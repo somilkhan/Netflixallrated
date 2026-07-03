@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from "react";
-import { Search, Bell, LogOut, Film, Bookmark, Heart, ChevronDown, Sparkles, Users } from "lucide-react";
+import { Search, Bell, LogOut, Film, Bookmark, Heart, ChevronDown, Sparkles, Users, ExternalLink } from "lucide-react";
 import { useApp } from "../context/AppContext";
 
 interface NavbarProps {
@@ -21,7 +21,16 @@ export default function Navbar({ onOpenAuth, activeTab, setActiveTab }: NavbarPr
   const [showSuggestions, setShowSuggestions] = useState(false);
   const suggestionsRef = useRef<HTMLDivElement>(null);
 
+  // Iframe sandboxing/preview detection
+  const [isInsideIframe, setIsInsideIframe] = useState(false);
+
   useEffect(() => {
+    try {
+      setIsInsideIframe(window.self !== window.top);
+    } catch (e) {
+      setIsInsideIframe(true);
+    }
+
     const handleScroll = () => {
       if (window.scrollY > 20) {
         setIsScrolled(true);
@@ -90,13 +99,33 @@ export default function Navbar({ onOpenAuth, activeTab, setActiveTab }: NavbarPr
   const alternateProfiles = profiles.filter(p => p.id !== activeProfile?.id);
 
   return (
-    <nav
-      className={`fixed top-0 inset-x-0 z-45 transition-all duration-500 h-20 flex items-center justify-between px-6 md:px-12 ${
-        isScrolled 
-          ? "glass-nav py-4 shadow-xl" 
-          : "bg-gradient-to-b from-black/85 via-black/40 to-transparent py-6"
-      }`}
-    >
+    <div className="fixed top-0 inset-x-0 z-45 flex flex-col">
+      {isInsideIframe && (
+        <div className="bg-gradient-to-r from-brand-red via-[#f43f5e] to-[#a21caf] py-2.5 px-4 text-center text-white text-[11px] font-semibold flex flex-col sm:flex-row items-center justify-center gap-2.5 shadow-lg border-b border-white/10 z-50 backdrop-blur-md animate-fade-in">
+          <div className="flex items-center gap-2">
+            <Sparkles size={13} className="text-yellow-300 animate-bounce flex-shrink-0" />
+            <span className="leading-normal">
+              Some video players block viewing inside the sandboxed preview frame. Open Allrated in a new tab for instant playback!
+            </span>
+          </div>
+          <a
+            href={window.location.href}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="bg-white hover:bg-white/95 text-brand-maroon hover:text-brand-crimson px-3 py-1 rounded-lg font-bold transition duration-300 shadow-md flex items-center gap-1.5 flex-shrink-0 transform active:scale-95 text-[10px]"
+          >
+            <span>Open in Dedicated Tab</span>
+            <ExternalLink size={10} />
+          </a>
+        </div>
+      )}
+      <nav
+        className={`w-full transition-all duration-500 h-20 flex items-center justify-between px-6 md:px-12 ${
+          isScrolled 
+            ? "glass-nav py-4 shadow-xl" 
+            : "bg-gradient-to-b from-black/85 via-black/40 to-transparent py-6"
+        }`}
+      >
       {/* Left section: Logo & Nav Links */}
       <div className="flex items-center gap-10">
         {/* Brand Logo */}
@@ -327,5 +356,6 @@ export default function Navbar({ onOpenAuth, activeTab, setActiveTab }: NavbarPr
         )}
       </div>
     </nav>
+    </div>
   );
 }

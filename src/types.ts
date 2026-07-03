@@ -22,6 +22,8 @@ export interface Movie {
   age_rating?: string;
   match_percentage?: number;
   cast?: string[];
+  initialSeason?: number;
+  initialEpisode?: number;
 }
 
 export interface UserProfile {

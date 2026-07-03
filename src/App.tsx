@@ -553,9 +553,10 @@ function AllratedApp() {
               )}
 
               <MovieRow
-                title="Trending Now"
+                title="Top 10 Global Trending Leaderboard"
                 fetchUrl="/api/movies/trending"
                 onOpenAuth={() => setIsAuthOpen(true)}
+                isTop10={true}
               />
 
               <MovieRow
@@ -599,6 +600,7 @@ function AllratedApp() {
 
       {activeMovieForModal && (
         <DetailModal
+          key={activeMovieForModal.id}
           movie={activeMovieForModal}
           onClose={() => setActiveMovieForModal(null)}
           onOpenAuth={() => setIsAuthOpen(true)}

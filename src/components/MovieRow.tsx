@@ -9,9 +9,10 @@ interface MovieRowProps {
   fetchUrl?: string; // Optional if movies list is passed directly
   initialMovies?: Movie[]; // Fallback list
   onOpenAuth: () => void;
+  isTop10?: boolean;
 }
 
-export default function MovieRow({ title, fetchUrl, initialMovies, onOpenAuth }: MovieRowProps) {
+export default function MovieRow({ title, fetchUrl, initialMovies, onOpenAuth, isTop10 }: MovieRowProps) {
   const [movies, setMovies] = useState<Movie[]>(initialMovies || []);
   const [loading, setLoading] = useState(true);
   const [anyCardHovered, setAnyCardHovered] = useState(false);
@@ -164,8 +165,24 @@ export default function MovieRow({ title, fetchUrl, initialMovies, onOpenAuth }:
               />
             ))
           ) : movies.length > 0 ? (
-            movies.map((movie) => (
-              <div key={movie.id} style={{ scrollSnapAlign: "start" }}>
+            movies.map((movie, index) => (
+              <div
+                key={movie.id}
+                style={{ scrollSnapAlign: "start" }}
+                className={isTop10 ? "relative pl-12 md:pl-20 pr-3 py-5 flex-shrink-0" : "flex-shrink-0"}
+              >
+                {isTop10 && (
+                  <span
+                    className="absolute left-0 bottom-1 text-[110px] md:text-[150px] font-display font-black text-[#12090B] select-none pointer-events-none leading-none z-10"
+                    style={{
+                      WebkitTextStroke: "2.5px rgba(229, 9, 20, 0.45)",
+                      textShadow: "0 0 30px rgba(229, 9, 20, 0.35)",
+                      transform: "translateY(15px) translateX(-4px)"
+                    }}
+                  >
+                    {index + 1}
+                  </span>
+                )}
                 <MovieCard
                   movie={movie}
                   onOpenAuth={onOpenAuth}

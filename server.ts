@@ -499,10 +499,70 @@ app.get("/api/movies/search", async (req, res) => {
   return res.json(filtered);
 });
 
+// PROXY EXTERNAL PROVIDERS CONFIG
+app.get("/api/streaming/providers", async (req, res) => {
+  try {
+    const response = await fetch("https://raw.githubusercontent.com/Anshu78780/json/main/providers.json");
+    if (!response.ok) {
+      throw new Error(`Failed to fetch providers: ${response.statusText}`);
+    }
+    const data = await response.json();
+    return res.json({ success: true, data });
+  } catch (err: any) {
+    console.error("Error fetching dynamic providers:", err);
+    return res.json({
+      success: false,
+      error: err.message,
+      fallback: {
+        "4kHDHub": { "name": "4kHDHub", "url": "https://4khdhub.one/" },
+        "nfMirror": { "name": "nfMirror", "url": "https://net22.cc/" },
+        "rive": { "name": "rive", "url": "https://watch.rivestream.app/" },
+        "kissKh": { "name": "kissKh", "url": "https://kisskh.ws/" },
+        "Vega": { "name": "vegamovies", "url": "https://vegamovies.navy/" }
+      }
+    });
+  }
+});
+
+// PROXY EXTERNAL SERVERS CONFIG
+app.get("/api/streaming/servers", async (req, res) => {
+  try {
+    const response = await fetch("https://raw.githubusercontent.com/Anshu78780/json/main/servers.json");
+    if (!response.ok) {
+      throw new Error(`Failed to fetch servers: ${response.statusText}`);
+    }
+    const data = await response.json();
+    return res.json({ success: true, data });
+  } catch (err: any) {
+    console.error("Error fetching dynamic servers:", err);
+    return res.json({
+      success: false,
+      error: err.message,
+      fallback: [
+        {
+          "name": "Scape",
+          "label": "Scape",
+          "flag": "🇮🇳 🇺🇸",
+          "isEmbed": true,
+          "embedUrl": "https://nxsha.screenscape.me/embed"
+        }
+      ]
+    });
+  }
+});
+
 // PROXY NETMIRROR HOME
 app.get("/api/netmirror", async (req, res) => {
-  const apiKey = process.env.NETMIRROR_API_KEY || req.headers["x-api-key"] as string;
-  const baseUrl = process.env.NETMIRROR_API_URL || "https://netmirror.one";
+  const apiKey = process.env.NETMIRROR_API_KEY || req.headers["x-api-key"] as string || "sk_tLF8DC2Fcjp0mW1KlwPgpdZeVIrjocyH";
+  
+  let baseUrl = process.env.NETMIRROR_API_URL;
+  if (!baseUrl) {
+    if (apiKey && apiKey.startsWith("sk_")) {
+      baseUrl = "https://screenscapeapi.dev";
+    } else {
+      baseUrl = "https://netmirror.one";
+    }
+  }
 
   if (!apiKey) {
     return res.status(401).json({
@@ -540,11 +600,19 @@ app.get("/api/netmirror", async (req, res) => {
 // PROXY NETMIRROR STREAM
 app.get("/api/netmirror/stream", async (req, res) => {
   const { id } = req.query;
-  const apiKey = process.env.NETMIRROR_API_KEY || req.headers["x-api-key"] as string;
-  const baseUrl = process.env.NETMIRROR_API_URL || "https://netmirror.one";
+  const apiKey = process.env.NETMIRROR_API_KEY || req.headers["x-api-key"] as string || "sk_tLF8DC2Fcjp0mW1KlwPgpdZeVIrjocyH";
 
   if (!id) {
     return res.status(400).json({ success: false, error: "Missing required query parameter: id" });
+  }
+
+  let baseUrl = process.env.NETMIRROR_API_URL;
+  if (!baseUrl) {
+    if (apiKey && apiKey.startsWith("sk_")) {
+      baseUrl = "https://screenscapeapi.dev";
+    } else {
+      baseUrl = "https://netmirror.one";
+    }
   }
 
   if (!apiKey) {
@@ -578,6 +646,24 @@ app.get("/api/netmirror/stream", async (req, res) => {
     console.error("Error fetching NetMirror Stream:", err);
     return res.status(500).json({ success: false, error: err.message });
   }
+});
+
+// CREDITS / CAST
+app.get("/api/movies/credits/:type/:id", async (req, res) => {
+  const { type, id } = req.params;
+
+  if (id.startsWith("f-")) {
+    const movie = fallbackMovies.find(m => m.id === id);
+    return res.json({ cast: movie?.cast || [] });
+  }
+
+  const tmdbData = await fetchTMDB(`/${type}/${id}/credits`);
+  if (tmdbData && tmdbData.cast) {
+    const castNames = tmdbData.cast.slice(0, 5).map((member: any) => member.name);
+    return res.json({ cast: castNames });
+  }
+
+  return res.json({ cast: [] });
 });
 
 // Vite server setup for full-stack integration

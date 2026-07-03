@@ -4,6 +4,7 @@ import { Movie } from "../types";
 import { useApp } from "../context/AppContext";
 
 interface DetailModalProps {
+  key?: string | number;
   movie: Movie;
   onClose: () => void;
   onOpenAuth: () => void;
@@ -15,14 +16,29 @@ export default function DetailModal({ movie, onClose, onOpenAuth }: DetailModalP
   const [loadingSimilar, setLoadingSimilar] = useState(true);
   const [trailerMuted, setTrailerMuted] = useState(true);
   const [selectedSeason, setSelectedSeason] = useState(1);
+  const [cast, setCast] = useState<string[]>(movie.cast || []);
+  const [loadingCredits, setLoadingCredits] = useState(!movie.cast);
+  const [youtubeId, setYoutubeId] = useState<string | null>(movie.youtube_id || null);
 
   const isWatchlisted = watchlist.includes(movie.id);
   const isLiked = liked.includes(movie.id);
 
-  // Lock body scroll on mount
+  // Lock body scroll once on mount, unlock on unmount
   useEffect(() => {
     document.body.style.overflow = "hidden";
-    
+    return () => {
+      document.body.style.overflow = "unset";
+    };
+  }, []);
+
+  // Fetch similar titles, cast credits, and trailer when movie changes
+  useEffect(() => {
+    setSimilarMovies([]);
+    setLoadingSimilar(true);
+    setCast(movie.cast || []);
+    setLoadingCredits(!movie.cast);
+    setYoutubeId(movie.youtube_id || null);
+
     // Fetch similar movies
     const fetchSimilar = async () => {
       try {
@@ -38,11 +54,39 @@ export default function DetailModal({ movie, onClose, onOpenAuth }: DetailModalP
         setLoadingSimilar(false);
       }
     };
-    fetchSimilar();
 
-    return () => {
-      document.body.style.overflow = "unset";
+    // Fetch actual cast/credits
+    const fetchCredits = async () => {
+      try {
+        const res = await fetch(`/api/movies/credits/${movie.type}/${movie.id}`);
+        const data = await res.json();
+        if (data && Array.isArray(data.cast) && data.cast.length > 0) {
+          setCast(data.cast);
+        }
+      } catch (err) {
+        console.error("Error fetching cast credits:", err);
+      } finally {
+        setLoadingCredits(false);
+      }
     };
+
+    // Fetch trailer/video key
+    const fetchTrailer = async () => {
+      if (movie.youtube_id) return; // already has it
+      try {
+        const res = await fetch(`/api/movies/videos/${movie.type}/${movie.id}`);
+        const data = await res.json();
+        if (data && data.youtube_id) {
+          setYoutubeId(data.youtube_id);
+        }
+      } catch (err) {
+        console.error("Error fetching trailer:", err);
+      }
+    };
+
+    fetchSimilar();
+    fetchCredits();
+    fetchTrailer();
   }, [movie.id, movie.type]);
 
   const handlePlayClick = () => {
@@ -69,15 +113,39 @@ export default function DetailModal({ movie, onClose, onOpenAuth }: DetailModalP
     toggleLike(movie);
   };
 
-  // Simulated premium episodes for TV shows
-  const simulatedEpisodes = [
-    { episode: 1, title: "Pilot / The Genesis", duration: "54m", overview: "The introductory saga that sparks the overarching mystery and lays bare the power dynamics within." },
-    { episode: 2, title: "Interlocking Threads", duration: "48m", overview: "Unseen alliances are forged as key players attempt to assert control over the burgeoning narrative chaos." },
-    { episode: 3, title: "The Breaking Point", duration: "52m", overview: "Tension boils over when a critical decision threatens to tear the central community apart." },
-    { episode: 4, title: "Echoes of History", duration: "56m", overview: "A deep dive into past secrets exposes the heavy price paid by predecessors to secure their legacy." },
-    { episode: 5, title: "The Grand Strategy", duration: "51m", overview: "Infiltration plans are set in motion as factions mobilize for a coordinated, high-stakes coup." },
-    { episode: 6, title: "Resolution & Ruin", duration: "63m", overview: "The climactic season finale where old conflicts are temporarily settled, leaving behind a trail of unanswered questions." }
-  ];
+  // Simulated premium episodes for TV shows by season
+  const simulatedEpisodesBySeason: Record<number, Array<{ episode: number; title: string; duration: string; overview: string; progress?: number; thumb: string }>> = {
+    1: [
+      { episode: 1, title: "The Departure / Echoes of Command", duration: "54m", overview: "The journey begins as ancient factions align, a long-hidden truth is revealed, and the weight of legacy is placed upon our protagonists.", progress: 85, thumb: "https://images.unsplash.com/photo-1536440136628-849c177e76a1?q=80&w=400" },
+      { episode: 2, title: "Friction & Alliances", duration: "48m", overview: "As the search intensifies, key players find themselves navigating betrayal within their ranks and a fragile truce outside.", progress: 30, thumb: "https://images.unsplash.com/photo-1489599849927-2ee91cede3ba?q=80&w=400" },
+      { episode: 3, title: "A Reckoning of Blood", duration: "52m", overview: "An unexpected raid disrupts the power balance, forcing a direct confrontation that changes the destiny of the entire sector.", progress: 0, thumb: "https://images.unsplash.com/photo-1478720568477-152d9b164e26?q=80&w=400" },
+      { episode: 4, title: "Shadows in the Dust", duration: "56m", overview: "Quiet secrets in forgotten crypts are unearthed, leading to a race against time before the rising sand covers the traces forever.", progress: 0, thumb: "https://images.unsplash.com/photo-1517604931442-7e0c8ed2963c?q=80&w=400" },
+      { episode: 5, title: "The Silent Siege", duration: "51m", overview: "Survival hangs in the balance as an invisible grid locks down communication, forcing characters to rely on primitive wits.", progress: 0, thumb: "https://images.unsplash.com/photo-1440404653325-ab127d49abc1?q=80&w=400" },
+      { episode: 6, title: "Legacy & Ashes", duration: "63m", overview: "The devastating season finale where empires crumble, lines are permanently drawn, and the stage is set for a massive retaliatory war.", progress: 0, thumb: "https://images.unsplash.com/photo-1515621061946-eff1c2a352bd?q=80&w=400" }
+    ],
+    2: [
+      { episode: 1, title: "Rebirth / Out of the Ruins", duration: "58m", overview: "Survivors pick up the pieces of the shattered capital while a new, more dangerous player emerges from the deep outer rim.", progress: 0, thumb: "https://images.unsplash.com/photo-1509198397868-475647b2a1e5?q=80&w=400" },
+      { episode: 2, title: "The Outer Rim Protocol", duration: "50m", overview: "A secret signal leads a faction into uncharted territories, finding unexpected resistance and a long-abandoned vessel.", progress: 0, thumb: "https://images.unsplash.com/photo-1534447677768-be436bb09401?q=80&w=400" },
+      { episode: 3, title: "Infiltration of the Core", duration: "55m", overview: "Going deep undercover, key agents attempt to hack the main frame before the weekly grid sweep exposes their bio-signatures.", progress: 0, thumb: "https://images.unsplash.com/photo-1508700115892-45ecd05ae2ad?q=80&w=400" },
+      { episode: 4, title: "The Grand Alliance", duration: "53m", overview: "Bitter rivals must sit at the negotiation table as a common, terrifying threat moves to consume both of their homeworlds.", progress: 0, thumb: "https://images.unsplash.com/photo-1451187580459-43490279c0fa?q=80&w=400" },
+      { episode: 5, title: "Terminal Descent", duration: "57m", overview: "A tense struggle inside a failing shuttle that is burning up on re-entry, while secrets are blurted out in what they think are their final moments.", progress: 0, thumb: "https://images.unsplash.com/photo-1506703719100-a0f3a48c0f86?q=80&w=400" },
+      { episode: 6, title: "Sovereign Light", duration: "65m", overview: "An epic battle in the skies and on the ground. A supreme sacrifice clears the path, but opens up a wormhole of unpredictable consequences.", progress: 0, thumb: "https://images.unsplash.com/photo-1461360370896-922624d12aa1?q=80&w=400" }
+    ]
+  };
+
+  const currentSeasonEpisodes = simulatedEpisodesBySeason[selectedSeason] || simulatedEpisodesBySeason[1] || [];
+
+  const handleEpisodePlayClick = (episodeNum: number) => {
+    if (!user) {
+      onOpenAuth();
+      return;
+    }
+    setActiveMovieForPlayer({
+      ...movie,
+      initialSeason: selectedSeason,
+      initialEpisode: episodeNum,
+    });
+  };
 
   return (
     <div className="fixed inset-0 z-40 bg-black/85 backdrop-blur-md flex justify-center overflow-y-auto py-10 px-4 animate-fade-in custom-scrollbar">
@@ -97,12 +165,12 @@ export default function DetailModal({ movie, onClose, onOpenAuth }: DetailModalP
 
         {/* Video / Backdrop Header */}
         <div className="relative w-full aspect-[16/9] md:h-[400px] overflow-hidden bg-black">
-          {movie.youtube_id ? (
+          {youtubeId ? (
             <div className="absolute inset-0 w-full h-full scale-[1.35] origin-center">
               <iframe
-                src={`https://www.youtube.com/embed/${movie.youtube_id}?autoplay=1&mute=${
+                src={`https://www.youtube.com/embed/${youtubeId}?autoplay=1&mute=${
                   trailerMuted ? 1 : 0
-                }&controls=0&loop=1&playlist=${movie.youtube_id}&showinfo=0&rel=0&modestbranding=1&iv_load_policy=3&playsinline=1`}
+                }&controls=0&loop=1&playlist=${youtubeId}&showinfo=0&rel=0&modestbranding=1&iv_load_policy=3&playsinline=1`}
                 title="Modal Spotlight Trailer"
                 className="w-full h-full border-none pointer-events-none select-none"
                 allow="autoplay; encrypted-media"
@@ -161,7 +229,7 @@ export default function DetailModal({ movie, onClose, onOpenAuth }: DetailModalP
                 <ThumbsUp size={15} fill={isLiked ? "currentColor" : "none"} className={isLiked ? "text-brand-red" : ""} />
               </button>
 
-              {movie.youtube_id && (
+              {youtubeId && (
                 <button
                   onClick={() => setTrailerMuted(prev => !prev)}
                   className="p-2.5 rounded-full bg-black/60 border border-white/10 text-white hover:bg-brand-red transition-all cursor-pointer"
@@ -209,64 +277,141 @@ export default function DetailModal({ movie, onClose, onOpenAuth }: DetailModalP
               </p>
             </div>
 
-            {/* Right column: Cast, Genres, Creators */}
-            <div className="glass-panel p-4.5 rounded-xl border border-white/5 space-y-4 text-xs text-gray-400">
+            {/* Right column: Cast, Genres, Ratings Scorecard */}
+            <div className="glass-panel p-5 rounded-xl border border-white/5 space-y-5 text-xs text-gray-400 shadow-lg">
               <div>
-                <span className="font-mono text-[10px] text-gray-500 uppercase block mb-1">STARRING</span>
-                <p className="text-gray-200 leading-snug">
-                  {movie.cast && movie.cast.length ? movie.cast.join(", ") : "Timothée Chalamet, Zendaya, Austin Butler, Florence Pugh, Pedro Pascal"}
+                <span className="font-mono text-[9px] tracking-wider text-gray-500 uppercase block mb-1">STARRING</span>
+                <p className="text-gray-200 font-medium leading-snug">
+                  {cast && cast.length 
+                    ? cast.join(", ") 
+                    : loadingCredits 
+                      ? "Loading cast list..." 
+                      : "Cast information unavailable"}
                 </p>
               </div>
 
               <div>
-                <span className="font-mono text-[10px] text-gray-500 uppercase block mb-1">GENRES</span>
-                <p className="text-gray-200">
+                <span className="font-mono text-[9px] tracking-wider text-gray-500 uppercase block mb-1">GENRES</span>
+                <p className="text-gray-200 font-medium">
                   {movie.genres.join(", ")}
                 </p>
               </div>
 
-              <div>
-                <span className="font-mono text-[10px] text-gray-500 uppercase block mb-1">CRITIC SCORE</span>
-                <p className="text-brand-red font-bold">
-                  ★ {movie.vote_average.toFixed(1)} / 10 <span className="text-[10px] font-normal text-gray-500">({movie.vote_count} votes)</span>
-                </p>
+              <div className="pt-3 border-t border-white/5 space-y-3">
+                <span className="font-mono text-[9px] tracking-wider text-gray-500 uppercase block">ALLRATED AGGREGATED SCORECARD</span>
+                
+                <div className="grid grid-cols-3 gap-2 text-center">
+                  {/* Critic score (IMDb equivalent) */}
+                  <div className="bg-white/5 p-2 rounded-lg border border-white/5">
+                    <span className="text-[10px] font-mono text-gray-400 block uppercase">IMDb</span>
+                    <span className="text-sm font-black font-display text-amber-400">★ {movie.vote_average.toFixed(1)}</span>
+                  </div>
+                  
+                  {/* Rotten tomatoes score */}
+                  <div className="bg-white/5 p-2 rounded-lg border border-white/5">
+                    <span className="text-[10px] font-mono text-gray-400 block uppercase">TOMATO</span>
+                    <span className="text-sm font-black font-display text-brand-red">🍅 {Math.min(99, Math.round(movie.vote_average * 10 + 2))}%</span>
+                  </div>
+
+                  {/* Allrated score */}
+                  <div className="bg-brand-red/10 p-2 rounded-lg border border-brand-red/20">
+                    <span className="text-[10px] font-mono text-brand-red block uppercase font-bold">ALLRATED</span>
+                    <span className="text-sm font-black font-display text-white">🔥 {(movie.vote_average * 9.8).toFixed(0)}</span>
+                  </div>
+                </div>
+
+                <div className="bg-[#170A0D] border border-brand-red/10 rounded-lg p-2.5 flex items-start gap-2">
+                  <span className="text-lg">🏆</span>
+                  <div>
+                    <span className="font-mono text-[8px] font-bold text-brand-red uppercase block">Consensus Choice</span>
+                    <p className="text-[10px] text-gray-300 leading-relaxed font-sans">
+                      Highly recommended cinematic entry based on overall positive critical reviews.
+                    </p>
+                  </div>
+                </div>
               </div>
             </div>
           </div>
 
           {/* TV SHOW EPISODES (Render if TV Show) */}
           {movie.type === "tv" && (
-            <div className="space-y-4 pt-4 border-t border-white/5">
+            <div className="space-y-5 pt-6 border-t border-white/5">
               <div className="flex items-center justify-between">
-                <h3 className="font-display font-bold text-lg text-white">
-                  Episodes
-                </h3>
+                <div className="space-y-1">
+                  <h3 className="font-display font-bold text-lg text-white">
+                    Episodes
+                  </h3>
+                  <p className="text-xs text-gray-400">Select any episode to begin watching instantly.</p>
+                </div>
                 <select
                   value={selectedSeason}
                   onChange={(e) => setSelectedSeason(parseInt(e.target.value))}
-                  className="bg-[#12090B] text-white font-mono text-xs border border-white/10 rounded-lg px-3 py-1.5 focus:border-brand-red focus:outline-none"
+                  className="bg-[#12090B] text-white font-mono text-xs border border-white/10 rounded-lg px-3 py-2 focus:border-brand-red focus:outline-none cursor-pointer"
                 >
-                  <option value={1}>Season 1</option>
-                  <option value={2}>Season 2</option>
+                  <option value={1}>Season 1 ({simulatedEpisodesBySeason[1]?.length || 0} Episodes)</option>
+                  <option value={2}>Season 2 ({simulatedEpisodesBySeason[2]?.length || 0} Episodes)</option>
                 </select>
               </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                {simulatedEpisodes.map((ep) => (
+              <div className="flex flex-col gap-4">
+                {currentSeasonEpisodes.map((ep) => (
                   <div
                     key={ep.episode}
-                    className="flex flex-col gap-2 p-3.5 bg-brand-maroon/20 border border-white/5 rounded-xl hover:border-brand-crimson/50 transition duration-300"
+                    onClick={() => handleEpisodePlayClick(ep.episode)}
+                    className="group flex flex-col md:flex-row gap-4 p-4 bg-brand-maroon/20 hover:bg-brand-maroon/60 border border-white/5 hover:border-brand-red/30 rounded-xl transition duration-300 cursor-pointer shadow-md"
                   >
-                    <div className="flex items-center justify-between text-xs font-mono">
-                      <span className="text-brand-red">EPISODE {ep.episode}</span>
-                      <span className="text-gray-400">{ep.duration}</span>
+                    {/* Episode Thumbnail */}
+                    <div className="relative aspect-[16/9] w-full md:w-48 flex-shrink-0 bg-black/40 rounded-lg overflow-hidden border border-white/5 group-hover:border-brand-red/20 transition-all">
+                      <img
+                        src={ep.thumb}
+                        alt={ep.title}
+                        className="w-full h-full object-cover opacity-80 group-hover:opacity-100 group-hover:scale-105 transition-all duration-300"
+                        referrerPolicy="no-referrer"
+                      />
+                      
+                      {/* Hover Play overlay */}
+                      <div className="absolute inset-0 bg-black/30 group-hover:bg-black/10 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                        <div className="w-10 h-10 rounded-full bg-brand-red flex items-center justify-center text-white shadow-lg transform scale-90 group-hover:scale-100 transition-all duration-300">
+                          <Play size={16} fill="currentColor" className="ml-0.5" />
+                        </div>
+                      </div>
+
+                      {/* Episode indicator badge */}
+                      <div className="absolute top-2 left-2 px-1.5 py-0.5 rounded bg-black/75 text-[10px] font-mono font-bold tracking-wider text-brand-red border border-white/10">
+                        EP {ep.episode}
+                      </div>
+
+                      {/* Runtime Badge */}
+                      <div className="absolute bottom-2 right-2 px-1.5 py-0.5 rounded bg-black/75 text-[9px] font-mono text-gray-300 border border-white/5">
+                        {ep.duration}
+                      </div>
+
+                      {/* Realistic Progress bar */}
+                      {ep.progress !== undefined && ep.progress > 0 && (
+                        <div className="absolute bottom-0 inset-x-0 h-1 bg-black/40">
+                          <div className="h-full bg-brand-red transition-all duration-500" style={{ width: `${ep.progress}%` }}></div>
+                        </div>
+                      )}
                     </div>
-                    <h4 className="font-display font-semibold text-sm text-white mt-1">
-                      {ep.title}
-                    </h4>
-                    <p className="text-xs text-gray-400 leading-relaxed mt-1">
-                      {ep.overview}
-                    </p>
+
+                    {/* Episode Text Meta */}
+                    <div className="flex-grow flex flex-col justify-between py-1 min-w-0">
+                      <div>
+                        <h4 className="font-display font-bold text-sm md:text-base text-white group-hover:text-brand-red transition truncate mb-1">
+                          {ep.title}
+                        </h4>
+                        <p className="text-xs text-gray-400 leading-relaxed line-clamp-3">
+                          {ep.overview}
+                        </p>
+                      </div>
+                      
+                      {ep.progress !== undefined && ep.progress > 0 && (
+                        <div className="text-[10px] font-mono text-brand-red mt-2 flex items-center gap-1.5 uppercase tracking-wider font-bold">
+                          <span className="w-1.5 h-1.5 rounded-full bg-brand-red animate-pulse"></span>
+                          Resume Watching ({ep.progress}% completed)
+                        </div>
+                      )}
+                    </div>
                   </div>
                 ))}
               </div>

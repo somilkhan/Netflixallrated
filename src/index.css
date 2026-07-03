@@ -82,3 +82,19 @@ body {
 .animate-fade-in {
   animation: fadeIn 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
+
+/* Fullscreen rotation fallback for mobile devices in portrait orientation */
+@media (orientation: portrait) {
+  .force-landscape-fullscreen {
+    transform: translate(-50%, -50%) rotate(90deg) !important;
+    transform-origin: center !important;
+    width: 100vh !important;
+    height: 100vw !important;
+    position: fixed !important;
+    top: 50% !important;
+    left: 50% !important;
+    max-width: none !important;
+    max-height: none !important;
+    z-index: 9999 !important;
+  }
+}
