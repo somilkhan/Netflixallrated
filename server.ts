@@ -1,5 +1,6 @@
 import express from "express";
 import path from "path";
+import { createServer as createViteServer } from "vite";
 import dns from "dns";
 
 // For potential DNS issues in sandboxes
@@ -974,69 +975,20 @@ app.get("/api/movies/credits/:type/:id", async (req, res) => {
   return res.json({ cast: [] });
 });
 
-// ===== Auto-Fix Agent: error reporting endpoints =====
-import fs from "fs";
-const QUEUE_FILE = path.join(process.cwd(), "queue.json");
-
-function loadErrorQueue(): any[] {
-  if (!fs.existsSync(QUEUE_FILE)) return [];
-  try {
-    return JSON.parse(fs.readFileSync(QUEUE_FILE, "utf-8"));
-  } catch {
-    return [];
-  }
-}
-
-function saveErrorQueue(queue: any[]) {
-  fs.writeFileSync(QUEUE_FILE, JSON.stringify(queue, null, 2));
-}
-
-// Website se error reports yahan aate hain (src/lib/errorReporter.ts se)
-app.post("/api/report-error", (req, res) => {
-  const queue = loadErrorQueue();
-
-  const isDuplicate = queue.some(
-    (item) =>
-      item.status === "pending" &&
-      item.message === req.body.message &&
-      item.componentName === req.body.componentName
-  );
-
-  if (!isDuplicate) {
-    queue.push({
-      id: Date.now().toString(),
-      ...req.body,
-      status: "pending", // pending -> fixing -> fixed / needs-review
-    });
-    saveErrorQueue(queue);
-    console.log("🐛 New error reported:", req.body.message);
-  }
-
-  res.json({ received: true });
-});
-
-// Dashboard / agent ke liye queue dekhne ka endpoint
-app.get("/api/queue", (_req, res) => {
-  res.json(loadErrorQueue());
-});
-
 // Vite server setup for full-stack integration
 async function startServer() {
-  if (process.env.VERCEL !== "1") {
-    const { createServer: createViteServer } = await import("vite");
-    if (process.env.NODE_ENV !== "production") {
-      const vite = await createViteServer({
-        server: { middlewareMode: true },
-        appType: "spa",
-      });
-      app.use(vite.middlewares);
-    } else {
-      const distPath = path.join(process.cwd(), "dist");
-      app.use(express.static(distPath));
-      app.get("*", (req, res) => {
-        res.sendFile(path.join(distPath, "index.html"));
-      });
-    }
+  if (process.env.NODE_ENV !== "production") {
+    const vite = await createViteServer({
+      server: { middlewareMode: true },
+      appType: "spa",
+    });
+    app.use(vite.middlewares);
+  } else {
+    const distPath = path.join(process.cwd(), "dist");
+    app.use(express.static(distPath));
+    app.get("*", (req, res) => {
+      res.sendFile(path.join(distPath, "index.html"));
+    });
   }
 
   app.listen(PORT, "0.0.0.0", () => {
@@ -1044,8 +996,4 @@ async function startServer() {
   });
 }
 
-if (process.env.VERCEL !== "1") {
-  startServer();
-}
-
-export default app;
+startServer();

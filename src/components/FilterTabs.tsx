@@ -52,7 +52,7 @@ export default function FilterTabs({
   const hasActiveFilters = selectedGenre || selectedYear || activeSection !== "all";
 
   return (
-    <div className="w-full flex flex-col md:flex-row md:items-center justify-between gap-4 px-6 md:px-12 py-4 border-b border-white/5 bg-[#000000]/60 backdrop-blur-md sticky top-20 z-30">
+    <div id="explore-filter-tabs" className="w-full flex flex-col md:flex-row md:items-center justify-between gap-4 px-6 md:px-12 py-4 border-b border-white/5 bg-[#000000]/60 backdrop-blur-md sticky top-20 z-30">
       {/* Tab-based Filters (Movies / Series / Anime) styled as pill tabs with red active-state background */}
       <div className="flex items-center gap-2 overflow-x-auto no-scrollbar scroll-smooth py-1">
         {sections.map((sec) => {

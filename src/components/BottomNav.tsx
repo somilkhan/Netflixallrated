@@ -1,11 +1,13 @@
 import React, { useRef, useState, useEffect } from "react";
-import { Home, Search, Bookmark, User, Heart } from "lucide-react";
+import { Home, Search, Bookmark, User, Heart, Tv, Sparkles } from "lucide-react";
 import { useApp } from "../context/AppContext";
 import { motion, useMotionValue, useTransform, useSpring, AnimatePresence } from "motion/react";
 
 interface BottomNavProps {
-  activeTab: "home" | "search" | "watchlist" | "liked" | "profile";
+  activeTab: "home" | "watchlist" | "liked";
   setActiveTab: (tab: "home" | "watchlist" | "liked") => void;
+  homeSection: "all" | "movie" | "tv" | "anime";
+  setHomeSection: (section: "all" | "movie" | "tv" | "anime") => void;
   onSearchClick: () => void;
   onOpenAuth: () => void;
 }
@@ -122,8 +124,8 @@ function DockIcon({
   );
 }
 
-export default function BottomNav({ activeTab, setActiveTab, onSearchClick, onOpenAuth }: BottomNavProps) {
-  const { user, activeProfile, selectProfile, setSearchQuery } = useApp();
+export default function BottomNav({ activeTab, setActiveTab, homeSection, setHomeSection, onSearchClick, onOpenAuth }: BottomNavProps) {
+  const { user, activeProfile, selectProfile, searchQuery, setSearchQuery } = useApp();
   const mouseX = useMotionValue(Infinity);
 
   // Collapse the dock wave expansion on scroll to prevent stuck layouts
@@ -151,21 +153,40 @@ export default function BottomNav({ activeTab, setActiveTab, onSearchClick, onOp
       id: "home" as const,
       label: "Home",
       icon: Home,
+      isActive: activeTab === "home" && homeSection === "all" && !searchQuery,
       action: () => {
         setActiveTab("home");
+        setHomeSection("all");
         setSearchQuery("");
       }
     },
     {
-      id: "search" as const,
-      label: "Search",
-      icon: Search,
-      action: onSearchClick
+      id: "tv" as const,
+      label: "TV Shows",
+      icon: Tv,
+      isActive: activeTab === "home" && homeSection === "tv" && !searchQuery,
+      action: () => {
+        setActiveTab("home");
+        setHomeSection("tv");
+        setSearchQuery("");
+      }
+    },
+    {
+      id: "anime" as const,
+      label: "Anime",
+      icon: Sparkles,
+      isActive: activeTab === "home" && homeSection === "anime" && !searchQuery,
+      action: () => {
+        setActiveTab("home");
+        setHomeSection("anime");
+        setSearchQuery("");
+      }
     },
     {
       id: "watchlist" as const,
       label: "My List",
       icon: Bookmark,
+      isActive: activeTab === "watchlist",
       action: () => {
         if (!user) {
           onOpenAuth();
@@ -178,6 +199,7 @@ export default function BottomNav({ activeTab, setActiveTab, onSearchClick, onOp
       id: "liked" as const,
       label: "Liked",
       icon: Heart,
+      isActive: activeTab === "liked",
       action: () => {
         if (!user) {
           onOpenAuth();
@@ -199,7 +221,7 @@ export default function BottomNav({ activeTab, setActiveTab, onSearchClick, onOp
         className="flex items-end gap-3 bg-[#12090B]/85 hover:bg-[#12090B]/95 border border-white/10 backdrop-blur-xl px-4 pb-3 rounded-full shadow-[0_15px_35px_rgba(0,0,0,0.8)] pointer-events-auto transition-all duration-300 max-w-lg mx-auto h-[68px]"
       >
         {navItems.map((item) => {
-          const isActive = activeTab === item.id;
+          const isActive = item.isActive;
           const Icon = item.icon;
 
           return (
@@ -212,7 +234,7 @@ export default function BottomNav({ activeTab, setActiveTab, onSearchClick, onOp
             >
               <div className="w-[45%] h-[45%] flex items-center justify-center transition-colors duration-300">
                 <Icon 
-                  className={isActive ? "text-white" : "text-gray-400 group-hover:text-white"} 
+                  className={isActive ? "text-brand-red" : "text-gray-400 group-hover:text-white"} 
                   size="100%" 
                 />
               </div>
@@ -223,7 +245,7 @@ export default function BottomNav({ activeTab, setActiveTab, onSearchClick, onOp
         {/* Profile Avatar / Login Icon inside the Dock */}
         <DockIcon
           mouseX={mouseX}
-          isActive={activeTab === "profile"}
+          isActive={false}
           label={user ? (activeProfile ? `Profile: ${activeProfile.name}` : "Switch Profile") : "Log In"}
           action={handleProfileClick}
         >
@@ -239,6 +261,24 @@ export default function BottomNav({ activeTab, setActiveTab, onSearchClick, onOp
               <User size="100%" />
             </div>
           )}
+        </DockIcon>
+
+        {/* Thin elegant visual separator */}
+        <div className="w-[1px] h-6 bg-white/15 self-center mx-1 flex-shrink-0" />
+
+        {/* Separate prominent option beside all: Search */}
+        <DockIcon
+          mouseX={mouseX}
+          isActive={!!searchQuery}
+          label="Search Titles"
+          action={onSearchClick}
+        >
+          <div className="w-[45%] h-[45%] flex items-center justify-center transition-colors duration-300">
+            <Search 
+              className={searchQuery ? "text-brand-red" : "text-gray-400 group-hover:text-brand-red"} 
+              size="100%" 
+            />
+          </div>
         </DockIcon>
       </motion.div>
     </div>

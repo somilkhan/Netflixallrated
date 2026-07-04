@@ -6,9 +6,11 @@ interface NavbarProps {
   onOpenAuth: () => void;
   activeTab: "home" | "watchlist" | "liked";
   setActiveTab: (tab: "home" | "watchlist" | "liked") => void;
+  homeSection: "all" | "movie" | "tv" | "anime";
+  setHomeSection: (section: "all" | "movie" | "tv" | "anime") => void;
 }
 
-export default function Navbar({ onOpenAuth, activeTab, setActiveTab }: NavbarProps) {
+export default function Navbar({ onOpenAuth, activeTab, setActiveTab, homeSection, setHomeSection }: NavbarProps) {
   const { user, profiles, activeProfile, selectProfile, signOut, searchQuery, setSearchQuery, config } = useApp();
   const [isScrolled, setIsScrolled] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
@@ -128,30 +130,79 @@ export default function Navbar({ onOpenAuth, activeTab, setActiveTab }: NavbarPr
       >
       {/* Left section: Logo & Nav Links */}
       <div className="flex items-center gap-10">
-        {/* Brand Logo */}
+        {/* Aesthetic Brand Logo with glowing Play/Film design */}
         <div 
-          onClick={() => { setActiveTab("home"); setSearchQuery(""); }}
-          className="flex items-center gap-2.5 cursor-pointer group"
+          onClick={() => { 
+            setActiveTab("home"); 
+            setHomeSection("all");
+            setSearchQuery(""); 
+          }}
+          className="flex items-center gap-3 cursor-pointer group select-none"
         >
-          <div className="w-8.5 h-8.5 rounded bg-gradient-to-br from-[#E50914] to-[#9B0F15] flex items-center justify-center font-display font-black text-white shadow-md shadow-brand-red/10 transform group-hover:scale-105 transition-all">
-            A
+          {/* Glowing Red-Maroon Film Badge */}
+          <div className="relative w-10 h-10 rounded-xl bg-gradient-to-br from-[#FF1E27] via-[#E50914] to-[#9B0F15] flex items-center justify-center text-white shadow-[0_0_20px_rgba(229,9,20,0.4)] transform group-hover:scale-105 group-hover:rotate-3 transition-all duration-300">
+            <Film size={20} className="animate-pulse" />
+            <div className="absolute -top-1 -right-1 w-3 h-3 bg-yellow-400 rounded-full border-2 border-black flex items-center justify-center">
+              <span className="w-1 h-1 bg-black rounded-full animate-ping"></span>
+            </div>
           </div>
-          <span className="font-display font-black tracking-tighter text-[#E50914] italic text-2xl group-hover:text-white transition-colors">
-            ALLRATED
-          </span>
+          
+          {/* Custom high-end futuristic typography */}
+          <div className="flex flex-col">
+            <span className="font-display font-black tracking-wider text-white text-xl leading-none group-hover:text-[#E50914] transition-colors">
+              ALL<span className="text-[#E50914]">RATED</span>
+            </span>
+            <span className="text-[8px] font-mono tracking-widest text-gray-400 uppercase leading-none mt-1 group-hover:text-white transition-colors">
+              CINEMA EXPLORER
+            </span>
+          </div>
         </div>
 
         {/* Navigation Links */}
         <div className="hidden md:flex items-center gap-6 text-sm font-medium">
           <button
-            onClick={() => { setActiveTab("home"); setSearchQuery(""); }}
+            onClick={() => { 
+              setActiveTab("home"); 
+              setHomeSection("all");
+              setSearchQuery(""); 
+            }}
             className={`transition-colors cursor-pointer ${
-              activeTab === "home" && !searchQuery
+              activeTab === "home" && homeSection === "all" && !searchQuery
                 ? "text-brand-red font-semibold" 
                 : "text-gray-300 hover:text-white"
             }`}
           >
             Home
+          </button>
+
+          <button
+            onClick={() => { 
+              setActiveTab("home"); 
+              setHomeSection("tv");
+              setSearchQuery(""); 
+            }}
+            className={`transition-colors cursor-pointer ${
+              activeTab === "home" && homeSection === "tv" && !searchQuery
+                ? "text-brand-red font-semibold" 
+                : "text-gray-300 hover:text-white"
+            }`}
+          >
+            TV Shows
+          </button>
+
+          <button
+            onClick={() => { 
+              setActiveTab("home"); 
+              setHomeSection("anime");
+              setSearchQuery(""); 
+            }}
+            className={`transition-colors cursor-pointer ${
+              activeTab === "home" && homeSection === "anime" && !searchQuery
+                ? "text-brand-red font-semibold" 
+                : "text-gray-300 hover:text-white"
+            }`}
+          >
+            Anime
           </button>
           
           {user && activeProfile && (

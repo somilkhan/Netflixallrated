@@ -367,6 +367,8 @@ function AllratedApp() {
         onOpenAuth={() => setIsAuthOpen(true)}
         activeTab={activeTab}
         setActiveTab={setActiveTab}
+        homeSection={homeSection}
+        setHomeSection={setHomeSection}
       />
 
       {/* Main Content Area */}
@@ -644,6 +646,7 @@ function AllratedApp() {
                       title="My List"
                       initialMovies={watchlistMovies}
                       onOpenAuth={() => setIsAuthOpen(true)}
+                      onViewAll={() => setActiveTab("watchlist")}
                     />
                   )}
 
@@ -653,6 +656,7 @@ function AllratedApp() {
                       title="Recommended For You"
                       initialMovies={recommendedMovies}
                       onOpenAuth={() => setIsAuthOpen(true)}
+                      onViewAll={() => setActiveTab("liked")}
                     />
                   )}
 
@@ -661,18 +665,57 @@ function AllratedApp() {
                     fetchUrl="/api/movies/trending"
                     onOpenAuth={() => setIsAuthOpen(true)}
                     isTop10={true}
+                    onViewAll={() => {
+                      setHomeSection("all");
+                      setHomeGenre("");
+                      setHomeYear("");
+                      setTimeout(() => {
+                        const target = document.getElementById("explore-filter-tabs");
+                        if (target) {
+                          target.scrollIntoView({ behavior: "smooth" });
+                        } else {
+                          window.scrollTo({ top: 480, behavior: "smooth" });
+                        }
+                      }, 100);
+                    }}
                   />
 
                   <ContentRow
                     title="Top Rated Blockbusters"
                     fetchUrl="/api/movies/top-rated"
                     onOpenAuth={() => setIsAuthOpen(true)}
+                    onViewAll={() => {
+                      setHomeSection("movie");
+                      setHomeGenre("");
+                      setHomeYear("");
+                      setTimeout(() => {
+                        const target = document.getElementById("explore-filter-tabs");
+                        if (target) {
+                          target.scrollIntoView({ behavior: "smooth" });
+                        } else {
+                          window.scrollTo({ top: 480, behavior: "smooth" });
+                        }
+                      }, 100);
+                    }}
                   />
 
                   <ContentRow
                     title="New Releases"
                     fetchUrl="/api/movies/new-releases"
                     onOpenAuth={() => setIsAuthOpen(true)}
+                    onViewAll={() => {
+                      setHomeSection("all");
+                      setHomeGenre("");
+                      setHomeYear("");
+                      setTimeout(() => {
+                        const target = document.getElementById("explore-filter-tabs");
+                        if (target) {
+                          target.scrollIntoView({ behavior: "smooth" });
+                        } else {
+                          window.scrollTo({ top: 480, behavior: "smooth" });
+                        }
+                      }, 100);
+                    }}
                   />
 
                   {/* Dynamic Priority Sorted Genres Rows based on Liked Affinity weights */}
@@ -682,6 +725,19 @@ function AllratedApp() {
                       title={`${genre} Spotlight`}
                       fetchUrl={`/api/movies/genre/${genre}`}
                       onOpenAuth={() => setIsAuthOpen(true)}
+                      onViewAll={() => {
+                        setHomeGenre(genre);
+                        setHomeSection("all");
+                        setHomeYear("");
+                        setTimeout(() => {
+                          const target = document.getElementById("explore-filter-tabs");
+                          if (target) {
+                            target.scrollIntoView({ behavior: "smooth" });
+                          } else {
+                            window.scrollTo({ top: 480, behavior: "smooth" });
+                          }
+                        }, 100);
+                      }}
                     />
                   ))}
                 </div>
@@ -693,12 +749,10 @@ function AllratedApp() {
 
       {/* Floating Pill Bottom Navigation Bar */}
       <BottomNav
-        activeTab={
-          activeTab === "home" && isHomeFiltered 
-            ? "search" // active search state for indicators
-            : activeTab
-        }
+        activeTab={activeTab}
         setActiveTab={setActiveTab}
+        homeSection={homeSection}
+        setHomeSection={setHomeSection}
         onSearchClick={handleSearchClickInBottomNav}
         onOpenAuth={() => setIsAuthOpen(true)}
       />

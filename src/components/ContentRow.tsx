@@ -10,9 +10,10 @@ interface ContentRowProps {
   initialMovies?: Movie[];
   onOpenAuth: () => void;
   isTop10?: boolean;
+  onViewAll?: () => void;
 }
 
-export default function ContentRow({ title, fetchUrl, initialMovies, onOpenAuth, isTop10 }: ContentRowProps) {
+export default function ContentRow({ title, fetchUrl, initialMovies, onOpenAuth, isTop10, onViewAll }: ContentRowProps) {
   const [movies, setMovies] = useState<Movie[]>(initialMovies || []);
   const [loading, setLoading] = useState(true);
   const [showLeftArrow, setShowLeftArrow] = useState(false);
@@ -123,12 +124,14 @@ export default function ContentRow({ title, fetchUrl, initialMovies, onOpenAuth,
         </div>
         
         {/* View All link */}
-        <button 
-          onClick={() => {}} 
-          className="text-xs text-gray-400 hover:text-brand-red font-semibold font-display tracking-wider uppercase transition-colors"
-        >
-          View All
-        </button>
+        {onViewAll && (
+          <button 
+            onClick={onViewAll} 
+            className="text-xs text-gray-400 hover:text-brand-red font-semibold font-display tracking-wider uppercase transition-colors cursor-pointer"
+          >
+            View All
+          </button>
+        )}
       </div>
 
       {/* Row Track Container */}
