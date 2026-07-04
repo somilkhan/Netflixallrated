@@ -13,7 +13,45 @@ export default function HeroBanner({ movie, onOpenAuth }: HeroBannerProps) {
   const [playTrailer, setPlayTrailer] = useState(false);
   const [isMuted, setIsMuted] = useState(true);
   const [scrolledPast, setScrolledPast] = useState(false);
+  const [mousePos, setMousePos] = useState({ x: 0, y: 0 });
+  const [gyroOffset, setGyroOffset] = useState({ x: 0, y: 0 });
+  const bannerRef = useRef<HTMLDivElement>(null);
   const timerRef = useRef<number | null>(null);
+
+  const handleMouseMove = (e: React.MouseEvent) => {
+    if (!bannerRef.current || window.matchMedia("(pointer: coarse)").matches) return;
+    const rect = bannerRef.current.getBoundingClientRect();
+    const x = (e.clientX - rect.left) / rect.width - 0.5; // -0.5 to 0.5
+    const y = (e.clientY - rect.top) / rect.height - 0.5; // -0.5 to 0.5
+    setMousePos({ x, y });
+  };
+
+  const handleMouseLeave = () => {
+    setMousePos({ x: 0, y: 0 });
+  };
+
+  useEffect(() => {
+    if (!window.matchMedia("(pointer: coarse)").matches) return;
+
+    const handleOrientation = (e: DeviceOrientationEvent) => {
+      // gamma is tilt left/right in degrees [-90, 90]
+      // beta is tilt front/back in degrees [-180, 180]
+      const x = e.gamma ? Math.max(-20, Math.min(20, e.gamma)) / 20 : 0;
+      const rawBeta = e.beta || 45;
+      const y = Math.max(-20, Math.min(20, rawBeta - 45)) / 20;
+
+      // Dampen the sensor values slightly for an incredibly smooth experience
+      setGyroOffset(prev => ({
+        x: prev.x * 0.82 + x * 0.18,
+        y: prev.y * 0.82 + y * 0.18,
+      }));
+    };
+
+    window.addEventListener("deviceorientation", handleOrientation);
+    return () => {
+      window.removeEventListener("deviceorientation", handleOrientation);
+    };
+  }, []);
 
   useEffect(() => {
     // Reset play state when movie changes
@@ -58,10 +96,26 @@ export default function HeroBanner({ movie, onOpenAuth }: HeroBannerProps) {
     setActiveMovieForModal(movie);
   };
 
+  const isCoarse = window.matchMedia("(pointer: coarse)").matches;
+  const finalX = isCoarse ? gyroOffset.x : mousePos.x;
+  const finalY = isCoarse ? gyroOffset.y : mousePos.y;
+
   return (
-    <div className="relative w-full h-[65vh] md:h-[85vh] overflow-hidden bg-black select-none">
+    <div
+      ref={bannerRef}
+      onMouseMove={handleMouseMove}
+      onMouseLeave={handleMouseLeave}
+      style={{ perspective: "1200px" }}
+      className="relative w-full h-[65vh] md:h-[85vh] overflow-hidden bg-black select-none"
+    >
       {/* Background Media */}
-      <div className="absolute inset-0 w-full h-full">
+      <div 
+        className="absolute inset-0 w-full h-full"
+        style={{
+          transform: `scale(1.08) translate(${finalX * -18}px, ${finalY * -18}px)`,
+          transition: isCoarse ? "transform 0.4s cubic-bezier(0.16, 1, 0.3, 1)" : "transform 0.25s cubic-bezier(0.16, 1, 0.3, 1)"
+        }}
+      >
         {playTrailer && movie.youtube_id ? (
           <div className="absolute inset-0 w-full h-full scale-[1.35] origin-center">
             <iframe
@@ -91,7 +145,14 @@ export default function HeroBanner({ movie, onOpenAuth }: HeroBannerProps) {
       <div className="absolute inset-x-0 bottom-0 h-40 hero-gradient z-10 pointer-events-none"></div>
 
       {/* Banner Metadata / Content */}
-      <div className="absolute bottom-16 md:bottom-28 left-6 md:left-12 max-w-xl z-20 flex flex-col gap-4 md:gap-6">
+      <div 
+        className="absolute bottom-16 md:bottom-28 left-6 md:left-12 max-w-xl z-20 flex flex-col gap-4 md:gap-6"
+        style={{
+          transform: `translate(${finalX * 24}px, ${finalY * 24}px) translateZ(40px)`,
+          transition: isCoarse ? "transform 0.4s cubic-bezier(0.16, 1, 0.3, 1)" : "transform 0.25s cubic-bezier(0.16, 1, 0.3, 1)",
+          transformStyle: "preserve-3d"
+        }}
+      >
         <div className="space-y-2">
           {/* Tagline or Type Badge */}
           <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded bg-[#E50914] text-white font-mono text-[10px] font-bold uppercase tracking-widest shadow-md shadow-brand-red/30">

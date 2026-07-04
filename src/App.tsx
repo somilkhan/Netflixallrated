@@ -1,14 +1,18 @@
 import React, { useState, useEffect } from "react";
 import { AppProvider, useApp } from "./context/AppContext";
 import Navbar from "./components/Navbar";
-import HeroBanner from "./components/HeroBanner";
-import MovieRow from "./components/MovieRow";
+import HeroSection from "./components/HeroSection";
+import ContentRow from "./components/ContentRow";
+import FilterTabs from "./components/FilterTabs";
+import BottomNav from "./components/BottomNav";
+import PosterCard from "./components/PosterCard";
 import DetailModal from "./components/DetailModal";
 import CustomPlayer from "./components/CustomPlayer";
 import AuthModal from "./components/AuthModal";
 import ProfileScreen from "./components/ProfileScreen";
 import { Movie } from "./types";
-import { Search, Sparkles, AlertCircle, Heart, Bookmark, Eye, Filter } from "lucide-react";
+import { Search, Sparkles, AlertCircle, Heart, Bookmark, Filter, Grid } from "lucide-react";
+import { AnimatePresence, motion } from "motion/react";
 
 function AllratedApp() {
   const {
@@ -34,10 +38,18 @@ function AllratedApp() {
   const [recommendedMovies, setRecommendedMovies] = useState<Movie[]>([]);
   const [loadingRecommendations, setLoadingRecommendations] = useState(false);
 
+  // Home Filters state
+  const [homeSection, setHomeSection] = useState<"all" | "movie" | "tv" | "anime">("all");
+  const [homeGenre, setHomeGenre] = useState<string>("");
+  const [homeYear, setHomeYear] = useState<string>("");
+
   // Search Filters state
   const [selectedGenre, setSelectedGenre] = useState<string>("");
   const [selectedYear, setSelectedYear] = useState<string>("");
   const [selectedType, setSelectedType] = useState<string>("");
+
+  // All movies for home filtering
+  const [allAvailableMovies, setAllAvailableMovies] = useState<Movie[]>([]);
 
   // Default fallback items to use for spotlight or initial states
   const fallbackSpotlight: Movie = {
@@ -65,13 +77,39 @@ function AllratedApp() {
     setSelectedType("");
   }, [searchQuery]);
 
+  // Fetch all movies to build dynamic filter pool
+  useEffect(() => {
+    const loadAllMoviesForFilters = async () => {
+      try {
+        const endpoints = [
+          "/api/movies/trending",
+          "/api/movies/top-rated",
+          "/api/movies/new-releases"
+        ];
+        const responses = await Promise.all(
+          endpoints.map(ep => fetch(ep).then(r => r.ok ? r.json() : []).catch(() => []))
+        );
+        const combined = responses.flat();
+        
+        // Deduplicate by ID
+        const unique: Record<string, Movie> = {};
+        combined.forEach(m => {
+          if (m && m.id) unique[m.id] = m;
+        });
+        setAllAvailableMovies(Object.values(unique));
+      } catch (err) {
+        console.error("Error loading combined filter movie list:", err);
+      }
+    };
+    loadAllMoviesForFilters();
+  }, []);
+
   // 1. Fetch spotlight movie on mount
   useEffect(() => {
     fetch("/api/movies/trending")
       .then(res => res.json())
       .then(data => {
         if (Array.isArray(data) && data.length > 0) {
-          // Select the first trending movie as spotlight
           setSpotlightMovie(data[0]);
         } else {
           setSpotlightMovie(fallbackSpotlight);
@@ -117,10 +155,9 @@ function AllratedApp() {
     const fetchRecommendations = async () => {
       try {
         setLoadingRecommendations(true);
-        // We pick up to 3 liked titles and fetch their recommendations
         const sampleLikes = liked.slice(0, 3);
         const promises = sampleLikes.map(async (movieId) => {
-          const type = movieId.startsWith("f-") ? "movie" : "movie"; // defaults or fetch
+          const type = "movie";
           const res = await fetch(`/api/movies/recommendations/${type}/${movieId}`);
           const data = await res.json();
           return Array.isArray(data) ? data : [];
@@ -129,7 +166,6 @@ function AllratedApp() {
         const results = await Promise.all(promises);
         const combined = results.flat();
         
-        // Deduplicate by ID and filter out items already liked
         const unique: Record<string, Movie> = {};
         combined.forEach(item => {
           if (!liked.includes(item.id)) {
@@ -150,21 +186,18 @@ function AllratedApp() {
 
   // 4. Calculate Genre-affinity priority row orders
   const getGenreRowOrder = () => {
-    // Standard genres we have rows for
     const baseGenres = ["Action", "Sci-Fi", "Drama", "Thriller", "Comedy"];
     
-    // Check local preferences
     const storedState = localStorage.getItem("allrated_local_state");
     if (storedState) {
       try {
         const parsed = JSON.parse(storedState);
         const profilePrefs = activeProfile ? (parsed.profileStates?.[activeProfile.id]?.genresPreference || {}) : (parsed.genresPreference || {});
         
-        // Sort genres based on preferences weights
         return [...baseGenres].sort((a, b) => {
           const weightA = profilePrefs[a] || 0;
           const weightB = profilePrefs[b] || 0;
-          return weightB - weightA; // Descending
+          return weightB - weightA;
         });
       } catch {
         return baseGenres;
@@ -175,7 +208,7 @@ function AllratedApp() {
 
   const prioritizedGenres = getGenreRowOrder();
 
-  // 5. Watchlist movies list (Full Fetch details helper)
+  // 5. Watchlist movies list
   const [watchlistMovies, setWatchlistMovies] = useState<Movie[]>([]);
   const [loadingWatchlist, setLoadingWatchlist] = useState(false);
 
@@ -240,16 +273,13 @@ function AllratedApp() {
 
   // Apply search filters
   const filteredSearchResults = searchResults.filter((movie) => {
-    // Genre Filter
     if (selectedGenre && !movie.genres.some(g => g.toLowerCase() === selectedGenre.toLowerCase())) {
       return false;
     }
-    // Content type filter (Movie vs TV)
     if (selectedType) {
       if (selectedType === "movie" && movie.type !== "movie") return false;
       if (selectedType === "tv" && movie.type !== "tv") return false;
     }
-    // Release Year filter
     if (selectedYear) {
       const dateStr = movie.release_date || "";
       if (!dateStr) return false;
@@ -269,9 +299,54 @@ function AllratedApp() {
     return true;
   });
 
+  // Apply dynamic Home filters
+  const filteredHomeMovies = allAvailableMovies.filter((movie) => {
+    if (homeSection === "movie" && movie.type !== "movie") return false;
+    if (homeSection === "tv" && movie.type !== "tv") return false;
+    if (homeSection === "anime" && !movie.genres.some(g => g.toLowerCase() === "animation")) return false;
+
+    if (homeGenre && !movie.genres.some(g => g.toLowerCase() === homeGenre.toLowerCase())) return false;
+
+    if (homeYear) {
+      const dateStr = movie.release_date || movie.first_air_date || "";
+      if (!dateStr) return false;
+      const year = new Date(dateStr).getFullYear();
+      if (isNaN(year)) return false;
+
+      if (homeYear === "2026" && year !== 2026) return false;
+      if (homeYear === "2025" && year !== 2025) return false;
+      if (homeYear === "2024" && year !== 2024) return false;
+      if (homeYear === "2023" && year !== 2023) return false;
+      if (homeYear === "2020s" && (year < 2020 || year > 2029)) return false;
+      if (homeYear === "2010s" && (year < 2010 || year > 2019)) return false;
+      if (homeYear === "Older" && year >= 2010) return false;
+    }
+
+    return true;
+  });
+
+  const isHomeFiltered = homeSection !== "all" || homeGenre || homeYear;
+
+  const handleClearHomeFilters = () => {
+    setHomeSection("all");
+    setHomeGenre("");
+    setHomeYear("");
+  };
+
+  const handleSearchClickInBottomNav = () => {
+    // Focus or open Navbar search by targeting the search trigger or setting a placeholder
+    const searchTrigger = document.querySelector('[title="Search movie/TV"]') as HTMLButtonElement;
+    if (searchTrigger) {
+      searchTrigger.click();
+    } else {
+      setSearchQuery(" ");
+    }
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  };
+
   if (loading) {
     return (
-      <div className="min-h-screen bg-brand-maroon flex flex-col items-center justify-center">
+      <div className="min-h-screen bg-black flex flex-col items-center justify-center">
         <div className="w-12 h-12 border-4 border-brand-red border-t-transparent rounded-full animate-spin"></div>
         <p className="mt-4 font-mono text-xs tracking-widest text-gray-500 uppercase animate-pulse">
           Initializing Allrated Cinematic Core...
@@ -286,7 +361,7 @@ function AllratedApp() {
   }
 
   return (
-    <div className="min-h-screen bg-brand-maroon text-gray-100 flex flex-col relative select-none">
+    <div className="min-h-screen bg-black text-gray-100 flex flex-col relative select-none">
       {/* Fixed top Navbar */}
       <Navbar
         onOpenAuth={() => setIsAuthOpen(true)}
@@ -295,7 +370,7 @@ function AllratedApp() {
       />
 
       {/* Main Content Area */}
-      <main className="flex-grow pb-24">
+      <main className="flex-grow pb-32">
         {searchQuery ? (
           /* SEARCH RESULTS GRID VIEW WITH INTEGRATED FILTERS */
           <div className="pt-28 px-6 md:px-12 space-y-6">
@@ -309,7 +384,6 @@ function AllratedApp() {
 
               {/* Advanced Search Filters Bar */}
               <div className="flex flex-wrap items-center gap-3 text-xs">
-                {/* Genre Selector */}
                 <select
                   value={selectedGenre}
                   onChange={(e) => setSelectedGenre(e.target.value)}
@@ -327,7 +401,6 @@ function AllratedApp() {
                   <option value="Animation">Animation</option>
                 </select>
 
-                {/* Release Year Selector */}
                 <select
                   value={selectedYear}
                   onChange={(e) => setSelectedYear(e.target.value)}
@@ -345,7 +418,6 @@ function AllratedApp() {
                   <option value="Older">Older</option>
                 </select>
 
-                {/* Content Type Selector */}
                 <select
                   value={selectedType}
                   onChange={(e) => setSelectedType(e.target.value)}
@@ -381,7 +453,7 @@ function AllratedApp() {
                   <div
                     key={movie.id}
                     onClick={() => setActiveMovieForModal(movie)}
-                    className="aspect-[16/9] md:aspect-[2/3] relative rounded-xl overflow-hidden border border-white/5 cursor-pointer hover:border-brand-red hover:scale-105 transition-all duration-300 group shadow-md"
+                    className="aspect-[2/3] relative rounded-xl overflow-hidden border border-[#12090B] cursor-pointer hover:border-brand-red hover:scale-105 transition-all duration-300 group shadow-lg bg-[#12090B]/30"
                   >
                     <img
                       src={movie.poster_path}
@@ -435,25 +507,13 @@ function AllratedApp() {
                 <div className="w-8 h-8 border-4 border-brand-red border-t-transparent rounded-full animate-spin"></div>
               </div>
             ) : watchlistMovies.length > 0 ? (
-              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-6">
+              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-6">
                 {watchlistMovies.map((movie) => (
-                  <div
-                    key={movie.id}
-                    onClick={() => setActiveMovieForModal(movie)}
-                    className="aspect-[16/9] relative rounded-xl overflow-hidden border border-white/5 cursor-pointer hover:border-brand-red hover:scale-105 transition-all duration-300 group shadow-md"
-                  >
-                    <img
-                      src={movie.backdrop_path}
-                      alt={movie.title}
-                      className="w-full h-full object-cover opacity-85 group-hover:opacity-100 transition"
-                      referrerPolicy="no-referrer"
-                    />
-                    <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/90 to-transparent p-3">
-                      <h4 className="font-display font-semibold text-xs text-white truncate">
-                        {movie.title}
-                      </h4>
-                    </div>
-                  </div>
+                  <PosterCard 
+                    key={movie.id} 
+                    movie={movie} 
+                    onOpenAuth={() => setIsAuthOpen(true)} 
+                  />
                 ))}
               </div>
             ) : (
@@ -491,25 +551,13 @@ function AllratedApp() {
                 <div className="w-8 h-8 border-4 border-brand-red border-t-transparent rounded-full animate-spin"></div>
               </div>
             ) : likedMovies.length > 0 ? (
-              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-6">
+              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-6">
                 {likedMovies.map((movie) => (
-                  <div
-                    key={movie.id}
-                    onClick={() => setActiveMovieForModal(movie)}
-                    className="aspect-[16/9] relative rounded-xl overflow-hidden border border-white/5 cursor-pointer hover:border-brand-red hover:scale-105 transition-all duration-300 group shadow-md"
-                  >
-                    <img
-                      src={movie.backdrop_path}
-                      alt={movie.title}
-                      className="w-full h-full object-cover opacity-85 group-hover:opacity-100 transition"
-                      referrerPolicy="no-referrer"
-                    />
-                    <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/90 to-transparent p-3">
-                      <h4 className="font-display font-semibold text-xs text-white truncate">
-                        {movie.title}
-                      </h4>
-                    </div>
-                  </div>
+                  <PosterCard 
+                    key={movie.id} 
+                    movie={movie} 
+                    onOpenAuth={() => setIsAuthOpen(true)} 
+                  />
                 ))}
               </div>
             ) : (
@@ -523,67 +571,137 @@ function AllratedApp() {
             )}
           </div>
         ) : (
-          /* STANDARD CINEMATIC HOME DASHBOARD */
+          /* STANDARD CINEMATIC HOME DASHBOARD WITH GLASSMORPHIC REDESIGN */
           <div className="flex flex-col">
             {spotlightMovie && (
-              <HeroBanner
+              <HeroSection
                 movie={spotlightMovie}
                 onOpenAuth={() => setIsAuthOpen(true)}
               />
             )}
 
-            {/* Movie Rows Area */}
-            <div className="relative -mt-16 md:-mt-24 z-20 space-y-4 md:space-y-6">
-              {/* Prominent My List (Watchlist) row for the Active Profile */}
-              {user && activeProfile && watchlistMovies.length > 0 && (
-                <MovieRow
-                  title="My List"
-                  initialMovies={watchlistMovies}
-                  onOpenAuth={() => setIsAuthOpen(true)}
-                />
+            {/* Filter Tabs Section */}
+            <FilterTabs
+              activeSection={homeSection}
+              setActiveSection={setHomeSection}
+              selectedGenre={homeGenre}
+              setSelectedGenre={setHomeGenre}
+              selectedYear={homeYear}
+              setSelectedYear={setHomeYear}
+              onClearFilters={handleClearHomeFilters}
+            />
+
+            {/* Movie Rows Area / Dynamic Filtered Grid */}
+            <div className="relative -mt-10 md:-mt-14 z-20 space-y-2 md:space-y-4">
+              {isHomeFiltered ? (
+                /* Beautiful glassmorphic filtered grid */
+                <div className="px-6 md:px-12 py-8 space-y-6 bg-black/40 backdrop-blur-md rounded-t-3xl border-t border-white/5 shadow-[0_-15px_40px_rgba(0,0,0,0.9)]">
+                  <div className="flex items-center gap-2">
+                    <Grid className="text-brand-red" size={20} />
+                    <h3 className="font-display font-bold text-lg md:text-xl text-white">
+                      Filtered Exploration ({filteredHomeMovies.length} matching)
+                    </h3>
+                  </div>
+
+                  {filteredHomeMovies.length > 0 ? (
+                    <motion.div 
+                      layout
+                      className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-6"
+                    >
+                      <AnimatePresence>
+                        {filteredHomeMovies.map((movie) => (
+                          <motion.div
+                            key={movie.id}
+                            initial={{ opacity: 0, scale: 0.9 }}
+                            animate={{ opacity: 1, scale: 1 }}
+                            exit={{ opacity: 0, scale: 0.9 }}
+                            transition={{ duration: 0.3 }}
+                          >
+                            <PosterCard
+                              movie={movie}
+                              onOpenAuth={() => setIsAuthOpen(true)}
+                            />
+                          </motion.div>
+                        ))}
+                      </AnimatePresence>
+                    </motion.div>
+                  ) : (
+                    <div className="text-center py-20 border border-dashed border-white/10 rounded-2xl max-w-md mx-auto">
+                      <AlertCircle className="text-gray-500 mx-auto mb-3" size={32} />
+                      <p className="text-sm font-semibold text-white">No items match your filters</p>
+                      <p className="text-xs text-gray-400 mt-1">
+                        Try selecting a different genre or clearing filters to discover incredible cinematic releases.
+                      </p>
+                    </div>
+                  )}
+                </div>
+              ) : (
+                /* Unfiltered horizontal scrolling modular content rows */
+                <div className="bg-gradient-to-b from-[#000000]/10 via-[#000000]/80 to-black rounded-t-3xl pt-4 shadow-[0_-25px_50px_rgba(0,0,0,0.9)]">
+                  {/* Prominent My List (Watchlist) row for the Active Profile */}
+                  {user && activeProfile && watchlistMovies.length > 0 && (
+                    <ContentRow
+                      title="My List"
+                      initialMovies={watchlistMovies}
+                      onOpenAuth={() => setIsAuthOpen(true)}
+                    />
+                  )}
+
+                  {/* Dynamic Recommendations for You row based on likes */}
+                  {user && liked.length > 0 && recommendedMovies.length > 0 && (
+                    <ContentRow
+                      title="Recommended For You"
+                      initialMovies={recommendedMovies}
+                      onOpenAuth={() => setIsAuthOpen(true)}
+                    />
+                  )}
+
+                  <ContentRow
+                    title="Top 10 Global Trending Leaderboard"
+                    fetchUrl="/api/movies/trending"
+                    onOpenAuth={() => setIsAuthOpen(true)}
+                    isTop10={true}
+                  />
+
+                  <ContentRow
+                    title="Top Rated Blockbusters"
+                    fetchUrl="/api/movies/top-rated"
+                    onOpenAuth={() => setIsAuthOpen(true)}
+                  />
+
+                  <ContentRow
+                    title="New Releases"
+                    fetchUrl="/api/movies/new-releases"
+                    onOpenAuth={() => setIsAuthOpen(true)}
+                  />
+
+                  {/* Dynamic Priority Sorted Genres Rows based on Liked Affinity weights */}
+                  {prioritizedGenres.map((genre) => (
+                    <ContentRow
+                      key={genre}
+                      title={`${genre} Spotlight`}
+                      fetchUrl={`/api/movies/genre/${genre}`}
+                      onOpenAuth={() => setIsAuthOpen(true)}
+                    />
+                  ))}
+                </div>
               )}
-
-              {/* Dynamic Recommendations for You row based on likes */}
-              {user && liked.length > 0 && recommendedMovies.length > 0 && (
-                <MovieRow
-                  title="Recommended For You"
-                  initialMovies={recommendedMovies}
-                  onOpenAuth={() => setIsAuthOpen(true)}
-                />
-              )}
-
-              <MovieRow
-                title="Top 10 Global Trending Leaderboard"
-                fetchUrl="/api/movies/trending"
-                onOpenAuth={() => setIsAuthOpen(true)}
-                isTop10={true}
-              />
-
-              <MovieRow
-                title="Top Rated Blockbusters"
-                fetchUrl="/api/movies/top-rated"
-                onOpenAuth={() => setIsAuthOpen(true)}
-              />
-
-              <MovieRow
-                title="New Releases"
-                fetchUrl="/api/movies/new-releases"
-                onOpenAuth={() => setIsAuthOpen(true)}
-              />
-
-              {/* Dynamic Priority Sorted Genres Rows based on Liked Affinity weights */}
-              {prioritizedGenres.map((genre) => (
-                <MovieRow
-                  key={genre}
-                  title={`${genre} Spotlight`}
-                  fetchUrl={`/api/movies/genre/${genre}`}
-                  onOpenAuth={() => setIsAuthOpen(true)}
-                />
-              ))}
             </div>
           </div>
         )}
       </main>
+
+      {/* Floating Pill Bottom Navigation Bar */}
+      <BottomNav
+        activeTab={
+          activeTab === "home" && isHomeFiltered 
+            ? "search" // active search state for indicators
+            : activeTab
+        }
+        setActiveTab={setActiveTab}
+        onSearchClick={handleSearchClickInBottomNav}
+        onOpenAuth={() => setIsAuthOpen(true)}
+      />
 
       {/* FOOTER */}
       <footer className="border-t border-white/5 py-8 text-center text-xs text-gray-500 font-mono tracking-wide mt-auto">
@@ -594,18 +712,20 @@ function AllratedApp() {
       </footer>
 
       {/* MODAL SYSTEMS */}
-      {isAuthOpen && (
-        <AuthModal onClose={() => setIsAuthOpen(false)} />
-      )}
+      <AnimatePresence mode="wait">
+        {isAuthOpen && (
+          <AuthModal onClose={() => setIsAuthOpen(false)} />
+        )}
 
-      {activeMovieForModal && (
-        <DetailModal
-          key={activeMovieForModal.id}
-          movie={activeMovieForModal}
-          onClose={() => setActiveMovieForModal(null)}
-          onOpenAuth={() => setIsAuthOpen(true)}
-        />
-      )}
+        {activeMovieForModal && (
+          <DetailModal
+            key={`detail-modal-${activeMovieForModal.id}`}
+            movie={activeMovieForModal}
+            onClose={() => setActiveMovieForModal(null)}
+            onOpenAuth={() => setIsAuthOpen(true)}
+          />
+        )}
+      </AnimatePresence>
 
       {activeMovieForPlayer && (
         <CustomPlayer
@@ -624,3 +744,4 @@ export default function App() {
     </AppProvider>
   );
 }
+

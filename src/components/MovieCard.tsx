@@ -21,6 +21,100 @@ export default function MovieCard({ movie, onOpenAuth, anyCardHovered, setAnyCar
   const isWatchlisted = watchlist.includes(movie.id);
   const isLiked = liked.includes(movie.id);
 
+  const cardRef = useRef<HTMLDivElement>(null);
+  const [tilt, setTilt] = useState({ x: 0, y: 0 });
+  const [glare, setGlare] = useState({ x: 50, y: 50, opacity: 0 });
+  const [isTouched, setIsTouched] = useState(false);
+  const touchStartRef = useRef<{ x: number; y: number } | null>(null);
+
+  const handleTouchStart = (e: React.TouchEvent) => {
+    const touch = e.touches[0];
+    touchStartRef.current = { x: touch.clientX, y: touch.clientY };
+    setIsTouched(true);
+
+    if (cardRef.current) {
+      const rect = cardRef.current.getBoundingClientRect();
+      const xVal = touch.clientX - rect.left;
+      const yVal = touch.clientY - rect.top;
+      const xNorm = xVal / rect.width - 0.5;
+      const yNorm = yVal / rect.height - 0.5;
+
+      setTilt({
+        x: -yNorm * 22,
+        y: xNorm * 22,
+      });
+      setGlare({
+        x: (xVal / rect.width) * 100,
+        y: (yVal / rect.height) * 100,
+        opacity: 0.45,
+      });
+    }
+  };
+
+  const handleTouchMove = (e: React.TouchEvent) => {
+    if (!touchStartRef.current) return;
+    const touch = e.touches[0];
+    const diffX = Math.abs(touch.clientX - touchStartRef.current.x);
+    const diffY = Math.abs(touch.clientY - touchStartRef.current.y);
+
+    if (diffX > 10 || diffY > 10) {
+      // User is scrolling the horizontal row; cancel active press scale/tilt
+      setIsTouched(false);
+      setTilt({ x: 0, y: 0 });
+      setGlare(prev => ({ ...prev, opacity: 0 }));
+    } else if (cardRef.current) {
+      const rect = cardRef.current.getBoundingClientRect();
+      const xVal = touch.clientX - rect.left;
+      const yVal = touch.clientY - rect.top;
+      const xNorm = xVal / rect.width - 0.5;
+      const yNorm = yVal / rect.height - 0.5;
+
+      setTilt({
+        x: -yNorm * 22,
+        y: xNorm * 22,
+      });
+      setGlare({
+        x: (xVal / rect.width) * 100,
+        y: (yVal / rect.height) * 100,
+        opacity: 0.45,
+      });
+    }
+  };
+
+  const handleTouchEnd = () => {
+    setIsTouched(false);
+    setTilt({ x: 0, y: 0 });
+    setGlare(prev => ({ ...prev, opacity: 0 }));
+    touchStartRef.current = null;
+  };
+
+  const handleMouseMove = (e: React.MouseEvent) => {
+    if (!cardRef.current || window.matchMedia("(pointer: coarse)").matches) return;
+    const rect = cardRef.current.getBoundingClientRect();
+    const xVal = e.clientX - rect.left;
+    const yVal = e.clientY - rect.top;
+
+    const xNorm = xVal / rect.width - 0.5;
+    const yNorm = yVal / rect.height - 0.5;
+
+    setTilt({
+      x: -yNorm * 22, // pitch tilt on X axis
+      y: xNorm * 22,  // yaw tilt on Y axis
+    });
+
+    setGlare({
+      x: (xVal / rect.width) * 100,
+      y: (yVal / rect.height) * 100,
+      opacity: 0.45,
+    });
+  };
+
+  const handleMouseLeaveOverride = () => {
+    setTilt({ x: 0, y: 0 });
+    setGlare(prev => ({ ...prev, opacity: 0 }));
+    handleMouseLeave();
+  };
+
   // Clean up timeouts on unmount
   useEffect(() => {
     return () => {
@@ -104,17 +198,45 @@ export default function MovieCard({ movie, onOpenAuth, anyCardHovered, setAnyCar
 
   return (
     <div
+      ref={cardRef}
       onMouseEnter={handleMouseEnter}
-      onMouseLeave={handleMouseLeave}
+      onMouseMove={handleMouseMove}
+      onMouseLeave={handleMouseLeaveOverride}
+      onTouchStart={handleTouchStart}
+      onTouchMove={handleTouchMove}
+      onTouchEnd={handleTouchEnd}
+      onTouchCancel={handleTouchEnd}
       onClick={handleCardClick}
-      className={`relative flex-shrink-0 w-36 sm:w-48 md:w-56 aspect-[2/3] md:aspect-[16/9] rounded-xl overflow-hidden cursor-pointer select-none smooth-scale bg-[#1A0E11] border border-white/5 shadow-md ${
-        isHovered 
-          ? "scale-[1.32] z-30 shadow-2xl -translate-y-4" 
+      style={{
+        transformStyle: "preserve-3d",
+        perspective: "1000px",
+        transform: isHovered
+          ? `scale(1.32) rotateX(${tilt.x}deg) rotateY(${tilt.y}deg) translateY(-14px)`
+          : isTouched
+            ? `scale(1.12) rotateX(${tilt.x}deg) rotateY(${tilt.y}deg) translateY(-6px)`
+            : anyCardHovered
+              ? `scale(0.94)`
+              : `scale(1) rotateX(${tilt.x * 0.4}deg) rotateY(${tilt.y * 0.4}deg)`,
+        transition: isHovered || isTouched
+          ? "transform 0.12s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.12s ease"
+          : "transform 0.35s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.35s ease, opacity 0.3s ease, filter 0.3s ease",
+      }}
+      className={`relative flex-shrink-0 w-36 sm:w-48 md:w-56 aspect-[2/3] md:aspect-[16/9] rounded-xl overflow-hidden cursor-pointer select-none bg-[#1A0E11] border border-white/5 shadow-md ${
+        isHovered || isTouched
+          ? "z-30 shadow-2xl" 
           : anyCardHovered 
-            ? "scale-[0.94] opacity-50 blur-[1px]" 
-            : "scale-100 hover:scale-[1.03] hover:shadow-lg"
+            ? "opacity-50 blur-[1px]" 
+            : ""
       }`}
     >
+      {/* Dynamic 3D Glare Lighting Effect */}
+      <div
+        className="absolute inset-0 pointer-events-none z-30 transition-opacity duration-300"
+        style={{
+          background: `radial-gradient(circle 120px at ${glare.x}% ${glare.y}%, rgba(255, 255, 255, 0.15), transparent 80%)`,
+          opacity: glare.opacity,
+        }}
+      />
       {/* Base Poster Backdrop Image */}
       <img
         src={isHovered ? movie.backdrop_path : (window.innerWidth < 768 ? movie.poster_path : movie.backdrop_path)}
@@ -161,7 +283,13 @@ export default function MovieCard({ movie, onOpenAuth, anyCardHovered, setAnyCar
 
       {/* Expanded Card Detail Overlay (Pristine layout inside the scaled-up container) */}
       {isHovered && (
-        <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-[#0a0406] via-[#12090B]/95 to-black/10 p-3 flex flex-col gap-2 z-20 animate-fade-in border-t border-white/5">
+        <div 
+          style={{
+            transform: "translateZ(30px)",
+            transformStyle: "preserve-3d"
+          }}
+          className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-[#0a0406] via-[#12090B]/95 to-black/10 p-3 flex flex-col gap-2 z-20 animate-fade-in border-t border-white/5"
+        >
           {/* Action Row */}
           <div className="flex items-center justify-between gap-1">
             <div className="flex items-center gap-1.5">

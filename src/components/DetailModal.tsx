@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import { X, Play, Plus, Check, ThumbsUp, Volume2, VolumeX, Sparkles, Tv, Calendar, Hourglass } from "lucide-react";
 import { Movie } from "../types";
 import { useApp } from "../context/AppContext";
+import { motion } from "motion/react";
 
 interface DetailModalProps {
   key?: string | number;
@@ -19,6 +20,7 @@ export default function DetailModal({ movie, onClose, onOpenAuth }: DetailModalP
   const [cast, setCast] = useState<string[]>(movie.cast || []);
   const [loadingCredits, setLoadingCredits] = useState(!movie.cast);
   const [youtubeId, setYoutubeId] = useState<string | null>(movie.youtube_id || null);
+  const [playTrailer, setPlayTrailer] = useState(false);
 
   const isWatchlisted = watchlist.includes(movie.id);
   const isLiked = liked.includes(movie.id);
@@ -38,6 +40,12 @@ export default function DetailModal({ movie, onClose, onOpenAuth }: DetailModalP
     setCast(movie.cast || []);
     setLoadingCredits(!movie.cast);
     setYoutubeId(movie.youtube_id || null);
+    setPlayTrailer(false);
+
+    // Timeout to trigger play trailer only after visual load
+    const timer = setTimeout(() => {
+      setPlayTrailer(true);
+    }, 2000);
 
     // Fetch similar movies
     const fetchSimilar = async () => {
@@ -87,6 +95,10 @@ export default function DetailModal({ movie, onClose, onOpenAuth }: DetailModalP
     fetchSimilar();
     fetchCredits();
     fetchTrailer();
+
+    return () => {
+      clearTimeout(timer);
+    };
   }, [movie.id, movie.type]);
 
   const handlePlayClick = () => {
@@ -148,12 +160,25 @@ export default function DetailModal({ movie, onClose, onOpenAuth }: DetailModalP
   };
 
   return (
-    <div className="fixed inset-0 z-40 bg-black/85 backdrop-blur-md flex justify-center overflow-y-auto py-10 px-4 animate-fade-in custom-scrollbar">
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      transition={{ duration: 0.3 }}
+      className="fixed inset-0 z-40 bg-black/85 backdrop-blur-md flex justify-center overflow-y-auto py-10 px-4 custom-scrollbar"
+    >
       {/* Background click to close */}
       <div className="absolute inset-0 cursor-default" onClick={onClose}></div>
 
       {/* Modal Container */}
-      <div className="relative w-full max-w-4xl bg-[#12090B] rounded-2xl overflow-hidden shadow-2xl border border-brand-crimson/20 z-10 my-auto animate-scale-up flex flex-col">
+      <motion.div
+        initial={{ opacity: 0, scale: 0.85, rotateX: 12, y: 30 }}
+        animate={{ opacity: 1, scale: 1, rotateX: 0, y: 0 }}
+        exit={{ opacity: 0, scale: 0.88, rotateX: -10, y: 20 }}
+        transition={{ type: "spring", damping: 26, stiffness: 160 }}
+        style={{ transformOrigin: "center", perspective: "1200px", transformStyle: "preserve-3d" }}
+        className="relative w-full max-w-4xl bg-[#12090B] rounded-2xl overflow-hidden shadow-2xl border border-brand-crimson/20 z-10 my-auto flex flex-col"
+      >
         {/* Close button */}
         <button
           onClick={onClose}
@@ -164,8 +189,17 @@ export default function DetailModal({ movie, onClose, onOpenAuth }: DetailModalP
         </button>
 
         {/* Video / Backdrop Header */}
-        <div className="relative w-full aspect-[16/9] md:h-[400px] overflow-hidden bg-black">
-          {youtubeId ? (
+        <div className="relative w-full h-[280px] sm:h-[340px] md:h-[400px] overflow-hidden bg-black">
+          {/* Always render static backdrop as layer so there is zero layout shift or blank/black space if iframe is blocked/delayed */}
+          <img
+            src={movie.backdrop_path}
+            alt={movie.title}
+            className="absolute inset-0 w-full h-full object-cover transition-opacity duration-500"
+            style={{ opacity: youtubeId && playTrailer ? 0.35 : 0.7 }}
+            referrerPolicy="no-referrer"
+          />
+
+          {youtubeId && playTrailer && (
             <div className="absolute inset-0 w-full h-full scale-[1.35] origin-center">
               <iframe
                 src={`https://www.youtube.com/embed/${youtubeId}?autoplay=1&mute=${
@@ -176,13 +210,6 @@ export default function DetailModal({ movie, onClose, onOpenAuth }: DetailModalP
                 allow="autoplay; encrypted-media"
               ></iframe>
             </div>
-          ) : (
-            <img
-              src={movie.backdrop_path}
-              alt={movie.title}
-              className="w-full h-full object-cover"
-              referrerPolicy="no-referrer"
-            />
           )}
 
           {/* Overlays */}
@@ -462,7 +489,7 @@ export default function DetailModal({ movie, onClose, onOpenAuth }: DetailModalP
             )}
           </div>
         </div>
-      </div>
-    </div>
+      </motion.div>
+    </motion.div>
   );
 }

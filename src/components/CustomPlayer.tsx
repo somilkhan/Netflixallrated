@@ -47,6 +47,16 @@ const STREAMING_SERVERS: StreamServer[] = [
     description: "Premium ad-shielded direct streaming player. Supports multilingual tracks (English, Hindi, Tamil, Telugu)."
   },
   {
+    name: "showbox-febbox",
+    label: "Showbox & Febbox Private Cloud",
+    flag: "🔒 🚀",
+    isEmbed: false,
+    embedUrl: "",
+    speed: "Super Fast",
+    stability: "Highly Stable",
+    description: "Premium, ultra-fast streaming direct from your private Febbox storage. Ad-free HTML5 video playback."
+  },
+  {
     name: "vidsrc-me",
     label: "VidSrc.me (High Compatibility)",
     flag: "🇺🇸 🌐",
@@ -106,6 +116,101 @@ export default function CustomPlayer({ movie, onClose }: CustomPlayerProps) {
   const [isServerHubOpen, setIsServerHubOpen] = useState(false);
   const [language, setLanguage] = useState<string>("eng");
 
+  const { tmdbId, type } = movie.id.startsWith("f-")
+    ? (FALLBACK_TMDB_MAP[movie.id] || { tmdbId: "693134", type: movie.type })
+    : { tmdbId: movie.id, type: movie.type };
+
+  const [streamLinks, setStreamLinks] = useState<{ label: string; url: string }[]>([]);
+  const [selectedStreamLink, setSelectedStreamLink] = useState<string>("");
+  const [streamLoading, setStreamLoading] = useState<boolean>(false);
+  const [streamError, setStreamError] = useState<string | null>(null);
+
+  // Parse links recursively and flexibly from any API response structure
+  const parseLinks = (data: any): { label: string; url: string }[] => {
+    const list: { label: string; url: string }[] = [];
+    if (!data) return list;
+
+    const extractFromObject = (obj: any) => {
+      for (const k of Object.keys(obj)) {
+        const val = obj[k];
+        if (typeof val === "string" && (val.startsWith("http://") || val.startsWith("https://"))) {
+          list.push({ label: k, url: val });
+        } else if (val && typeof val === "object") {
+          extractFromObject(val);
+        }
+      }
+    };
+
+    if (typeof data === "string") {
+      list.push({ label: "Auto / Direct", url: data });
+      return list;
+    }
+
+    if (Array.isArray(data)) {
+      data.forEach((item, index) => {
+        if (typeof item === "string") {
+          list.push({ label: `Link ${index + 1}`, url: item });
+        } else if (item && typeof item === "object") {
+          const url = item.link || item.url || item.download_link || item.file;
+          const q = item.quality || item.resolution || item.label || item.name || `Link ${index + 1}`;
+          if (url && typeof url === "string") {
+            list.push({ label: q, url: url });
+          }
+        }
+      });
+    }
+
+    if (list.length === 0 && data.data) {
+      return parseLinks(data.data);
+    }
+    if (list.length === 0 && data.links) {
+      return parseLinks(data.links);
+    }
+
+    if (list.length === 0 && typeof data === "object") {
+      extractFromObject(data);
+    }
+
+    return list;
+  };
+
+  useEffect(() => {
+    if (selectedServer.name === "showbox-febbox") {
+      setStreamLoading(true);
+      setStreamError(null);
+      setStreamLinks([]);
+      setSelectedStreamLink("");
+ 
+      const url = `/api/showbox/link?id=${tmdbId}&type=${type}&season=${season}&episode=${episode}&key=${key}&language=${language}`;
+      fetch(url)
+        .then((res) => {
+          if (!res.ok) {
+            return res.json().then((err) => {
+              throw new Error(err.error || "Failed to contact Showbox & Febbox Private API.");
+            });
+          }
+          return res.json();
+        })
+        .then((data) => {
+          console.log("[Showbox Stream Link Response]", data);
+          const parsed = parseLinks(data);
+          if (parsed && parsed.length > 0) {
+            setStreamLinks(parsed);
+            // Select highest quality or first link by default
+            setSelectedStreamLink(parsed[0].url);
+          } else {
+            throw new Error("No streamable high-speed link returned by the private cloud API.");
+          }
+        })
+        .catch((err) => {
+          setStreamError(err.message);
+        })
+        .finally(() => {
+          setStreamLoading(false);
+        });
+    }
+  }, [selectedServer.name, tmdbId, type, season, episode, key, language]);
+
   // Reset season/episode if movie changes
   useEffect(() => {
     if (movie.initialSeason) {
@@ -115,10 +220,6 @@ export default function CustomPlayer({ movie, onClose }: CustomPlayerProps) {
       setEpisode(movie.initialEpisode);
     }
   }, [movie.id, movie.initialSeason, movie.initialEpisode]);
-
-  const { tmdbId, type } = movie.id.startsWith("f-")
-    ? (FALLBACK_TMDB_MAP[movie.id] || { tmdbId: "693134", type: movie.type })
-    : { tmdbId: movie.id, type: movie.type };
 
   const getEmbedUrl = (server: StreamServer) => {
     const sName = server.name.toLowerCase();
@@ -287,8 +388,8 @@ export default function CustomPlayer({ movie, onClose }: CustomPlayerProps) {
             <ChevronDown size={14} className="text-gray-400 absolute right-3 pointer-events-none" />
           </div>
 
-          {/* Language Selector Dropdown - ONLY for Screenscape */}
-          {selectedServer.name.toLowerCase() === "scape" && (
+          {/* Language Selector Dropdown - for Screenscape and Showbox/Febbox */}
+          {(selectedServer.name.toLowerCase() === "scape" || selectedServer.name === "showbox-febbox") && (
             <div className="relative flex items-center bg-[#12090B] border border-white/10 hover:border-brand-red/50 rounded-xl px-3 h-11 sm:h-10 transition-all min-w-[130px]">
               <Globe size={14} className="text-brand-red mr-2 shrink-0" />
               <select
@@ -328,16 +429,107 @@ export default function CustomPlayer({ movie, onClose }: CustomPlayerProps) {
 
       {/* Main Video Stage */}
       <div className="flex-grow w-full relative bg-black flex items-center justify-center overflow-hidden">
-        <iframe
-          key={`${selectedServer.name}-${season}-${episode}-${key}-${language}`}
-          src={getEmbedUrl(selectedServer)}
-          className="w-full h-full border-none"
-          allowFullScreen
-          allow="autoplay; encrypted-media; picture-in-picture; fullscreen"
-          title={`${movie.title} - ${selectedServer.label}`}
-          referrerPolicy="no-referrer-when-downgrade"
-          sandbox="allow-scripts allow-same-origin allow-forms allow-presentation"
-        />
+        {selectedServer.name === "showbox-febbox" ? (
+          <div className="w-full h-full flex flex-col items-center justify-center p-4 bg-[#050203]">
+            {streamLoading ? (
+              <div className="flex flex-col items-center justify-center text-center max-w-md animate-pulse">
+                <div className="relative w-16 h-16 mb-4">
+                  <div className="absolute inset-0 rounded-full border-4 border-brand-red/20" />
+                  <div className="absolute inset-0 rounded-full border-4 border-t-brand-red animate-spin" />
+                </div>
+                <h3 className="text-sm font-semibold text-white tracking-wider font-mono">CONNECTING PRIVATE STORAGE</h3>
+                <p className="text-xs text-gray-500 mt-2 font-sans font-medium">
+                  Decrypting high-speed stream path from Febbox servers and preparing direct cloud playback...
+                </p>
+              </div>
+            ) : streamError ? (
+              <div className="flex flex-col items-center justify-center text-center max-w-md p-6 bg-[#12090B] border border-white/5 rounded-2xl shadow-2xl animate-fade-in">
+                <AlertTriangle size={40} className="text-[#eab308] mb-3 animate-bounce" />
+                <h3 className="text-sm font-bold text-white tracking-wider font-mono">
+                  {streamError.includes("SHOWBOX_FEB_BOX_API_URL") ? "CONFIGURATION REQUIRED" : "STREAM CONNECTION FAILED"}
+                </h3>
+                
+                <p className="text-xs text-gray-400 mt-2.5 leading-relaxed">
+                  {streamError.includes("SHOWBOX_FEB_BOX_API_URL") 
+                    ? "To stream directly from your private Showbox & Febbox cloud storage, please configure the required variables in your environment secrets."
+                    : "An error occurred while communicating with your private Showbox & Febbox API service."}
+                </p>
+
+                {/* Dynamic Error Message Details */}
+                <div className="w-full mt-4 p-3 bg-black/60 rounded-xl border border-white/5 text-left font-mono text-[10px] text-gray-400 space-y-1 max-h-32 overflow-y-auto">
+                  <div className="text-brand-red font-bold uppercase tracking-wider text-[9px] mb-1">Details:</div>
+                  <div className="whitespace-pre-wrap leading-normal break-words">{streamError}</div>
+                </div>
+
+                <div className="mt-5 flex gap-2 w-full">
+                  <button
+                    onClick={handleRefresh}
+                    className="flex-1 py-2 px-4 rounded-lg bg-brand-red text-white text-xs font-bold hover:bg-brand-red/90 transition-all cursor-pointer"
+                  >
+                    Retry Connection
+                  </button>
+                  <button
+                    onClick={() => {
+                      // fallback to Scape
+                      setSelectedServer(STREAMING_SERVERS[0]);
+                    }}
+                    className="flex-1 py-2 px-4 rounded-lg bg-white/5 border border-white/10 text-gray-300 text-xs font-bold hover:bg-white/10 transition-all cursor-pointer"
+                  >
+                    Use Public Stream
+                  </button>
+                </div>
+              </div>
+            ) : selectedStreamLink ? (
+              <div className="w-full h-full relative flex flex-col justify-center items-center group">
+                <video
+                  key={selectedStreamLink}
+                  src={selectedStreamLink}
+                  className="w-full h-full max-h-[85vh] object-contain border-none"
+                  controls
+                  autoPlay
+                  playsInline
+                />
+                
+                {/* Quality / Link Selector Overlay */}
+                {streamLinks.length > 1 && (
+                  <div className="absolute top-4 right-4 bg-black/80 backdrop-blur-md border border-white/10 rounded-xl p-2 flex items-center gap-2 z-20 shadow-xl opacity-80 group-hover:opacity-100 transition-opacity duration-200">
+                    <span className="text-[10px] font-mono font-bold tracking-wider text-gray-400">QUALITY:</span>
+                    <select
+                      value={selectedStreamLink}
+                      onChange={(e) => setSelectedStreamLink(e.target.value)}
+                      className="bg-[#12090B] text-white text-[11px] font-semibold outline-none border border-white/10 rounded-lg px-2 py-1 cursor-pointer focus:text-brand-red font-sans transition-all"
+                    >
+                      {streamLinks.map((link) => (
+                        <option key={link.url} value={link.url}>
+                          {link.label}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                )}
+              </div>
+            ) : (
+              <div className="flex flex-col items-center justify-center text-center max-w-md">
+                <AlertTriangle size={32} className="text-brand-red mb-3" />
+                <h3 className="text-sm font-bold text-white tracking-wider font-mono">EMPTY STREAM RESPONSE</h3>
+                <p className="text-xs text-gray-400 mt-2">
+                  No streaming URLs could be parsed from the API output.
+                </p>
+              </div>
+            )}
+          </div>
+        ) : (
+          <iframe
+            key={`${selectedServer.name}-${season}-${episode}-${key}-${language}`}
+            src={getEmbedUrl(selectedServer)}
+            className="w-full h-full border-none"
+            allowFullScreen
+            allow="autoplay; encrypted-media; picture-in-picture; fullscreen"
+            title={`${movie.title} - ${selectedServer.label}`}
+            referrerPolicy="no-referrer-when-downgrade"
+            sandbox="allow-scripts allow-same-origin allow-forms allow-presentation"
+          />
+        )}
       </div>
 
       {/* FOOTER INFO BAR */}

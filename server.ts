@@ -648,6 +648,315 @@ app.get("/api/netmirror/stream", async (req, res) => {
   }
 });
 
+// PROXY SHOWBOX / FEBBOX STREAM LINK
+app.get("/api/showbox/link", async (req, res) => {
+  const { id, type, season, episode, language } = req.query;
+  const apiUrl = process.env.SHOWBOX_FEB_BOX_API_URL;
+  const token = process.env.FEB_BOX_TOKEN;
+
+  if (!apiUrl) {
+    return res.status(400).json({
+      success: false,
+      error: "SHOWBOX_FEB_BOX_API_URL is not configured. Please configure it in your environment variables via the Settings tab in AI Studio."
+    });
+  }
+
+  if (!token) {
+    return res.status(400).json({
+      success: false,
+      error: "FEB_BOX_TOKEN is missing. Please retrieve your Febbox UI token/cookie from Febbox.com (Application -> Cookies -> ui) and configure FEB_BOX_TOKEN in your environment variables via the Settings tab in AI Studio."
+    });
+  }
+
+  if (!id) {
+    return res.status(400).json({ success: false, error: "Missing required parameter: id" });
+  }
+
+  // Helper to extract clean 'ui' cookie value in case the user pasted the entire raw header
+  function extractUiCookie(cookieStr: string): string {
+    if (!cookieStr) return "";
+    const match = cookieStr.match(/(?:^|;\s*)ui=([^;]+)/);
+    if (match) return match[1];
+    return cookieStr.trim();
+  }
+
+  const cleanToken = extractUiCookie(token);
+
+  try {
+    let title = "";
+    
+    // Resolve the title using TMDB or fallback
+    if (typeof id === "string" && id.startsWith("f-")) {
+      const movie = fallbackMovies.find(m => m.id === id);
+      title = movie?.title || "";
+    } else {
+      const tmdbDetails = await fetchTMDB(`/${type}/${id}`);
+      if (tmdbDetails) {
+        title = tmdbDetails.title || tmdbDetails.name || "";
+      }
+    }
+
+    if (!title) {
+      throw new Error(`Could not resolve title for media ID: ${id}`);
+    }
+
+    console.log(`[Showbox Proxy] Resolved title: "${title}" for TMDB ID: ${id}`);
+
+    // Step 1: Search on Showbox API
+    const searchUrl = `${apiUrl.replace(/\/$/, "")}/api/search?title=${encodeURIComponent(title)}&type=${type === "tv" ? "tv" : "movie"}`;
+    console.log(`[Showbox Proxy] Searching Showbox: ${searchUrl}`);
+    const searchRes = await fetch(searchUrl);
+    if (!searchRes.ok) {
+      throw new Error(`Showbox search failed with status ${searchRes.status}`);
+    }
+    const searchData = await searchRes.json();
+    if (!Array.isArray(searchData) || searchData.length === 0) {
+      throw new Error(`No Showbox matches found for title: "${title}"`);
+    }
+
+    // Select the best match (the first is usually the most accurate)
+    const bestMatch = searchData[0];
+    const showboxId = bestMatch.id;
+    console.log(`[Showbox Proxy] Best match: "${bestMatch.title}" (Showbox ID: ${showboxId})`);
+
+    // Step 2: Get Febbox Share Key (febBoxId)
+    const boxType = type === "tv" ? "2" : "1";
+    const idUrl = `${apiUrl.replace(/\/$/, "")}/api/febbox/id?id=${showboxId}&type=${boxType}`;
+    console.log(`[Showbox Proxy] Fetching Febbox share key: ${idUrl}`);
+    const idRes = await fetch(idUrl);
+    if (!idRes.ok) {
+      throw new Error(`Failed to fetch Febbox share key with status ${idRes.status}`);
+    }
+    const idData = await idRes.json();
+    const shareKey = idData.febBoxId;
+    if (!shareKey) {
+      throw new Error(`Febbox share key is empty for Showbox ID: ${showboxId}`);
+    }
+    console.log(`[Showbox Proxy] Retrieved share key: "${shareKey}"`);
+
+    // Step 3: Get files list
+    const filesUrl = `${apiUrl.replace(/\/$/, "")}/api/febbox/files?shareKey=${shareKey}`;
+    console.log(`[Showbox Proxy] Fetching folder file list: ${filesUrl}`);
+    const filesRes = await fetch(filesUrl, {
+      headers: {
+        "x-auth-cookie": cleanToken,
+        "Accept": "application/json"
+      }
+    });
+    if (!filesRes.ok) {
+      throw new Error(`Failed to fetch files list with status ${filesRes.status}`);
+    }
+    const filesData = await filesRes.json();
+    if (!Array.isArray(filesData) || filesData.length === 0) {
+      throw new Error(`No files found in Febbox share folder "${shareKey}"`);
+    }
+
+    let targetFile: any = null;
+
+    if (type === "tv") {
+      const seasonNum = parseInt(season as string || "1");
+      console.log(`[Showbox Proxy] TV Series Mode: Searching Season ${seasonNum}`);
+      
+      let seasonFolder = filesData.find((f: any) => {
+        if (f.is_dir !== 1) return false;
+        const name = f.file_name.toLowerCase();
+        const m = name.match(/season\s*0*(\d+)/i) || name.match(/\bs\s*0*(\d+)\b/i) || name.match(/s(\d+)/i);
+        return m && parseInt(m[1]) === seasonNum;
+      });
+
+      if (!seasonFolder) {
+        // Fallback checks for season folder
+        seasonFolder = filesData.find((f: any) => {
+          const name = f.file_name.toLowerCase();
+          return f.is_dir === 1 && (name.includes(`season ${seasonNum}`) || name.includes(`s${seasonNum}`) || name.includes(String(seasonNum)));
+        });
+      }
+
+      if (!seasonFolder) {
+        // Broadest fallback: pick first available folder
+        seasonFolder = filesData.find((f: any) => f.is_dir === 1);
+      }
+
+      if (!seasonFolder) {
+        throw new Error(`Could not find folder for Season ${seasonNum} in files list`);
+      }
+
+      console.log(`[Showbox Proxy] Found Season folder: "${seasonFolder.file_name}" (FID: ${seasonFolder.fid})`);
+
+      // Fetch episodes within the season folder
+      const epFilesUrl = `${apiUrl.replace(/\/$/, "")}/api/febbox/files?shareKey=${shareKey}&parent_id=${seasonFolder.fid}`;
+      console.log(`[Showbox Proxy] Fetching episode list: ${epFilesUrl}`);
+      const epFilesRes = await fetch(epFilesUrl, {
+        headers: {
+          "x-auth-cookie": cleanToken,
+          "Accept": "application/json"
+        }
+      });
+      if (!epFilesRes.ok) {
+        throw new Error(`Failed to fetch episode list with status ${epFilesRes.status}`);
+      }
+      const epFilesData = await epFilesRes.json();
+      if (!Array.isArray(epFilesData) || epFilesData.length === 0) {
+        throw new Error(`No files found inside Season folder "${seasonFolder.file_name}"`);
+      }
+
+      const epNum = parseInt(episode as string || "1");
+      console.log(`[Showbox Proxy] Searching Episode ${epNum}`);
+
+      // Filter files that are videos (is_dir === 0) and match the episode number
+      let matchingEpisodes = epFilesData.filter((f: any) => {
+        if (f.is_dir !== 0) return false;
+        const name = f.file_name.toLowerCase();
+        const m = name.match(/e0*(\d+)\b/i) || name.match(/ep0*(\d+)\b/i) || name.match(/episode\s*0*(\d+)\b/i);
+        return m && parseInt(m[1]) === epNum;
+      });
+
+      if (matchingEpisodes.length === 0) {
+        // Fallback matches
+        matchingEpisodes = epFilesData.filter((f: any) => {
+          const name = f.file_name.toLowerCase();
+          return f.is_dir === 0 && (name.includes(`e${epNum}`) || name.includes(`ep${epNum}`) || name.includes(`episode ${epNum}`));
+        });
+      }
+
+      if (matchingEpisodes.length === 0) {
+        matchingEpisodes = epFilesData.filter((f: any) => f.is_dir === 0 && f.file_name.includes(String(epNum)));
+      }
+
+      if (matchingEpisodes.length === 0) {
+        // Broadest fallback: all files
+        matchingEpisodes = epFilesData.filter((f: any) => f.is_dir === 0);
+      }
+
+      const reqLang = (language as string || "").toLowerCase();
+      console.log(`[Showbox Proxy] Episode files found: ${matchingEpisodes.length}. Filtering for language: "${reqLang}"`);
+
+      if (matchingEpisodes.length > 0) {
+        if (reqLang === "hindi") {
+          targetFile = matchingEpisodes.find((f: any) => {
+            const name = f.file_name.toLowerCase();
+            return name.includes("hindi") || name.includes("hin") || name.includes("dub") || name.includes("dual");
+          });
+        } else if (reqLang === "tamil" || reqLang === "tam") {
+          targetFile = matchingEpisodes.find((f: any) => {
+            const name = f.file_name.toLowerCase();
+            return name.includes("tamil") || name.includes("tam") || name.includes("dub") || name.includes("dual");
+          });
+        } else if (reqLang === "telugu" || reqLang === "tel") {
+          targetFile = matchingEpisodes.find((f: any) => {
+            const name = f.file_name.toLowerCase();
+            return name.includes("telugu") || name.includes("tel") || name.includes("dub") || name.includes("dual");
+          });
+        } else if (reqLang === "eng" || reqLang === "english") {
+          targetFile = matchingEpisodes.find((f: any) => {
+            const name = f.file_name.toLowerCase();
+            return name.includes("english") || name.includes("eng");
+          });
+          if (!targetFile) {
+            // Find file that doesn't contain indian languages
+            targetFile = matchingEpisodes.find((f: any) => {
+              const name = f.file_name.toLowerCase();
+              return !name.includes("hindi") && !name.includes("hin") && !name.includes("tamil") && !name.includes("tam") && !name.includes("telugu") && !name.includes("tel");
+            });
+          }
+        }
+
+        // Default fallback if language specific match not found
+        if (!targetFile) {
+          targetFile = matchingEpisodes[0];
+        }
+      }
+
+      if (!targetFile) {
+        throw new Error(`Could not resolve episode file for Episode ${epNum}`);
+      }
+    } else {
+      // Movie Mode: select best file in the root shared folder
+      console.log(`[Showbox Proxy] Movie Mode: Searching for video files`);
+      const videoFiles = filesData.filter((f: any) => {
+        const name = f.file_name.toLowerCase();
+        return f.is_dir === 0 && (name.endsWith(".mkv") || name.endsWith(".mp4") || name.endsWith(".avi"));
+      });
+
+      const reqLang = (language as string || "").toLowerCase();
+      console.log(`[Showbox Proxy] Movie files found: ${videoFiles.length}. Filtering for language: "${reqLang}"`);
+
+      if (videoFiles.length > 0) {
+        if (reqLang === "hindi") {
+          targetFile = videoFiles.find((f: any) => {
+            const name = f.file_name.toLowerCase();
+            return name.includes("hindi") || name.includes("hin") || name.includes("dub") || name.includes("dual");
+          });
+        } else if (reqLang === "tamil" || reqLang === "tam") {
+          targetFile = videoFiles.find((f: any) => {
+            const name = f.file_name.toLowerCase();
+            return name.includes("tamil") || name.includes("tam") || name.includes("dub") || name.includes("dual");
+          });
+        } else if (reqLang === "telugu" || reqLang === "tel") {
+          targetFile = videoFiles.find((f: any) => {
+            const name = f.file_name.toLowerCase();
+            return name.includes("telugu") || name.includes("tel") || name.includes("dub") || name.includes("dual");
+          });
+        } else if (reqLang === "eng" || reqLang === "english") {
+          targetFile = videoFiles.find((f: any) => {
+            const name = f.file_name.toLowerCase();
+            return name.includes("english") || name.includes("eng");
+          });
+          if (!targetFile) {
+            targetFile = videoFiles.find((f: any) => {
+              const name = f.file_name.toLowerCase();
+              return !name.includes("hindi") && !name.includes("hin") && !name.includes("tamil") && !name.includes("tam") && !name.includes("telugu") && !name.includes("tel");
+            });
+          }
+        }
+
+        // Fallback: if language filter failed, pick first video file
+        if (!targetFile) {
+          targetFile = videoFiles[0];
+        }
+      }
+
+      if (!targetFile) {
+        targetFile = filesData.find((f: any) => f.is_dir === 0);
+      }
+
+      if (!targetFile) {
+        throw new Error(`Could not locate any video file in Febbox share folder`);
+      }
+    }
+
+    console.log(`[Showbox Proxy] Resolved target video file: "${targetFile.file_name}" (FID: ${targetFile.fid})`);
+
+    // Step 4: Get direct streaming links
+    const linksUrl = `${apiUrl.replace(/\/$/, "")}/api/febbox/links?shareKey=${shareKey}&fid=${targetFile.fid}`;
+    console.log(`[Showbox Proxy] Fetching links: ${linksUrl}`);
+    const linksRes = await fetch(linksUrl, {
+      headers: {
+        "x-auth-cookie": cleanToken,
+        "Accept": "application/json"
+      }
+    });
+    if (!linksRes.ok) {
+      throw new Error(`Failed to retrieve streaming links with status ${linksRes.status}`);
+    }
+    const linksData = await linksRes.json();
+
+    if (linksData && linksData.error) {
+      throw new Error(linksData.error);
+    }
+
+    console.log(`[Showbox Proxy] Successfully retrieved ${Array.isArray(linksData) ? linksData.length : 1} links`);
+    return res.json(linksData);
+
+  } catch (err: any) {
+    console.error(`[Showbox Proxy Error]`, err);
+    return res.status(500).json({
+      success: false,
+      error: `Failed to fetch download links from Showbox/Febbox. Error: ${err.message}`
+    });
+  }
+});
+
 // CREDITS / CAST
 app.get("/api/movies/credits/:type/:id", async (req, res) => {
   const { type, id } = req.params;

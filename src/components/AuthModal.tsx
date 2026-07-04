@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { X, Mail, Lock, User, Sparkles, LogIn } from "lucide-react";
 import { useApp } from "../context/AppContext";
+import { motion, AnimatePresence } from "motion/react";
 
 interface AuthModalProps {
   onClose: () => void;
@@ -50,8 +51,21 @@ export default function AuthModal({ onClose }: AuthModalProps) {
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-fade-in">
-      <div className="relative w-full max-w-md glass-panel rounded-2xl overflow-hidden shadow-2xl border border-brand-crimson/30 animate-scale-up">
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      transition={{ duration: 0.3 }}
+      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm"
+    >
+      <motion.div
+        initial={{ opacity: 0, scale: 0.8, rotateY: -35, z: -100 }}
+        animate={{ opacity: 1, scale: 1, rotateY: 0, z: 0 }}
+        exit={{ opacity: 0, scale: 0.8, rotateY: 35, z: -100 }}
+        transition={{ type: "spring", damping: 24, stiffness: 150 }}
+        style={{ perspective: "1200px", transformStyle: "preserve-3d" }}
+        className="relative w-full max-w-md glass-panel rounded-2xl overflow-hidden shadow-2xl border border-brand-crimson/30"
+      >
         {/* Glow Element */}
         <div className="absolute -top-12 -left-12 w-40 h-40 bg-brand-red/10 rounded-full blur-3xl pointer-events-none"></div>
         <div className="absolute -bottom-12 -right-12 w-40 h-40 bg-brand-crimson/10 rounded-full blur-3xl pointer-events-none"></div>
@@ -75,7 +89,16 @@ export default function AuthModal({ onClose }: AuthModalProps) {
         </div>
 
         {/* Body */}
-        <div className="p-6 relative z-10">
+        <div className="p-6 relative z-10 overflow-hidden">
+          <AnimatePresence mode="wait">
+            <motion.div
+              key={isSignUp ? "signup" : "signin"}
+              initial={{ opacity: 0, rotateY: -65, scale: 0.95 }}
+              animate={{ opacity: 1, rotateY: 0, scale: 1 }}
+              exit={{ opacity: 0, rotateY: 65, scale: 0.95 }}
+              transition={{ type: "spring", damping: 20, stiffness: 140 }}
+              style={{ transformStyle: "preserve-3d", backfaceVisibility: "hidden" }}
+            >
           <div className="mb-6">
             <h3 className="font-display font-semibold text-2xl text-white">
               {isSignUp ? "Create your account" : "Welcome back"}
@@ -181,8 +204,10 @@ export default function AuthModal({ onClose }: AuthModalProps) {
                 : "USING LOCAL EMBEDDED AUTHENTICATION"}
             </span>
           </div>
+            </motion.div>
+          </AnimatePresence>
         </div>
-      </div>
-    </div>
+      </motion.div>
+    </motion.div>
   );
 }
