@@ -975,6 +975,52 @@ app.get("/api/movies/credits/:type/:id", async (req, res) => {
   return res.json({ cast: [] });
 });
 
+// ===== Auto-Fix Agent: error reporting endpoints =====
+import fs from "fs";
+const QUEUE_FILE = path.join(process.cwd(), "queue.json");
+
+function loadErrorQueue(): any[] {
+  if (!fs.existsSync(QUEUE_FILE)) return [];
+  try {
+    return JSON.parse(fs.readFileSync(QUEUE_FILE, "utf-8"));
+  } catch {
+    return [];
+  }
+}
+
+function saveErrorQueue(queue: any[]) {
+  fs.writeFileSync(QUEUE_FILE, JSON.stringify(queue, null, 2));
+}
+
+// Website se error reports yahan aate hain (src/lib/errorReporter.ts se)
+app.post("/api/report-error", (req, res) => {
+  const queue = loadErrorQueue();
+
+  const isDuplicate = queue.some(
+    (item) =>
+      item.status === "pending" &&
+      item.message === req.body.message &&
+      item.componentName === req.body.componentName
+  );
+
+  if (!isDuplicate) {
+    queue.push({
+      id: Date.now().toString(),
+      ...req.body,
+      status: "pending", // pending -> fixing -> fixed / needs-review
+    });
+    saveErrorQueue(queue);
+    console.log("🐛 New error reported:", req.body.message);
+  }
+
+  res.json({ received: true });
+});
+
+// Dashboard / agent ke liye queue dekhne ka endpoint
+app.get("/api/queue", (_req, res) => {
+  res.json(loadErrorQueue());
+});
+
 // Vite server setup for full-stack integration
 async function startServer() {
   if (process.env.NODE_ENV !== "production") {
