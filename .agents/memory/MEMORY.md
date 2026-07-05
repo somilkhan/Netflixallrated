@@ -1,0 +1,3 @@
+- [Supabase Auth integration](supabase-auth.md) — token verification via auth.getUser; user auto-upserted in Neon on first login; ADMIN_EMAIL grants admin on creation
+- [Admin bootstrap flow](admin-bootstrap.md) — no register/login routes; promote via POST /api/auth/promote with valid JWT + ADMIN_PASSWORD
+- [Neon DB strategy](neon-db.md) — dev uses Replit managed PG; prod (Vercel) uses Neon DATABASE_URL; migrations via prisma migrate deploy in vercel.json build

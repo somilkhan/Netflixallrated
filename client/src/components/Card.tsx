@@ -3,7 +3,7 @@ import Meter from './Meter';
 
 const tierLabels: Record<string, string> = { SKIP: 'Skip', TIMEPASS: 'Timepass', GOFORIT: 'Go for it', PERFECTION: 'Perfection' };
 
-export default function Card({ title, index, rank }: { title: any; index: number; rank?: number }) {
+export default function Card({ title, rank }: { title: any; index?: number; rank?: number }) {
   const nav = useNavigate();
   const tierIdx = Math.floor(Math.random() * 4);
   const tiers = ['SKIP', 'TIMEPASS', 'GOFORIT', 'PERFECTION'];

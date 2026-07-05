@@ -1,6 +1,6 @@
 # Allrated
 
-Full-stack movie/TV/anime discovery platform with a 4-tier rating system (Skip / Timepass / Go for it / Perfection), watchlist tracking, JWT auth, and an admin panel for importing titles from TMDB.
+Full-stack movie/TV/anime discovery platform with a 4-tier rating system (Skip / Timepass / Go for it / Perfection), watchlist tracking, Supabase Auth, and an admin panel for importing titles from TMDB.
 
 ## Architecture
 
@@ -8,7 +8,9 @@ Full-stack movie/TV/anime discovery platform with a 4-tier rating system (Skip /
 |---|---|---|
 | Frontend | React 18, Vite, Tailwind CSS | 5000 (webview) |
 | Backend API | Express, Prisma ORM | 3000 |
-| Database | Replit PostgreSQL | managed |
+| Database (dev) | Replit managed PostgreSQL | managed |
+| Database (prod) | Neon (set `DATABASE_URL` in Vercel) | — |
+| Auth | Supabase Auth (client) + token verify (server) | — |
 
 The client Vite dev server proxies `/api/*` to the Express server, so the browser always talks to a single origin.
 
@@ -18,70 +20,103 @@ Two workflows run automatically:
 - **API Server** — `cd server && npm run dev`
 - **Start application** — `cd client && npm run dev`
 
+## Authentication (Supabase Auth)
+
+Sign-in and sign-up are handled entirely by Supabase Auth on the client side. The server verifies Supabase access tokens via `supabase.auth.getUser(token)` and auto-upserts the user into the Neon/Postgres DB on first login.
+
+**To make yourself admin:**
+1. Register / sign in via the app (you get `USER` role by default).
+2. Call the promote endpoint once — requires your own valid JWT + the admin password:
+   ```bash
+   curl -X POST https://YOUR-DOMAIN/api/auth/promote \
+     -H "Authorization: Bearer YOUR_SUPABASE_TOKEN" \
+     -H "Content-Type: application/json" \
+     -d '{"email":"you@example.com","adminPassword":"YOUR_ADMIN_PASSWORD"}'
+   ```
+3. Sign out and sign back in — your session will now reflect `ADMIN` role.
+
+**Alternative:** Set `ADMIN_EMAIL` secret before your first sign-in. Any user with that email is auto-granted `ADMIN` on their first login.
+
+**Supabase email confirmation:** By default Supabase requires email verification. To skip it during dev, go to Supabase Dashboard → Authentication → Providers → Email → disable "Confirm email".
+
 ## Database
 
-Prisma manages the schema (`server/prisma/schema.prisma`). To reset and re-seed:
+Prisma manages the schema (`server/prisma/schema.prisma`). To re-seed titles:
 
 ```bash
 cd server
-npx prisma migrate dev
-npm run db:seed   # seeds 63 titles, 10 platforms, admin account
+npm run db:seed   # seeds 63 titles, 10 platforms (no admin user — handled by Supabase Auth now)
 ```
-
-The seed script requires an `ADMIN_PASSWORD` secret to be set before running — it will exit with an error if missing. Set `ADMIN_EMAIL` to override the default address (`admin@allrated.local`).
 
 ## API Routes
 
 | Route | Auth | Purpose |
 |---|---|---|
-| `POST /api/auth/register` | public | Create account |
-| `POST /api/auth/login` | public | Login, returns JWT |
-| `GET /api/auth/me` | required | Current user |
+| `GET /api/auth/me` | required | Current user (Neon DB, includes role) |
+| `PATCH /api/auth/me` | required | Update display name / avatar |
+| `POST /api/auth/promote` | required + admin password | Promote user to ADMIN |
 | `GET /api/titles` | public | Browse/search titles |
 | `GET /api/titles/:id` | public | Title detail |
 | `POST /api/titles/:id/ratings` | required | Rate a title |
+| `GET /api/titles/tmdb-search` | admin | Search TMDB |
+| `POST /api/titles/import-tmdb` | admin | Import single title from TMDB |
+| `POST /api/titles/sync-tmdb` | admin | Bulk import this week's trending |
 | `GET/POST/PATCH/DELETE /api/watchlist` | required | Watchlist CRUD |
 | `GET /api/platforms` | public | Streaming platforms |
 | `GET /api/netmirror` | required | NetMirror proxy |
 | `GET /api/netmirror/stream?id=` | required | NetMirror stream links |
 | `GET /api/showbox/link?type=&id=` | required | Showbox/Febbox download links |
 | `GET /api/config` | public | Public client config (Supabase keys, Aceternity key) |
+| `GET /api/health` | public | Health check |
 
 ## Environment variables / secrets
 
-### Secrets (Replit Secrets panel)
+### Secrets (Replit Secrets panel → Vercel Environment Variables)
 | Key | Purpose |
 |---|---|
-| `JWT_SECRET` | Signs login tokens — keep private |
-| `DATABASE_URL` | Auto-provided by Replit's managed PostgreSQL |
-| `TMDB_API_KEY` | Admin panel TMDB search & import |
-| `SUPABASE_URL` | Supabase project URL |
+| `SUPABASE_URL` | Supabase project URL (e.g. `https://xxx.supabase.co`) |
 | `SUPABASE_ANON_KEY` | Supabase public anon key |
-| `ACETERNITY_API_KEY` | Aceternity UI (served to client via /api/config) |
+| `TMDB_API_KEY` | Admin panel TMDB search, import, and bulk sync |
+| `ADMIN_PASSWORD` | Used by `/api/auth/promote` to self-bootstrap an admin |
+| `ADMIN_EMAIL` | Optional: auto-grants ADMIN role to this email on first login |
 | `FEB_BOX_TOKEN` | Febbox download link token |
 | `SHOWBOX_FEB_BOX_API_URL` | Showbox/Febbox API base URL |
 | `NETMIRROR_API_KEY` | NetMirror premium stream provider |
-| `ADMIN_PASSWORD` | Used to seed the admin account |
-| `ADMIN_EMAIL` | Admin email (default: admin@allrated.local) |
+| `ACETERNITY_API_KEY` | Aceternity UI (served to client via /api/config) |
+| `SESSION_SECRET` | Reserved |
+
+> `JWT_SECRET` is no longer needed — Supabase handles token signing.
 
 ### Env vars (shared)
 | Key | Value | Purpose |
 |---|---|---|
 | `PORT` | 3000 | Express server port |
-| `CLIENT_URL` | http://localhost:5000 | CORS allowed origin |
+| `CLIENT_URL` | http://localhost:5000 | CORS allowed origin (update in Vercel) |
 | `TMDB_API_BASE` | https://api.themoviedb.org/3 | TMDB base URL |
 | `TMDB_IMAGE_BASE` | https://image.tmdb.org/t/p | TMDB image CDN |
 
 ## Vercel deployment
 
-`vercel.json` is configured at the root. When you push to Vercel:
-1. It builds the client (`client/npm run build` → `client/dist`)
-2. The Express server is deployed as a single serverless function (`api/index.ts`)
-3. `/api/*` requests route to the serverless function; everything else serves the SPA
+`vercel.json` is configured at the root. The build command runs automatically:
+1. `cd server && npm install && npx prisma generate && npx prisma migrate deploy`
+2. `cd client && npm install && npm run build`
+3. Express app deploys as a single serverless function (`api/index.ts`)
+4. `/api/*` routes to the function; everything else serves the SPA
 
-**Before deploying to Vercel**, add all secrets from the table above to your Vercel project's Environment Variables. The `DATABASE_URL` must point to an external PostgreSQL instance (not Replit's — Vercel can't reach it). Options: Supabase Postgres, Neon, Railway, PlanetScale.
+**Required Vercel environment variables:**
+- `DATABASE_URL` → your Neon connection string (pooled URL)
+- All secrets from the table above
+- `CLIENT_URL` → your Vercel app domain (e.g. `https://allrated.vercel.app`)
+
+**Neon setup:**
+1. Create a project at [neon.tech](https://neon.tech)
+2. Copy the pooled connection string
+3. Add it as `DATABASE_URL` in Vercel environment variables
+4. Prisma migrations run automatically on first deploy via `prisma migrate deploy`
 
 ## User preferences
 
 - Keep existing project structure (client/ + server/ monorepo)
 - Do not restructure or migrate the stack
+- Supabase Auth for cross-device login
+- Neon DB for production (Vercel)

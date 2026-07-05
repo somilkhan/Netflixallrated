@@ -34,36 +34,35 @@ enum Role {
 }
 
 model User {
-  id           String   @id @default(uuid())
-  email        String   @unique
-  passwordHash String
-  displayName  String?
-  avatarUrl    String?
-  role         Role     @default(USER)
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
+  id          String   @id              // Supabase Auth UUID — provided at creation, never auto-generated
+  email       String   @unique
+  displayName String?
+  avatarUrl   String?
+  role        Role     @default(USER)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
 
-  ratings      Rating[]
-  watchlist    WatchlistItem[]
+  ratings   Rating[]
+  watchlist WatchlistItem[]
 }
 
 model Title {
-  id                String   @id @default(uuid())
-  name              String
-  type              TitleType
-  year              Int
-  runtimeMinutes    Int?
-  genres            String[]
-  synopsis          String   @db.Text
-  posterColorFrom   String
-  posterColorTo     String
-  trailerYoutubeId  String?
+  id               String    @id @default(uuid())
+  name             String
+  type             TitleType
+  year             Int
+  runtimeMinutes   Int?
+  genres           String[]
+  synopsis         String    @db.Text
+  posterColorFrom  String
+  posterColorTo    String
+  trailerYoutubeId String?
   officialWatchLinks Json?   @db.Json
-  tmdbId            Int?     @unique
-  posterUrl         String?
-  backdropUrl       String?
-  createdAt         DateTime @default(now())
-  updatedAt         DateTime @updatedAt
+  tmdbId           Int?      @unique
+  posterUrl        String?
+  backdropUrl      String?
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
 
   ratings        Rating[]
   watchlistItems WatchlistItem[]
@@ -102,9 +101,9 @@ model WatchlistItem {
 }
 
 model Platform {
-  id      String   @id @default(uuid())
+  id      String  @id @default(uuid())
   name    String
-  abbr    String   @unique
+  abbr    String  @unique
   iconUrl String?
 
   titles TitlePlatform[]

@@ -45,6 +45,27 @@ export async function searchTmdb(query: string): Promise<TmdbSearchResult[]> {
     }));
 }
 
+/**
+ * Fetch trending titles from TMDB (movies + TV combined).
+ * @param timeWindow 'day' or 'week' — weekly gives more stable results
+ */
+export async function getTrendingTmdb(timeWindow: 'day' | 'week' = 'week'): Promise<TmdbSearchResult[]> {
+  const data = await tmdbFetch(`/trending/all/${timeWindow}`);
+  return (data.results || [])
+    .filter((r: any) => r.media_type === 'movie' || r.media_type === 'tv')
+    .slice(0, 50)
+    .map((r: any) => ({
+      tmdbId: r.id,
+      mediaType: r.media_type as 'movie' | 'tv',
+      name: r.title || r.name,
+      year: (r.release_date || r.first_air_date)
+        ? Number((r.release_date || r.first_air_date).slice(0, 4))
+        : null,
+      posterUrl: tmdbImageUrl(r.poster_path),
+      overview: r.overview || '',
+    }));
+}
+
 export interface TmdbDetails {
   tmdbId: number;
   name: string;

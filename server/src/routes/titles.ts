@@ -2,14 +2,11 @@ import { Router } from 'express';
 import { z } from 'zod';
 import { prisma } from '../lib/prisma.js';
 import { authenticate, requireAdmin, AuthRequest } from '../middleware/auth.js';
-import { searchTmdb, getTmdbDetails } from '../lib/tmdb.js';
+import { searchTmdb, getTmdbDetails, getTrendingTmdb } from '../lib/tmdb.js';
 
 const router = Router();
 
 // Curated gradient palette matching the app's maroon/amber design language.
-// Used as a poster tint fallback (and behind real TMDB poster images) so the
-// visual language stays consistent whether a title was added manually or
-// imported from TMDB.
 const POSTER_PALETTE = [
   { from: '#1a1510', to: '#0a0908' },
   { from: '#1c1410', to: '#0a0807' },
@@ -44,7 +41,7 @@ router.get('/top10', async (_req, res) => { const titles = await prisma.title.fi
 router.get('/trending', async (_req, res) => { const titles = await prisma.title.findMany({ take: 14, orderBy: { year: 'desc' }, include: { platforms: { include: { platform: true } } } }); res.json(titles); });
 router.get('/recent', async (_req, res) => { const titles = await prisma.title.findMany({ take: 18, orderBy: { createdAt: 'desc' }, include: { platforms: { include: { platform: true } } } }); res.json(titles); });
 
-// --- TMDB catalog lookup (admin only) ---------------------------------
+// --- TMDB catalog lookup (admin only) -----------------------------------
 router.get('/tmdb-search', authenticate, requireAdmin, async (req: AuthRequest, res) => {
   const q = (req.query.q as string || '').trim();
   if (!q) return res.json([]);
@@ -87,6 +84,50 @@ router.post('/import-tmdb', authenticate, requireAdmin, async (req: AuthRequest,
     res.status(201).json(title);
   } catch (err) {
     res.status(502).json({ error: 'TMDB import failed', detail: (err as Error).message });
+  }
+});
+
+/**
+ * POST /api/titles/sync-tmdb
+ * Fetches the week's trending titles from TMDB and imports any that aren't
+ * already in the catalog. Safe to run multiple times (skips existing).
+ */
+router.post('/sync-tmdb', authenticate, requireAdmin, async (req: AuthRequest, res) => {
+  try {
+    const trending = await getTrendingTmdb('week');
+    let imported = 0, skipped = 0, errors = 0;
+
+    for (const result of trending) {
+      const existing = await prisma.title.findUnique({ where: { tmdbId: result.tmdbId } });
+      if (existing) { skipped++; continue; }
+
+      try {
+        const details = await getTmdbDetails(result.tmdbId, result.mediaType);
+        const palette = randomPalette();
+        await prisma.title.create({
+          data: {
+            name: details.name,
+            type: result.mediaType === 'movie' ? 'MOVIE' : 'SERIES',
+            year: details.year,
+            runtimeMinutes: details.runtimeMinutes ?? undefined,
+            genres: details.genres,
+            synopsis: details.synopsis,
+            posterColorFrom: palette.from,
+            posterColorTo: palette.to,
+            trailerYoutubeId: details.trailerYoutubeId ?? undefined,
+            tmdbId: details.tmdbId,
+            posterUrl: details.posterUrl ?? undefined,
+            backdropUrl: details.backdropUrl ?? undefined,
+            officialWatchLinks: [],
+          },
+        });
+        imported++;
+      } catch { errors++; }
+    }
+
+    res.json({ imported, skipped, errors, total: trending.length });
+  } catch (err) {
+    res.status(502).json({ error: 'TMDB sync failed', detail: (err as Error).message });
   }
 });
 
