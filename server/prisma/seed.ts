@@ -1,6 +1,7 @@
 import { PrismaClient, TitleType, Role } from '@prisma/client';
 import bcrypt from 'bcryptjs';
 import 'dotenv/config';
+import { randomUUID } from 'crypto';
 const prisma = new PrismaClient();
 
 const platforms = [
