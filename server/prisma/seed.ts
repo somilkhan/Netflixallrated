@@ -94,7 +94,7 @@ async function main() {
   const existingAdmin = await prisma.user.findUnique({ where: { email: adminEmail } });
   if (!existingAdmin) {
     const passwordHash = await bcrypt.hash(adminPassword, 12);
-    await prisma.user.create({ data: { email: adminEmail, passwordHash, displayName: 'Admin', role: Role.ADMIN } });
+    await prisma.user.create({ data: { id: randomUUID(), email: adminEmail, passwordHash, displayName: 'Admin', role: Role.ADMIN } });
     console.log(`Seeded admin user: ${adminEmail}`);
   } else {
     console.log(`Admin user ${adminEmail} already exists — skipping.`);
