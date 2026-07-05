@@ -1,5 +1,6 @@
 import { PrismaClient, TitleType, Role } from '@prisma/client';
 import bcrypt from 'bcryptjs';
+import 'dotenv/config';
 const prisma = new PrismaClient();
 
 const platforms = [
@@ -84,12 +85,19 @@ const titles = [
 async function main() {
   // Seed a real admin account so the Admin panel (and TMDB import) is usable
   // right after `npm run db:seed`. Change this password before deploying.
-  const adminEmail = 'admin@allrated.local';
+  const adminEmail = process.env.ADMIN_EMAIL || 'admin@allrated.local';
+  const adminPassword = process.env.ADMIN_PASSWORD;
+  if (!adminPassword) {
+    console.error('ERROR: ADMIN_PASSWORD env var is required to seed the admin account. Set it and re-run.');
+    process.exit(1);
+  }
   const existingAdmin = await prisma.user.findUnique({ where: { email: adminEmail } });
   if (!existingAdmin) {
-    const passwordHash = await bcrypt.hash('admin123', 12);
+    const passwordHash = await bcrypt.hash(adminPassword, 12);
     await prisma.user.create({ data: { email: adminEmail, passwordHash, displayName: 'Admin', role: Role.ADMIN } });
-    console.log(`Seeded admin user: ${adminEmail} / admin123 (please change this password)`);
+    console.log(`Seeded admin user: ${adminEmail}`);
+  } else {
+    console.log(`Admin user ${adminEmail} already exists — skipping.`);
   }
 
   for (const p of platforms) {
