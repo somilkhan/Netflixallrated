@@ -1,6 +1,6 @@
 {
   "version": 2,
-  "buildCommand": "npm install -g npm@10.9.2 && npm config set maxsockets 3 && cd server && npm install --no-audit --no-fund && npx prisma generate && cd ../client && npm install --no-audit --no-fund && npm run build",
+  "buildCommand": "npm install -g pnpm && cd server && pnpm install --no-frozen-lockfile && npx prisma generate && cd ../client && pnpm install --no-frozen-lockfile && pnpm run build",
   "outputDirectory": "client/dist",
   "functions": {
     "api/index.ts": {
