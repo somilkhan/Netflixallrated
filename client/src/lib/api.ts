@@ -1,0 +1,18 @@
+const API_URL = import.meta.env.VITE_API_URL || '/api';
+
+async function fetcher(path: string, options?: RequestInit) {
+  const token = localStorage.getItem('token');
+  const res = await fetch(`${API_URL}${path}`, {
+    ...options,
+    headers: { 'Content-Type': 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}), ...options?.headers },
+  });
+  if (!res.ok) { const err = await res.json().catch(() => ({ error: 'Unknown error' })); throw new Error(err.error || `HTTP ${res.status}`); }
+  return res.json();
+}
+
+export const api = {
+  auth: { register: (data: any) => fetcher('/auth/register', { method: 'POST', body: JSON.stringify(data) }), login: (data: any) => fetcher('/auth/login', { method: 'POST', body: JSON.stringify(data) }), me: () => fetcher('/auth/me') },
+  titles: { list: (params?: Record<string, string>) => { const qs = params ? '?' + new URLSearchParams(params).toString() : ''; return fetcher(`/titles${qs}`); }, get: (id: string) => fetcher(`/titles/${id}`), top10: () => fetcher('/titles/top10'), trending: () => fetcher('/titles/trending'), recent: () => fetcher('/titles/recent'), rate: (id: string, data: any) => fetcher(`/titles/${id}/ratings`, { method: 'POST', body: JSON.stringify(data) }), ratings: (id: string) => fetcher(`/titles/${id}/ratings`), tmdbSearch: (q: string) => fetcher(`/titles/tmdb-search?q=${encodeURIComponent(q)}`), importTmdb: (data: { tmdbId: number; mediaType: 'movie' | 'tv'; type: string }) => fetcher('/titles/import-tmdb', { method: 'POST', body: JSON.stringify(data) }) },
+  watchlist: { add: (data: any) => fetcher('/watchlist', { method: 'POST', body: JSON.stringify(data) }), mine: () => fetcher('/watchlist/me'), update: (id: string, data: any) => fetcher(`/watchlist/${id}`, { method: 'PATCH', body: JSON.stringify(data) }), delete: (id: string) => fetcher(`/watchlist/${id}`, { method: 'DELETE' }) },
+  platforms: { list: () => fetcher('/platforms') },
+};

@@ -1,6 +1,0 @@
-{
-  "name": "Allrated",
-  "description": "A premium, Netflix-style streaming UI clone featuring full-bleed hero trailer autoplay, interactive hover card expansion with video playback, and custom-styled video controls.",
-  "requestFramePermissions": [],
-  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
-}

@@ -1,0 +1,120 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum TitleType {
+  MOVIE
+  SERIES
+  ANIME
+}
+
+enum Tier {
+  SKIP
+  TIMEPASS
+  GOFORIT
+  PERFECTION
+}
+
+enum WatchStatus {
+  PLAN_TO_WATCH
+  WATCHING
+  COMPLETED
+  DROPPED
+}
+
+enum Role {
+  USER
+  ADMIN
+}
+
+model User {
+  id           String   @id @default(uuid())
+  email        String   @unique
+  passwordHash String
+  displayName  String?
+  avatarUrl    String?
+  role         Role     @default(USER)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  ratings      Rating[]
+  watchlist    WatchlistItem[]
+}
+
+model Title {
+  id                String   @id @default(uuid())
+  name              String
+  type              TitleType
+  year              Int
+  runtimeMinutes    Int?
+  genres            String[]
+  synopsis          String   @db.Text
+  posterColorFrom   String
+  posterColorTo     String
+  trailerYoutubeId  String?
+  officialWatchLinks Json?   @db.Json
+  tmdbId            Int?     @unique
+  posterUrl         String?
+  backdropUrl       String?
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  ratings        Rating[]
+  watchlistItems WatchlistItem[]
+  platforms      TitlePlatform[]
+}
+
+model Rating {
+  id         String   @id @default(uuid())
+  userId     String
+  titleId    String
+  tier       Tier
+  reviewText String?  @db.Text
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  user  User  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  title Title @relation(fields: [titleId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, titleId])
+  @@index([titleId])
+}
+
+model WatchlistItem {
+  id        String      @id @default(uuid())
+  userId    String
+  titleId   String
+  status    WatchStatus
+  createdAt DateTime    @default(now())
+  updatedAt DateTime    @updatedAt
+
+  user  User  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  title Title @relation(fields: [titleId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, titleId])
+  @@index([userId])
+}
+
+model Platform {
+  id      String   @id @default(uuid())
+  name    String
+  abbr    String   @unique
+  iconUrl String?
+
+  titles TitlePlatform[]
+}
+
+model TitlePlatform {
+  titleId    String
+  platformId String
+
+  title    Title    @relation(fields: [titleId], references: [id], onDelete: Cascade)
+  platform Platform @relation(fields: [platformId], references: [id], onDelete: Cascade)
+
+  @@id([titleId, platformId])
+}
