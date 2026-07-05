@@ -7,7 +7,7 @@ import dns from "dns";
 dns.setDefaultResultOrder("ipv4first");
 
 const app = express();
-const PORT = 3000;
+const PORT = parseInt(process.env.PORT || "5000");
 
 app.use(express.json());
 
@@ -553,7 +553,7 @@ app.get("/api/streaming/servers", async (req, res) => {
 
 // PROXY NETMIRROR HOME
 app.get("/api/netmirror", async (req, res) => {
-  const apiKey = process.env.NETMIRROR_API_KEY || req.headers["x-api-key"] as string || "sk_tLF8DC2Fcjp0mW1KlwPgpdZeVIrjocyH";
+  const apiKey = process.env.NETMIRROR_API_KEY || req.headers["x-api-key"] as string;
   
   let baseUrl = process.env.NETMIRROR_API_URL;
   if (!baseUrl) {
@@ -600,7 +600,7 @@ app.get("/api/netmirror", async (req, res) => {
 // PROXY NETMIRROR STREAM
 app.get("/api/netmirror/stream", async (req, res) => {
   const { id } = req.query;
-  const apiKey = process.env.NETMIRROR_API_KEY || req.headers["x-api-key"] as string || "sk_tLF8DC2Fcjp0mW1KlwPgpdZeVIrjocyH";
+  const apiKey = process.env.NETMIRROR_API_KEY || req.headers["x-api-key"] as string;
 
   if (!id) {
     return res.status(400).json({ success: false, error: "Missing required query parameter: id" });
