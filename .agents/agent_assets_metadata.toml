@@ -1,0 +1,8 @@
+uploads = []
+generated = []
+
+[[outputs]]
+id = "Gz9NzUszDQBFoleIPskmJ"
+uri = "file://attached_assets/allrated-changelog.zip"
+type = "unspecified"
+title = "Allrated — Changelog & Changed Files"
