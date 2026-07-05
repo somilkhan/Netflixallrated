@@ -1,6 +1,6 @@
 {
   "version": 2,
-  "buildCommand": "cd server && npm install --no-audit --no-fund --ignore-scripts && npx --yes prisma@5.15.0 generate && cd ../client && npm install --no-audit --no-fund && npm run build",
+  "buildCommand": "npm install -g npm@11 && cd server && npm install --no-audit --no-fund --ignore-scripts && npx --yes prisma@5.15.0 generate && cd ../client && npm install --no-audit --no-fund && npm run build",
   "outputDirectory": "client/dist",
   "functions": {
     "api/index.ts": {
