@@ -2,7 +2,7 @@ import { Router, Response, NextFunction } from 'express';
 import { z } from 'zod';
 import { prisma } from '../lib/prisma.js';
 import { authenticate, requireAdmin, AuthRequest } from '../middleware/auth.js';
-import { searchTmdb, getTmdbDetails, getTrendingTmdb, getTvSeasons, getTvEpisodes } from '../lib/tmdb.js';
+import { searchTmdb, getTmdbDetails, getTvSeasons, getTvEpisodes } from '../lib/tmdb.js';
 import { syncTmdbCatalog, resetSyncProgress } from '../lib/sync.js';
 
 const router = Router();
