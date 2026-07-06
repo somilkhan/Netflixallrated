@@ -5,7 +5,8 @@ import { api } from '../lib/api';
 import { useAuth } from '../lib/auth';
 import Meter from '../components/Meter';
 import { searchAnime } from '../lib/anilist';
-import VideoPlayer, { SERVERS } from '../components/VideoPlayer';
+import { SERVERS } from '../components/VideoPlayer';
+import PlayerModal from '../components/PlayerModal';
 import RatingWidget from '../components/RatingWidget';
 import type { Tier } from '../components/RatingWidget';
 
@@ -543,21 +544,25 @@ export default function TitleDetail() {
         </div>
       </div>
 
-      {/* Fullscreen player */}
-      <VideoPlayer
+      {/* Player modal */}
+      <PlayerModal
         title={title}
-        playerOpen={playerOpen}
-        setPlayerOpen={setPlayerOpen}
+        isOpen={playerOpen}
+        onClose={() => setPlayerOpen(false)}
         serverId={serverId}
         switchServer={switchServer}
         iframeKey={iframeKey}
         setIframeKey={setIframeKey}
+        seasons={seasons}
         selectedSeason={selectedSeason}
+        setSelectedSeason={setSelectedSeason}
         selectedEp={selectedEp}
         setSelectedEp={setSelectedEp}
+        episodes={episodes}
         embedUrl={embedUrl}
         onAnimePrev={animePrev}
         onAnimeNext={animeNext}
+        anicrushEpCount={anicrushEpCount}
       />
     </div>
   );
