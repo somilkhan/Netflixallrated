@@ -116,6 +116,84 @@ export async function getTvEpisodes(tmdbId: number, seasonNumber: number): Promi
   }));
 }
 
+// ── Region-aware helpers (used by /api/geo) ────────────────────────────────
+
+export interface TmdbRegionItem {
+  tmdbId: number;
+  mediaType: 'movie' | 'tv';
+  name: string;
+  year: number | null;
+  posterUrl: string | null;
+  overview: string;
+  genres: number[]; // raw genre IDs — no extra round-trip needed for display
+}
+
+function normRegionItem(r: any, mediaType: 'movie' | 'tv'): TmdbRegionItem {
+  return {
+    tmdbId: r.id,
+    mediaType,
+    name: r.title || r.name || '',
+    year: (r.release_date || r.first_air_date)
+      ? Number((r.release_date || r.first_air_date).slice(0, 4))
+      : null,
+    posterUrl: tmdbImageUrl(r.poster_path, 'w342'),
+    overview: r.overview || '',
+    genres: r.genre_ids || [],
+  };
+}
+
+/** Fetch multiple pages in parallel and flatten results. */
+async function fetchMultiPage(
+  path: string,
+  extraParams: Record<string, string> = {},
+  pages = 3,
+): Promise<any[]> {
+  assertConfigured();
+  const requests = Array.from({ length: pages }, (_, i) => {
+    const qs = new URLSearchParams({
+      api_key: TMDB_API_KEY!,
+      page: String(i + 1),
+      ...extraParams,
+    });
+    return fetch(`${TMDB_BASE}${path}?${qs.toString()}`).then(res => {
+      if (!res.ok) throw new Error(`TMDb error ${res.status}`);
+      return res.json();
+    });
+  });
+  const pages_data = await Promise.all(requests);
+  return pages_data.flatMap(p => p.results || []);
+}
+
+/**
+ * Regional popularity — uses /movie/popular?region=X which TMDB does filter by
+ * theatrical availability per country. (The trending endpoint ignores region.)
+ */
+export async function trendingInRegion(region = 'IN'): Promise<TmdbRegionItem[]> {
+  const results = await fetchMultiPage('/movie/popular', { region });
+  return results.map(r => normRegionItem(r, 'movie'));
+}
+
+export async function popularOnOTT(region = 'IN'): Promise<TmdbRegionItem[]> {
+  const results = await fetchMultiPage('/discover/movie', {
+    region,
+    watch_region: region,
+    with_watch_monetization_types: 'flatrate',
+    sort_by: 'popularity.desc',
+  });
+  return results.map(r => normRegionItem(r, 'movie'));
+}
+
+export async function discoverByLanguage(language: string, region = 'IN'): Promise<TmdbRegionItem[]> {
+  const results = await fetchMultiPage('/discover/movie', {
+    with_original_language: language,
+    region,
+    sort_by: 'popularity.desc',
+  });
+  return results.map(r => normRegionItem(r, 'movie'));
+}
+
+// ── Full details (admin import) ───────────────────────────────────────────
+
 export async function getTmdbDetails(tmdbId: number, mediaType: 'movie' | 'tv'): Promise<TmdbDetails> {
   const path = mediaType === 'movie' ? `/movie/${tmdbId}` : `/tv/${tmdbId}`;
   const detail = await tmdbFetch(path, { append_to_response: 'videos' });

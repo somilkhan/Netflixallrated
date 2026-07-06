@@ -1,10 +1,14 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { api } from '../lib/api';
+import { getRegionCookie, setRegionCookie, normalizeRegion } from '../lib/regionConfig';
 import Ticker from '../components/Ticker';
 import Hero from '../components/Hero';
 import Tabs from '../components/Tabs';
 import Section from '../components/Section';
 import Card from '../components/Card';
+import TmdbCard from '../components/TmdbCard';
+import type { TmdbItem } from '../components/TmdbCard';
+import RegionPicker from '../components/RegionPicker';
 
 const GENRE_SECTIONS = [
   { genre: 'Action', label: 'Action & Thrills', emoji: '⚡' },
@@ -19,6 +23,12 @@ const GENRE_SECTIONS = [
   { genre: 'Documentary', label: 'Documentary', emoji: '📽️' },
 ];
 
+interface GeoRow {
+  id: string;
+  label: string;
+  items: TmdbItem[];
+}
+
 export default function Home() {
   const [activeTab, setActiveTab] = useState('All');
   const [top10, setTop10] = useState<any[]>([]);
@@ -28,6 +38,48 @@ export default function Home() {
   const [series, setSeries] = useState<any[]>([]);
   const [anime, setAnime] = useState<any[]>([]);
   const [genreSections, setGenreSections] = useState<Record<string, any[]>>({});
+
+  // Geo state
+  const [region, setRegion] = useState<string>(() => normalizeRegion(getRegionCookie()));
+  const [geoRows, setGeoRows] = useState<GeoRow[]>([]);
+  const [geoLoading, setGeoLoading] = useState(false);
+
+  // Fetch geo rows whenever region changes
+  const loadGeoContent = useCallback(async (r: string) => {
+    setGeoLoading(true);
+    try {
+      const data = await api.geo.content(r);
+      setGeoRows(data.rows || []);
+    } catch {
+      setGeoRows([]);
+    } finally {
+      setGeoLoading(false);
+    }
+  }, []);
+
+  // On mount: resolve region from cookie → detect from IP if missing → fetch content
+  useEffect(() => {
+    const cookie = getRegionCookie();
+    if (cookie) {
+      loadGeoContent(cookie);
+    } else {
+      // Auto-detect from IP
+      api.geo.detect()
+        .then((data: { region: string }) => {
+          const detected = data.region || 'IN';
+          setRegion(detected);
+          setRegionCookie(detected);
+          return loadGeoContent(detected);
+        })
+        .catch(() => loadGeoContent('IN'));
+    }
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+  const handleRegionChange = (newRegion: string) => {
+    setRegion(newRegion);
+    setRegionCookie(newRegion);
+    loadGeoContent(newRegion);
+  };
 
   useEffect(() => {
     // Core sections
@@ -103,6 +155,27 @@ export default function Home() {
         <Section title="Recently Added" count={`${filter(recent).length}`} viewAllPath="/search?q=">
           {filter(recent).map(t => <Card key={t.id} title={t} />)}
         </Section>
+      )}
+
+      {/* ── Geo-personalised rows (All tab only) ─────────────────────────── */}
+      {showGenre && (
+        <>
+          <RegionPicker region={region} onChange={handleRegionChange} />
+          {geoLoading && geoRows.length === 0 && (
+            <div className="px-5 py-6 font-mono text-[11px] text-ink-faint animate-pulse">
+              Loading regional content…
+            </div>
+          )}
+          {geoRows.map(row =>
+            row.items.length > 0 ? (
+              <Section key={row.id} title={row.label} count={`${row.items.length}`}>
+                {row.items.map(item => (
+                  <TmdbCard key={item.tmdbId} item={item} />
+                ))}
+              </Section>
+            ) : null
+          )}
+        </>
       )}
 
       {/* Genre sections — only in "All" tab */}

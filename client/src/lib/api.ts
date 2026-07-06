@@ -54,6 +54,10 @@ export const api = {
     delete: (id: string) => fetcher(`/watchlist/${id}`, { method: 'DELETE' }),
   },
   platforms: { list: () => fetcher('/platforms') },
+  geo: {
+    detect: () => fetcher('/geo/detect'),
+    content: (region: string) => fetcher(`/geo/content?region=${encodeURIComponent(region)}`),
+  },
   showbox: {
     link: (tmdbId: string, type: 'movie' | 'tv', season?: number, episode?: number) => {
       const params = new URLSearchParams({ id: tmdbId, type });

@@ -9,6 +9,7 @@ import platformRoutes from './routes/platforms.js';
 import netmirrorRoutes from './routes/netmirror.js';
 import showboxRoutes from './routes/showbox.js';
 import configRoutes from './routes/config.js';
+import geoRoutes from './routes/geo.js';
 import { prisma } from './lib/prisma.js';
 import { getTrendingTmdb, getTmdbDetails } from './lib/tmdb.js';
 
@@ -31,6 +32,7 @@ app.use('/api/platforms', platformRoutes);
 app.use('/api/netmirror', netmirrorRoutes);
 app.use('/api/showbox', showboxRoutes);
 app.use('/api/config', configRoutes);
+app.use('/api/geo', geoRoutes);
 
 app.get('/api/health', (_req, res) => res.json({ status: 'ok' }));
 
