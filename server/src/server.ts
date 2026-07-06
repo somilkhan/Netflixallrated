@@ -85,6 +85,12 @@ async function autoSyncTmdb() {
   }
 }
 
+// Centralized error handler — catches anything passed to next(err)
+app.use((err: Error, _req: express.Request, res: express.Response, _next: express.NextFunction) => {
+  console.error('[unhandled]', err);
+  res.status(500).json({ error: err.message || 'Internal server error' });
+});
+
 // Export for Vercel serverless — only bind to a port when running directly
 export default app;
 
