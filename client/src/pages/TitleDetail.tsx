@@ -4,6 +4,7 @@ import { Play, Search, X, RefreshCw, ExternalLink } from 'lucide-react';
 import { api } from '../lib/api';
 import { useAuth } from '../lib/auth';
 import Meter from '../components/Meter';
+import { searchAnime } from '../lib/anilist';
 
 // ── Embed providers ────────────────────────────────────────────────────────────
 // These are iframe-embeddable streaming sources — they return a clean player,
@@ -75,6 +76,9 @@ export default function TitleDetail() {
   const [serverId, setServerId] = useState('vidzen');
   const [iframeKey, setIframeKey] = useState(0); // force reload on server switch
 
+  // AniList metadata (anime only)
+  const [anilistData, setAnilistData] = useState<any>(null);
+
   // Anime session state (MyAPI / AnimePahe)
   const [animeSession, setAnimeSession] = useState<string | null>(null);
   const [animeEpisodeSessions, setAnimeEpisodeSessions] = useState<Record<number, string>>({});
@@ -113,6 +117,13 @@ export default function TitleDetail() {
       .then(setEpisodes).catch(() => setEpisodes([]))
       .finally(() => setEpsLoading(false));
   }, [selectedSeason, title, id]);
+
+  // Fetch AniList metadata for ANIME titles
+  useEffect(() => {
+    if (!title || title.type !== 'ANIME') return;
+    setAnilistData(null);
+    searchAnime(title.name).then((data) => { if (data) setAnilistData(data); });
+  }, [title]);
 
   // Fetch AnimePahe session + episode sessions for ANIME titles
   useEffect(() => {
@@ -226,10 +237,12 @@ export default function TitleDetail() {
     <div className="pb-20">
       {/* Backdrop */}
       <div className="relative w-full h-[52vw] max-h-[480px] min-h-[260px] overflow-hidden">
-        {title.backdropUrl
-          ? <img src={title.backdropUrl} alt="" className="w-full h-full object-cover" />
-          : <div className="w-full h-full" style={{ background: `radial-gradient(90% 70% at 30% 0%, ${title.posterColorFrom}, ${title.posterColorTo} 70%)` }} />
-        }
+        {(() => {
+          const src = title.backdropUrl || (title.type === 'ANIME' ? anilistData?.bannerImage : null);
+          return src
+            ? <img src={src} alt="" className="w-full h-full object-cover" />
+            : <div className="w-full h-full" style={{ background: `radial-gradient(90% 70% at 30% 0%, ${title.posterColorFrom}, ${title.posterColorTo} 70%)` }} />;
+        })()}
         <div className="absolute inset-0 bg-gradient-to-b from-void/10 via-void/50 to-void" />
         <div className="absolute inset-0 bg-gradient-to-r from-void/60 to-transparent" />
       </div>
@@ -242,20 +255,45 @@ export default function TitleDetail() {
           <div
             className="w-[130px] md:w-[160px] h-[190px] md:h-[234px] rounded-xl border border-line shrink-0 bg-cover bg-center shadow-2xl"
             style={{
-              backgroundImage: title.posterUrl
-                ? `url(${title.posterUrl})`
-                : `radial-gradient(120% 100% at 30% 0%, ${title.posterColorFrom}, ${title.posterColorTo} 70%)`,
+              backgroundImage: (() => {
+                const src = title.posterUrl
+                  || (title.type === 'ANIME' ? (anilistData?.coverImage?.extraLarge || anilistData?.coverImage?.large) : null);
+                return src
+                  ? `url(${src})`
+                  : `radial-gradient(120% 100% at 30% 0%, ${title.posterColorFrom}, ${title.posterColorTo} 70%)`;
+              })(),
             }}
           />
 
           {/* Meta */}
           <div className="flex-1 space-y-3 pt-2 md:pt-16">
-            <h1 className="font-serif text-3xl md:text-4xl font-semibold leading-tight">{title.name}</h1>
+            <h1 className="font-serif text-3xl md:text-4xl font-semibold leading-tight">
+              {title.type === 'ANIME' && anilistData
+                ? (anilistData.title.english || anilistData.title.romaji)
+                : title.name}
+            </h1>
+            {title.type === 'ANIME' && anilistData?.title.romaji && anilistData.title.english && (
+              <p className="font-mono text-xs text-ink-faint">{anilistData.title.romaji}</p>
+            )}
             <div className="font-mono text-xs text-ink-dim flex flex-wrap gap-2 items-center">
-              <span>{title.year}</span>·
+              <span>{title.year || anilistData?.startDate?.year}</span>·
               <span className="uppercase">{title.type}</span>
-              {title.runtimeMinutes && <><span>·</span><span>{Math.floor(title.runtimeMinutes / 60)}h {title.runtimeMinutes % 60}m</span></>}
-              {title.genres?.length > 0 && <><span>·</span><span>{title.genres.slice(0, 3).join(', ')}</span></>}
+              {title.type === 'ANIME' && anilistData?.episodes && (
+                <><span>·</span><span>{anilistData.episodes} eps</span></>
+              )}
+              {title.type === 'ANIME' && anilistData?.averageScore && (
+                <><span>·</span>
+                <span className="bg-maroon/20 border border-maroon text-ink rounded px-1.5 py-0.5">
+                  ★ {(anilistData.averageScore / 10).toFixed(1)}
+                </span></>
+              )}
+              {title.type !== 'ANIME' && title.runtimeMinutes && (
+                <><span>·</span><span>{Math.floor(title.runtimeMinutes / 60)}h {title.runtimeMinutes % 60}m</span></>
+              )}
+              {(() => {
+                const genres = title.genres?.length > 0 ? title.genres : (anilistData?.genres || []);
+                return genres.length > 0 ? <><span>·</span><span>{genres.slice(0, 3).join(', ')}</span></> : null;
+              })()}
             </div>
 
             <div className="flex flex-wrap gap-2 pt-1">
@@ -310,7 +348,29 @@ export default function TitleDetail() {
         </div>
 
         {/* Synopsis */}
-        <p className="text-ink-dim leading-relaxed mt-6 text-[15px] max-w-2xl">{title.synopsis}</p>
+        {(() => {
+          const synopsis = title.synopsis
+            || (title.type === 'ANIME' ? anilistData?.description?.replace(/<br\s*\/?>/gi, '\n').replace(/<[^>]+>/g, '') : null);
+          return synopsis ? (
+            <p className="text-ink-dim leading-relaxed mt-6 text-[15px] max-w-2xl">{synopsis}</p>
+          ) : null;
+        })()}
+
+        {/* AniList genres + studio row */}
+        {title.type === 'ANIME' && anilistData && (
+          <div className="flex flex-wrap gap-2 mt-4">
+            {(anilistData.genres || []).map((g: string) => (
+              <span key={g} className="font-mono text-[11px] px-2 py-0.5 rounded border border-line text-ink-dim">
+                {g}
+              </span>
+            ))}
+            {anilistData.studios?.nodes?.[0]?.name && (
+              <span className="font-mono text-[11px] px-2 py-0.5 rounded border border-maroon/40 text-ink-dim">
+                {anilistData.studios.nodes[0].name}
+              </span>
+            )}
+          </div>
+        )}
 
         {/* SERIES: Season + Episode list */}
         {title.type === 'SERIES' && (
