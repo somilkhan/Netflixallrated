@@ -10,6 +10,11 @@
   @media (prefers-reduced-motion: reduce) { * { animation: none !important; transition: none !important; } }
 }
 
+/* Embla Carousel */
+.embla__viewport { overflow: hidden; }
+.embla__container { display: flex; touch-action: pan-y pinch-zoom; }
+.embla__slide { flex: 0 0 100%; min-width: 0; }
+
 @layer utilities {
   .scrollbar-hide::-webkit-scrollbar { display: none; }
   .scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
