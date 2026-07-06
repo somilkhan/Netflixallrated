@@ -23,7 +23,8 @@ router.get('/', async (req, res) => {
   const { type, genre, platform, search, page = '1', limit = '20' } = req.query;
   const skip = (parseInt(page as string) - 1) * parseInt(limit as string);
   const take = Math.min(parseInt(limit as string) || 20, 50);
-  const where: any = {};
+  const currentYear = new Date().getFullYear();
+  const where: any = { year: { lte: currentYear } }; // never serve unreleased titles
   if (type) where.type = type;
   if (genre) where.genres = { has: genre as string };
   if (search) { where.OR = [{ name: { contains: search as string, mode: 'insensitive' } }, { synopsis: { contains: search as string, mode: 'insensitive' } }]; }
@@ -39,9 +40,10 @@ router.get('/', async (req, res) => {
 });
 
 router.get('/top10', async (_req, res) => {
+  const currentYear = new Date().getFullYear();
   const titles = await prisma.title.findMany({
     take: 10,
-    where: { posterUrl: { not: null } },
+    where: { posterUrl: { not: null }, year: { lte: currentYear } },
     orderBy: [{ ratings: { _count: 'desc' } }, { year: 'desc' }],
     include: { platforms: { include: { platform: true } }, _count: { select: { ratings: true } } },
   });
@@ -64,31 +66,21 @@ router.get('/:id/episodes', async (req, res) => {
   catch (err) { res.status(502).json({ error: 'TMDB episodes failed', detail: (err as Error).message }); }
 });
 router.get('/trending', async (_req, res) => {
-  // Titles with real poster images first (TMDB-imported), then by year, then ratings
+  const currentYear = new Date().getFullYear();
   const titles = await prisma.title.findMany({
     take: 14,
+    where: { posterUrl: { not: null }, year: { lte: currentYear } },
     orderBy: [{ year: 'desc' }, { ratings: { _count: 'desc' } }],
-    where: { posterUrl: { not: null } }, // prefer titles that have real art
     include: { platforms: { include: { platform: true } }, _count: { select: { ratings: true } } },
   });
-  // If not enough with posters, backfill with any titles
-  if (titles.length < 14) {
-    const ids = new Set(titles.map(t => t.id));
-    const extra = await prisma.title.findMany({
-      take: 14 - titles.length,
-      orderBy: [{ year: 'desc' }, { ratings: { _count: 'desc' } }],
-      where: { id: { notIn: [...ids] } },
-      include: { platforms: { include: { platform: true } }, _count: { select: { ratings: true } } },
-    });
-    titles.push(...extra);
-  }
   res.json(titles);
 });
 
 router.get('/recent', async (_req, res) => {
+  const currentYear = new Date().getFullYear();
   const titles = await prisma.title.findMany({
     take: 18,
-    where: { posterUrl: { not: null } },
+    where: { posterUrl: { not: null }, year: { lte: currentYear } },
     orderBy: { createdAt: 'desc' },
     include: { platforms: { include: { platform: true } } },
   });

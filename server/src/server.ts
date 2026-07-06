@@ -38,6 +38,27 @@ app.use('/api/anicrush', anicrushRoutes);
 
 app.get('/api/health', (_req, res) => res.json({ status: 'ok' }));
 
+// ── Auto junk cleanup ──────────────────────────────────────────────────────
+// On every startup: delete unrated future-dated or posterless titles that
+// slipped in before the discover filters were tightened. Rated titles are
+// never touched. Runs silently in the background — non-blocking.
+async function autoCleanupJunk() {
+  try {
+    const currentYear = new Date().getFullYear();
+    const result = await prisma.title.deleteMany({
+      where: {
+        OR: [{ posterUrl: null }, { year: { gt: currentYear } }],
+        ratings: { none: {} },
+      },
+    });
+    if (result.count > 0) {
+      console.log(`[auto-cleanup] Removed ${result.count} unreleased/posterless titles with no ratings.`);
+    }
+  } catch (err) {
+    console.warn('[auto-cleanup] Failed (non-fatal):', (err as Error).message);
+  }
+}
+
 // ── Auto TMDB sync ─────────────────────────────────────────────────────────
 // On startup: if catalog is empty, seed with 5 pages (~100 movies) so the
 // UI isn't blank. The full catalog is populated incrementally via
@@ -66,6 +87,10 @@ async function autoSyncTmdb() {
 
 // Export for Vercel serverless — only bind to a port when running directly
 export default app;
+
+// Run cleanup on every cold start (local + Vercel) — purges unreleased junk
+// from the production DB that pre-dates the discover filters. Non-blocking.
+autoCleanupJunk();
 
 if (!process.env.VERCEL) {
   app.listen(PORT, () => {
