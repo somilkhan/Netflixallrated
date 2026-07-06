@@ -2,6 +2,8 @@
  * HeroCarousel — Embla-powered full-bleed hero carousel.
  * Each slide carries its own background (trailer iframe or backdrop image).
  * Content overlay reads from the selected index tracked via emblaApi.
+ *
+ * Play Now → always navigates to /title/:id (title detail page has the full player).
  */
 import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
@@ -10,14 +12,6 @@ import useEmblaCarousel from 'embla-carousel-react';
 import Autoplay from 'embla-carousel-autoplay';
 
 const AUTO_ADVANCE_MS = 10000;
-
-function getEmbedSrc(title: any): string | null {
-  if (!title?.tmdbId) return null;
-  if (title.type === 'MOVIE') return `https://vidsrc.to/embed/movie/${title.tmdbId}`;
-  if (title.type === 'SERIES') return `https://vidsrc.to/embed/tv/${title.tmdbId}/1/1`;
-  if (title.type === 'ANIME') return `https://vidsrc.to/embed/movie/${title.tmdbId}`;
-  return null;
-}
 
 function TrailerBg({ youtubeId }: { youtubeId: string }) {
   return (
@@ -57,7 +51,6 @@ export default function HeroCarousel({ titles }: { titles: any[] }) {
   const [emblaRef, emblaApi] = useEmblaCarousel({ loop: true, duration: 20 }, [autoplay]);
   const [selectedIdx, setSelectedIdx] = useState(0);
   const [progress, setProgress] = useState(0);
-  const [showPlayer, setShowPlayer] = useState(false);
   const progressRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   // Sync selected index from Embla
@@ -65,7 +58,6 @@ export default function HeroCarousel({ titles }: { titles: any[] }) {
     if (!emblaApi) return;
     setSelectedIdx(emblaApi.selectedScrollSnap());
     setProgress(0);
-    setShowPlayer(false);
   }, [emblaApi]);
 
   useEffect(() => {
@@ -90,7 +82,6 @@ export default function HeroCarousel({ titles }: { titles: any[] }) {
   if (!titles.length) return null;
 
   const title = titles[selectedIdx];
-  const embedSrc = getEmbedSrc(title);
 
   return (
     <section className="relative h-[70vh] min-h-[500px] max-h-[80vh] border-b border-line overflow-hidden">
@@ -143,21 +134,13 @@ export default function HeroCarousel({ titles }: { titles: any[] }) {
           </div>
 
           <div className="flex gap-2.5 animate-fadeUp" style={{ animationDelay: '0.3s' }}>
-            {embedSrc ? (
-              <button
-                onClick={() => setShowPlayer(true)}
-                className="flex items-center gap-2 bg-ink text-void font-semibold text-[13.5px] px-5 py-3 rounded-lg active:scale-[0.97] transition-transform shadow-lg"
-              >
-                <Play size={13} fill="currentColor" /> Play Now
-              </button>
-            ) : (
-              <button
-                onClick={() => nav(`/title/${title.id}`)}
-                className="flex items-center gap-2 bg-ink text-void font-semibold text-[13.5px] px-5 py-3 rounded-lg active:scale-[0.97] transition-transform"
-              >
-                <Play size={13} fill="currentColor" /> Play
-              </button>
-            )}
+            {/* Play Now — always goes to title detail page (full player, all sources) */}
+            <button
+              onClick={() => nav(`/title/${title.id}`)}
+              className="flex items-center gap-2 bg-ink text-void font-semibold text-[13.5px] px-5 py-3 rounded-lg active:scale-[0.97] transition-transform shadow-lg"
+            >
+              <Play size={13} fill="currentColor" /> Play Now
+            </button>
             <button
               onClick={() => nav(`/title/${title.id}`)}
               className="flex items-center gap-2 bg-surface/80 backdrop-blur-sm text-ink font-semibold text-[13.5px] px-5 py-3 rounded-lg border border-line-bright hover:bg-surface transition-colors"
@@ -195,37 +178,6 @@ export default function HeroCarousel({ titles }: { titles: any[] }) {
           )}
         </div>
       </div>
-
-      {/* StreamRip player overlay */}
-      {showPlayer && embedSrc && (
-        <div className="fixed inset-0 z-50 bg-void/95 backdrop-blur-sm flex flex-col">
-          <div className="flex items-center justify-between px-5 py-4 border-b border-line shrink-0">
-            <div>
-              <p className="font-serif text-lg font-semibold">{title.name}</p>
-              <p className="text-xs text-ink-dim font-mono">{title.year} · {title.type}</p>
-            </div>
-            <div className="flex gap-2">
-              <button onClick={() => nav(`/title/${title.id}`)} className="text-xs text-ink-dim border border-line rounded-lg px-3 py-1.5 hover:text-ink transition-colors">
-                More info
-              </button>
-              <button onClick={() => setShowPlayer(false)} className="text-xs text-ink-dim border border-line rounded-lg px-3 py-1.5 hover:text-ink transition-colors">
-                ✕ Close
-              </button>
-            </div>
-          </div>
-          <div className="flex-1 min-h-0 overflow-hidden bg-black flex items-center justify-center">
-            <div className="relative player-ratio w-full overflow-hidden">
-              <iframe
-                src={embedSrc}
-                className="absolute inset-0 w-full h-full border-0"
-                allowFullScreen
-                allow="autoplay; encrypted-media; fullscreen; picture-in-picture"
-                title={title.name}
-              />
-            </div>
-          </div>
-        </div>
-      )}
     </section>
   );
 }

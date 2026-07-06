@@ -107,9 +107,12 @@ export default function Home() {
   // Map display tab names → DB enum values
   const TAB_TYPE: Record<string, string> = { Movies: 'MOVIE', Series: 'SERIES', Anime: 'ANIME' };
 
+  // Filter by active tab AND deduplicate by id so React never sees duplicate keys
   const filter = (list: any[]) => {
     const type = TAB_TYPE[activeTab];
-    return type ? list.filter(t => t.type === type) : list;
+    const filtered = type ? list.filter(t => t.type === type) : list;
+    const seen = new Set<string>();
+    return filtered.filter(t => { if (seen.has(t.id)) return false; seen.add(t.id); return true; });
   };
 
   const heroTitles = (top10.length ? top10 : trending).slice(0, 10);

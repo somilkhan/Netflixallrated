@@ -1,4 +1,6 @@
-/** Card for raw TMDB items (geo rows). Not in our DB so no navigation. */
+/** Card for raw TMDB items (geo rows). Tapping searches our catalog for the title. */
+import { useNavigate } from 'react-router-dom';
+
 export interface TmdbItem {
   tmdbId: number;
   mediaType: 'movie' | 'tv';
@@ -9,10 +11,16 @@ export interface TmdbItem {
 }
 
 export default function TmdbCard({ item }: { item: TmdbItem }) {
+  const nav = useNavigate();
+  const typeFilter = item.mediaType === 'movie' ? 'MOVIE' : 'SERIES';
+
   return (
-    <div className="shrink-0 w-[142px] md:w-[172px] scroll-snap-start group">
+    <div
+      className="shrink-0 w-[142px] md:w-[172px] scroll-snap-start group cursor-pointer"
+      onClick={() => nav(`/search?q=${encodeURIComponent(item.name)}&type=${typeFilter}`)}
+    >
       <div
-        className="relative w-[142px] md:w-[172px] h-[200px] md:h-[246px] rounded-[11px] border border-line overflow-hidden flex flex-col justify-end p-2 bg-cover bg-center transition-all duration-200 group-hover:border-maroon group-hover:-translate-y-1 group-hover:shadow-[0_16px_32px_-12px_rgba(0,0,0,0.6),0_0_0_1px_#7A2530]"
+        className="relative w-full poster-ratio rounded-[11px] border border-line overflow-hidden flex flex-col justify-end p-2 bg-cover bg-center transition-all duration-200 group-hover:border-maroon group-hover:-translate-y-1 group-hover:shadow-[0_16px_32px_-12px_rgba(0,0,0,0.6),0_0_0_1px_#7A2530]"
         style={{
           backgroundImage: item.posterUrl
             ? `linear-gradient(to bottom, rgba(0,0,0,0.05), rgba(0,0,0,0.65)), url(${item.posterUrl})`
