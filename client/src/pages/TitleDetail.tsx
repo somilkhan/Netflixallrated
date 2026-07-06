@@ -316,9 +316,19 @@ export default function TitleDetail() {
         <div style={{ width: 36 }} />
       </header>
 
-      {/* ── Hero — backdrop only ─────────────────────────────────── */}
+      {/* ── Hero — trailer or backdrop ───────────────────────────── */}
       <div className="hero">
-        <div className="hero-bg" style={heroBgStyle} />
+        {title.trailerYoutubeId ? (
+          <iframe
+            className="hero-trailer"
+            src={`https://www.youtube.com/embed/${title.trailerYoutubeId}?autoplay=1&mute=1&loop=1&playlist=${title.trailerYoutubeId}&controls=0&showinfo=0&rel=0&iv_load_policy=3&modestbranding=1&playsinline=1`}
+            allow="autoplay; encrypted-media"
+            allowFullScreen={false}
+            title="Trailer"
+          />
+        ) : (
+          <div className="hero-bg" style={heroBgStyle} />
+        )}
         <div className="hero-gradient" />
         <div className="hero-noise" />
         {/* Play button on hero only for ANIME (async embed fetch) */}
