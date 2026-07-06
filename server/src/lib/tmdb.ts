@@ -247,7 +247,14 @@ async function fetchMultiPage(
   const pages_data = await Promise.all(requests);
   return pages_data
     .flatMap(p => p.results || [])
-    .filter((r: any) => r.poster_path && (r.vote_count ?? 0) >= 50);
+    .filter((r: any) => {
+      if (!r.poster_path) return false;
+      if ((r.vote_count ?? 0) < 50) return false;
+      // Exclude unreleased entries regardless of endpoint support for date params
+      const releaseDate = r.release_date || r.first_air_date;
+      if (!releaseDate || releaseDate > today) return false;
+      return true;
+    });
 }
 
 /**
