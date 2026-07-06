@@ -9,14 +9,13 @@ import { Play, Info, ChevronLeft, ChevronRight } from 'lucide-react';
 import useEmblaCarousel from 'embla-carousel-react';
 import Autoplay from 'embla-carousel-autoplay';
 
-const STREAMRIP = 'https://streamrip-website-production.up.railway.app';
 const AUTO_ADVANCE_MS = 10000;
 
 function getEmbedSrc(title: any): string | null {
   if (!title?.tmdbId) return null;
-  if (title.type === 'MOVIE') return `${STREAMRIP}/movie/${title.tmdbId}`;
-  if (title.type === 'SERIES') return `${STREAMRIP}/tv/${title.tmdbId}/1/1`;
-  if (title.type === 'ANIME') return `${STREAMRIP}/anime/${title.tmdbId}/1`;
+  if (title.type === 'MOVIE') return `https://vidsrc.to/embed/movie/${title.tmdbId}`;
+  if (title.type === 'SERIES') return `https://vidsrc.to/embed/tv/${title.tmdbId}/1/1`;
+  if (title.type === 'ANIME') return `https://vidsrc.to/embed/movie/${title.tmdbId}`;
   return null;
 }
 

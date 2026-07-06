@@ -17,22 +17,28 @@ export interface Server {
 
 export const SERVERS: Server[] = [
   {
-    id: 'vidzen',
-    label: 'VidZen',
+    id: 'vidsrc',
+    label: 'VidSrc',
     getUrl: (id, type, s, e) =>
-      type === 'MOVIE' ? `https://vidzen.fun/movie/${id}` : `https://vidzen.fun/tv/${id}/${s}/${e}`,
+      type === 'MOVIE'
+        ? `https://vidsrc.to/embed/movie/${id}`
+        : `https://vidsrc.to/embed/tv/${id}/${s}/${e}`,
   },
   {
-    id: 'vidcore',
-    label: 'VidCore',
+    id: 'vidsrc2',
+    label: 'VidSrc2',
     getUrl: (id, type, s, e) =>
-      type === 'MOVIE' ? `https://vidcore.net/movie/${id}` : `https://vidcore.net/tv/${id}/${s}/${e}`,
+      type === 'MOVIE'
+        ? `https://vidsrc.xyz/embed/movie?tmdb=${id}`
+        : `https://vidsrc.xyz/embed/tv?tmdb=${id}&season=${s}&episode=${e}`,
   },
   {
-    id: 'filmu',
-    label: 'FilmU',
+    id: '2embed',
+    label: '2Embed',
     getUrl: (id, type, s, e) =>
-      type === 'MOVIE' ? `https://embed.filmu.in/movie/${id}` : `https://embed.filmu.in/tv/${id}/${s}/${e}`,
+      type === 'MOVIE'
+        ? `https://www.2embed.cc/embed/${id}`
+        : `https://www.2embed.cc/embedtv/${id}&s=${s}&e=${e}`,
   },
 ];
 

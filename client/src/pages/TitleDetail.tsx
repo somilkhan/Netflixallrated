@@ -22,7 +22,7 @@ export default function TitleDetail() {
 
   // Player
   const [playerOpen, setPlayerOpen] = useState(false);
-  const [serverId, setServerId] = useState('vidzen');
+  const [serverId, setServerId] = useState('vidsrc');
   const [iframeKey, setIframeKey] = useState(0);
 
   // AniList metadata (anime only)
