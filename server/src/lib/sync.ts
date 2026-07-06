@@ -158,7 +158,7 @@ export async function syncTmdbCatalog(opts: SyncOptions = {}): Promise<SyncResul
     let pageInserted = 0, pageSkipped = 0, pageFailed = 0;
 
     for (const item of pageData.results) {
-      if (!item.id) { pageFailed++; continue; }
+      if (!item.id || !item.poster_path) { pageFailed++; continue; }
 
       const genres = (item.genre_ids || [])
         .map((id: number) => genreMap.get(id))

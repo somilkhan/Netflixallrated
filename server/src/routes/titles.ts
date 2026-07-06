@@ -41,6 +41,7 @@ router.get('/', async (req, res) => {
 router.get('/top10', async (_req, res) => {
   const titles = await prisma.title.findMany({
     take: 10,
+    where: { posterUrl: { not: null } },
     orderBy: [{ ratings: { _count: 'desc' } }, { year: 'desc' }],
     include: { platforms: { include: { platform: true } }, _count: { select: { ratings: true } } },
   });
@@ -87,6 +88,7 @@ router.get('/trending', async (_req, res) => {
 router.get('/recent', async (_req, res) => {
   const titles = await prisma.title.findMany({
     take: 18,
+    where: { posterUrl: { not: null } },
     orderBy: { createdAt: 'desc' },
     include: { platforms: { include: { platform: true } } },
   });
@@ -340,6 +342,30 @@ router.post('/backfill-images', authenticate, requireAdmin, async (_req: AuthReq
   }
 
   res.json({ total: missing.length, updated, failed, errors: errors.slice(0, 30) });
+});
+
+/**
+ * POST /api/titles/cleanup-junk
+ * Deletes unreleased/posterless titles that have no ratings (protects real user data).
+ * Run once after deploying the discover-filter fix to clear out stale junk.
+ * Admin only.
+ */
+router.post('/cleanup-junk', authenticate, requireAdmin, async (_req: AuthRequest, res) => {
+  const currentYear = new Date().getFullYear();
+  const junk = await prisma.title.findMany({
+    where: {
+      OR: [{ posterUrl: null }, { year: { gt: currentYear } }],
+      ratings: { none: {} },
+    },
+    select: { id: true, name: true, year: true },
+  });
+  const result = await prisma.title.deleteMany({
+    where: { id: { in: junk.map(j => j.id) } },
+  });
+  res.json({
+    deletedCount: result.count,
+    deletedTitles: junk.map(j => `${j.name} (${j.year})`),
+  });
 });
 
 router.get('/:id', async (req, res) => {

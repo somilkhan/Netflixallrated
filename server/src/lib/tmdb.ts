@@ -175,17 +175,20 @@ export async function discoverMoviesPage(
   page: number,
   extraParams: Record<string, string> = {},
 ): Promise<DiscoverPage> {
+  const today = new Date().toISOString().slice(0, 10);
   const data = await tmdbFetch('/discover/movie', {
     sort_by: 'popularity.desc',
     include_adult: 'false',
+    'primary_release_date.lte': today,  // exclude unreleased / announced films
+    'vote_count.gte': '50',             // exclude low-signal / placeholder entries
     page: String(page),
-    ...extraParams,
+    ...extraParams,                     // callers can still override any of the above
   });
   return {
     page: data.page ?? page,
     totalPages: Math.min(data.total_pages ?? 1, 500), // TMDB hard-caps at 500
     totalResults: data.total_results ?? 0,
-    results: data.results || [],
+    results: (data.results || []).filter((r: any) => r.poster_path), // drop posterless junk
   };
 }
 
@@ -201,7 +204,9 @@ export interface TmdbRegionItem {
   genres: number[]; // raw genre IDs — no extra round-trip needed for display
 }
 
-function normRegionItem(r: any, mediaType: 'movie' | 'tv'): TmdbRegionItem {
+/** Returns null for items without a poster (caller must filter). */
+function normRegionItem(r: any, mediaType: 'movie' | 'tv'): TmdbRegionItem | null {
+  if (!r.poster_path) return null;
   return {
     tmdbId: r.id,
     mediaType,
@@ -215,17 +220,23 @@ function normRegionItem(r: any, mediaType: 'movie' | 'tv'): TmdbRegionItem {
   };
 }
 
-/** Fetch multiple pages in parallel and flatten results. */
+/** Fetch multiple pages in parallel, flatten, and drop posterless entries. */
 async function fetchMultiPage(
   path: string,
   extraParams: Record<string, string> = {},
   pages = 3,
 ): Promise<any[]> {
   assertConfigured();
+  const today = new Date().toISOString().slice(0, 10);
+  const defaultParams: Record<string, string> = {
+    'primary_release_date.lte': today,
+    'vote_count.gte': '50',
+  };
   const requests = Array.from({ length: pages }, (_, i) => {
     const qs = new URLSearchParams({
       api_key: TMDB_API_KEY!,
       page: String(i + 1),
+      ...defaultParams,
       ...extraParams,
     });
     return fetch(`${TMDB_BASE}${path}?${qs.toString()}`).then(res => {
@@ -234,7 +245,9 @@ async function fetchMultiPage(
     });
   });
   const pages_data = await Promise.all(requests);
-  return pages_data.flatMap(p => p.results || []);
+  return pages_data
+    .flatMap(p => p.results || [])
+    .filter((r: any) => r.poster_path && (r.vote_count ?? 0) >= 50);
 }
 
 /**
@@ -243,7 +256,9 @@ async function fetchMultiPage(
  */
 export async function trendingInRegion(region = 'IN'): Promise<TmdbRegionItem[]> {
   const results = await fetchMultiPage('/movie/popular', { region });
-  return results.map(r => normRegionItem(r, 'movie'));
+  return results
+    .map(r => normRegionItem(r, 'movie'))
+    .filter((r): r is TmdbRegionItem => r !== null);
 }
 
 export async function popularOnOTT(region = 'IN'): Promise<TmdbRegionItem[]> {
@@ -253,7 +268,9 @@ export async function popularOnOTT(region = 'IN'): Promise<TmdbRegionItem[]> {
     with_watch_monetization_types: 'flatrate',
     sort_by: 'popularity.desc',
   });
-  return results.map(r => normRegionItem(r, 'movie'));
+  return results
+    .map(r => normRegionItem(r, 'movie'))
+    .filter((r): r is TmdbRegionItem => r !== null);
 }
 
 export async function discoverByLanguage(language: string, region = 'IN'): Promise<TmdbRegionItem[]> {
@@ -262,7 +279,9 @@ export async function discoverByLanguage(language: string, region = 'IN'): Promi
     region,
     sort_by: 'popularity.desc',
   });
-  return results.map(r => normRegionItem(r, 'movie'));
+  return results
+    .map(r => normRegionItem(r, 'movie'))
+    .filter((r): r is TmdbRegionItem => r !== null);
 }
 
 // ── Full details (admin import) ───────────────────────────────────────────
