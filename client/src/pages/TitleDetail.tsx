@@ -2,7 +2,6 @@ import { useState, useEffect, useCallback, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { api } from '../lib/api';
 import { useAuth } from '../lib/auth';
-import Meter from '../components/Meter';
 import { searchAnime } from '../lib/anilist';
 import { SERVERS } from '../components/VideoPlayer';
 import '@/styles/MovieDetailPage.css';

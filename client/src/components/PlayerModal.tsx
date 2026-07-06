@@ -58,7 +58,6 @@ export default function PlayerModal({
 
   if (!isOpen || !title) return null;
 
-  const isMovie = title.type === 'MOVIE';
   const isAnime = title.type === 'ANIME';
   const isSeries = title.type === 'SERIES';
 
