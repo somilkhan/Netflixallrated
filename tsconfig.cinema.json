@@ -1,0 +1,23 @@
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "module": "ESNext",
+    "moduleResolution": "bundler",
+    "lib": ["ES2022", "DOM"],
+    "strict": true,
+    "skipLibCheck": true,
+    "noEmit": true,
+    "esModuleInterop": true,
+    "allowSyntheticDefaultImports": true,
+    "resolveJsonModule": true,
+    "typeRoots": ["./server/node_modules/@types"],
+    "types": ["node"]
+  },
+  "include": [
+    "middleware.ts",
+    "lib/geo.ts",
+    "lib/tmdb.ts",
+    "lib/regionConfig.ts",
+    "types/next-server.d.ts"
+  ]
+}
