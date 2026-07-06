@@ -120,3 +120,4 @@ npm run db:seed   # seeds 63 titles, 10 platforms (no admin user — handled by 
 - Do not restructure or migrate the stack
 - Supabase Auth for cross-device login
 - Neon DB for production (Vercel)
+- After every clean build, commit and push to GitHub automatically
