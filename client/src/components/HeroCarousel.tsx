@@ -3,13 +3,15 @@
  * Each slide carries its own background (trailer iframe or backdrop image).
  * Content overlay reads from the selected index tracked via emblaApi.
  */
-import { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Play, Info, ChevronLeft, ChevronRight } from 'lucide-react';
 import useEmblaCarousel from 'embla-carousel-react';
+import Autoplay from 'embla-carousel-autoplay';
 
 const STREAMRIP = 'https://streamrip-website-production.up.railway.app';
 const AUTO_ADVANCE_MS = 10000;
+const autoplay = Autoplay({ delay: AUTO_ADVANCE_MS, stopOnInteraction: false });
 
 function getEmbedSrc(title: any): string | null {
   if (!title?.tmdbId) return null;
@@ -53,11 +55,10 @@ function ImageBg({ backdropUrl, colorFrom, colorTo }: { backdropUrl?: string; co
 
 export default function HeroCarousel({ titles }: { titles: any[] }) {
   const nav = useNavigate();
-  const [emblaRef, emblaApi] = useEmblaCarousel({ loop: true, duration: 20 });
+  const [emblaRef, emblaApi] = useEmblaCarousel({ loop: true, duration: 20 }, [autoplay]);
   const [selectedIdx, setSelectedIdx] = useState(0);
   const [progress, setProgress] = useState(0);
   const [showPlayer, setShowPlayer] = useState(false);
-  const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const progressRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   // Sync selected index from Embla
@@ -74,21 +75,14 @@ export default function HeroCarousel({ titles }: { titles: any[] }) {
     return () => { emblaApi.off('select', onSelect); };
   }, [emblaApi, onSelect]);
 
-  // Auto-advance + progress bar
+  // Progress bar tied to autoplay delay
   useEffect(() => {
-    if (!emblaApi || !titles.length) return;
-    if (timerRef.current) clearInterval(timerRef.current);
+    if (!titles.length) return;
     if (progressRef.current) clearInterval(progressRef.current);
-
-    timerRef.current = setInterval(() => emblaApi.scrollNext(), AUTO_ADVANCE_MS);
     const step = 100 / (AUTO_ADVANCE_MS / 50);
     progressRef.current = setInterval(() => setProgress(p => Math.min(p + step, 100)), 50);
-
-    return () => {
-      if (timerRef.current) clearInterval(timerRef.current);
-      if (progressRef.current) clearInterval(progressRef.current);
-    };
-  }, [emblaApi, selectedIdx, titles.length]);
+    return () => { if (progressRef.current) clearInterval(progressRef.current); };
+  }, [selectedIdx, titles.length]);
 
   const scrollPrev = useCallback(() => emblaApi?.scrollPrev(), [emblaApi]);
   const scrollNext = useCallback(() => emblaApi?.scrollNext(), [emblaApi]);
