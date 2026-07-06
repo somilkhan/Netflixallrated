@@ -57,6 +57,37 @@ router.get('/:id/episodes', async (req, res) => {
 router.get('/trending', async (_req, res) => { const titles = await prisma.title.findMany({ take: 14, orderBy: { year: 'desc' }, include: { platforms: { include: { platform: true } } } }); res.json(titles); });
 router.get('/recent', async (_req, res) => { const titles = await prisma.title.findMany({ take: 18, orderBy: { createdAt: 'desc' }, include: { platforms: { include: { platform: true } } } }); res.json(titles); });
 
+// --- Public live search (DB + optional TMDB fallback) -------------------
+router.get('/live-search', async (req, res) => {
+  const q = (req.query.q as string || '').trim();
+  if (!q || q.length < 2) return res.json({ local: [], tmdb: [] });
+
+  try {
+    // Local DB search
+    const dbResults = await prisma.title.findMany({
+      where: { OR: [{ name: { contains: q, mode: 'insensitive' } }, { synopsis: { contains: q, mode: 'insensitive' } }] },
+      take: 20,
+      include: { platforms: { include: { platform: true } } },
+    });
+
+    // TMDB live search (only if key is configured)
+    let tmdbResults: any[] = [];
+    if (process.env.TMDB_API_KEY) {
+      try {
+        const raw = await searchTmdb(q);
+        const localTmdbIds = new Set(dbResults.map((t) => t.tmdbId).filter(Boolean));
+        tmdbResults = raw
+          .filter((r) => !localTmdbIds.has(r.tmdbId))
+          .slice(0, 12);
+      } catch { /* TMDB unavailable — still return local */ }
+    }
+
+    res.json({ local: dbResults, tmdb: tmdbResults });
+  } catch (err) {
+    res.status(500).json({ error: 'Search failed', detail: (err as Error).message });
+  }
+});
+
 // --- TMDB catalog lookup (admin only) -----------------------------------
 router.get('/tmdb-search', authenticate, requireAdmin, async (req: AuthRequest, res) => {
   const q = (req.query.q as string || '').trim();

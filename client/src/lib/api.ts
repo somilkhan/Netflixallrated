@@ -37,6 +37,7 @@ export const api = {
     rate: (id: string, data: { tier: string; reviewText?: string }) =>
       fetcher(`/titles/${id}/ratings`, { method: 'POST', body: JSON.stringify(data) }),
     ratings: (id: string) => fetcher(`/titles/${id}/ratings`),
+    liveSearch: (q: string) => fetcher(`/titles/live-search?q=${encodeURIComponent(q)}`),
     tmdbSearch: (q: string) => fetcher(`/titles/tmdb-search?q=${encodeURIComponent(q)}`),
     importTmdb: (data: { tmdbId: number; mediaType: 'movie' | 'tv'; type: string }) =>
       fetcher('/titles/import-tmdb', { method: 'POST', body: JSON.stringify(data) }),

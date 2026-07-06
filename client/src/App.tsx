@@ -9,6 +9,8 @@ import Watchlist from './pages/Watchlist';
 import Login from './pages/Login';
 import Register from './pages/Register';
 import Admin from './pages/Admin';
+import TV from './pages/TV';
+import Anime from './pages/Anime';
 
 export default function App() {
   return (
@@ -23,6 +25,8 @@ export default function App() {
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
           <Route path="/admin" element={<Admin />} />
+          <Route path="/tv" element={<TV />} />
+          <Route path="/anime" element={<Anime />} />
         </Routes>
         <BottomNav />
       </div>
