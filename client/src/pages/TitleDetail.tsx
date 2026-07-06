@@ -1,3 +1,4 @@
+import CustomPlayer from '../components/CustomPlayer';
 import { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 import { api } from '../lib/api';
