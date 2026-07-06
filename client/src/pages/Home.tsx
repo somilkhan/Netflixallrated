@@ -52,19 +52,20 @@ export default function Home() {
     });
   }, []);
 
+  // Map display tab names → DB enum values
+  const TAB_TYPE: Record<string, string> = { Movies: 'MOVIE', Series: 'SERIES', Anime: 'ANIME' };
+
   const filter = (list: any[]) => {
-    if (activeTab === 'All') return list;
-    if (activeTab === 'Movies') return list.filter(t => t.type === 'MOVIE');
-    if (activeTab === 'Series') return list.filter(t => t.type === 'SERIES');
-    if (activeTab === 'Anime') return list.filter(t => t.type === 'ANIME');
-    return list;
+    const type = TAB_TYPE[activeTab];
+    return type ? list.filter(t => t.type === type) : list;
   };
 
   const heroTitles = (top10.length ? top10 : trending).slice(0, 10);
 
-  // Sections to show based on active tab
   const showGenre = activeTab === 'All';
-  const typeSpecificItems = activeTab === 'Movies' ? movies : activeTab === 'Series' ? series : activeTab === 'Anime' ? anime : [];
+  const typeSpecificItems = TAB_TYPE[activeTab]
+    ? (activeTab === 'Movies' ? movies : activeTab === 'Series' ? series : anime)
+    : [];
 
   return (
     <div>
@@ -74,7 +75,7 @@ export default function Home() {
 
       {/* Top 10 — shown always, filtered by tab */}
       {filter(top10).length > 0 && (
-        <Section title="Top 10 Today" count={`${filter(top10).length} titles`} viewAllPath={`/search?q=&type=${activeTab === 'All' ? '' : activeTab.toUpperCase()}`}>
+        <Section title="Top 10 Today" count={`${filter(top10).length} titles`} viewAllPath={`/search?q=&type=${TAB_TYPE[activeTab] ?? ''}`}>
           {filter(top10).map((t, i) => <Card key={t.id} title={t} rank={i + 1} />)}
         </Section>
       )}
@@ -84,7 +85,7 @@ export default function Home() {
         <Section
           title={activeTab === 'Movies' ? 'All Movies' : activeTab === 'Series' ? 'TV Shows' : 'Anime'}
           count={`${typeSpecificItems.length}`}
-          viewAllPath={`/search?q=&type=${activeTab === 'MOVIES' ? 'MOVIE' : activeTab === 'Series' ? 'SERIES' : 'ANIME'}`}
+          viewAllPath={`/search?q=&type=${TAB_TYPE[activeTab]}`}
         >
           {typeSpecificItems.map(t => <Card key={t.id} title={t} />)}
         </Section>

@@ -9,7 +9,7 @@ const GENRES = ['Action', 'Drama', 'Comedy', 'Sci-Fi', 'Thriller', 'Horror', 'Ro
   'Animation', 'Crime', 'Mystery', 'Fantasy', 'Adventure', 'Documentary', 'Family'];
 
 function TmdbCard({ item, onImported }: { item: any; onImported?: () => void }) {
-  const [status, setStatus] = useState<'idle' | 'importing' | 'done' | 'exists'>('idle');
+  const [status, setStatus] = useState<'idle' | 'importing' | 'done' | 'exists' | 'noauth'>('idle');
   const nav = useNavigate();
 
   const handleImport = async () => {
@@ -25,6 +25,7 @@ function TmdbCard({ item, onImported }: { item: any; onImported?: () => void }) 
       nav(`/title/${result.id}`);
     } catch (e: any) {
       if (e.message?.includes('Already imported')) setStatus('exists');
+      else if (e.message?.includes('401') || e.message?.includes('403') || e.message?.includes('Unauthorized') || e.message?.includes('Forbidden')) setStatus('noauth');
       else setStatus('idle');
     }
   };
@@ -55,6 +56,11 @@ function TmdbCard({ item, onImported }: { item: any; onImported?: () => void }) 
             <span className="text-[11px] font-mono text-maroon-bright">Added ✓</span>
           </div>
         )}
+        {status === 'noauth' && (
+          <div className="absolute inset-0 bg-void/80 flex items-center justify-center p-2">
+            <span className="text-[10px] font-mono text-ink-dim text-center leading-snug">Admin only</span>
+          </div>
+        )}
       </div>
       <div className="mt-2.5 text-[13.5px] font-semibold truncate">{item.name}</div>
       <div className="font-mono text-[10.5px] text-ink-faint">{item.year ?? '—'} · {item.mediaType === 'movie' ? 'Movie' : 'Series'}</div>
@@ -67,7 +73,7 @@ export default function SearchResults() {
   const nav = useNavigate();
   const q = params.get('q') || '';
   const [query, setQuery] = useState(q);
-  const [filters, setFilters] = useState({ type: params.get('type') || '', genre: '' });
+  const [filters, setFilters] = useState({ type: params.get('type') || '', genre: params.get('genre') || '' });
   const [localResults, setLocalResults] = useState<any[]>([]);
   const [tmdbResults, setTmdbResults] = useState<any[]>([]);
   const [anilistResult, setAnilistResult] = useState<any>(null);
@@ -91,7 +97,12 @@ export default function SearchResults() {
       if (filters.type) local = local.filter((t: any) => t.type === filters.type);
       if (filters.genre) local = local.filter((t: any) => t.genres?.includes(filters.genre));
       setLocalResults(local);
-      setTmdbResults(live.tmdb || []);
+      // Filter TMDB results by type and suppress when Anime is selected
+      let tmdb: any[] = live.tmdb || [];
+      if (filters.type === 'ANIME') tmdb = [];
+      else if (filters.type === 'MOVIE') tmdb = tmdb.filter((r: any) => r.mediaType === 'movie');
+      else if (filters.type === 'SERIES') tmdb = tmdb.filter((r: any) => r.mediaType === 'tv');
+      setTmdbResults(tmdb);
       setLoading(false);
     });
   }, [q, filters, tmdbKey]);
@@ -102,9 +113,17 @@ export default function SearchResults() {
     searchAnime(q).then((data) => { setAnilistResult(data); });
   }, [q, filters.type]);
 
+  const buildSearchUrl = (q: string, type: string, genre: string) => {
+    const p = new URLSearchParams();
+    if (q) p.set('q', q);
+    if (type) p.set('type', type);
+    if (genre) p.set('genre', genre);
+    return `/search?${p.toString()}`;
+  };
+
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
-    if (query.trim()) nav(`/search?q=${encodeURIComponent(query.trim())}&type=${filters.type}`);
+    if (query.trim()) nav(buildSearchUrl(query.trim(), filters.type, filters.genre));
   };
 
   const handleQueryChange = (val: string) => {
@@ -112,7 +131,7 @@ export default function SearchResults() {
     if (debounceRef.current) clearTimeout(debounceRef.current);
     if (val.trim().length > 1) {
       debounceRef.current = setTimeout(() => {
-        nav(`/search?q=${encodeURIComponent(val.trim())}&type=${filters.type}`, { replace: true });
+        nav(buildSearchUrl(val.trim(), filters.type, filters.genre), { replace: true });
       }, 400);
     }
   };

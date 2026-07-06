@@ -44,10 +44,10 @@ export default function Anime() {
     if (!searchQuery.trim()) return;
     setSearchLoading(true);
     setSearchResult(null);
-    searchAnime(searchQuery.trim()).then(result => {
-      setSearchResult(result);
-      setSearchLoading(false);
-    });
+    searchAnime(searchQuery.trim())
+      .then(result => { setSearchResult(result); })
+      .catch(() => { setSearchResult(null); })
+      .finally(() => { setSearchLoading(false); });
   };
 
   return (

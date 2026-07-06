@@ -1,5 +1,4 @@
-import { PrismaClient, TitleType, Role } from '@prisma/client';
-import bcrypt from 'bcryptjs';
+import { PrismaClient, TitleType } from '@prisma/client';
 import 'dotenv/config';
 const prisma = new PrismaClient();
 const platforms = [
@@ -80,23 +79,6 @@ const titles = [
     { name: 'Demon Slayer: Hashira Training Arc', type: TitleType.ANIME, year: 2024, runtimeMinutes: 24, genres: ['Animation', 'Action', 'Adventure'], synopsis: 'Tanjiro undergoes rigorous training with the Hashira to prepare for the final battle against Muzan Kibutsuji.', posterColorFrom: '#201008', posterColorTo: '#0c0604', trailerYoutubeId: '3t4u5v6w7x8', platforms: ['CR'] },
 ];
 async function main() {
-    // Seed a real admin account so the Admin panel (and TMDB import) is usable
-    // right after `npm run db:seed`. Change this password before deploying.
-    const adminEmail = process.env.ADMIN_EMAIL || 'admin@allrated.local';
-    const adminPassword = process.env.ADMIN_PASSWORD;
-    if (!adminPassword) {
-        console.error('ERROR: ADMIN_PASSWORD env var is required to seed the admin account. Set it and re-run.');
-        process.exit(1);
-    }
-    const existingAdmin = await prisma.user.findUnique({ where: { email: adminEmail } });
-    if (!existingAdmin) {
-        const passwordHash = await bcrypt.hash(adminPassword, 12);
-        await prisma.user.create({ data: { email: adminEmail, passwordHash, displayName: 'Admin', role: Role.ADMIN } });
-        console.log(`Seeded admin user: ${adminEmail}`);
-    }
-    else {
-        console.log(`Admin user ${adminEmail} already exists — skipping.`);
-    }
     for (const p of platforms) {
         await prisma.platform.upsert({ where: { abbr: p.abbr }, update: {}, create: p });
     }

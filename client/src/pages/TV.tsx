@@ -16,7 +16,9 @@ export default function TV() {
   useEffect(() => {
     setLoading(true);
     api.titles.list({ type: 'SERIES', limit: '50', ...(selectedGenre ? { genre: selectedGenre } : {}) })
-      .then(d => { setAll(d.titles || []); setLoading(false); });
+      .then(d => { setAll(d.titles || []); })
+      .catch(() => { setAll([]); })
+      .finally(() => { setLoading(false); });
   }, [selectedGenre]);
 
   useEffect(() => {
