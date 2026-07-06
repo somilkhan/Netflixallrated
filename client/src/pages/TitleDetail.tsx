@@ -299,7 +299,7 @@ export default function TitleDetail() {
               })()}
             </div>
 
-            <div className="flex flex-wrap gap-2 pt-1">
+            <div className="action-buttons">
               {title.type === 'ANIME' ? (
                 animeLoading ? (
                   <div className="flex items-center gap-2 px-4 py-2.5 rounded-lg border border-line text-ink-dim text-xs font-mono animate-pulse">
@@ -311,13 +311,13 @@ export default function TitleDetail() {
                   </div>
                 ) : canPlay ? (
                   <button
+                    className="play-btn"
                     onClick={() => openAnimePlayer()}
                     disabled={animeEmbedLoading}
-                    className="flex items-center gap-2 bg-ink text-void font-semibold text-sm px-5 py-2.5 rounded-lg hover:bg-ink/90 active:scale-[0.97] transition-all shadow-lg disabled:opacity-60"
                   >
                     {animeEmbedLoading
-                      ? <span className="font-mono text-xs">Loading…</span>
-                      : <><Play size={13} fill="currentColor" /> Play</>
+                      ? 'Loading…'
+                      : <><span>▶</span> Play</>
                     }
                   </button>
                 ) : (
@@ -326,11 +326,8 @@ export default function TitleDetail() {
                   </div>
                 )
               ) : canPlay ? (
-                <button
-                  onClick={() => openPlayer()}
-                  className="flex items-center gap-2 bg-ink text-void font-semibold text-sm px-5 py-2.5 rounded-lg hover:bg-ink/90 active:scale-[0.97] transition-all shadow-lg"
-                >
-                  <Play size={13} fill="currentColor" /> Play
+                <button className="play-btn" onClick={() => openPlayer()}>
+                  <span>▶</span> Play
                 </button>
               ) : (
                 <div className="flex items-center gap-2 px-4 py-2.5 rounded-lg border border-line text-ink-dim text-xs font-mono">
@@ -341,7 +338,7 @@ export default function TitleDetail() {
                 <select
                   value={watchlistStatus}
                   onChange={e => addToWatchlist(e.target.value)}
-                  className="bg-surface border border-line text-ink text-sm px-3 py-2.5 rounded-lg focus:border-maroon outline-none cursor-pointer"
+                  className="watchlist-btn"
                 >
                   <option value="">+ Watchlist</option>
                   <option value="PLAN_TO_WATCH">Plan to Watch</option>
