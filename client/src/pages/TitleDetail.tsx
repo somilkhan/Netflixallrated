@@ -35,7 +35,7 @@ export default function TitleDetail() {
   // Player
   const [isPlaying, setIsPlaying] = useState(false);
   const [isIframeLoading, setIsIframeLoading] = useState(false);
-  const [showServers, setShowServers] = useState(false);
+  const [iframeError, setIframeError] = useState(false);
   const [serverId, setServerId] = useState('vidsrc');
   const [iframeKey, setIframeKey] = useState(0);
   const videoSectionRef = useRef<HTMLDivElement>(null);
@@ -204,12 +204,16 @@ export default function TitleDetail() {
   const switchServer = (sid: string) => {
     setServerId(sid);
     setIframeKey(k => k + 1);
+    setIframeError(false);
+    setIsIframeLoading(true);
+    setIsPlaying(true);
+    setTimeout(() => videoSectionRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 50);
   };
 
   const handleClosePlayer = () => {
     setIsPlaying(false);
     setIsIframeLoading(false);
-    setShowServers(false);
+    setIframeError(false);
   };
 
   const handleShare = () => {
@@ -313,45 +317,26 @@ export default function TitleDetail() {
         <div style={{ width: 36 }} />
       </header>
 
-      {/* ── Hero / Inline player ──────────────────────────────────── */}
-      <div ref={videoSectionRef} className={`hero${isPlaying ? ' playing' : ''}`}>
-        {isPlaying ? (
-          <>
-            {isIframeLoading && (
-              <div className="video-loading"><div className="spinner" /></div>
-            )}
-            <button className="player-close" onClick={handleClosePlayer}>
-              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-                <line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" />
-              </svg>
-            </button>
-            <iframe
-              key={`${serverId}-${selectedSeason}-${selectedEp}-${iframeKey}`}
-              src={embedUrl || ''}
-              allowFullScreen
-              allow="autoplay; encrypted-media; fullscreen; picture-in-picture"
-              referrerPolicy="no-referrer"
-              title={title.name}
-              onLoad={() => setIsIframeLoading(false)}
-              style={{ opacity: isIframeLoading ? 0 : 1 }}
-            />
-          </>
-        ) : (
-          <>
-            <div className="hero-bg" style={heroBgStyle} />
-            <div className="hero-gradient" />
-            <div className="hero-noise" />
-            {canPlay && (
-              <button
-                className="play-overlay-btn"
-                onClick={() => title.type === 'ANIME' ? openAnimePlayer() : openPlayer()}
-              >
-                <svg width="24" height="24" viewBox="0 0 24 24" fill="white">
-                  <polygon points="8,5 8,19 19,12" />
-                </svg>
-              </button>
-            )}
-          </>
+      {/* ── Hero — backdrop only ─────────────────────────────────── */}
+      <div className="hero">
+        <div className="hero-bg" style={heroBgStyle} />
+        <div className="hero-gradient" />
+        <div className="hero-noise" />
+        {/* Play button on hero only for ANIME (async embed fetch) */}
+        {title.type === 'ANIME' && canPlay && !animeEmbedLoading && (
+          <button
+            className="play-overlay-btn"
+            onClick={() => openAnimePlayer()}
+          >
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="white">
+              <polygon points="8,5 8,19 19,12" />
+            </svg>
+          </button>
+        )}
+        {title.type === 'ANIME' && animeEmbedLoading && (
+          <div style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%,-50%)' }}>
+            <div style={{ width: 40, height: 40, border: '2px solid rgba(245,240,236,0.12)', borderTopColor: '#C4485A', borderRadius: '50%', animation: 'spin 0.8s linear infinite' }} />
+          </div>
         )}
       </div>
 
@@ -446,42 +431,125 @@ export default function TitleDetail() {
           <div className="anime-status error">{animeError}</div>
         )}
 
-        {/* ── Server accordion (MOVIE / SERIES) ─────────────────── */}
+        {/* ── Watch section — Movie / Series ───────────────────── */}
         {title.type !== 'ANIME' && canPlay && (
-          <div className="server-wrap">
-            <button className="server-toggle" onClick={() => setShowServers(s => !s)}>
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
-                <rect x="2" y="2" width="20" height="8" rx="2"/>
-                <rect x="2" y="14" width="20" height="8" rx="2"/>
-              </svg>
-              Source:&nbsp;<span className="active-server-name">
-                {SERVERS.find(s => s.id === serverId)?.label ?? 'VidSrc'}
-              </span>
-              <svg
-                className={`server-toggle-chevron${showServers ? ' open' : ''}`}
-                width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"
-              >
-                <polyline points="6 9 12 15 18 9"/>
-              </svg>
-            </button>
-            {showServers && (
-              <div className="server-options">
-                {SERVERS.map(srv => (
+          <div ref={videoSectionRef} className="watch-section">
+
+            {/* Provider tabs */}
+            <div className="provider-tabs">
+              {SERVERS.map(srv => (
+                <button
+                  key={srv.id}
+                  className={`provider-tab${isPlaying && serverId === srv.id ? ' active' : ''}`}
+                  onClick={() => switchServer(srv.id)}
+                >
+                  <span className="status-dot" />
+                  {srv.label}
+                  <span className="quality-badge">HD</span>
+                </button>
+              ))}
+            </div>
+
+            {/* Video container */}
+            <div className="video-wrap">
+              {/* Play placeholder — shown before any tab is clicked */}
+              {!isPlaying && (
+                <button
+                  className="video-placeholder"
+                  onClick={() => {
+                    setIsIframeLoading(true);
+                    setIframeError(false);
+                    setIsPlaying(true);
+                  }}
+                >
+                  <div className="video-placeholder-ring">
+                    <svg width="22" height="22" viewBox="0 0 24 24" fill="white">
+                      <polygon points="8,5 8,19 19,12" />
+                    </svg>
+                  </div>
+                  <span className="video-placeholder-hint">Choose a source above or tap to play</span>
+                </button>
+              )}
+
+              {/* Loading skeleton */}
+              {isPlaying && (
+                <div className={`video-skeleton${!isIframeLoading ? ' hidden' : ''}`}>
+                  <div className="skeleton-spinner" />
+                  <div className="skeleton-text">Loading source…</div>
+                </div>
+              )}
+
+              {/* Error overlay */}
+              {isPlaying && (
+                <div className={`video-error${iframeError ? ' show' : ''}`}>
+                  <div className="error-icon">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                      <path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/>
+                      <line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/>
+                    </svg>
+                  </div>
+                  <div className="error-title">Source unavailable</div>
+                  <div className="error-desc">This provider isn't responding. Try another source from the tabs above.</div>
+                  <button className="error-retry" onClick={() => {
+                    setIframeError(false);
+                    setIsIframeLoading(true);
+                    setIframeKey(k => k + 1);
+                  }}>Retry</button>
+                </div>
+              )}
+
+              {/* The actual iframe */}
+              {isPlaying && !iframeError && (
+                <iframe
+                  key={`${serverId}-${selectedSeason}-${selectedEp}-${iframeKey}`}
+                  src={embedUrl || ''}
+                  allowFullScreen
+                  allow="autoplay; encrypted-media; fullscreen; picture-in-picture"
+                  referrerPolicy="no-referrer"
+                  title={title.name}
+                  onLoad={() => setIsIframeLoading(false)}
+                  onError={() => { setIsIframeLoading(false); setIframeError(true); }}
+                  style={{ opacity: isIframeLoading ? 0 : 1 }}
+                />
+              )}
+            </div>
+
+            {/* Player footer */}
+            {isPlaying && (
+              <div className="player-footer">
+                <div className="player-meta">
+                  <span className="player-meta-label">
+                    {title.type === 'SERIES' ? `S${selectedSeason} · E${selectedEp}` : 'Movie'}
+                  </span>
+                  <div className="player-meta-divider" />
+                  <span className="player-source-name">
+                    {SERVERS.find(s => s.id === serverId)?.label ?? 'VidSrc'}
+                  </span>
+                </div>
+                <div className="player-actions">
                   <button
-                    key={srv.id}
-                    className={`server-option${serverId === srv.id ? ' active' : ''}`}
-                    onClick={() => { switchServer(srv.id); setShowServers(false); }}
+                    className="player-action-btn"
+                    title="Reload"
+                    onClick={() => { setIframeError(false); setIsIframeLoading(true); setIframeKey(k => k + 1); }}
                   >
-                    {srv.label}
-                    {serverId === srv.id && (
-                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-                        <polyline points="20 6 9 17 4 12"/>
-                      </svg>
-                    )}
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2">
+                      <polyline points="23 4 23 10 17 10"/>
+                      <path d="M20.49 15a9 9 0 11-2.12-9.36L23 10"/>
+                    </svg>
                   </button>
-                ))}
+                  <button
+                    className="player-action-btn"
+                    title="Close player"
+                    onClick={handleClosePlayer}
+                  >
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                      <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+                    </svg>
+                  </button>
+                </div>
               </div>
             )}
+
           </div>
         )}
 
