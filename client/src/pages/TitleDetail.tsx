@@ -70,6 +70,20 @@ export default function TitleDetail() {
           </div>
         </div>
       </div>
-    </div>
+    
+      {/* Stream Player */}
+      <div className="mt-6 px-4">
+        <CustomPlayer
+          tmdbId={title.tmdbId || id || ""}
+          type={title.type === "SERIES" ? "tv" : "movie"}
+          season={1}
+          episode={1}
+          title={title.name || title.title || "Unknown"}
+          lang="en"
+          anilistId={title.anilistId || ""}
+          isAnime={title.type === "ANIME"}
+        />
+      </div>
+</div>
   );
 }
