@@ -280,8 +280,15 @@ router.post('/backfill-images', authenticate, requireAdmin, async (_req: AuthReq
         if (results.length > 0) {
           // Prefer exact year match, otherwise take first result
           const match = results.find(r => r.year === title.year) ?? results[0];
-          const mediaType = title.type === 'MOVIE' ? 'movie' : 'tv';
-          details = await getTmdbDetails(match.tmdbId, mediaType);
+          // Use the mediaType TMDB returned — don't override with our internal type
+          // (e.g. TMDB may classify an ANIME arc as 'movie', not 'tv')
+          try {
+            details = await getTmdbDetails(match.tmdbId, match.mediaType);
+          } catch {
+            // If the matched mediaType 404s, try the opposite endpoint as fallback
+            const fallback = match.mediaType === 'movie' ? 'tv' : 'movie';
+            details = await getTmdbDetails(match.tmdbId, fallback);
+          }
         }
       }
 
