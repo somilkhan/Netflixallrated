@@ -1,13 +1,19 @@
 {
   "version": 2,
-  "buildCommand": "npm install -g npm@10.9.2 && npm config set maxsockets 3 && cd server && npm install --no-audit --no-fund && npx prisma generate && npm install -g yarn && cd ../client && yarn install && yarn build",
+  "buildCommand": "npm install -g npm@10.9.2 && npm config set maxsockets 3 && cd server && npm install --no-audit --no-fund && npx prisma generate && npx prisma migrate deploy && npm install -g yarn && cd ../client && yarn install && yarn build",
   "outputDirectory": "client/dist",
   "functions": {
     "api/index.ts": {
-      "maxDuration": 30,
+      "maxDuration": 60,
       "includeFiles": "server/**"
     }
   },
+  "crons": [
+    {
+      "path": "/api/titles/sync-batch",
+      "schedule": "0 2 * * *"
+    }
+  ],
   "rewrites": [
     { "source": "/api/:path*", "destination": "/api/index" },
     { "source": "/((?!api/).*)", "destination": "/index.html" }

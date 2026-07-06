@@ -1,8 +1,9 @@
-import { Router } from 'express';
+import { Router, Response, NextFunction } from 'express';
 import { z } from 'zod';
 import { prisma } from '../lib/prisma.js';
 import { authenticate, requireAdmin, AuthRequest } from '../middleware/auth.js';
 import { searchTmdb, getTmdbDetails, getTrendingTmdb, getTvSeasons, getTvEpisodes } from '../lib/tmdb.js';
+import { syncTmdbCatalog, resetSyncProgress } from '../lib/sync.js';
 
 const router = Router();
 
@@ -136,45 +137,78 @@ router.post('/import-tmdb', authenticate, requireAdmin, async (req: AuthRequest,
 
 /**
  * POST /api/titles/sync-tmdb
- * Fetches the week's trending titles from TMDB and imports any that aren't
- * already in the catalog. Safe to run multiple times (skips existing).
+ * Full paginated sync of TMDb discover/movie.
+ * Accepts optional body: { startPage?: number; maxPages?: number; reset?: boolean }
+ * - Vercel callers: set maxPages ≤ 3 per invocation (fits in 60 s timeout).
+ * - Local / long-running: omit maxPages or pass Infinity equivalent ("all").
+ * Uses upsert — safe to run multiple times. Logs per-page progress to stdout.
  */
 router.post('/sync-tmdb', authenticate, requireAdmin, async (req: AuthRequest, res) => {
+  const { startPage, maxPages, reset } = req.body ?? {};
+
   try {
-    const trending = await getTrendingTmdb('week');
-    let imported = 0, skipped = 0, errors = 0;
+    if (reset) await resetSyncProgress();
 
-    for (const result of trending) {
-      const existing = await prisma.title.findUnique({ where: { tmdbId: result.tmdbId } });
-      if (existing) { skipped++; continue; }
+    const result = await syncTmdbCatalog({
+      startPage: typeof startPage === 'number' ? startPage : undefined,
+      maxPages: typeof maxPages === 'number' ? maxPages : undefined,
+    });
 
-      try {
-        const details = await getTmdbDetails(result.tmdbId, result.mediaType);
-        const palette = randomPalette();
-        await prisma.title.create({
-          data: {
-            name: details.name,
-            type: result.mediaType === 'movie' ? 'MOVIE' : 'SERIES',
-            year: details.year,
-            runtimeMinutes: details.runtimeMinutes ?? undefined,
-            genres: details.genres,
-            synopsis: details.synopsis,
-            posterColorFrom: palette.from,
-            posterColorTo: palette.to,
-            trailerYoutubeId: details.trailerYoutubeId ?? undefined,
-            tmdbId: details.tmdbId,
-            posterUrl: details.posterUrl ?? undefined,
-            backdropUrl: details.backdropUrl ?? undefined,
-            officialWatchLinks: [],
-          },
-        });
-        imported++;
-      } catch { errors++; }
-    }
-
-    res.json({ imported, skipped, errors, total: trending.length });
+    res.json(result);
   } catch (err) {
     res.status(502).json({ error: 'TMDB sync failed', detail: (err as Error).message });
+  }
+});
+
+/**
+ * POST /api/titles/sync-batch
+ * Processes one small batch (3 pages ≈ 60 movies) per call.
+ * Called by the Vercel daily cron (vercel.json) and safe to invoke manually.
+ *
+ * Auth strategy (fail-closed — always requires valid credentials):
+ *   1. Cron / automated callers: set CRON_SECRET env var and send
+ *      `Authorization: Bearer <CRON_SECRET>` — bypasses user JWT.
+ *   2. Manual admin callers: send a valid admin JWT (same as other admin routes).
+ *   If neither matches, the request is rejected with 401/403.
+ */
+function cronOrAdmin(req: AuthRequest, res: Response, next: NextFunction) {
+  const cronSecret = process.env.CRON_SECRET;
+  const authHeader = req.headers['authorization'] ?? '';
+  if (cronSecret && authHeader === `Bearer ${cronSecret}`) {
+    return next(); // cron secret matches — bypass user JWT
+  }
+  // Fall through to standard admin middleware chain
+  authenticate(req, res, (err?: any) => err ? next(err) : requireAdmin(req, res, next));
+}
+
+router.post('/sync-batch', cronOrAdmin, async (_req: AuthRequest, res) => {
+  try {
+    const result = await syncTmdbCatalog({ maxPages: 3 });
+    res.json(result);
+  } catch (err) {
+    res.status(502).json({ error: 'Batch sync failed', detail: (err as Error).message });
+  }
+});
+
+/**
+ * GET /api/titles/sync-status
+ * Returns current DB title count vs last known TMDb total.
+ */
+router.get('/sync-status', authenticate, requireAdmin, async (_req: AuthRequest, res) => {
+  try {
+    const [dbCount, kvRows] = await Promise.all([
+      prisma.title.count({ where: { tmdbId: { not: null } } }),
+      prisma.kV.findMany({ where: { key: { startsWith: 'sync:' } } }),
+    ]);
+    const kv = Object.fromEntries(kvRows.map(r => [r.key, r.value]));
+    res.json({
+      dbCount,
+      lastCompletedPage: parseInt(kv['sync:last_completed_page'] ?? '0', 10),
+      totalPages:        parseInt(kv['sync:total_pages'] ?? '0', 10),
+      totalResults:      parseInt(kv['sync:total_results'] ?? '0', 10),
+    });
+  } catch (err) {
+    res.status(500).json({ error: 'Status check failed', detail: (err as Error).message });
   }
 });
 

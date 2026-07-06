@@ -118,3 +118,10 @@ model TitlePlatform {
 
   @@id([titleId, platformId])
 }
+
+/// Generic key-value store — used for sync progress tracking and feature flags.
+model KV {
+  key       String   @id
+  value     String   @db.Text
+  updatedAt DateTime @updatedAt
+}

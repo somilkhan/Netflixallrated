@@ -10,12 +10,41 @@ function assertConfigured() {
   if (!TMDB_API_KEY) throw new Error('TMDB_API_KEY is not set in the environment');
 }
 
-async function tmdbFetch(path: string, params: Record<string, string> = {}) {
+function sleep(ms: number) {
+  return new Promise(resolve => setTimeout(resolve, ms));
+}
+
+/**
+ * Core fetch with automatic 429 retry + exponential backoff.
+ * TMDB allows ~40 req/10 s; a 250 ms inter-request delay (enforced by
+ * callers) keeps us well under that ceiling in normal use.
+ */
+async function tmdbFetch(
+  path: string,
+  params: Record<string, string> = {},
+  retries = 4,
+): Promise<any> {
   assertConfigured();
   const qs = new URLSearchParams({ api_key: TMDB_API_KEY!, ...params });
-  const res = await fetch(`${TMDB_BASE}${path}?${qs.toString()}`);
-  if (!res.ok) throw new Error(`TMDB request failed: ${res.status} ${res.statusText}`);
-  return res.json();
+  const url = `${TMDB_BASE}${path}?${qs.toString()}`;
+
+  for (let attempt = 0; attempt <= retries; attempt++) {
+    const res = await fetch(url);
+
+    if (res.status === 429) {
+      // Respect Retry-After header if present, otherwise back off exponentially
+      const retryAfter = parseInt(res.headers.get('retry-after') || '0', 10) || 0;
+      const delay = Math.max(retryAfter * 1000, (attempt + 1) * 2000); // min 2 s, doubles each attempt
+      console.warn(`[tmdb] 429 rate-limit on ${path} (attempt ${attempt + 1}/${retries + 1}). Waiting ${delay}ms…`);
+      await sleep(delay);
+      continue;
+    }
+
+    if (!res.ok) throw new Error(`TMDB request failed: ${res.status} ${res.statusText} — ${url}`);
+    return res.json();
+  }
+
+  throw new Error(`TMDB request failed after ${retries + 1} retries (persistent 429): ${url}`);
 }
 
 export function tmdbImageUrl(path: string | null, size: 'w342' | 'w500' | 'w780' | 'original' = 'w500') {
@@ -116,7 +145,51 @@ export async function getTvEpisodes(tmdbId: number, seasonNumber: number): Promi
   }));
 }
 
-// ── Region-aware helpers (used by /api/geo) ────────────────────────────────
+// ── Discover + genre helpers (used by sync engine) ───────────────────────────
+
+/** Cached genre id→name map. Populated on first call, reused thereafter. */
+let _genreCache: Map<number, string> | null = null;
+
+export async function getMovieGenreMap(): Promise<Map<number, string>> {
+  if (_genreCache) return _genreCache;
+  const data = await tmdbFetch('/genre/movie/list');
+  _genreCache = new Map<number, string>(
+    (data.genres || []).map((g: { id: number; name: string }) => [g.id, g.name]),
+  );
+  return _genreCache;
+}
+
+export interface DiscoverPage {
+  page: number;
+  /** Capped at 500 by TMDB regardless of total_results */
+  totalPages: number;
+  totalResults: number;
+  results: any[]; // raw TMDB movie objects
+}
+
+/**
+ * Fetch a single page of /discover/movie.
+ * Callers are responsible for honouring the 250 ms inter-request delay.
+ */
+export async function discoverMoviesPage(
+  page: number,
+  extraParams: Record<string, string> = {},
+): Promise<DiscoverPage> {
+  const data = await tmdbFetch('/discover/movie', {
+    sort_by: 'popularity.desc',
+    include_adult: 'false',
+    page: String(page),
+    ...extraParams,
+  });
+  return {
+    page: data.page ?? page,
+    totalPages: Math.min(data.total_pages ?? 1, 500), // TMDB hard-caps at 500
+    totalResults: data.total_results ?? 0,
+    results: data.results || [],
+  };
+}
+
+// ── Region-aware helpers (used by /api/geo) ───────────────────────────────
 
 export interface TmdbRegionItem {
   tmdbId: number;

@@ -11,7 +11,7 @@ import showboxRoutes from './routes/showbox.js';
 import configRoutes from './routes/config.js';
 import geoRoutes from './routes/geo.js';
 import { prisma } from './lib/prisma.js';
-import { getTrendingTmdb, getTmdbDetails } from './lib/tmdb.js';
+import { syncTmdbCatalog } from './lib/sync.js';
 
 dotenv.config();
 
@@ -36,53 +36,27 @@ app.use('/api/geo', geoRoutes);
 
 app.get('/api/health', (_req, res) => res.json({ status: 'ok' }));
 
-// ── Auto TMDB sync ────────────────────────────────────────────────────────────
-// On startup: if no titles have a tmdbId yet, pull this week's trending from
-// TMDB and import them automatically. Runs once, non-blocking.
+// ── Auto TMDB sync ─────────────────────────────────────────────────────────
+// On startup: if catalog is empty, seed with 5 pages (~100 movies) so the
+// UI isn't blank. The full catalog is populated incrementally via
+// POST /api/titles/sync-tmdb or the Vercel daily cron (/api/titles/sync-batch).
 async function autoSyncTmdb() {
-  if (!process.env.TMDB_API_KEY) return; // skip if key not set
+  if (!process.env.TMDB_API_KEY) return;
 
   try {
     const withTmdbId = await prisma.title.count({ where: { tmdbId: { not: null } } });
-    if (withTmdbId > 0) return; // already have real data
-
-    console.log('[auto-sync] No TMDB titles found — fetching trending now…');
-    const trending = await getTrendingTmdb('week');
-    const POSTER_PALETTE = [
-      { from: '#1a1510', to: '#0a0908' }, { from: '#1c1410', to: '#0a0807' },
-      { from: '#1a1018', to: '#0a0708' }, { from: '#101018', to: '#07070a' },
-      { from: '#181020', to: '#0a080c' }, { from: '#101820', to: '#080a0c' },
-    ];
-    const rp = () => POSTER_PALETTE[Math.floor(Math.random() * POSTER_PALETTE.length)];
-
-    let imported = 0, errors = 0;
-    for (const result of trending) {
-      const exists = await prisma.title.findUnique({ where: { tmdbId: result.tmdbId } });
-      if (exists) continue;
-      try {
-        const d = await getTmdbDetails(result.tmdbId, result.mediaType);
-        const p = rp();
-        await prisma.title.create({
-          data: {
-            name: d.name,
-            type: result.mediaType === 'movie' ? 'MOVIE' : 'SERIES',
-            year: d.year,
-            runtimeMinutes: d.runtimeMinutes ?? undefined,
-            genres: d.genres,
-            synopsis: d.synopsis,
-            posterColorFrom: p.from,
-            posterColorTo: p.to,
-            trailerYoutubeId: d.trailerYoutubeId ?? undefined,
-            tmdbId: d.tmdbId,
-            posterUrl: d.posterUrl ?? undefined,
-            backdropUrl: d.backdropUrl ?? undefined,
-            officialWatchLinks: [],
-          },
-        });
-        imported++;
-      } catch { errors++; }
+    if (withTmdbId > 0) {
+      console.log(`[auto-sync] Catalog already has ${withTmdbId} TMDB titles — skipping seed.`);
+      return;
     }
-    console.log(`[auto-sync] Done — ${imported} imported, ${errors} errors`);
+
+    console.log('[auto-sync] Empty catalog — seeding first 5 pages from TMDb…');
+    const result = await syncTmdbCatalog({ startPage: 0, maxPages: 5 });
+    console.log(
+      `[auto-sync] Seed done — inserted: ${result.totalInserted}, updated: ${result.totalSkipped}, failed: ${result.totalFailed}. ` +
+      `TMDb has ${result.totalResults.toLocaleString()} total movies across ${result.totalPages} pages. ` +
+      `Run POST /api/titles/sync-tmdb to continue.`,
+    );
   } catch (err) {
     console.error('[auto-sync] Failed:', (err as Error).message);
   }
