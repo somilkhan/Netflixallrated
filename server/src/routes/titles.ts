@@ -277,17 +277,31 @@ router.post('/backfill-images', authenticate, requireAdmin, async (_req: AuthReq
         details = await getTmdbDetails(title.tmdbId, mediaType);
       } else {
         const results = await searchTmdb(title.name);
+        // Helper: try fetching details, trying both media types on 404
+        const tryFetch = async (tmdbId: number, preferredType: 'movie' | 'tv') => {
+          try {
+            return await getTmdbDetails(tmdbId, preferredType);
+          } catch {
+            return await getTmdbDetails(tmdbId, preferredType === 'movie' ? 'tv' : 'movie');
+          }
+        };
+
         if (results.length > 0) {
           // Prefer exact year match, otherwise take first result
           const match = results.find(r => r.year === title.year) ?? results[0];
-          // Use the mediaType TMDB returned — don't override with our internal type
-          // (e.g. TMDB may classify an ANIME arc as 'movie', not 'tv')
+          // Use TMDB's own mediaType — don't override with our internal type
           try {
-            details = await getTmdbDetails(match.tmdbId, match.mediaType);
+            details = await tryFetch(match.tmdbId, match.mediaType);
           } catch {
-            // If the matched mediaType 404s, try the opposite endpoint as fallback
-            const fallback = match.mediaType === 'movie' ? 'tv' : 'movie';
-            details = await getTmdbDetails(match.tmdbId, fallback);
+            // Full-name search failed — try stripping subtitle (e.g. "Show: Arc Name" → "Show")
+            const baseName = title.name.includes(': ') ? title.name.split(': ')[0].trim() : null;
+            if (baseName && baseName !== title.name) {
+              const baseResults = await searchTmdb(baseName);
+              if (baseResults.length > 0) {
+                const baseMatch = baseResults.find(r => r.year === title.year) ?? baseResults[0];
+                details = await tryFetch(baseMatch.tmdbId, baseMatch.mediaType);
+              }
+            }
           }
         }
       }
