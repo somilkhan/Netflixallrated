@@ -1,0 +1,666 @@
+import React, { useState, useEffect, useRef, useMemo } from "react";
+import {
+  Settings, Search, Play, Star, X, Info, Plus, Home, Film, Tv, Sparkles,
+  Bookmark, User, Volume2, VolumeX, ChevronDown, Check, Clock,
+} from "lucide-react";
+
+/* ---------------------------------------------------------
+   ALLRATED — stream browse page
+   - Every poster gets generated abstract cover art (unique
+     gradient + pattern per title) instead of a placeholder icon.
+   - Featured hero auto-cycles the Top 10 with a simulated
+     trailer state; layout is a single flowing column so
+     nothing overlaps on narrow screens.
+   - Full detail view: storyline, cast & crew, season select,
+     working episode search.
+--------------------------------------------------------- */
+
+const CAST_POOL = [
+  { name: "Aria Kent", role: "Lead" }, { name: "Devon Cole", role: "Lead" },
+  { name: "Marisol Vane", role: "Supporting" }, { name: "Theo Bright", role: "Supporting" },
+  { name: "Nadia Storm", role: "Supporting" }, { name: "Elliot Cruz", role: "Guest" },
+  { name: "Kai Rendon", role: "Director" }, { name: "Lena Ashford", role: "Writer" },
+  { name: "Omar Delgado", role: "Composer" },
+];
+const EP_FRAGMENTS = [
+  "The Quiet Hour", "Static and Silence", "Borrowed Time", "Low Tide", "Paper Walls",
+  "The Long Way Back", "Glass Houses", "Night Shift", "Afterglow", "The Unraveling",
+  "Dead Reckoning", "Last Light",
+];
+const OVERVIEWS = [
+  "follows a small group of people whose ordinary routines start to unravel after one decision they can't take back.",
+  "is a slow-burn story about the cost of getting exactly what you asked for, told through the people closest to it.",
+  "tracks a single relationship across years, watching trust get rebuilt in ways nobody involved fully agrees on.",
+  "opens with an ending and works backward, letting you sit with the consequences before you understand the cause.",
+  "is set in one city over one long season, where everyone's storylines keep almost missing each other.",
+  "centers on a return home that goes wrong in quiet, specific ways rather than one big dramatic turn.",
+];
+
+function hashIndex(str, mod) {
+  let h = 0;
+  for (let i = 0; i < str.length; i++) h += str.charCodeAt(i) * (i + 1);
+  return Math.abs(h) % mod;
+}
+
+function buildDetail(item) {
+  const seed = hashIndex(item.name, 1000);
+  const overview = `${item.name} ${OVERVIEWS[seed % OVERVIEWS.length]}`;
+  const cast = [0, 1, 2, 3, 4, 5, 6, 7, 8].map((i) => CAST_POOL[(seed + i) % CAST_POOL.length]);
+  const genres = item.genres || ["Drama", "Thriller"];
+  let seasons = null;
+  if (item.type !== "Film") {
+    const seasonCount = 1 + (seed % 3);
+    seasons = Array.from({ length: seasonCount }, (_, s) => {
+      const epCount = 6 + ((seed + s) % 5);
+      return {
+        season: s + 1,
+        episodes: Array.from({ length: epCount }, (_, e) => ({
+          ep: e + 1,
+          title: EP_FRAGMENTS[(seed + s * 3 + e) % EP_FRAGMENTS.length],
+          duration: 38 + ((seed + e) % 22),
+          watched: e < (s === 0 ? 3 : 0) && item.progress,
+        })),
+      };
+    });
+  }
+  return { overview, cast, genres, seasons };
+}
+
+/* --- generated abstract cover art, seeded per title, strictly grayscale --- */
+function artFor(name) {
+  const seed = hashIndex(name, 360);
+  const l1 = 10 + (seed % 12);
+  const l2 = 24 + (seed % 20);
+  const l3 = Math.max(2, l1 - 6);
+  const angle = 100 + (seed % 160);
+  const patternType = seed % 3;
+  const rotate = seed % 180;
+  const background = `linear-gradient(${angle}deg, hsl(0,0%,${l1}%) 0%, hsl(0,0%,${l2}%) 55%, hsl(0,0%,${l3}%) 100%)`;
+  let pattern;
+  if (patternType === 0) {
+    pattern = { backgroundImage: `repeating-linear-gradient(${rotate}deg, rgba(255,255,255,0.055) 0px, rgba(255,255,255,0.055) 2px, transparent 2px, transparent 16px)` };
+  } else if (patternType === 1) {
+    pattern = { backgroundImage: `radial-gradient(rgba(255,255,255,0.10) 1.4px, transparent 1.4px)`, backgroundSize: "16px 16px" };
+  } else {
+    pattern = {
+      backgroundImage: `repeating-radial-gradient(circle at ${20 + (seed % 60)}% ${20 + ((seed * 3) % 60)}%, rgba(255,255,255,0.06) 0, rgba(255,255,255,0.06) 1px, transparent 1px, transparent 20px)`,
+    };
+  }
+  return { background, pattern };
+}
+
+function PosterArt({ name, type, iconSize = 11 }) {
+  const { background, pattern } = useMemo(() => artFor(name), [name]);
+  const Icon = type === "Anime" ? Sparkles : type === "Series" ? Tv : Film;
+  return (
+    <div className="absolute inset-0" style={{ background }}>
+      <div className="absolute inset-0" style={pattern} />
+      <div className="absolute bottom-2 left-2 w-5 h-5 rounded-full bg-black/50 border border-white/15 flex items-center justify-center backdrop-blur-sm">
+        <Icon size={iconSize} className="text-white/75" />
+      </div>
+    </div>
+  );
+}
+
+const TOP10 = [
+  { name: "Obsession", rating: 8.2, year: "2026", type: "Film", runtime: 118, genres: ["Thriller", "Drama"] },
+  { name: "Enola Holmes 3", rating: 7.1, year: "2026", type: "Film", runtime: 121, genres: ["Mystery", "Adventure"] },
+  { name: "Mushoku Tensei", rating: 8.6, year: "2021", type: "Anime", genres: ["Fantasy", "Drama"] },
+  { name: "The Devil Wears Prada 2", rating: 6.9, year: "2026", type: "Film", runtime: 108, genres: ["Comedy", "Drama"] },
+  { name: "Minions & Co.", rating: 6.6, year: "2026", type: "Film", runtime: 94, genres: ["Comedy", "Family"] },
+  { name: "Hollow Circuit", rating: 8.4, year: "2025", type: "Series", genres: ["Sci-Fi", "Thriller"], progress: true },
+];
+
+const TRENDING = {
+  Movies: [
+    { name: "Obsession", rating: 8.2, year: "2026", type: "Film", genres: ["Thriller"] },
+    { name: "Enola Holmes 3", rating: 7.1, year: "2026", type: "Film", genres: ["Mystery"] },
+    { name: "The Devil Wears Prada 2", rating: 6.9, year: "2026", type: "Film", genres: ["Comedy"] },
+    { name: "Nine Winters", rating: 7.4, year: "2026", type: "Film", genres: ["Drama"] },
+    { name: "Salt Water Choir", rating: 8.0, year: "2026", type: "Film", genres: ["Drama"] },
+  ],
+  Series: [
+    { name: "Law & Order", rating: 7.3, year: "1990", type: "Series", genres: ["Crime"] },
+    { name: "Lantern Season", rating: 8.4, year: "2025", type: "Series", genres: ["Drama"] },
+    { name: "Northline", rating: 6.8, year: "2022", type: "Series", genres: ["Drama"] },
+    { name: "Sesame Street", rating: 7.1, year: "1969", type: "Series", genres: ["Family"] },
+    { name: "Hollow Circuit", rating: 8.1, year: "2025", type: "Series", genres: ["Sci-Fi"] },
+  ],
+  Anime: [
+    { name: "Mushoku Tensei", rating: 8.6, year: "2021", type: "Anime", genres: ["Fantasy"] },
+    { name: "Glass Prefecture", rating: 7.9, year: "2023", type: "Anime", genres: ["Drama"] },
+    { name: "Static Bloom", rating: 8.0, year: "2024", type: "Anime", genres: ["Romance"] },
+    { name: "Echo Ward", rating: 7.5, year: "2025", type: "Anime", genres: ["Horror"] },
+    { name: "Paper Districts", rating: 8.3, year: "2026", type: "Anime", genres: ["Slice of Life"] },
+  ],
+};
+
+const PLATFORMS = ["Netflix", "Prime Video", "Max", "Disney+", "Apple TV+", "Paramount+", "Hulu"];
+const PLATFORM_ITEMS = [
+  { name: "Avatar: The Last", rating: 7.8, year: "2024", type: "Series", genres: ["Fantasy"] },
+  { name: "Law & Order", rating: 7.3, year: "1990", type: "Series", genres: ["Crime"] },
+  { name: "Sesame Street", rating: 7.1, year: "1969", type: "Series", genres: ["Family"] },
+  { name: "Mortal Kombat II", rating: 8.0, year: "2026", type: "Film", genres: ["Action"] },
+  { name: "Enola Holmes 3", rating: 7.1, year: "2026", type: "Film", genres: ["Mystery"] },
+];
+
+const TOPRATED = {
+  Movies: [
+    { name: "The Shawshank Redemption", rating: 8.7, year: "1994", type: "Film", genres: ["Drama"] },
+    { name: "Michael", rating: 8.7, year: "2026", type: "Film", genres: ["Biography"] },
+    { name: "Project Hail Mary", rating: 8.7, year: "2026", type: "Film", genres: ["Sci-Fi"] },
+    { name: "The Godfather", rating: 8.7, year: "1972", type: "Film", genres: ["Crime"] },
+    { name: "Swapped", rating: 8.9, year: "2026", type: "Film", genres: ["Comedy"] },
+  ],
+  Series: [
+    { name: "Hollow Circuit", rating: 8.4, year: "2025", type: "Series", genres: ["Sci-Fi"] },
+    { name: "Lantern Season", rating: 8.4, year: "2025", type: "Series", genres: ["Drama"] },
+    { name: "Northline", rating: 6.8, year: "2022", type: "Series", genres: ["Drama"] },
+    { name: "Law & Order", rating: 7.3, year: "1990", type: "Series", genres: ["Crime"] },
+  ],
+};
+
+const GENRES = [
+  { title: "Comedy", tabs: {
+      Movies: [
+        { name: "Toy Story 5", rating: 7.4, year: "2026", type: "Film", genres: ["Comedy", "Family"] },
+        { name: "Scary Movie", rating: 5.4, year: "2026", type: "Film", genres: ["Comedy", "Horror"] },
+        { name: "The Devil Wears Prada 2", rating: 6.9, year: "2026", type: "Film", genres: ["Comedy"] },
+        { name: "Welcome to the Jungle", rating: 5.2, year: "2026", type: "Film", genres: ["Comedy", "Action"] },
+        { name: "The Sheep Detectives", rating: 7.7, year: "2026", type: "Film", genres: ["Comedy"] },
+      ],
+      Series: [
+        { name: "Sesame Street", rating: 7.1, year: "1969", type: "Series", genres: ["Family"] },
+        { name: "Northline", rating: 6.8, year: "2022", type: "Series", genres: ["Comedy"] },
+      ],
+    } },
+  { title: "Sci-Fi & Fantasy", tabs: {
+      Movies: [
+        { name: "Disclosure Day", rating: 6.7, year: "2026", type: "Film", genres: ["Sci-Fi"] },
+        { name: "Backrooms", rating: 6.9, year: "2026", type: "Film", genres: ["Horror", "Sci-Fi"] },
+        { name: "Supergirl", rating: 6.2, year: "2026", type: "Film", genres: ["Fantasy"] },
+        { name: "Avatar: Fire and Ash", rating: 7.6, year: "2025", type: "Film", genres: ["Fantasy"] },
+      ],
+      Series: [
+        { name: "The Mandalorian and Grogu", rating: 6.7, year: "2026", type: "Series", genres: ["Sci-Fi"] },
+        { name: "Hollow Circuit", rating: 8.4, year: "2025", type: "Series", genres: ["Sci-Fi"] },
+      ],
+    } },
+];
+
+const DOCK = [
+  { icon: Home, label: "Home" }, { icon: Search, label: "Search" }, { icon: Film, label: "Movies" },
+  { icon: Tv, label: "Series" }, { icon: Sparkles, label: "Anime" }, { icon: Bookmark, label: "Watchlist" },
+  { icon: User, label: "Profile" },
+];
+
+const AUTOPLAY_MS = 7000;
+
+export default function AllratedStream() {
+  const [glass, setGlass] = useState(true);
+  const [settingsOpen, setSettingsOpen] = useState(false);
+  const [grain, setGrain] = useState(true);
+  const [dockActive, setDockActive] = useState(0);
+  const [hovered, setHovered] = useState(null);
+  const [detail, setDetail] = useState(null);
+  const panelRef = useRef(null);
+
+  const [heroIndex, setHeroIndex] = useState(0);
+  const [heroPaused, setHeroPaused] = useState(false);
+  const [trailerOn, setTrailerOn] = useState(false);
+  const [muted, setMuted] = useState(true);
+  const [progress, setProgress] = useState(0);
+
+  useEffect(() => {
+    function onClick(e) { if (panelRef.current && !panelRef.current.contains(e.target)) setSettingsOpen(false); }
+    if (settingsOpen) document.addEventListener("mousedown", onClick);
+    return () => document.removeEventListener("mousedown", onClick);
+  }, [settingsOpen]);
+
+  useEffect(() => {
+    setTrailerOn(false);
+    setProgress(0);
+    const t = setTimeout(() => setTrailerOn(true), 1100);
+    return () => clearTimeout(t);
+  }, [heroIndex]);
+
+  useEffect(() => {
+    if (heroPaused || detail) return;
+    const tick = setInterval(() => {
+      setProgress((p) => {
+        const next = p + 100 / (AUTOPLAY_MS / 120);
+        if (next >= 100) { setHeroIndex((i) => (i + 1) % TOP10.length); return 0; }
+        return next;
+      });
+    }, 120);
+    return () => clearInterval(tick);
+  }, [heroPaused, heroIndex, detail]);
+
+  const surface = glass
+    ? "bg-white/[0.06] backdrop-blur-xl border border-white/10"
+    : "bg-[#0A0A0A] border border-white/15";
+  const surfaceHover = glass
+    ? "hover:bg-white/[0.1] hover:border-white/20"
+    : "hover:bg-[#141414] hover:border-white/30";
+
+  const featured = TOP10[heroIndex];
+  const featuredDetail = useMemo(() => buildDetail(featured), [featured]);
+
+  return (
+    <div className="min-h-screen w-full bg-black text-white relative overflow-x-hidden selection:bg-white selection:text-black pb-32">
+      <style>{`
+        @import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700;800&family=Inter:wght@400;500;600&display=swap');
+        .font-display { font-family: 'Space Grotesk', sans-serif; }
+        .font-body { font-family: 'Inter', sans-serif; }
+        .grain::before {
+          content: ""; position: fixed; inset: 0; pointer-events: none; z-index: 60; opacity: 0.05;
+          background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+        }
+        .glow { background: radial-gradient(ellipse 70% 60% at 50% 0%, rgba(255,255,255,0.16), transparent 70%); }
+        .row-scroll { scrollbar-width: none; }
+        .row-scroll::-webkit-scrollbar { display: none; }
+        ::-webkit-scrollbar { height: 0px; width: 6px; }
+        ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.15); border-radius: 4px; }
+        .rank-num { -webkit-text-stroke: 1.5px rgba(255,255,255,0.24); color: transparent; }
+        @keyframes flicker { 0%,100%{opacity:.10} 50%{opacity:.18} }
+        .trailer-flicker { animation: flicker 2.4s ease-in-out infinite; }
+        @keyframes scanslide { 0%{transform:translateY(-100%)} 100%{transform:translateY(100%)} }
+        .scanline { animation: scanslide 4s linear infinite; }
+        @keyframes modalIn { from{opacity:0; transform:translateY(24px) scale(.98)} to{opacity:1; transform:translateY(0) scale(1)} }
+        .modal-in { animation: modalIn .32s cubic-bezier(.16,1,.3,1); }
+        .line-clamp-2 { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+      `}</style>
+
+      {grain && <div className="grain fixed inset-0" />}
+      <div className="glow absolute top-0 left-0 right-0 h-[560px] pointer-events-none" />
+
+      {/* TOP BAR */}
+      <header className="sticky top-0 z-50">
+        <div className={`mx-2 mt-2 sm:mx-6 sm:mt-4 rounded-2xl ${surface} transition-colors duration-500`}>
+          <div className="flex items-center justify-between px-3 sm:px-6 py-3">
+            <div className="flex items-center gap-2">
+              <div className="w-6 h-6 rounded-full border border-white flex items-center justify-center shrink-0">
+                <div className="w-2 h-2 rounded-full bg-white" />
+              </div>
+              <span className="font-display font-semibold tracking-tight text-[14px] sm:text-[15px]">ALLRATED</span>
+            </div>
+
+            <div className={`hidden sm:flex items-center gap-3 rounded-full px-4 py-2 ${glass ? "bg-white/[0.05]" : "bg-[#111]"} border border-white/10 w-72`}>
+              <Search size={14} className="text-white/40" />
+              <input placeholder="Search movies, series, anime..." className="bg-transparent outline-none text-[13px] font-body placeholder:text-white/30 w-full" />
+            </div>
+
+            <div className="flex items-center gap-1.5 sm:gap-2 relative">
+              <button onClick={() => setSettingsOpen((s) => !s)} aria-label="Open settings"
+                className={`w-7 h-7 sm:w-8 sm:h-8 rounded-full flex items-center justify-center transition-all shrink-0 ${settingsOpen ? "bg-white text-black" : "text-white/60 hover:text-white"}`}>
+                <Settings size={14} />
+              </button>
+              <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-white/10 border border-white/15 flex items-center justify-center font-display text-[11px] shrink-0">Z</div>
+
+              {settingsOpen && (
+                <div ref={panelRef} className="absolute right-0 top-11 w-64 sm:w-72 rounded-2xl bg-black border border-white/15 shadow-2xl shadow-black/80 p-1.5 font-body z-50">
+                  <div className="flex items-center justify-between px-3 py-2.5">
+                    <span className="text-[12px] uppercase tracking-wider text-white/40">Appearance</span>
+                    <button onClick={() => setSettingsOpen(false)}><X size={13} className="text-white/40 hover:text-white" /></button>
+                  </div>
+                  <div className="px-2 pb-2 space-y-1">
+                    <button onClick={() => setGlass(true)} className={`w-full flex items-center justify-between rounded-xl px-3 py-2.5 text-left transition-colors ${glass ? "bg-white/10" : "hover:bg-white/5"}`}>
+                      <div><div className="text-[13px] font-medium">Frosted glass</div><div className="text-[11.5px] text-white/40">Blurred, translucent surfaces</div></div>
+                      <div className={`w-4 h-4 rounded-full border shrink-0 ${glass ? "bg-white border-white" : "border-white/30"}`} />
+                    </button>
+                    <button onClick={() => setGlass(false)} className={`w-full flex items-center justify-between rounded-xl px-3 py-2.5 text-left transition-colors ${!glass ? "bg-white/10" : "hover:bg-white/5"}`}>
+                      <div><div className="text-[13px] font-medium">Solid matte</div><div className="text-[11.5px] text-white/40">Flat, crisp, zero blur</div></div>
+                      <div className={`w-4 h-4 rounded-full border shrink-0 ${!glass ? "bg-white border-white" : "border-white/30"}`} />
+                    </button>
+                  </div>
+                  <div className="h-px bg-white/10 mx-3 my-1" />
+                  <button onClick={() => setGrain((g) => !g)} className="w-full flex items-center justify-between rounded-xl px-3 py-2.5 hover:bg-white/5 transition-colors">
+                    <div className="text-left"><div className="text-[13px] font-medium">Film grain</div><div className="text-[11.5px] text-white/40">Subtle texture overlay</div></div>
+                    <div className={`w-8 h-[18px] rounded-full p-[2px] transition-colors shrink-0 ${grain ? "bg-white" : "bg-white/15"}`}>
+                      <div className={`w-[14px] h-[14px] rounded-full transition-transform ${grain ? "translate-x-[14px] bg-black" : "translate-x-0 bg-white/70"}`} />
+                    </div>
+                  </button>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      </header>
+
+      {/* FEATURED HERO */}
+      <section className="relative z-10 px-2 sm:px-6 pt-4" onMouseEnter={() => setHeroPaused(true)} onMouseLeave={() => setHeroPaused(false)}>
+        <div className={`relative rounded-3xl overflow-hidden ${surface} min-h-[440px] sm:min-h-[500px] flex flex-col`}>
+          <div className="absolute inset-0">
+            <PosterArt name={featured.name} type={featured.type} iconSize={13} />
+          </div>
+
+          {trailerOn && (
+            <>
+              <div className="absolute inset-0 bg-white/[0.05] trailer-flicker" />
+              <div className="absolute left-0 right-0 h-24 bg-gradient-to-b from-white/10 to-transparent scanline" />
+            </>
+          )}
+          <div className="absolute inset-0 bg-gradient-to-t from-black via-black/55 to-black/10" />
+
+          {trailerOn && (
+            <button onClick={() => setMuted((m) => !m)}
+              className="absolute top-4 right-4 z-20 w-8 h-8 rounded-full bg-black/60 border border-white/20 backdrop-blur-sm flex items-center justify-center hover:bg-white/20 transition-colors">
+              {muted ? <VolumeX size={14} /> : <Volume2 size={14} />}
+            </button>
+          )}
+
+          {/* content column — flows, never overlaps */}
+          <div className="relative z-10 flex-1 flex flex-col justify-end p-4 sm:p-10 gap-3">
+            <div className="flex items-center gap-1.5 flex-wrap text-[10.5px] font-body">
+              <span className="rank-num font-display font-extrabold leading-none mr-0.5" style={{ fontSize: 26 }}>#{heroIndex + 1}</span>
+              <span className="border border-white/25 rounded-full px-2 py-0.5 text-white/60">FEATURED</span>
+              <span className="bg-white text-black rounded-full px-2 py-0.5 font-medium flex items-center gap-1">
+                <Star size={9} fill="black" /> {featured.rating}
+              </span>
+              <span className="text-white/50">{featured.year} · {featured.type}</span>
+              {trailerOn && (
+                <span className="flex items-center gap-1.5 bg-white/10 border border-white/20 rounded-full px-2 py-0.5 backdrop-blur-sm">
+                  <span className="w-1.5 h-1.5 rounded-full bg-white animate-pulse" /> Playing trailer
+                </span>
+              )}
+            </div>
+
+            <h1 className="font-display font-semibold text-[28px] sm:text-[48px] tracking-tight leading-[1.05]">
+              {featured.name}
+            </h1>
+
+            <p className="font-body text-white/55 text-[12.5px] sm:text-[14.5px] leading-relaxed max-w-md line-clamp-2 sm:line-clamp-none">
+              {featuredDetail.overview}
+            </p>
+
+            <div className="flex items-center gap-2 flex-wrap pt-1">
+              <button onClick={() => setDetail(featured)} className="flex items-center gap-2 bg-white text-black font-body text-[13px] sm:text-[13.5px] font-medium rounded-full px-4 sm:px-5 py-2.5 hover:bg-white/85 transition-colors">
+                <Play size={14} fill="black" /> Play
+              </button>
+              <button onClick={() => setDetail(featured)} className={`flex items-center gap-2 font-body text-[13px] sm:text-[13.5px] font-medium rounded-full px-4 sm:px-5 py-2.5 ${surface} ${surfaceHover} transition-colors`}>
+                <Info size={14} /> More info
+              </button>
+              <button className={`w-9 h-9 rounded-full flex items-center justify-center ${surface} ${surfaceHover} transition-colors`}>
+                <Plus size={14} />
+              </button>
+            </div>
+
+            <div className="flex items-center gap-1.5 pt-1">
+              {TOP10.map((_, i) => (
+                <button key={i} onClick={() => setHeroIndex(i)} className="relative h-[3px] rounded-full bg-white/20 overflow-hidden transition-all" style={{ width: i === heroIndex ? 26 : 11 }}>
+                  {i === heroIndex && <div className="absolute inset-y-0 left-0 bg-white" style={{ width: `${progress}%` }} />}
+                </button>
+              ))}
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <div className="relative z-10 mt-10 space-y-10">
+        <section className="px-2 sm:px-6">
+          <SectionHeader title="Top 10 today" />
+          <div className="flex overflow-x-auto row-scroll pb-1 -mx-1 px-1">
+            {TOP10.map((t, i) => (
+              <div key={t.name} className="relative flex items-end shrink-0" style={{ marginLeft: i === 0 ? 4 : -20 }}>
+                <span className="rank-num font-display font-extrabold leading-none select-none shrink-0" style={{ fontSize: 100 }}>{i + 1}</span>
+                <div className="relative z-10 -ml-3">
+                  <PosterCard title={t} surface={surface} surfaceHover={surfaceHover} onOpen={() => setDetail(t)} />
+                </div>
+              </div>
+            ))}
+          </div>
+        </section>
+
+        <TabbedRow title="Trending today" data={TRENDING} surface={surface} surfaceHover={surfaceHover} onOpen={setDetail} />
+        <PlatformRow surface={surface} surfaceHover={surfaceHover} onOpen={setDetail} />
+        <TabbedRow title="Top rated" data={TOPRATED} surface={surface} surfaceHover={surfaceHover} onOpen={setDetail} />
+        {GENRES.map((g) => (
+          <TabbedRow key={g.title} title={g.title} data={g.tabs} surface={surface} surfaceHover={surfaceHover} onOpen={setDetail} />
+        ))}
+      </div>
+
+      {/* DOCK NAV */}
+      <nav className="fixed bottom-3 sm:bottom-4 left-0 right-0 z-40 flex justify-center px-4 pointer-events-none">
+        <div className={`flex items-end gap-1 sm:gap-1.5 rounded-2xl px-2 sm:px-2.5 py-1.5 sm:py-2 ${surface} shadow-2xl shadow-black/60 transition-colors duration-500 pointer-events-auto`}>
+          {DOCK.map((d, i) => {
+            const Icon = d.icon;
+            const isHovered = hovered === i;
+            const isActive = dockActive === i;
+            return (
+              <button key={d.label} onClick={() => setDockActive(i)} onMouseEnter={() => setHovered(i)} onMouseLeave={() => setHovered(null)}
+                className="relative flex flex-col items-center justify-end" aria-label={d.label}>
+                {isHovered && <span className="absolute -top-9 font-body text-[10.5px] bg-white text-black rounded-md px-2 py-1 whitespace-nowrap">{d.label}</span>}
+                <div className={`flex items-center justify-center rounded-xl transition-all duration-200 ${isActive ? "bg-white text-black" : "text-white/60 hover:text-white hover:bg-white/10"}`}
+                  style={{ width: isHovered ? 42 : 36, height: isHovered ? 42 : 36, transform: isHovered ? "translateY(-4px)" : "translateY(0)" }}>
+                  <Icon size={isHovered ? 18 : 16} />
+                </div>
+                {isActive && <div className="w-1 h-1 rounded-full bg-white mt-1" />}
+              </button>
+            );
+          })}
+        </div>
+      </nav>
+
+      {detail && <DetailModal item={detail} onClose={() => setDetail(null)} surface={surface} />}
+    </div>
+  );
+}
+
+function SectionHeader({ title, right }) {
+  return (
+    <div className="flex items-center justify-between mb-3 px-1 gap-2">
+      <div className="flex items-center gap-2 min-w-0">
+        <span className="w-[3px] h-4 bg-white rounded-full shrink-0" />
+        <h2 className="font-display font-semibold text-[15px] sm:text-[18px] tracking-tight truncate">{title}</h2>
+      </div>
+      {right || <button className="font-body text-[12px] text-white/40 hover:text-white transition-colors shrink-0">See all</button>}
+    </div>
+  );
+}
+
+function TabbedRow({ title, data, surface, surfaceHover, onOpen }) {
+  const tabs = Object.keys(data);
+  const [tab, setTab] = useState(tabs[0]);
+  return (
+    <section className="px-2 sm:px-6">
+      <SectionHeader title={title} right={
+        <div className="flex items-center gap-3 sm:gap-4 shrink-0">
+          {tabs.map((t) => (
+            <button key={t} onClick={() => setTab(t)} className={`font-body text-[12px] sm:text-[12.5px] pb-0.5 border-b transition-colors ${tab === t ? "text-white border-white" : "text-white/35 border-transparent hover:text-white/60"}`}>{t}</button>
+          ))}
+        </div>
+      } />
+      <div className="flex gap-3 overflow-x-auto row-scroll pb-1 -mx-1 px-1">
+        {data[tab].map((t, i) => (
+          <PosterCard key={i} title={t} surface={surface} surfaceHover={surfaceHover} onOpen={() => onOpen(t)} />
+        ))}
+      </div>
+    </section>
+  );
+}
+
+function PlatformRow({ surface, surfaceHover, onOpen }) {
+  const [platform, setPlatform] = useState("Netflix");
+  const [open, setOpen] = useState(false);
+  const ref = useRef(null);
+  useEffect(() => {
+    function onClick(e) { if (ref.current && !ref.current.contains(e.target)) setOpen(false); }
+    if (open) document.addEventListener("mousedown", onClick);
+    return () => document.removeEventListener("mousedown", onClick);
+  }, [open]);
+  return (
+    <section className="px-2 sm:px-6">
+      <div className="flex items-center gap-2 mb-3 px-1 relative flex-wrap" ref={ref}>
+        <span className="w-[3px] h-4 bg-white rounded-full" />
+        <h2 className="font-display font-semibold text-[15px] sm:text-[18px] tracking-tight">Only on</h2>
+        <button onClick={() => setOpen((o) => !o)} className="flex items-center gap-1.5 font-display font-semibold text-[15px] sm:text-[18px] tracking-tight border-b border-white/40 pb-0.5">
+          {platform}<ChevronDown size={15} className={`transition-transform ${open ? "rotate-180" : ""}`} />
+        </button>
+        {open && (
+          <div className="absolute left-0 top-9 z-30 w-48 rounded-xl bg-black border border-white/15 shadow-2xl shadow-black/70 p-1.5 font-body">
+            {PLATFORMS.map((p) => (
+              <button key={p} onClick={() => { setPlatform(p); setOpen(false); }} className="w-full flex items-center justify-between rounded-lg px-2.5 py-2 text-[13px] hover:bg-white/10 transition-colors">
+                <span className="flex items-center gap-2">
+                  <span className="w-5 h-5 rounded-full bg-white/10 border border-white/20 flex items-center justify-center text-[10px] font-display">{p[0]}</span>{p}
+                </span>
+                {platform === p && <Check size={13} />}
+              </button>
+            ))}
+          </div>
+        )}
+      </div>
+      <div className="flex gap-3 overflow-x-auto row-scroll pb-1 -mx-1 px-1">
+        {PLATFORM_ITEMS.map((t, i) => (
+          <PosterCard key={i} title={t} surface={surface} surfaceHover={surfaceHover} onOpen={() => onOpen(t)} />
+        ))}
+      </div>
+    </section>
+  );
+}
+
+function PosterCard({ title, surface, surfaceHover, onOpen }) {
+  return (
+    <div onClick={onOpen} className={`w-[128px] sm:w-[156px] shrink-0 rounded-xl overflow-hidden ${surface} ${surfaceHover} transition-all duration-300 cursor-pointer group`}>
+      <div className="h-[178px] sm:h-[214px] w-full relative overflow-hidden">
+        <PosterArt name={title.name} type={title.type} />
+        <div className="absolute inset-0 flex items-center justify-center bg-black/0 group-hover:bg-black/40 transition-colors">
+          <div className="w-9 h-9 rounded-full bg-white/0 group-hover:bg-white flex items-center justify-center scale-75 group-hover:scale-100 opacity-0 group-hover:opacity-100 transition-all duration-200">
+            <Play size={13} fill="black" className="text-black ml-0.5" />
+          </div>
+        </div>
+        <div className="absolute top-2 right-2 flex items-center gap-1 bg-black/60 backdrop-blur-sm rounded-full px-1.5 py-0.5">
+          <Star size={9} className="fill-white text-white" /><span className="text-[9.5px] font-body">{title.rating}</span>
+        </div>
+        {title.progress && (
+          <div className="absolute bottom-0 left-0 right-0 h-[3px] bg-white/15">
+            <div className="h-full bg-white" style={{ width: "45%" }} />
+          </div>
+        )}
+      </div>
+      <div className="p-2.5 font-body">
+        <div className="text-[11px] sm:text-[11.5px] font-medium truncate">{title.name}</div>
+        <div className="flex items-center justify-between mt-1">
+          <span className="text-[10px] text-white/35">{title.year}</span>
+          <span className="text-[9.5px] text-white/40">{title.type}</span>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function DetailModal({ item, onClose, surface }) {
+  const data = useMemo(() => buildDetail(item), [item]);
+  const [season, setSeason] = useState(0);
+  const [query, setQuery] = useState("");
+  const overlayRef = useRef(null);
+
+  useEffect(() => {
+    document.body.style.overflow = "hidden";
+    return () => { document.body.style.overflow = ""; };
+  }, []);
+
+  const episodes = data.seasons
+    ? data.seasons[season].episodes.filter((e) => (e.title + " episode " + e.ep).toLowerCase().includes(query.toLowerCase()))
+    : [];
+
+  return (
+    <div ref={overlayRef} onClick={(e) => { if (e.target === overlayRef.current) onClose(); }}
+      className="fixed inset-0 z-[100] bg-black/80 backdrop-blur-sm flex items-start sm:items-center justify-center p-0 sm:p-6 overflow-y-auto">
+      <div className={`modal-in relative w-full sm:max-w-2xl rounded-none sm:rounded-3xl ${surface} bg-black overflow-hidden mb-0 sm:mb-auto`}>
+        <button onClick={onClose} className="absolute top-4 right-4 z-20 w-8 h-8 rounded-full bg-black/60 border border-white/20 backdrop-blur-sm flex items-center justify-center hover:bg-white hover:text-black transition-colors">
+          <X size={15} />
+        </button>
+
+        <div className="relative h-48 sm:h-64 overflow-hidden">
+          <PosterArt name={item.name} type={item.type} iconSize={14} />
+          <div className="absolute inset-0 bg-gradient-to-t from-black via-black/40 to-transparent" />
+          <div className="absolute inset-0 flex flex-col justify-end p-4 sm:p-7">
+            <div className="flex items-center gap-2 mb-2 flex-wrap text-[10.5px] font-body">
+              <span className="bg-white text-black rounded-full px-2 py-0.5 font-medium flex items-center gap-1"><Star size={9} fill="black" /> {item.rating}</span>
+              <span className="text-white/50">{item.year} · {item.type}</span>
+              {item.runtime && <span className="text-white/50 flex items-center gap-1"><Clock size={10} /> {item.runtime}m</span>}
+            </div>
+            <h2 className="font-display font-semibold text-[24px] sm:text-[32px] tracking-tight leading-tight">{item.name}</h2>
+          </div>
+        </div>
+
+        <div className="p-4 sm:p-7 space-y-6 sm:space-y-7">
+          <div className="flex items-center gap-2 sm:gap-3 flex-wrap">
+            <button className="flex items-center gap-2 bg-white text-black font-body text-[12.5px] sm:text-[13px] font-medium rounded-full px-4 sm:px-5 py-2.5 hover:bg-white/85 transition-colors">
+              <Play size={13} fill="black" /> Play
+            </button>
+            <button className="w-9 h-9 rounded-full flex items-center justify-center bg-white/[0.06] border border-white/10 hover:bg-white/10 transition-colors">
+              <Plus size={14} />
+            </button>
+            <div className="flex items-center gap-1.5 flex-wrap">
+              {data.genres.map((g) => (
+                <span key={g} className="font-body text-[10.5px] text-white/50 border border-white/15 rounded-full px-2.5 py-1">{g}</span>
+              ))}
+            </div>
+          </div>
+
+          <div>
+            <h3 className="font-display font-semibold text-[12px] sm:text-[13px] uppercase tracking-wider text-white/40 mb-2">Storyline</h3>
+            <p className="font-body text-[13px] sm:text-[13.5px] text-white/70 leading-relaxed">{data.overview}</p>
+          </div>
+
+          <div>
+            <h3 className="font-display font-semibold text-[12px] sm:text-[13px] uppercase tracking-wider text-white/40 mb-3">Cast &amp; crew</h3>
+            <div className="flex gap-4 overflow-x-auto row-scroll pb-1">
+              {data.cast.map((c, i) => (
+                <div key={i} className="flex flex-col items-center gap-1.5 shrink-0 w-16">
+                  <div className="w-12 h-12 rounded-full bg-white/10 border border-white/15 flex items-center justify-center font-display text-[13px]">
+                    {c.name.split(" ").map((n) => n[0]).join("")}
+                  </div>
+                  <div className="text-center">
+                    <div className="font-body text-[10.5px] font-medium leading-tight truncate w-16">{c.name.split(" ")[0]}</div>
+                    <div className="font-body text-[9px] text-white/40 leading-tight">{c.role}</div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {data.seasons && (
+            <div>
+              <div className="flex items-center justify-between mb-3 gap-3 flex-wrap">
+                <div className="flex items-center gap-1.5 flex-wrap">
+                  {data.seasons.map((s, i) => (
+                    <button key={s.season} onClick={() => { setSeason(i); setQuery(""); }}
+                      className={`font-body text-[12px] rounded-full px-3 py-1.5 border transition-colors ${i === season ? "bg-white text-black border-white" : "border-white/15 text-white/50 hover:text-white"}`}>
+                      Season {s.season}
+                    </button>
+                  ))}
+                </div>
+                <div className="flex items-center gap-2 bg-white/[0.06] border border-white/10 rounded-full px-3 py-1.5 w-full sm:w-48">
+                  <Search size={12} className="text-white/40 shrink-0" />
+                  <input value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Search episodes"
+                    className="bg-transparent outline-none text-[12px] font-body placeholder:text-white/30 w-full" />
+                </div>
+              </div>
+
+              <div className="space-y-1.5 max-h-64 overflow-y-auto pr-1">
+                {episodes.length === 0 && (
+                  <p className="font-body text-[12.5px] text-white/35 py-6 text-center">No episodes match "{query}".</p>
+                )}
+                {episodes.map((e) => (
+                  <div key={e.ep} className="flex items-center gap-3 rounded-xl px-3 py-2.5 bg-white/[0.03] hover:bg-white/[0.08] transition-colors cursor-pointer group">
+                    <div className="w-9 h-9 rounded-lg bg-white/[0.06] border border-white/10 flex items-center justify-center font-display text-[12px] text-white/50 shrink-0">
+                      {e.ep}
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <div className="font-body text-[12.5px] font-medium truncate">{e.title}</div>
+                      <div className="font-body text-[10.5px] text-white/35">{e.duration}m</div>
+                    </div>
+                    {e.watched && <div className="w-1.5 h-1.5 rounded-full bg-white/40 shrink-0" />}
+                    <Play size={13} className="text-white/0 group-hover:text-white/70 transition-colors shrink-0" />
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
