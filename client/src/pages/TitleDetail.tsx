@@ -1,10 +1,4 @@
-
-import {   useCallback } from 'react';
-
-
-
-import { useState, useEffect } from 'react';
-
+import { useState, useEffect, useCallback } from 'react';
 import { useParams } from 'react-router-dom';
 import { Play, Search, X } from 'lucide-react';
 import { api } from '../lib/api';
@@ -13,11 +7,13 @@ import Meter from '../components/Meter';
 
 const STREAMRIP = 'https://streamrip-website-production.up.railway.app';
 
-const tiers = ['SKIP', 'TIMEPASS', 'GOFORIT', 'PERFECTION'];
-const tierLabels: Record<string, string> = {
+const tiers = ['SKIP', 'TIMEPASS', 'GOFORIT', 'PERFECTION'] as const;
+type Tier = typeof tiers[number];
+
+const tierLabels: Record<Tier, string> = {
   SKIP: 'Skip', TIMEPASS: 'Timepass', GOFORIT: 'Go for it', PERFECTION: 'Perfection',
 };
-const tierColors: Record<string, string> = {
+const tierColors: Record<Tier, string> = {
   SKIP: 'border-red-800 bg-red-900/20 text-red-400',
   TIMEPASS: 'border-yellow-700 bg-yellow-900/20 text-yellow-400',
   GOFORIT: 'border-green-700 bg-green-900/20 text-green-400',
@@ -37,17 +33,17 @@ export default function TitleDetail() {
   const { user } = useAuth();
 
   const [title, setTitle] = useState<any>(null);
-  const [, setRatings] = useState<any[]>([]);
-  const [, setMyTier] = useState('');
+  const [ratings, setRatings] = useState<any[]>([]);
+  const [myTier, setMyTier] = useState<Tier | ''>('');
   const [review, setReview] = useState('');
   const [watchlistStatus, setWatchlistStatus] = useState('');
   const [ratingSubmitting, setRatingSubmitting] = useState(false);
 
-  // Player state
+  // Player
   const [playerOpen, setPlayerOpen] = useState(false);
   const [playerSrc, setPlayerSrc] = useState<string | null>(null);
 
-  // Season/episode state (SERIES only)
+  // Season / episode (SERIES only)
   const [seasons, setSeasons] = useState<any[]>([]);
   const [episodes, setEpisodes] = useState<any[]>([]);
   const [selectedSeason, setSelectedSeason] = useState(1);
@@ -56,12 +52,14 @@ export default function TitleDetail() {
   const [seasonsLoading, setSeasonsLoading] = useState(false);
   const [epsLoading, setEpsLoading] = useState(false);
 
+  // Load title + ratings
   useEffect(() => {
     if (!id) return;
-    api..get(id).then(setTitle);
+    api.titles.get(id).then(setTitle);
     api.titles.ratings(id).then(setRatings);
   }, [id]);
 
+  // Load seasons when title type is SERIES
   useEffect(() => {
     if (!title || title.type !== 'SERIES' || !id) return;
     setSeasonsLoading(true);
@@ -71,12 +69,13 @@ export default function TitleDetail() {
       .finally(() => setSeasonsLoading(false));
   }, [title, id]);
 
+  // Load episodes when selected season changes
   useEffect(() => {
     if (!title || title.type !== 'SERIES' || !id) return;
     setEpsLoading(true);
     setEpisodes([]);
     setSelectedEp(1);
-    api.id, selectedSeason)
+    api.titles.episodes(id, selectedSeason)
       .then(setEpisodes)
       .catch(() => setEpisodes([]))
       .finally(() => setEpsLoading(false));
@@ -92,14 +91,15 @@ export default function TitleDetail() {
     setRatingSubmitting(true);
     try {
       await api.titles.rate(id, { tier: myTier, reviewText: review || undefined });
-      const r = await api.titles.ratings(id);
-      setRatings(r);
-    } finally { setRatingSubmitting(false); }
+      setRatings(await api.titles.ratings(id));
+    } finally {
+      setRatingSubmitting(false);
+    }
   };
 
   const addToWatchlist = async (status: string) => {
-    if (!id) return;
-    await api..add({ titleId: id, status });
+    if (!id || !status) return;
+    await api.watchlist.add({ titleId: id, status });
     setWatchlistStatus(status);
   };
 
@@ -110,6 +110,7 @@ export default function TitleDetail() {
   );
 
   const streamSrc = getStreamSrc(title, selectedSeason, selectedEp);
+
   const filteredEps = episodes.filter(e =>
     !epSearch ||
     String(e.episodeNumber).includes(epSearch) ||
@@ -122,7 +123,10 @@ export default function TitleDetail() {
       <div className="relative w-full h-[52vw] max-h-[480px] min-h-[260px] overflow-hidden">
         {title.backdropUrl
           ? <img src={title.backdropUrl} alt="" className="w-full h-full object-cover" />
-          : <div className="w-full h-full" style={{ background: `radial-gradient(90% 70% at 30% 0%, ${title.posterColorFrom}, ${title.posterColorTo} 70%)` }} />
+          : <div
+              className="w-full h-full"
+              style={{ background: `radial-gradient(90% 70% at 30% 0%, ${title.posterColorFrom}, ${title.posterColorTo} 70%)` }}
+            />
         }
         <div className="absolute inset-0 bg-gradient-to-b from-void/10 via-void/50 to-void" />
         <div className="absolute inset-0 bg-gradient-to-r from-void/60 to-transparent" />
@@ -131,6 +135,7 @@ export default function TitleDetail() {
       {/* Main content */}
       <div className="px-5 -mt-28 relative z-10 max-w-4xl mx-auto">
         <div className="flex flex-col md:flex-row gap-6">
+
           {/* Poster */}
           <div
             className="w-[130px] md:w-[160px] h-[190px] md:h-[234px] rounded-xl border border-line shrink-0 bg-cover bg-center shadow-2xl"
@@ -144,11 +149,16 @@ export default function TitleDetail() {
           {/* Meta */}
           <div className="flex-1 space-y-3 pt-2 md:pt-16">
             <h1 className="font-serif text-3xl md:text-4xl font-semibold leading-tight">{title.name}</h1>
+
             <div className="font-mono text-xs text-ink-dim flex flex-wrap gap-2 items-center">
               <span>{title.year}</span>·
               <span className="uppercase">{title.type}</span>
-              {title.runtimeMinutes && <><span>·</span><span>{Math.floor(title.runtimeMinutes / 60)}h {title.runtimeMinutes % 60}m</span></>}
-              {title.genres?.length > 0 && <><span>·</span><span>{title.genres.slice(0, 3).join(', ')}</span></>}
+              {title.runtimeMinutes && (
+                <><span>·</span><span>{Math.floor(title.runtimeMinutes / 60)}h {title.runtimeMinutes % 60}m</span></>
+              )}
+              {title.genres?.length > 0 && (
+                <><span>·</span><span>{title.genres.slice(0, 3).join(', ')}</span></>
+              )}
             </div>
 
             {/* Action buttons */}
@@ -163,9 +173,9 @@ export default function TitleDetail() {
               )}
               {user && (
                 <select
-                  onChange={e => addToWatchlist(e.target.value)}
                   value={watchlistStatus}
-                  className="flex items-center gap-2 bg-surface border border-line text-ink text-sm px-3 py-2.5 rounded-lg focus:border-maroon outline-none cursor-pointer"
+                  onChange={e => addToWatchlist(e.target.value)}
+                  className="bg-surface border border-line text-ink text-sm px-3 py-2.5 rounded-lg focus:border-maroon outline-none cursor-pointer"
                 >
                   <option value="">+ Watchlist</option>
                   <option value="PLAN_TO_WATCH">Plan to Watch</option>
@@ -181,12 +191,11 @@ export default function TitleDetail() {
         {/* Synopsis */}
         <p className="text-ink-dim leading-relaxed mt-6 text-[15px] max-w-2xl">{title.synopsis}</p>
 
-        {/* === SERIES: Season + Episode Selector === */}
+        {/* SERIES: Season + Episode selector */}
         {title.type === 'SERIES' && (
           <div className="mt-8 space-y-4">
             <h2 className="font-serif text-xl font-semibold">Episodes</h2>
 
-            {/* Season selector */}
             {seasonsLoading
               ? <p className="text-ink-dim text-sm font-mono animate-pulse">Loading seasons…</p>
               : seasons.length > 0 && (
@@ -209,7 +218,7 @@ export default function TitleDetail() {
               )
             }
 
-            {/* Episode search */}
+            {/* Episode search — only shows when list is long enough */}
             {episodes.length > 5 && (
               <div className="relative max-w-xs">
                 <Search size={13} className="absolute left-3 top-1/2 -translate-y-1/2 text-ink-faint" />
@@ -221,7 +230,10 @@ export default function TitleDetail() {
                   className="w-full bg-surface border border-line rounded-lg pl-8 pr-3 py-2 text-sm text-ink placeholder:text-ink-faint focus:border-maroon outline-none"
                 />
                 {epSearch && (
-                  <button onClick={() => setEpSearch('')} className="absolute right-3 top-1/2 -translate-y-1/2 text-ink-faint hover:text-ink">
+                  <button
+                    onClick={() => setEpSearch('')}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-ink-faint hover:text-ink"
+                  >
                     <X size={12} />
                   </button>
                 )}
@@ -241,7 +253,9 @@ export default function TitleDetail() {
                         key={ep.episodeNumber}
                         onClick={() => { setSelectedEp(ep.episodeNumber); if (src) openPlayer(src); }}
                         className={`flex items-center gap-3 p-3 rounded-xl border cursor-pointer transition-all group ${
-                          isActive ? 'border-maroon-bright bg-maroon/10' : 'border-line hover:border-line-bright hover:bg-surface'
+                          isActive
+                            ? 'border-maroon-bright bg-maroon/10'
+                            : 'border-line hover:border-line-bright hover:bg-surface'
                         }`}
                       >
                         {ep.stillUrl
@@ -271,7 +285,7 @@ export default function TitleDetail() {
           </div>
         )}
 
-        {/* === ANIME: Episode picker === */}
+        {/* ANIME: Episode picker */}
         {title.type === 'ANIME' && (
           <div className="mt-8 space-y-4">
             <h2 className="font-serif text-xl font-semibold">Watch Episode</h2>
@@ -284,14 +298,13 @@ export default function TitleDetail() {
                 onChange={e => setSelectedEp(Math.max(1, parseInt(e.target.value) || 1))}
                 className="w-20 bg-surface border border-line rounded-lg px-3 py-2 text-sm text-ink focus:border-maroon outline-none"
               />
-              {streamSrc && (
-                <button
-                  onClick={() => openPlayer(`${STREAMRIP}/anime/${title.tmdbId}/${selectedEp}`)}
-                  className="flex items-center gap-2 bg-ink text-void text-sm font-semibold px-4 py-2 rounded-lg hover:bg-ink/90 transition-colors"
-                >
-                  <Play size={12} fill="currentColor" /> Watch
-                </button>
-              )}
+              <button
+                onClick={() => openPlayer(`${STREAMRIP}/anime/${title.tmdbId}/${selectedEp}`)}
+                disabled={!title.tmdbId}
+                className="flex items-center gap-2 bg-ink text-void text-sm font-semibold px-4 py-2 rounded-lg hover:bg-ink/90 transition-colors disabled:opacity-40"
+              >
+                <Play size={12} fill="currentColor" /> Watch
+              </button>
             </div>
           </div>
         )}
@@ -316,7 +329,7 @@ export default function TitleDetail() {
           </div>
         )}
 
-        {/* Rating */}
+        {/* Your Rating */}
         {user && (
           <div className="mt-8 space-y-4 pt-6 border-t border-line">
             <h2 className="font-serif text-xl font-semibold">Your Rating</h2>
@@ -326,7 +339,9 @@ export default function TitleDetail() {
                   key={t}
                   onClick={() => setMyTier(t)}
                   className={`px-4 py-2 rounded-lg border text-xs font-mono transition-colors ${
-                    myTier === t ? tierColors[t] : 'border-line text-ink-dim hover:text-ink hover:border-line-bright'
+                    myTier === t
+                      ? tierColors[t]
+                      : 'border-line text-ink-dim hover:text-ink hover:border-line-bright'
                   }`}
                 >
                   {tierLabels[t]}
@@ -350,9 +365,11 @@ export default function TitleDetail() {
           </div>
         )}
 
-        {/* Community reviews */}
+        {/* Community Reviews */}
         <div className="mt-8 space-y-3 pt-6 border-t border-line">
-          <h2 className="font-serif text-xl font-semibold">Reviews <span className="text-ink-dim font-sans text-base font-normal">({ratings.length})</span></h2>
+          <h2 className="font-serif text-xl font-semibold">
+            Reviews <span className="text-ink-dim font-sans text-base font-normal">({ratings.length})</span>
+          </h2>
           {ratings.length === 0
             ? <p className="text-ink-faint text-sm font-mono">No reviews yet. Be the first!</p>
             : ratings.map((r: any) => (
@@ -368,8 +385,7 @@ export default function TitleDetail() {
         </div>
       </div>
 
-
-      {/* StreamRip player fullscreen overlay */}
+      {/* StreamRip fullscreen player overlay */}
       {playerOpen && playerSrc && (
         <div className="fixed inset-0 z-50 bg-void flex flex-col">
           <div className="flex items-center justify-between px-4 py-3 border-b border-line shrink-0 bg-void/95 backdrop-blur-sm">
@@ -383,11 +399,21 @@ export default function TitleDetail() {
               {title.type === 'SERIES' && (
                 <>
                   <button
-                    onClick={() => { const prev = Math.max(1, selectedEp - 1); setSelectedEp(prev); const s = getStreamSrc(title, selectedSeason, prev); if (s) setPlayerSrc(s); }}
+                    onClick={() => {
+                      const prev = Math.max(1, selectedEp - 1);
+                      setSelectedEp(prev);
+                      const s = getStreamSrc(title, selectedSeason, prev);
+                      if (s) setPlayerSrc(s);
+                    }}
                     className="text-xs text-ink-dim border border-line rounded-lg px-3 py-1.5 hover:text-ink transition-colors"
                   >← Prev</button>
                   <button
-                    onClick={() => { const next = selectedEp + 1; setSelectedEp(next); const s = getStreamSrc(title, selectedSeason, next); if (s) setPlayerSrc(s); }}
+                    onClick={() => {
+                      const next = selectedEp + 1;
+                      setSelectedEp(next);
+                      const s = getStreamSrc(title, selectedSeason, next);
+                      if (s) setPlayerSrc(s);
+                    }}
                     className="text-xs text-ink-dim border border-line rounded-lg px-3 py-1.5 hover:text-ink transition-colors"
                   >Next →</button>
                 </>
@@ -409,8 +435,5 @@ export default function TitleDetail() {
         </div>
       )}
     </div>
-
-    
-      /* Stream Player */
-      
+  );
 }
