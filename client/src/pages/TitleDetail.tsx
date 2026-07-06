@@ -75,7 +75,7 @@ export default function TitleDetail() {
       {/* Stream Player */}
       <div className="mt-6 px-4">
         <CustomPlayer
-          tmdbId={title.tmdbId || id || ""}
+          tmdbId={title.tmdbId || title.id || id || "27205"}
           type={title.type === "SERIES" ? "tv" : "movie"}
           season={1}
           episode={1}
