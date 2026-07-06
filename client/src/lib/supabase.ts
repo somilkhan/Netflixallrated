@@ -7,10 +7,23 @@ function normalizeUrl(url: string): string {
     .replace(/\/$/, '');
 }
 
+// Module-level singleton — prevents multiple GoTrueClient instances even
+// in React StrictMode (which double-fires effects in development).
+let _client: SupabaseClient | null = null;
+let _key = '';
+
 /**
- * Create a Supabase client from config values fetched from /api/config.
- * Call this once at app startup inside AuthProvider.
+ * Create (or return the existing) Supabase client.
+ * Call this inside AuthProvider once config is loaded from /api/config.
  */
 export function createSupabaseClient(supabaseUrl: string, supabaseAnonKey: string): SupabaseClient {
-  return createClient(normalizeUrl(supabaseUrl), supabaseAnonKey);
+  const url = normalizeUrl(supabaseUrl);
+  const cacheKey = `${url}|${supabaseAnonKey}`;
+  if (!_client || _key !== cacheKey) {
+    _client = createClient(url, supabaseAnonKey, {
+      auth: { persistSession: true, autoRefreshToken: true },
+    });
+    _key = cacheKey;
+  }
+  return _client;
 }

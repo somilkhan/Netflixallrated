@@ -2,7 +2,7 @@ import { Router } from 'express';
 import { z } from 'zod';
 import { prisma } from '../lib/prisma.js';
 import { authenticate, requireAdmin, AuthRequest } from '../middleware/auth.js';
-import { searchTmdb, getTmdbDetails, getTrendingTmdb } from '../lib/tmdb.js';
+import { searchTmdb, getTmdbDetails, getTrendingTmdb, getTvSeasons, getTvEpisodes } from '../lib/tmdb.js';
 
 const router = Router();
 
@@ -38,6 +38,22 @@ router.get('/', async (req, res) => {
 });
 
 router.get('/top10', async (_req, res) => { const titles = await prisma.title.findMany({ take: 10, orderBy: { createdAt: 'desc' }, include: { platforms: { include: { platform: true } } } }); res.json(titles); });
+
+// Must be defined before /:id to avoid Express treating "seasons"/"episodes" as an ID
+router.get('/:id/seasons', async (req, res) => {
+  const title = await prisma.title.findUnique({ where: { id: req.params.id }, select: { tmdbId: true, type: true } });
+  if (!title || !title.tmdbId || title.type !== 'SERIES') return res.json([]);
+  try { res.json(await getTvSeasons(title.tmdbId)); }
+  catch (err) { res.status(502).json({ error: 'TMDB seasons failed', detail: (err as Error).message }); }
+});
+
+router.get('/:id/episodes', async (req, res) => {
+  const title = await prisma.title.findUnique({ where: { id: req.params.id }, select: { tmdbId: true, type: true } });
+  if (!title || !title.tmdbId || title.type !== 'SERIES') return res.json([]);
+  const season = Math.max(1, parseInt(req.query.season as string) || 1);
+  try { res.json(await getTvEpisodes(title.tmdbId, season)); }
+  catch (err) { res.status(502).json({ error: 'TMDB episodes failed', detail: (err as Error).message }); }
+});
 router.get('/trending', async (_req, res) => { const titles = await prisma.title.findMany({ take: 14, orderBy: { year: 'desc' }, include: { platforms: { include: { platform: true } } } }); res.json(titles); });
 router.get('/recent', async (_req, res) => { const titles = await prisma.title.findMany({ take: 18, orderBy: { createdAt: 'desc' }, include: { platforms: { include: { platform: true } } } }); res.json(titles); });
 

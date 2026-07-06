@@ -78,6 +78,44 @@ export interface TmdbDetails {
   trailerYoutubeId: string | null;
 }
 
+export interface TvSeason {
+  seasonNumber: number;
+  name: string;
+  episodeCount: number;
+  airDate: string;
+}
+
+export interface TvEpisode {
+  episodeNumber: number;
+  name: string;
+  airDate: string;
+  overview: string;
+  stillUrl: string | null;
+}
+
+export async function getTvSeasons(tmdbId: number): Promise<TvSeason[]> {
+  const data = await tmdbFetch(`/tv/${tmdbId}`);
+  return (data.seasons || [])
+    .filter((s: any) => s.season_number > 0)
+    .map((s: any) => ({
+      seasonNumber: s.season_number,
+      name: s.name,
+      episodeCount: s.episode_count,
+      airDate: s.air_date || '',
+    }));
+}
+
+export async function getTvEpisodes(tmdbId: number, seasonNumber: number): Promise<TvEpisode[]> {
+  const data = await tmdbFetch(`/tv/${tmdbId}/season/${seasonNumber}`);
+  return (data.episodes || []).map((e: any) => ({
+    episodeNumber: e.episode_number,
+    name: e.name,
+    airDate: e.air_date || '',
+    overview: e.overview || '',
+    stillUrl: tmdbImageUrl(e.still_path, 'w342'),
+  }));
+}
+
 export async function getTmdbDetails(tmdbId: number, mediaType: 'movie' | 'tv'): Promise<TmdbDetails> {
   const path = mediaType === 'movie' ? `/movie/${tmdbId}` : `/tv/${tmdbId}`;
   const detail = await tmdbFetch(path, { append_to_response: 'videos' });
