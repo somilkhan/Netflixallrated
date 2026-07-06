@@ -74,7 +74,7 @@ export default function TV() {
           {loading ? (
             <div className="flex flex-wrap gap-4">
               {Array.from({ length: 10 }).map((_, i) => (
-                <div key={i} className="w-[142px] md:w-[172px] h-[200px] md:h-[246px] rounded-[11px] bg-surface animate-pulse" />
+                <div key={i} className="w-[142px] md:w-[172px] poster-ratio rounded-[11px] bg-surface animate-pulse" />
               ))}
             </div>
           ) : all.length > 0 ? (

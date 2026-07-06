@@ -11,6 +11,7 @@ export default function Admin() {
   const [results, setResults] = useState<TmdbSearchResult[]>([]);
   const [searching, setSearching] = useState(false);
   const [syncing, setSyncing] = useState(false);
+  const [backfilling, setBackfilling] = useState(false);
   const [importingId, setImportingId] = useState<number | null>(null);
   const [message, setMessage] = useState('');
 
@@ -36,6 +37,19 @@ export default function Admin() {
       setMessage('Search failed.');
     } finally {
       setSearching(false);
+    }
+  };
+
+  const runBackfill = async () => {
+    setBackfilling(true);
+    setMessage('');
+    try {
+      const data = await api.titles.backfillImages();
+      setMessage(`Backfill done — ${data.updated} updated, ${data.failed} failed out of ${data.total} titles.${data.errors?.length ? ' Errors: ' + data.errors.join('; ') : ''}`);
+    } catch (err: any) {
+      setMessage(`Backfill failed: ${err.message}`);
+    } finally {
+      setBackfilling(false);
     }
   };
 
@@ -73,6 +87,22 @@ export default function Admin() {
 
   return (
     <div className="px-5 py-8 max-w-2xl mx-auto space-y-8">
+      {/* Backfill poster images */}
+      <section>
+        <h2 className="font-serif text-xl font-semibold mb-1">Backfill Poster Images</h2>
+        <p className="text-ink-dim text-sm mb-4">
+          Fetch real poster art, backdrops, and trailers from TMDB for every title that's missing them.
+          Requires <code className="font-mono text-[11px] bg-surface-2 px-1 rounded">TMDB_API_KEY</code> to be set in Replit Secrets.
+        </p>
+        <button
+          onClick={runBackfill}
+          disabled={backfilling}
+          className="px-5 py-2.5 bg-maroon-bright text-white rounded-lg font-semibold hover:bg-maroon transition-colors disabled:opacity-50 text-sm"
+        >
+          {backfilling ? 'Backfilling… (this may take a minute)' : 'Backfill All Missing Images'}
+        </button>
+      </section>
+
       {/* Sync trending */}
       <section>
         <h2 className="font-serif text-xl font-semibold mb-1">Sync Trending</h2>

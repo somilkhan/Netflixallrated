@@ -42,6 +42,7 @@ export const api = {
     importTmdb: (data: { tmdbId: number; mediaType: 'movie' | 'tv'; type: string }) =>
       fetcher('/titles/import-tmdb', { method: 'POST', body: JSON.stringify(data) }),
     syncTmdb: () => fetcher('/titles/sync-tmdb', { method: 'POST' }),
+    backfillImages: () => fetcher('/titles/backfill-images', { method: 'POST' }),
     seasons: (id: string) => fetcher(`/titles/${id}/seasons`),
     episodes: (id: string, season: number) => fetcher(`/titles/${id}/episodes?season=${season}`),
   },

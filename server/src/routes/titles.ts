@@ -38,7 +38,14 @@ router.get('/', async (req, res) => {
   res.json({ titles, total: count, page: parseInt(page as string), pages: Math.ceil(count / take) });
 });
 
-router.get('/top10', async (_req, res) => { const titles = await prisma.title.findMany({ take: 10, orderBy: { createdAt: 'desc' }, include: { platforms: { include: { platform: true } } } }); res.json(titles); });
+router.get('/top10', async (_req, res) => {
+  const titles = await prisma.title.findMany({
+    take: 10,
+    orderBy: [{ ratings: { _count: 'desc' } }, { year: 'desc' }],
+    include: { platforms: { include: { platform: true } }, _count: { select: { ratings: true } } },
+  });
+  res.json(titles);
+});
 
 // Must be defined before /:id to avoid Express treating "seasons"/"episodes" as an ID
 router.get('/:id/seasons', async (req, res) => {
@@ -55,8 +62,36 @@ router.get('/:id/episodes', async (req, res) => {
   try { res.json(await getTvEpisodes(title.tmdbId, season)); }
   catch (err) { res.status(502).json({ error: 'TMDB episodes failed', detail: (err as Error).message }); }
 });
-router.get('/trending', async (_req, res) => { const titles = await prisma.title.findMany({ take: 14, orderBy: { year: 'desc' }, include: { platforms: { include: { platform: true } } } }); res.json(titles); });
-router.get('/recent', async (_req, res) => { const titles = await prisma.title.findMany({ take: 18, orderBy: { createdAt: 'desc' }, include: { platforms: { include: { platform: true } } } }); res.json(titles); });
+router.get('/trending', async (_req, res) => {
+  // Titles with real poster images first (TMDB-imported), then by year, then ratings
+  const titles = await prisma.title.findMany({
+    take: 14,
+    orderBy: [{ year: 'desc' }, { ratings: { _count: 'desc' } }],
+    where: { posterUrl: { not: null } }, // prefer titles that have real art
+    include: { platforms: { include: { platform: true } }, _count: { select: { ratings: true } } },
+  });
+  // If not enough with posters, backfill with any titles
+  if (titles.length < 14) {
+    const ids = new Set(titles.map(t => t.id));
+    const extra = await prisma.title.findMany({
+      take: 14 - titles.length,
+      orderBy: [{ year: 'desc' }, { ratings: { _count: 'desc' } }],
+      where: { id: { notIn: [...ids] } },
+      include: { platforms: { include: { platform: true } }, _count: { select: { ratings: true } } },
+    });
+    titles.push(...extra);
+  }
+  res.json(titles);
+});
+
+router.get('/recent', async (_req, res) => {
+  const titles = await prisma.title.findMany({
+    take: 18,
+    orderBy: { createdAt: 'desc' },
+    include: { platforms: { include: { platform: true } } },
+  });
+  res.json(titles);
+});
 
 // --- Public live search (DB + optional TMDB fallback) -------------------
 router.get('/live-search', async (req, res) => {
@@ -210,6 +245,80 @@ router.get('/sync-status', authenticate, requireAdmin, async (_req: AuthRequest,
   } catch (err) {
     res.status(500).json({ error: 'Status check failed', detail: (err as Error).message });
   }
+});
+
+/**
+ * POST /api/titles/backfill-images
+ * For every title missing a posterUrl:
+ *  - Has tmdbId → fetch details directly by ID
+ *  - No tmdbId  → search TMDB by name + year, take best match
+ * Requires TMDB_API_KEY. Admin-only.
+ */
+router.post('/backfill-images', authenticate, requireAdmin, async (_req: AuthRequest, res) => {
+  if (!process.env.TMDB_API_KEY) {
+    return res.status(503).json({ error: 'TMDB_API_KEY is not configured — add it in Replit Secrets.' });
+  }
+
+  const missing = await prisma.title.findMany({
+    where: { posterUrl: null },
+    select: { id: true, name: true, tmdbId: true, type: true, year: true },
+  });
+
+  let updated = 0;
+  let failed = 0;
+  const errors: string[] = [];
+
+  for (const title of missing) {
+    try {
+      let details = null;
+
+      if (title.tmdbId) {
+        const mediaType = title.type === 'MOVIE' ? 'movie' : 'tv';
+        details = await getTmdbDetails(title.tmdbId, mediaType);
+      } else {
+        const results = await searchTmdb(title.name);
+        if (results.length > 0) {
+          // Prefer exact year match, otherwise take first result
+          const match = results.find(r => r.year === title.year) ?? results[0];
+          const mediaType = title.type === 'MOVIE' ? 'movie' : 'tv';
+          details = await getTmdbDetails(match.tmdbId, mediaType);
+        }
+      }
+
+      if (details && (details.posterUrl || details.backdropUrl)) {
+        // Determine whether we can safely write the tmdbId (guard against unique constraint)
+        const newTmdbId = title.tmdbId ?? details.tmdbId;
+        let safeToWriteTmdbId = true;
+        if (!title.tmdbId && newTmdbId) {
+          const existing = await prisma.title.findUnique({ where: { tmdbId: newTmdbId }, select: { id: true } });
+          if (existing && existing.id !== title.id) safeToWriteTmdbId = false;
+        }
+        await prisma.title.update({
+          where: { id: title.id },
+          data: {
+            posterUrl: details.posterUrl ?? undefined,
+            backdropUrl: details.backdropUrl ?? undefined,
+            trailerYoutubeId: details.trailerYoutubeId ?? undefined,
+            ...(safeToWriteTmdbId ? { tmdbId: newTmdbId } : {}),
+          },
+        });
+        updated++;
+      } else {
+        failed++;
+        errors.push(`No match: "${title.name}"`);
+      }
+
+      // Respect TMDB rate limit (~40 req/10 s):
+      // name-search path makes 2 requests (search + details) so wait 600 ms;
+      // direct tmdbId path makes 1 request so wait 300 ms.
+      await new Promise(r => setTimeout(r, title.tmdbId ? 300 : 600));
+    } catch (err) {
+      failed++;
+      errors.push(`Error: "${title.name}" — ${(err as Error).message}`);
+    }
+  }
+
+  res.json({ total: missing.length, updated, failed, errors: errors.slice(0, 30) });
 });
 
 router.get('/:id', async (req, res) => {
