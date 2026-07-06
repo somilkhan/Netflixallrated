@@ -1,18 +1,28 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
-import { useParams } from 'react-router-dom';
-import { Play, Search, X } from 'lucide-react';
+import { useParams, useNavigate } from 'react-router-dom';
 import { api } from '../lib/api';
 import { useAuth } from '../lib/auth';
 import Meter from '../components/Meter';
 import { searchAnime } from '../lib/anilist';
 import { SERVERS } from '../components/VideoPlayer';
 import '@/styles/MovieDetailPage.css';
-import RatingWidget from '../components/RatingWidget';
 import type { Tier } from '../components/RatingWidget';
+
+const TIERS = [
+  { id: 'SKIP',       label: 'Skip',       key: 'skip' },
+  { id: 'TIMEPASS',   label: 'Timepass',   key: 'timepass' },
+  { id: 'GO_FOR_IT',  label: 'Go for it',  key: 'goforit' },
+  { id: 'PERFECTION', label: 'Perfection', key: 'perfection' },
+] as const;
+
+const TIER_LABEL: Record<string, string> = {
+  SKIP: 'Skip', TIMEPASS: 'Timepass', GO_FOR_IT: 'Go for it', PERFECTION: 'Perfection',
+};
 
 export default function TitleDetail() {
   const { id } = useParams();
   const { user } = useAuth();
+  const navigate = useNavigate();
 
   const [title, setTitle] = useState<any>(null);
   const [ratings, setRatings] = useState<any[]>([]);
@@ -20,6 +30,7 @@ export default function TitleDetail() {
   const [review, setReview] = useState('');
   const [watchlistStatus, setWatchlistStatus] = useState('');
   const [ratingSubmitting, setRatingSubmitting] = useState(false);
+  const [scrolled, setScrolled] = useState(false);
 
   // Player
   const [isPlaying, setIsPlaying] = useState(false);
@@ -39,7 +50,6 @@ export default function TitleDetail() {
   const [animeError, setAnimeError] = useState<string | null>(null);
   const [animeEmbedUrl, setAnimeEmbedUrl] = useState<string | null>(null);
   const [animeEmbedLoading, setAnimeEmbedLoading] = useState(false);
-  // Guard against race conditions when episode changes rapidly
   const embedReqRef = useRef(0);
 
   // Season / episode (SERIES only)
@@ -50,6 +60,13 @@ export default function TitleDetail() {
   const [epSearch, setEpSearch] = useState('');
   const [seasonsLoading, setSeasonsLoading] = useState(false);
   const [epsLoading, setEpsLoading] = useState(false);
+
+  // Topbar scroll detection
+  useEffect(() => {
+    const onScroll = () => setScrolled(window.scrollY > 20);
+    window.addEventListener('scroll', onScroll, { passive: true });
+    return () => window.removeEventListener('scroll', onScroll);
+  }, []);
 
   useEffect(() => {
     if (!id) return;
@@ -75,17 +92,14 @@ export default function TitleDetail() {
       .finally(() => setEpsLoading(false));
   }, [selectedSeason, title, id]);
 
-  // AniList metadata fetch
   useEffect(() => {
     if (!title || title.type !== 'ANIME') return;
     setAnilistData(null);
     searchAnime(title.name).then((data) => { if (data) setAnilistData(data); });
   }, [title]);
 
-  // Anicrush: resolve movieId + episode count when title loads
   useEffect(() => {
     if (!title || title.type !== 'ANIME') return;
-
     setAnicrushMovieId(null);
     setAnicrushEpCount(0);
     setAnimeError(null);
@@ -97,7 +111,6 @@ export default function TitleDetail() {
 
     const run = async () => {
       try {
-        // Search anicrush by stored title name
         const searchRes = await fetch(
           `/api/anicrush/search?keyword=${encodeURIComponent(title.name)}`,
           { signal }
@@ -112,7 +125,6 @@ export default function TitleDetail() {
         const movieId: string = movies[0].id;
         setAnicrushMovieId(movieId);
 
-        // Fetch episode list to get total count
         const epRes = await fetch(
           `/api/anicrush/episodes?movieId=${encodeURIComponent(movieId)}`,
           { signal }
@@ -127,7 +139,6 @@ export default function TitleDetail() {
             0;
           setAnicrushEpCount(count);
         }
-
         setSelectedEp(1);
       } catch (err: any) {
         if (err?.name === 'AbortError') return;
@@ -149,13 +160,9 @@ export default function TitleDetail() {
     return server.getUrl(title.tmdbId, title.type, selectedSeason, selectedEp);
   }, [title, serverId, selectedSeason, selectedEp, animeEmbedUrl]);
 
-  // Fetch embed URL from anicrush, then open player.
-  // Uses a request-id ref to discard stale responses from rapid episode changes.
   const openAnimePlayer = useCallback(async (ep?: number) => {
     const epNum = ep ?? selectedEp;
     if (!anicrushMovieId) return;
-
-    // Clamp to known bounds
     const bounded = anicrushEpCount > 0
       ? Math.min(Math.max(1, epNum), anicrushEpCount)
       : Math.max(1, epNum);
@@ -163,14 +170,14 @@ export default function TitleDetail() {
     const reqId = ++embedReqRef.current;
     setSelectedEp(bounded);
     setAnimeEmbedUrl(null);
-    setAnimeError(null);       // clear previous errors so controls stay visible
+    setAnimeError(null);
     setAnimeEmbedLoading(true);
 
     try {
       const res = await fetch(
         `/api/anicrush/embed?movieId=${encodeURIComponent(anicrushMovieId)}&episode=${bounded}`
       );
-      if (embedReqRef.current !== reqId) return; // stale — a newer request is in-flight
+      if (embedReqRef.current !== reqId) return;
       if (!res.ok) throw new Error(`Episode unavailable (${res.status})`);
       const data = await res.json();
       if (embedReqRef.current !== reqId) return;
@@ -194,8 +201,8 @@ export default function TitleDetail() {
     setTimeout(() => videoSectionRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 50);
   }, []);
 
-  const switchServer = (id: string) => {
-    setServerId(id);
+  const switchServer = (sid: string) => {
+    setServerId(sid);
     setIframeKey(k => k + 1);
   };
 
@@ -213,10 +220,8 @@ export default function TitleDetail() {
     }
   };
 
-  // Prev / Next episode for anime inside the player
   const animePrev = useCallback(() => {
-    const prev = Math.max(1, selectedEp - 1);
-    openAnimePlayer(prev);
+    openAnimePlayer(Math.max(1, selectedEp - 1));
   }, [selectedEp, openAnimePlayer]);
 
   const animeNext = useCallback(() => {
@@ -234,14 +239,16 @@ export default function TitleDetail() {
   };
 
   const addToWatchlist = async (status: string) => {
-    if (!id || !status) return;
+    if (!id) return;
     await api.watchlist.add({ titleId: id, status });
     setWatchlistStatus(status);
   };
 
   if (!title) return (
-    <div className="min-h-screen flex items-center justify-center">
-      <div className="text-ink-dim font-mono text-sm animate-pulse">Loading…</div>
+    <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#060505' }}>
+      <div style={{ fontFamily: 'IBM Plex Mono, monospace', fontSize: 12, color: 'rgba(245,240,236,0.4)', animation: 'pulseFade 1.5s ease-in-out infinite' }}>
+        Loading…
+      </div>
     </div>
   );
 
@@ -250,24 +257,71 @@ export default function TitleDetail() {
     ? !!anicrushMovieId && !animeLoading
     : !!title.tmdbId;
 
+  const posterUrl = title.posterUrl
+    || (title.type === 'ANIME' ? (anilistData?.coverImage?.extraLarge || anilistData?.coverImage?.large) : null);
+  const backdropUrl = title.backdropUrl
+    || (title.type === 'ANIME' ? anilistData?.bannerImage : null);
+  const displayName = title.type === 'ANIME' && anilistData
+    ? (anilistData.title.english || anilistData.title.romaji)
+    : title.name;
+  const genres: string[] = title.genres?.length > 0
+    ? title.genres
+    : (anilistData?.genres || []);
+  const synopsis = title.synopsis
+    || (title.type === 'ANIME'
+      ? anilistData?.description?.replace(/<br\s*\/?>/gi, '\n').replace(/<[^>]+>/g, '')
+      : null);
+  const typeLabel = title.type === 'ANIME' ? 'Anime'
+    : title.type === 'SERIES' ? 'TV Series'
+    : 'Movie';
+
+  const topTier = ratings.length > 0
+    ? TIERS.reduce((best, t) => {
+        const c = ratings.filter(r => r.tier === t.id).length;
+        const b = ratings.filter(r => r.tier === best.id).length;
+        return c > b ? t : best;
+      }, TIERS[0]).label
+    : null;
+
   const filteredEps = episodes.filter(e =>
     !epSearch ||
     String(e.episodeNumber).includes(epSearch) ||
     e.name.toLowerCase().includes(epSearch.toLowerCase())
   );
 
+  const heroBgStyle = backdropUrl
+    ? {
+        backgroundImage: `radial-gradient(ellipse 120% 90% at 30% 10%, rgba(196,72,90,0.12), transparent 55%), url(${backdropUrl})`,
+        backgroundSize: 'cover',
+        backgroundPosition: 'center 30%',
+      }
+    : {
+        background: `radial-gradient(90% 70% at 30% 0%, ${title.posterColorFrom || '#4a1520'}, ${title.posterColorTo || '#0c0a0a'} 80%)`,
+      };
+
   return (
-    /* Fix #3: pb-28 so the last content line never hides behind the floating BottomNav */
-    <div className="pb-28">
-      {/* ── Inline video section ───────────────────────────────── */}
-      <div ref={videoSectionRef} className={`video-section${isPlaying ? ' playing' : ''}`}>
+    <div className="movie-detail-page">
+
+      {/* ── Topbar ───────────────────────────────────────────────── */}
+      <header className={`detail-topbar${scrolled ? ' scrolled' : ''}`}>
+        <button className="detail-back-btn" onClick={() => navigate(-1)}>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2">
+            <polyline points="15 18 9 12 15 6" />
+          </svg>
+        </button>
+        <span className="detail-brand">ALLRATED</span>
+        <div style={{ width: 36 }} />
+      </header>
+
+      {/* ── Hero / Inline player ──────────────────────────────────── */}
+      <div ref={videoSectionRef} className={`hero${isPlaying ? ' playing' : ''}`}>
         {isPlaying ? (
           <>
             {isIframeLoading && (
               <div className="video-loading"><div className="spinner" /></div>
             )}
             <button className="player-close" onClick={handleClosePlayer}>
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
                 <line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" />
               </svg>
             </button>
@@ -283,174 +337,131 @@ export default function TitleDetail() {
             />
           </>
         ) : (
-          <div
-            className="poster-section"
-            onClick={() => {
-              if (!canPlay) return;
-              if (title.type === 'ANIME') openAnimePlayer();
-              else openPlayer();
-            }}
-          >
-            {(() => {
-              const src = title.backdropUrl || (title.type === 'ANIME' ? anilistData?.bannerImage : null);
-              return src
-                ? <img src={src} alt="" className="backdrop-img" />
-                : <div className="backdrop-img" style={{ background: `radial-gradient(90% 70% at 30% 0%, ${title.posterColorFrom}, ${title.posterColorTo} 70%)` }} />;
-            })()}
-            <div className="poster-overlay" />
+          <>
+            <div className="hero-bg" style={heroBgStyle} />
+            <div className="hero-gradient" />
+            <div className="hero-noise" />
             {canPlay && (
-              <div className="play-overlay-btn">
-                <svg width="26" height="26" viewBox="0 0 24 24" fill="white">
+              <button
+                className="play-overlay-btn"
+                onClick={() => title.type === 'ANIME' ? openAnimePlayer() : openPlayer()}
+              >
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="white">
                   <polygon points="8,5 8,19 19,12" />
                 </svg>
-              </div>
+              </button>
             )}
-          </div>
+          </>
         )}
       </div>
 
-      {/* Main content */}
-      <div className="px-5 mt-0 relative z-10 max-w-4xl mx-auto">
-        <div className="flex flex-col md:flex-row gap-6">
+      {/* ── Shell ────────────────────────────────────────────────── */}
+      <div className="detail-shell">
 
-          {/* Poster — poster-ratio (2:3) */}
+        {/* Poster row */}
+        <div className="poster-row">
           <div
-            className="w-[130px] md:w-[160px] poster-ratio rounded-xl border border-line shrink-0 bg-cover bg-center shadow-2xl"
+            className="detail-poster"
             style={{
-              backgroundImage: (() => {
-                const src = title.posterUrl
-                  || (title.type === 'ANIME' ? (anilistData?.coverImage?.extraLarge || anilistData?.coverImage?.large) : null);
-                return src
-                  ? `url(${src})`
-                  : `radial-gradient(120% 100% at 30% 0%, ${title.posterColorFrom}, ${title.posterColorTo} 70%)`;
-              })(),
+              backgroundImage: posterUrl
+                ? `url(${posterUrl})`
+                : `radial-gradient(120% 100% at 30% 0%, ${title.posterColorFrom || '#4a1520'}, ${title.posterColorTo || '#0c0a0a'} 70%)`,
             }}
           />
-
-          {/* Meta */}
-          <div className="flex-1 space-y-3 pt-2 md:pt-16">
-            <h1 className="font-serif text-3xl md:text-4xl font-semibold leading-tight">
-              {title.type === 'ANIME' && anilistData
-                ? (anilistData.title.english || anilistData.title.romaji)
-                : title.name}
-            </h1>
-            {title.type === 'ANIME' && anilistData?.title.romaji && anilistData.title.english && (
-              <p className="font-mono text-xs text-ink-faint">{anilistData.title.romaji}</p>
-            )}
-            <div className="font-mono text-xs text-ink-dim flex flex-wrap gap-2 items-center">
-              <span>{title.year || anilistData?.startDate?.year}</span>·
-              <span className="uppercase">{title.type}</span>
-              {title.type === 'ANIME' && anicrushEpCount > 0 && (
-                <><span>·</span><span>{anicrushEpCount} eps</span></>
-              )}
-              {title.type === 'ANIME' && anilistData?.averageScore && (
-                <><span>·</span>
-                <span className="bg-maroon/20 border border-maroon text-ink rounded px-1.5 py-0.5">
-                  ★ {(anilistData.averageScore / 10).toFixed(1)}
-                </span></>
-              )}
-              {title.type !== 'ANIME' && title.runtimeMinutes && (
-                <><span>·</span><span>{Math.floor(title.runtimeMinutes / 60)}h {title.runtimeMinutes % 60}m</span></>
-              )}
-              {(() => {
-                const genres = title.genres?.length > 0 ? title.genres : (anilistData?.genres || []);
-                return genres.length > 0 ? <><span>·</span><span>{genres.slice(0, 3).join(', ')}</span></> : null;
-              })()}
-            </div>
-
-            <div className="action-buttons">
-              {title.type === 'ANIME' ? (
-                animeLoading ? (
-                  <div className="flex items-center gap-2 px-4 py-2.5 rounded-lg border border-line text-ink-dim text-xs font-mono animate-pulse">
-                    Resolving anime source…
-                  </div>
-                ) : animeError ? (
-                  <div className="flex items-center gap-2 px-4 py-2.5 rounded-lg border border-line text-ink-dim text-xs font-mono">
-                    {animeError}
-                  </div>
-                ) : canPlay ? (
-                  <button
-                    className="play-btn"
-                    onClick={() => openAnimePlayer()}
-                    disabled={animeEmbedLoading}
-                  >
-                    {animeEmbedLoading
-                      ? 'Loading…'
-                      : <><span>▶</span> Play</>
-                    }
-                  </button>
-                ) : (
-                  <div className="flex items-center gap-2 px-4 py-2.5 rounded-lg border border-line text-ink-dim text-xs font-mono">
-                    Select an episode to watch
-                  </div>
-                )
-              ) : canPlay ? (
-                <button className="play-btn" onClick={() => openPlayer()}>
-                  <span>▶</span> Play
-                </button>
-              ) : (
-                <div className="flex items-center gap-2 px-4 py-2.5 rounded-lg border border-line text-ink-dim text-xs font-mono">
-                  No TMDB ID — sync from Admin to enable streaming
-                </div>
-              )}
-              {user && (
-                <select
-                  value={watchlistStatus}
-                  onChange={e => addToWatchlist(e.target.value)}
-                  className="watchlist-btn"
-                >
-                  <option value="">+ Watchlist</option>
-                  <option value="PLAN_TO_WATCH">Plan to Watch</option>
-                  <option value="WATCHING">Watching</option>
-                  <option value="COMPLETED">Completed</option>
-                  <option value="DROPPED">Dropped</option>
-                </select>
-              )}
-            </div>
+          <div className="title-block">
+            <div className="eyebrow">{typeLabel}</div>
           </div>
         </div>
 
-        {/* Synopsis */}
-        {(() => {
-          const synopsis = title.synopsis
-            || (title.type === 'ANIME' ? anilistData?.description?.replace(/<br\s*\/?>/gi, '\n').replace(/<[^>]+>/g, '') : null);
-          return synopsis ? (
-            <p className="text-ink-dim leading-relaxed mt-6 text-[15px] max-w-2xl">{synopsis}</p>
-          ) : null;
-        })()}
+        {/* Title */}
+        <h1 className="detail-title">{displayName}</h1>
+        {title.type === 'ANIME' && anilistData?.title.romaji && anilistData.title.english && (
+          <p className="detail-subtitle">{anilistData.title.romaji}</p>
+        )}
 
-        {/* Action row */}
-        <div className="action-row mt-6">
-          {user && (
+        {/* Meta */}
+        <div className="detail-meta">
+          <span>{title.year || anilistData?.startDate?.year}</span>
+          <span className="dot">·</span>
+          <span>{typeLabel}</span>
+          {title.type === 'ANIME' && anicrushEpCount > 0 && (
+            <><span className="dot">·</span><span>{anicrushEpCount} eps</span></>
+          )}
+          {title.type !== 'ANIME' && title.runtimeMinutes && (
+            <><span className="dot">·</span>
+            <span>{Math.floor(title.runtimeMinutes / 60)}h {title.runtimeMinutes % 60}m</span></>
+          )}
+          {title.type === 'ANIME' && anilistData?.averageScore && (
+            <><span className="dot">·</span><span>★ {(anilistData.averageScore / 10).toFixed(1)}</span></>
+          )}
+          {genres.slice(0, 3).map(g => (
+            <span key={g} className="dp-pill">{g}</span>
+          ))}
+        </div>
+
+        {/* Synopsis */}
+        {synopsis && <p className="synopsis">{synopsis}</p>}
+
+        {/* CTA Buttons */}
+        <div className="detail-actions">
+          {canPlay && (
             <button
-              className={`action-btn${watchlistStatus ? ' active' : ''}`}
-              onClick={() => !watchlistStatus && addToWatchlist('PLAN_TO_WATCH')}
+              className="dp-btn dp-btn-play"
+              onClick={() => title.type === 'ANIME' ? openAnimePlayer() : openPlayer()}
+              disabled={animeEmbedLoading}
+              style={{ flex: '0 0 auto', minWidth: 110 }}
             >
-              <svg width="22" height="22" viewBox="0 0 24 24" fill={watchlistStatus ? 'currentColor' : 'none'} stroke="currentColor" strokeWidth="2">
-                <line x1="12" y1="5" x2="12" y2="19" /><line x1="5" y1="12" x2="19" y2="12" />
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
+                <polygon points="8,5 8,19 19,12" />
               </svg>
-              My List
+              {animeEmbedLoading ? 'Loading…' : 'Play'}
             </button>
           )}
-          <button className="action-btn" onClick={handleShare}>
-            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <line x1="22" y1="2" x2="11" y2="13" />
-              <polygon points="22 2 15 22 11 13 2 9 22 2" />
+          {user && (
+            <button
+              className={`dp-btn dp-btn-save${watchlistStatus ? ' saved' : ''}`}
+              onClick={() => addToWatchlist(watchlistStatus ? '' : 'PLAN_TO_WATCH')}
+            >
+              {watchlistStatus ? (
+                <><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><polyline points="20 6 9 17 4 12"/></svg> Saved</>
+              ) : (
+                <><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg> Save</>
+              )}
+            </button>
+          )}
+          <button className="dp-btn dp-btn-ghost" onClick={handleShare}>
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <line x1="22" y1="2" x2="11" y2="13"/>
+              <polygon points="22 2 15 22 11 13 2 9 22 2"/>
             </svg>
             Share
           </button>
         </div>
 
-        {/* Server accordion — movie & series only */}
-        {!title.type.includes('ANIME') && canPlay && (
-          <div className="mt-4">
+        {/* Anime loading / error state */}
+        {title.type === 'ANIME' && animeLoading && (
+          <div className="anime-status pulse">Resolving anime source…</div>
+        )}
+        {title.type === 'ANIME' && animeError && !animeLoading && (
+          <div className="anime-status error">{animeError}</div>
+        )}
+
+        {/* ── Server accordion (MOVIE / SERIES) ─────────────────── */}
+        {title.type !== 'ANIME' && canPlay && (
+          <div className="server-wrap">
             <button className="server-toggle" onClick={() => setShowServers(s => !s)}>
-              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <rect x="2" y="2" width="20" height="8" rx="2" /><rect x="2" y="14" width="20" height="8" rx="2" />
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
+                <rect x="2" y="2" width="20" height="8" rx="2"/>
+                <rect x="2" y="14" width="20" height="8" rx="2"/>
               </svg>
-              Servers: <span className="active-server-name">{SERVERS.find(s => s.id === serverId)?.label ?? 'VidSrc'}</span>
-              <svg className={`server-toggle-chevron${showServers ? ' open' : ''}`} width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <polyline points="6 9 12 15 18 9" />
+              Source:&nbsp;<span className="active-server-name">
+                {SERVERS.find(s => s.id === serverId)?.label ?? 'VidSrc'}
+              </span>
+              <svg
+                className={`server-toggle-chevron${showServers ? ' open' : ''}`}
+                width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"
+              >
+                <polyline points="6 9 12 15 18 9"/>
               </svg>
             </button>
             {showServers && (
@@ -463,8 +474,8 @@ export default function TitleDetail() {
                   >
                     {srv.label}
                     {serverId === srv.id && (
-                      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#e50914" strokeWidth="3">
-                        <polyline points="20 6 9 17 4 12" />
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                        <polyline points="20 6 9 17 4 12"/>
                       </svg>
                     )}
                   </button>
@@ -474,148 +485,114 @@ export default function TitleDetail() {
           </div>
         )}
 
-        {/* AniList genres + studio row */}
-        {title.type === 'ANIME' && anilistData && (
-          <div className="flex flex-wrap gap-2 mt-4">
-            {(anilistData.genres || []).map((g: string) => (
-              <span key={g} className="font-mono text-[11px] px-2 py-0.5 rounded border border-line text-ink-dim">
-                {g}
-              </span>
-            ))}
-            {anilistData.studios?.nodes?.[0]?.name && (
-              <span className="font-mono text-[11px] px-2 py-0.5 rounded border border-maroon/40 text-ink-dim">
-                {anilistData.studios.nodes[0].name}
-              </span>
-            )}
-          </div>
-        )}
-
-        {/* SERIES: Season + Episode list */}
-        {title.type === 'SERIES' && (
-          <div className="mt-8 space-y-4">
-            <h2 className="font-serif text-xl font-semibold">Episodes</h2>
-
-            {seasonsLoading
-              ? <p className="text-ink-dim text-sm font-mono animate-pulse">Loading seasons…</p>
-              : seasons.length > 0 && (
-                <div className="flex flex-wrap gap-2">
-                  {seasons.map(s => (
-                    <button
-                      key={s.seasonNumber}
-                      onClick={() => setSelectedSeason(s.seasonNumber)}
-                      className={`px-3 py-1.5 rounded-lg border text-xs font-mono transition-colors ${
-                        selectedSeason === s.seasonNumber
-                          ? 'border-maroon-bright bg-maroon/20 text-ink'
-                          : 'border-line text-ink-dim hover:text-ink hover:border-line-bright'
-                      }`}
-                    >
-                      {s.name || `Season ${s.seasonNumber}`}
-                      <span className="ml-1 text-ink-faint">({s.episodeCount})</span>
-                    </button>
-                  ))}
-                </div>
-              )
-            }
-
-            {episodes.length > 5 && (
-              <div className="relative max-w-xs">
-                <Search size={13} className="absolute left-3 top-1/2 -translate-y-1/2 text-ink-faint" />
-                <input
-                  type="text"
-                  value={epSearch}
-                  onChange={e => setEpSearch(e.target.value)}
-                  placeholder="Search episodes…"
-                  className="w-full bg-surface border border-line rounded-lg pl-8 pr-3 py-2 text-sm text-ink placeholder:text-ink-faint focus:border-maroon outline-none"
-                />
-                {epSearch && (
-                  <button onClick={() => setEpSearch('')} className="absolute right-3 top-1/2 -translate-y-1/2 text-ink-faint hover:text-ink">
-                    <X size={12} />
-                  </button>
-                )}
-              </div>
-            )}
-
-            {epsLoading
-              ? <p className="text-ink-dim text-sm font-mono animate-pulse">Loading episodes…</p>
-              : (
-                <div className="space-y-2 max-h-[420px] overflow-y-auto pr-1 scrollbar-none">
-                  {filteredEps.map(ep => {
-                    const isActive = selectedEp === ep.episodeNumber;
-                    return (
-                      <div
-                        key={ep.episodeNumber}
-                        onClick={() => { setSelectedEp(ep.episodeNumber); openPlayer(ep.episodeNumber); }}
-                        className={`flex items-center gap-3 p-3 rounded-xl border cursor-pointer transition-all group ${
-                          isActive ? 'border-maroon-bright bg-maroon/10' : 'border-line hover:border-line-bright hover:bg-surface'
-                        }`}
-                      >
-                        {ep.stillUrl
-                          ? <img src={ep.stillUrl} alt="" className="w-20 h-12 rounded-lg object-cover shrink-0 border border-line" />
-                          : <div className="w-20 h-12 rounded-lg bg-surface border border-line shrink-0 flex items-center justify-center text-ink-faint">
-                              <Play size={14} />
-                            </div>
-                        }
-                        <div className="flex-1 min-w-0">
-                          <p className="text-sm font-medium text-ink truncate">
-                            <span className="text-ink-dim mr-2 font-mono text-xs">{ep.episodeNumber}.</span>
-                            {ep.name}
-                          </p>
-                          {ep.airDate && <p className="text-xs text-ink-faint font-mono mt-0.5">{ep.airDate}</p>}
-                          {ep.overview && <p className="text-xs text-ink-dim mt-1 line-clamp-1">{ep.overview}</p>}
-                        </div>
-                        <Play size={14} className="text-ink-faint group-hover:text-ink shrink-0 transition-colors" />
-                      </div>
-                    );
-                  })}
-                  {filteredEps.length === 0 && !epsLoading && (
-                    <p className="text-ink-faint text-sm font-mono py-4">No episodes found.</p>
-                  )}
-                </div>
-              )
-            }
-          </div>
-        )}
-
-        {/* ANIME: Episode picker */}
+        {/* ── ANIME: episode controls ────────────────────────────── */}
         {title.type === 'ANIME' && !animeLoading && !animeError && anicrushMovieId && (
-          <div className="mt-8 space-y-4">
-            <h2 className="font-serif text-xl font-semibold">Watch Episode</h2>
-            <div className="flex items-center gap-3 flex-wrap">
-              <label className="text-sm text-ink-dim font-mono">Episode</label>
-              <input
-                type="number"
-                min={1}
-                max={anicrushEpCount || undefined}
-                value={selectedEp}
-                onChange={e => setSelectedEp(Math.max(1, parseInt(e.target.value) || 1))}
-                className="w-20 bg-surface border border-line rounded-lg px-3 py-2 text-sm text-ink focus:border-maroon outline-none"
-              />
+          <div className="dp-section">
+            <div className="dp-section-head">
+              <span className="dp-section-title">Watch Episode</span>
               {anicrushEpCount > 0 && (
-                <span className="text-xs text-ink-faint font-mono">of {anicrushEpCount}</span>
+                <span className="dp-section-count">{anicrushEpCount} episodes</span>
               )}
+            </div>
+            <div className="anime-ep-row">
+              <button className="ep-nav-btn" onClick={animePrev} disabled={selectedEp <= 1}>‹</button>
+              <span className="ep-label">Ep {selectedEp}</span>
+              <button className="ep-nav-btn" onClick={animeNext}
+                disabled={anicrushEpCount > 0 && selectedEp >= anicrushEpCount}>›</button>
               <button
+                className="dp-btn dp-btn-play"
+                style={{ flex: '0 0 auto' }}
                 onClick={() => openAnimePlayer()}
                 disabled={animeEmbedLoading}
-                className="flex items-center gap-2 bg-ink text-void text-sm font-semibold px-4 py-2 rounded-lg hover:bg-ink/90 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
               >
-                {animeEmbedLoading
-                  ? <span className="font-mono">Loading…</span>
-                  : <><Play size={12} fill="currentColor" /> Watch</>
-                }
+                {animeEmbedLoading ? 'Loading…' : '▶ Watch'}
               </button>
             </div>
           </div>
         )}
 
-        {/* Where to watch */}
+        {/* ── SERIES: seasons + episodes ────────────────────────── */}
+        {title.type === 'SERIES' && (
+          <div className="dp-section">
+            <div className="dp-section-head">
+              <span className="dp-section-title">Episodes</span>
+            </div>
+
+            {seasonsLoading ? (
+              <div className="anime-status pulse">Loading seasons…</div>
+            ) : seasons.length > 0 && (
+              <div className="season-tabs">
+                {seasons.map(s => (
+                  <button
+                    key={s.seasonNumber}
+                    className={`season-tab${selectedSeason === s.seasonNumber ? ' active' : ''}`}
+                    onClick={() => setSelectedSeason(s.seasonNumber)}
+                  >
+                    {s.name || `S${s.seasonNumber}`}
+                    <span style={{ marginLeft: 4, opacity: 0.45 }}>({s.episodeCount})</span>
+                  </button>
+                ))}
+              </div>
+            )}
+
+            {episodes.length > 5 && (
+              <div className="ep-search">
+                <svg className="ep-search-icon" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+                </svg>
+                <input
+                  className="ep-search-input"
+                  type="text"
+                  value={epSearch}
+                  onChange={e => setEpSearch(e.target.value)}
+                  placeholder="Search episodes…"
+                />
+              </div>
+            )}
+
+            {epsLoading ? (
+              <div className="anime-status pulse">Loading episodes…</div>
+            ) : (
+              <div className="ep-list">
+                {filteredEps.map(ep => (
+                  <div
+                    key={ep.episodeNumber}
+                    className={`ep-row${selectedEp === ep.episodeNumber ? ' active' : ''}`}
+                    onClick={() => { setSelectedEp(ep.episodeNumber); openPlayer(ep.episodeNumber); }}
+                  >
+                    <div className="ep-thumb">
+                      {ep.stillUrl
+                        ? <img src={ep.stillUrl} alt="" />
+                        : <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><polygon points="8,5 8,19 19,12"/></svg>
+                      }
+                    </div>
+                    <div className="ep-info">
+                      <div>
+                        <span className="ep-num">{ep.episodeNumber}.</span>
+                        <span className="ep-name">{ep.name}</span>
+                      </div>
+                      {ep.overview && <p className="ep-overview">{ep.overview}</p>}
+                    </div>
+                  </div>
+                ))}
+                {filteredEps.length === 0 && !epsLoading && (
+                  <div className="empty-note">No episodes found.</div>
+                )}
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* ── Where to watch ────────────────────────────────────── */}
         {title.officialWatchLinks?.length > 0 && (
-          <div className="mt-8 space-y-3">
-            <h2 className="font-serif text-xl font-semibold">Where to watch</h2>
-            <div className="flex gap-2 flex-wrap">
+          <div className="dp-section">
+            <div className="dp-section-head">
+              <span className="dp-section-title">Where to watch</span>
+            </div>
+            <div className="platform-chips">
               {title.officialWatchLinks.map((link: any) => (
                 <a key={link.platform} href={link.url} target="_blank" rel="noreferrer"
-                  className="px-3 py-1.5 rounded-lg border border-line bg-surface text-xs font-mono hover:border-maroon-bright transition-colors"
-                >
+                  className="platform-chip">
                   {link.platform}
                 </a>
               ))}
@@ -623,38 +600,112 @@ export default function TitleDetail() {
           </div>
         )}
 
-        {/* Your Rating */}
-        {user && (
-          <RatingWidget
-            myTier={myTier}
-            setMyTier={setMyTier}
-            review={review}
-            setReview={setReview}
-            submitRating={submitRating}
-            ratingSubmitting={ratingSubmitting}
-          />
-        )}
+        {/* ── Rating card ───────────────────────────────────────── */}
+        <div className="dp-section">
+          <div className="rating-card">
+            <div className="rating-summary">
+              <div>
+                <div className="rating-summary-label">Community</div>
+                <div className="rating-summary-value">{topTier || '—'}</div>
+              </div>
+              <div style={{ textAlign: 'right' }}>
+                <div className="rating-summary-label">Ratings</div>
+                <div className="rating-summary-value small">{ratings.length.toLocaleString()}</div>
+              </div>
+            </div>
 
-        {/* Community Reviews */}
-        <div className="mt-8 space-y-3 pt-6 border-t border-line">
-          <h2 className="font-serif text-xl font-semibold">
-            Reviews <span className="text-ink-dim font-sans text-base font-normal">({ratings.length})</span>
-          </h2>
-          {ratings.length === 0
-            ? <p className="text-ink-faint text-sm font-mono">No reviews yet. Be the first!</p>
-            : ratings.map((r: any) => (
-              <div key={r.id} className="bg-surface border border-line rounded-xl p-4">
-                <div className="flex items-center gap-2 mb-2">
-                  <span className="font-mono text-xs text-ink-dim">{r.user?.displayName || 'Anonymous'}</span>
-                  <Meter tier={r.tier} mini />
+            {TIERS.map(t => {
+              const count = ratings.filter(r => r.tier === t.id).length;
+              const pct = ratings.length > 0 ? Math.round((count / ratings.length) * 100) : 0;
+              return (
+                <div
+                  key={t.id}
+                  className={`tier${myTier === t.id ? ' selected' : ''}`}
+                  data-tier={t.key}
+                  onClick={() => user && setMyTier(t.id as Tier)}
+                  style={{ cursor: user ? 'pointer' : 'default' }}
+                >
+                  <div className="tier-top">
+                    <div className="tier-name">
+                      <span className="tier-check">
+                        <svg viewBox="0 0 10 10" fill="none">
+                          <path d="M1 5L4 8L9 2" stroke="#0a0908" strokeWidth="1.5"/>
+                        </svg>
+                      </span>
+                      {t.label}
+                    </div>
+                    <div className="tier-pct">{pct}%</div>
+                  </div>
+                  <div className="tier-track">
+                    <div className="tier-fill" style={{ width: `${Math.max(pct, 0.5)}%` }} />
+                  </div>
                 </div>
-                {r.reviewText && <p className="text-sm text-ink-dim leading-relaxed">{r.reviewText}</p>}
+              );
+            })}
+
+            {user && myTier ? (
+              <div className="rating-submit-row">
+                <textarea
+                  className="rating-review-input"
+                  placeholder="Add a review (optional)…"
+                  value={review}
+                  onChange={e => setReview(e.target.value)}
+                  rows={3}
+                />
+                <button
+                  className="dp-btn dp-btn-save"
+                  style={{ flex: 'none' }}
+                  onClick={submitRating}
+                  disabled={ratingSubmitting}
+                >
+                  {ratingSubmitting ? 'Saving…' : 'Submit rating'}
+                </button>
+              </div>
+            ) : (
+              <div className="rate-hint">
+                {user ? 'Tap a tier to add your rating' : 'Sign in to add your rating'}
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* ── Reviews ───────────────────────────────────────────── */}
+        <div className="dp-section">
+          <div className="dp-section-head">
+            <span className="dp-section-title">
+              Reviews
+              <span className="dp-section-count">({ratings.length})</span>
+            </span>
+          </div>
+
+          {ratings.filter(r => r.reviewText).length === 0 ? (
+            <div className="empty-note">No reviews yet — be the first!</div>
+          ) : (
+            ratings.filter(r => r.reviewText).map((r: any) => (
+              <div key={r.id} className="review-card">
+                <div className="review-head">
+                  <div className="review-avatar">
+                    {(r.user?.displayName || 'A')[0].toUpperCase()}
+                  </div>
+                  <div>
+                    <div className="review-user">{r.user?.displayName || 'Anonymous'}</div>
+                  </div>
+                  <div className="review-badge">{TIER_LABEL[r.tier] || r.tier}</div>
+                </div>
+                <div className="review-text">{r.reviewText}</div>
               </div>
             ))
-          }
-        </div>
-      </div>
+          )}
 
+          {/* Reviews without text (just tiers) */}
+          {ratings.filter(r => !r.reviewText).length > 0 && (
+            <div className="empty-note" style={{ marginTop: 8 }}>
+              +{ratings.filter(r => !r.reviewText).length} more ratings without a written review
+            </div>
+          )}
+        </div>
+
+      </div>
     </div>
   );
 }
