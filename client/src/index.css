@@ -12,4 +12,9 @@
 @layer utilities {
   .scrollbar-hide::-webkit-scrollbar { display: none; }
   .scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
+
+  /* Shared aspect-ratio tokens — use these everywhere instead of hardcoding */
+  .poster-ratio   { aspect-ratio: 2 / 3; }   /* title cards, search grid */
+  .backdrop-ratio { aspect-ratio: 16 / 9; }  /* hero banners, detail page backdrop */
+  .player-ratio   { aspect-ratio: 16 / 9; }  /* video player iframe wrapper */
 }

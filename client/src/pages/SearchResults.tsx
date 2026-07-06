@@ -2,71 +2,11 @@ import { useEffect, useState, useRef } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import { Search, Film, Tv, Sword, X } from 'lucide-react';
 import { api } from '../lib/api';
-import Card from '../components/Card';
 import { searchAnime } from '../lib/anilist';
+import SearchResultsGrid from '../components/SearchResultsGrid';
 
 const GENRES = ['Action', 'Drama', 'Comedy', 'Sci-Fi', 'Thriller', 'Horror', 'Romance',
   'Animation', 'Crime', 'Mystery', 'Fantasy', 'Adventure', 'Documentary', 'Family'];
-
-function TmdbCard({ item, onImported }: { item: any; onImported?: () => void }) {
-  const [status, setStatus] = useState<'idle' | 'importing' | 'done' | 'exists' | 'noauth'>('idle');
-  const nav = useNavigate();
-
-  const handleImport = async () => {
-    setStatus('importing');
-    try {
-      const result = await api.titles.importTmdb({
-        tmdbId: item.tmdbId,
-        mediaType: item.mediaType,
-        type: item.mediaType === 'movie' ? 'MOVIE' : 'SERIES',
-      });
-      setStatus('done');
-      onImported?.();
-      nav(`/title/${result.id}`);
-    } catch (e: any) {
-      if (e.message?.includes('Already imported')) setStatus('exists');
-      else if (e.message?.includes('401') || e.message?.includes('403') || e.message?.includes('Unauthorized') || e.message?.includes('Forbidden')) setStatus('noauth');
-      else setStatus('idle');
-    }
-  };
-
-  return (
-    <div className="shrink-0 w-[142px] md:w-[172px] group cursor-pointer" onClick={status === 'idle' ? handleImport : undefined}>
-      <div
-        className="relative w-[142px] md:w-[172px] h-[200px] md:h-[246px] rounded-[11px] border border-line overflow-hidden flex flex-col justify-end p-2 bg-cover bg-center transition-all duration-200 group-hover:border-maroon group-hover:-translate-y-1"
-        style={{
-          backgroundImage: item.posterUrl
-            ? `linear-gradient(to bottom, rgba(0,0,0,0.05), rgba(0,0,0,0.72)), url(${item.posterUrl})`
-            : 'radial-gradient(120% 100% at 30% 0%, #1a1215, #0a0708 70%)',
-        }}
-      >
-        <div className="absolute inset-0 bg-gradient-to-b from-transparent via-transparent to-black/60 pointer-events-none" />
-        <div className="relative z-10">
-          <span className="font-mono text-[9px] px-1.5 py-0.5 rounded border border-line/60 bg-surface/60 text-ink-faint uppercase tracking-wide">
-            {item.mediaType === 'movie' ? 'Movie' : 'Series'} · TMDB
-          </span>
-        </div>
-        {status === 'importing' && (
-          <div className="absolute inset-0 bg-void/70 flex items-center justify-center">
-            <span className="text-[11px] font-mono text-ink-dim animate-pulse">Adding…</span>
-          </div>
-        )}
-        {status === 'done' && (
-          <div className="absolute inset-0 bg-void/70 flex items-center justify-center">
-            <span className="text-[11px] font-mono text-maroon-bright">Added ✓</span>
-          </div>
-        )}
-        {status === 'noauth' && (
-          <div className="absolute inset-0 bg-void/80 flex items-center justify-center p-2">
-            <span className="text-[10px] font-mono text-ink-dim text-center leading-snug">Admin only</span>
-          </div>
-        )}
-      </div>
-      <div className="mt-2.5 text-[13.5px] font-semibold truncate">{item.name}</div>
-      <div className="font-mono text-[10.5px] text-ink-faint">{item.year ?? '—'} · {item.mediaType === 'movie' ? 'Movie' : 'Series'}</div>
-    </div>
-  );
-}
 
 export default function SearchResults() {
   const [params] = useSearchParams();
@@ -78,7 +18,7 @@ export default function SearchResults() {
   const [tmdbResults, setTmdbResults] = useState<any[]>([]);
   const [anilistResult, setAnilistResult] = useState<any>(null);
   const [loading, setLoading] = useState(false);
-  const [tmdbKey, setTmdbKey] = useState(0); // force-refresh after import
+  const [tmdbKey, setTmdbKey] = useState(0);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => { setQuery(q); }, [q]);
@@ -86,9 +26,6 @@ export default function SearchResults() {
   useEffect(() => {
     if (!q) { setLocalResults([]); setTmdbResults([]); setLoading(false); return; }
     setLoading(true);
-    const qs: Record<string, string> = { search: q, limit: '50' };
-    if (filters.type) qs.type = filters.type;
-    if (filters.genre) qs.genre = filters.genre;
 
     Promise.all([
       api.titles.liveSearch(q).catch(() => ({ local: [], tmdb: [] })),
@@ -97,7 +34,7 @@ export default function SearchResults() {
       if (filters.type) local = local.filter((t: any) => t.type === filters.type);
       if (filters.genre) local = local.filter((t: any) => t.genres?.includes(filters.genre));
       setLocalResults(local);
-      // Filter TMDB results by type and suppress when Anime is selected
+
       let tmdb: any[] = live.tmdb || [];
       if (filters.type === 'ANIME') tmdb = [];
       else if (filters.type === 'MOVIE') tmdb = tmdb.filter((r: any) => r.mediaType === 'movie');
@@ -107,7 +44,6 @@ export default function SearchResults() {
     });
   }, [q, filters, tmdbKey]);
 
-  // AniList when anime filter active
   useEffect(() => {
     if (!q || filters.type !== 'ANIME') { setAnilistResult(null); return; }
     searchAnime(q).then((data) => { setAnilistResult(data); });
@@ -136,11 +72,9 @@ export default function SearchResults() {
     }
   };
 
-  const total = localResults.length + tmdbResults.length;
-
   return (
     <div className="px-5 py-7 max-w-[1200px] mx-auto">
-      {/* Search bar on page */}
+      {/* Search bar */}
       <form onSubmit={handleSearch} className="relative mb-7 max-w-xl">
         <Search size={15} className="absolute left-4 top-1/2 -translate-y-1/2 text-ink-faint pointer-events-none" />
         <input
@@ -236,62 +170,18 @@ export default function SearchResults() {
         </div>
       )}
 
-      {/* Loading */}
-      {loading && (
-        <div className="flex flex-wrap gap-4">
-          {Array.from({ length: 8 }).map((_, i) => (
-            <div key={i} className="shrink-0 w-[142px] md:w-[172px]">
-              <div className="w-[142px] md:w-[172px] h-[200px] md:h-[246px] rounded-[11px] border border-line bg-surface animate-pulse" />
-              <div className="mt-2.5 h-3.5 bg-surface rounded w-4/5 animate-pulse" />
-              <div className="mt-1 h-2.5 bg-surface rounded w-1/2 animate-pulse" />
-            </div>
-          ))}
-        </div>
-      )}
-
-      {/* Results */}
-      {!loading && q && (
-        <>
-          {localResults.length > 0 && (
-            <div className="mb-10">
-              <div className="flex items-baseline gap-2 mb-4">
-                <span className="font-serif text-xl font-semibold">Results</span>
-                <span className="font-mono text-[11px] text-ink-faint">{localResults.length} titles</span>
-              </div>
-              <div className="flex flex-wrap gap-4">
-                {localResults.map((t, i) => <Card key={t.id} title={t} index={i} />)}
-              </div>
-            </div>
-          )}
-
-          {tmdbResults.length > 0 && (
-            <div className="mb-10">
-              <div className="flex items-baseline gap-2 mb-1">
-                <span className="font-serif text-xl font-semibold">From TMDB</span>
-                <span className="font-mono text-[11px] text-ink-faint">{tmdbResults.length} more</span>
-              </div>
-              <p className="text-ink-faint text-[11px] font-mono mb-4">Tap any card to add it to the catalog instantly</p>
-              <div className="flex flex-wrap gap-4">
-                {tmdbResults.map((t) => (
-                  <TmdbCard key={t.tmdbId} item={t} onImported={() => setTmdbKey(k => k + 1)} />
-                ))}
-              </div>
-            </div>
-          )}
-
-          {total === 0 && !loading && (
-            <div className="py-20 text-center">
-              <p className="text-5xl mb-5">🔍</p>
-              <p className="font-serif text-xl font-semibold mb-2">No results for "{q}"</p>
-              <p className="text-ink-faint text-sm">Try different keywords or adjust your filters</p>
-            </div>
-          )}
-        </>
-      )}
+      {/* Results grid — handles loading skeleton, local results, TMDB results, empty states */}
+      <SearchResultsGrid
+        localResults={localResults}
+        tmdbResults={tmdbResults}
+        loading={loading}
+        q={q}
+        onImported={() => setTmdbKey(k => k + 1)}
+      />
 
       {/* Empty state — no query */}
       {!q && !loading && (
-        <div className="py-16 text-center">
+        <div className="py-16 pb-28 text-center">
           <p className="text-5xl mb-5">🎬</p>
           <p className="font-serif text-xl font-semibold mb-2">Search the catalog</p>
           <p className="text-ink-faint text-sm mb-8">Movies, TV shows, anime — all in one place</p>

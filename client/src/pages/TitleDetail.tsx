@@ -1,65 +1,16 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useParams } from 'react-router-dom';
-import { Play, Search, X, RefreshCw, ExternalLink } from 'lucide-react';
+import { Play, Search, X } from 'lucide-react';
 import { api } from '../lib/api';
 import { useAuth } from '../lib/auth';
 import Meter from '../components/Meter';
 import { searchAnime } from '../lib/anilist';
-
-// ── Embed providers ────────────────────────────────────────────────────────────
-// These are iframe-embeddable streaming sources — they return a clean player,
-// not a full website.
-
-interface Server {
-  id: string;
-  label: string;
-  getUrl: (tmdbId: number, type: string, season: number, ep: number) => string;
-}
-
-// Movie / TV servers (TMDB-ID based)
-const SERVERS: Server[] = [
-  {
-    id: 'vidzen',
-    label: 'VidZen',
-    getUrl: (id, type, s, e) =>
-      type === 'MOVIE'
-        ? `https://vidzen.fun/movie/${id}`
-        : `https://vidzen.fun/tv/${id}/${s}/${e}`,
-  },
-  {
-    id: 'vidcore',
-    label: 'VidCore',
-    getUrl: (id, type, s, e) =>
-      type === 'MOVIE'
-        ? `https://vidcore.net/movie/${id}`
-        : `https://vidcore.net/tv/${id}/${s}/${e}`,
-  },
-  {
-    id: 'filmu',
-    label: 'FilmU',
-    getUrl: (id, type, s, e) =>
-      type === 'MOVIE'
-        ? `https://embed.filmu.in/movie/${id}`
-        : `https://embed.filmu.in/tv/${id}/${s}/${e}`,
-  },
-];
+import VideoPlayer, { SERVERS } from '../components/VideoPlayer';
+import RatingWidget from '../components/RatingWidget';
+import type { Tier } from '../components/RatingWidget';
 
 const MYAPI_BASE = 'https://myapi-psi-wheat.vercel.app';
 
-// ── Tier config ────────────────────────────────────────────────────────────────
-const tiers = ['SKIP', 'TIMEPASS', 'GOFORIT', 'PERFECTION'] as const;
-type Tier = typeof tiers[number];
-const tierLabels: Record<Tier, string> = {
-  SKIP: 'Skip', TIMEPASS: 'Timepass', GOFORIT: 'Go for it', PERFECTION: 'Perfection',
-};
-const tierColors: Record<Tier, string> = {
-  SKIP: 'border-red-800 bg-red-900/20 text-red-400',
-  TIMEPASS: 'border-yellow-700 bg-yellow-900/20 text-yellow-400',
-  GOFORIT: 'border-green-700 bg-green-900/20 text-green-400',
-  PERFECTION: 'border-maroon-bright bg-maroon/20 text-ink',
-};
-
-// ── Component ──────────────────────────────────────────────────────────────────
 export default function TitleDetail() {
   const { id } = useParams();
   const { user } = useAuth();
@@ -74,7 +25,7 @@ export default function TitleDetail() {
   // Player
   const [playerOpen, setPlayerOpen] = useState(false);
   const [serverId, setServerId] = useState('vidzen');
-  const [iframeKey, setIframeKey] = useState(0); // force reload on server switch
+  const [iframeKey, setIframeKey] = useState(0);
 
   // AniList metadata (anime only)
   const [anilistData, setAnilistData] = useState<any>(null);
@@ -118,14 +69,12 @@ export default function TitleDetail() {
       .finally(() => setEpsLoading(false));
   }, [selectedSeason, title, id]);
 
-  // Fetch AniList metadata for ANIME titles
   useEffect(() => {
     if (!title || title.type !== 'ANIME') return;
     setAnilistData(null);
     searchAnime(title.name).then((data) => { if (data) setAnilistData(data); });
   }, [title]);
 
-  // Fetch AnimePahe session + episode sessions for ANIME titles
   useEffect(() => {
     if (!title || title.type !== 'ANIME') return;
     setAnimeSession(null);
@@ -162,7 +111,6 @@ export default function TitleDetail() {
             if (ep.number != null && ep.session) map[Number(ep.number)] = ep.session;
           });
           setAnimeEpisodeSessions(map);
-          // Reset selected episode to first available episode in this anime
           const firstEp = Math.min(...epsData.map((ep: any) => Number(ep.number)).filter(n => !isNaN(n)));
           if (isFinite(firstEp)) setSelectedEp(firstEp);
         }
@@ -222,7 +170,6 @@ export default function TitleDetail() {
   );
 
   const embedUrl = getEmbedUrl();
-  // For anime, playability depends on session resolution; for others, on tmdbId
   const canPlay = title.type === 'ANIME'
     ? !!animeSession && !!animeEpisodeSessions[selectedEp]
     : !!title.tmdbId;
@@ -234,9 +181,10 @@ export default function TitleDetail() {
   );
 
   return (
-    <div className="pb-20">
-      {/* Backdrop */}
-      <div className="relative w-full h-[52vw] max-h-[480px] min-h-[260px] overflow-hidden">
+    /* Fix #3: pb-28 so the last content line never hides behind the floating BottomNav */
+    <div className="pb-28">
+      {/* Backdrop — backdrop-ratio (16:9) with explicit overflow-hidden */}
+      <div className="relative w-full backdrop-ratio max-h-[480px] min-h-[260px] overflow-hidden">
         {(() => {
           const src = title.backdropUrl || (title.type === 'ANIME' ? anilistData?.bannerImage : null);
           return src
@@ -247,13 +195,13 @@ export default function TitleDetail() {
         <div className="absolute inset-0 bg-gradient-to-r from-void/60 to-transparent" />
       </div>
 
-      {/* Main */}
+      {/* Main content */}
       <div className="px-5 -mt-28 relative z-10 max-w-4xl mx-auto">
         <div className="flex flex-col md:flex-row gap-6">
 
-          {/* Poster */}
+          {/* Poster — poster-ratio (2:3) */}
           <div
-            className="w-[130px] md:w-[160px] h-[190px] md:h-[234px] rounded-xl border border-line shrink-0 bg-cover bg-center shadow-2xl"
+            className="w-[130px] md:w-[160px] poster-ratio rounded-xl border border-line shrink-0 bg-cover bg-center shadow-2xl"
             style={{
               backgroundImage: (() => {
                 const src = title.posterUrl
@@ -458,7 +406,7 @@ export default function TitleDetail() {
           </div>
         )}
 
-        {/* ANIME: Episode picker — shown whenever session is resolved, regardless of canPlay */}
+        {/* ANIME: Episode picker */}
         {title.type === 'ANIME' && !animeSessionLoading && !animeSessionError && animeSession && (
           <div className="mt-8 space-y-4">
             <h2 className="font-serif text-xl font-semibold">Watch Episode</h2>
@@ -503,36 +451,16 @@ export default function TitleDetail() {
           </div>
         )}
 
-        {/* Your Rating */}
+        {/* Your Rating — monochrome re-skin via RatingWidget (Fix #4) */}
         {user && (
-          <div className="mt-8 space-y-4 pt-6 border-t border-line">
-            <h2 className="font-serif text-xl font-semibold">Your Rating</h2>
-            <div className="flex flex-wrap gap-2">
-              {tiers.map(t => (
-                <button key={t} onClick={() => setMyTier(t)}
-                  className={`px-4 py-2 rounded-lg border text-xs font-mono transition-colors ${
-                    myTier === t ? tierColors[t] : 'border-line text-ink-dim hover:text-ink hover:border-line-bright'
-                  }`}
-                >
-                  {tierLabels[t]}
-                </button>
-              ))}
-            </div>
-            <textarea
-              value={review}
-              onChange={e => setReview(e.target.value)}
-              placeholder="Write a review (optional)…"
-              className="w-full bg-surface border border-line rounded-xl p-3 text-sm text-ink placeholder:text-ink-faint focus:border-maroon outline-none resize-none"
-              rows={3}
-            />
-            <button
-              onClick={submitRating}
-              disabled={!myTier || ratingSubmitting}
-              className="px-5 py-2.5 bg-maroon-bright text-white rounded-lg text-sm font-semibold hover:bg-maroon transition-colors disabled:opacity-40"
-            >
-              {ratingSubmitting ? 'Submitting…' : 'Submit Rating'}
-            </button>
-          </div>
+          <RatingWidget
+            myTier={myTier}
+            setMyTier={setMyTier}
+            review={review}
+            setReview={setReview}
+            submitRating={submitRating}
+            ratingSubmitting={ratingSubmitting}
+          />
         )}
 
         {/* Community Reviews */}
@@ -555,90 +483,20 @@ export default function TitleDetail() {
         </div>
       </div>
 
-      {/* ── Fullscreen Player Overlay ── */}
-      {playerOpen && embedUrl && (
-        <div className="fixed inset-0 z-50 bg-void flex flex-col">
-          {/* Top bar */}
-          <div className="flex items-center justify-between px-4 py-2.5 border-b border-line shrink-0 bg-surface/80 backdrop-blur-sm gap-3">
-            <div className="shrink-0">
-              <p className="font-serif text-sm font-semibold leading-tight">{title.name}</p>
-              <p className="text-[10px] text-ink-dim font-mono">
-                {title.type === 'SERIES' ? `S${selectedSeason} · E${selectedEp}` : title.year}
-              </p>
-            </div>
-
-            {/* Server selector — only for Movie / Series */}
-            {title.type !== 'ANIME' && (
-              <div className="flex gap-1.5 flex-wrap">
-                {SERVERS.map(s => (
-                  <button
-                    key={s.id}
-                    onClick={() => switchServer(s.id)}
-                    className={`text-[10px] font-mono px-2.5 py-1 rounded-full border transition-colors ${
-                      serverId === s.id
-                        ? 'border-maroon-bright bg-maroon/20 text-ink'
-                        : 'border-line text-ink-dim hover:text-ink hover:border-line-bright'
-                    }`}
-                  >
-                    {s.label}
-                  </button>
-                ))}
-              </div>
-            )}
-            {title.type === 'ANIME' && (
-              <span className="text-[10px] font-mono text-ink-dim border border-line rounded-full px-2.5 py-1">
-                AnimePahe
-              </span>
-            )}
-
-            {/* Controls */}
-            <div className="flex gap-2 shrink-0">
-              <button
-                onClick={() => setIframeKey(k => k + 1)}
-                title="Reload player"
-                className="text-xs text-ink-dim border border-line rounded-lg px-2.5 py-1.5 hover:text-ink transition-colors"
-              >
-                <RefreshCw size={12} />
-              </button>
-              {title.type === 'SERIES' && (
-                <>
-                  <button
-                    onClick={() => { const p = Math.max(1, selectedEp - 1); setSelectedEp(p); setIframeKey(k => k + 1); }}
-                    className="text-xs text-ink-dim border border-line rounded-lg px-3 py-1.5 hover:text-ink transition-colors"
-                  >← Prev</button>
-                  <button
-                    onClick={() => { const n = selectedEp + 1; setSelectedEp(n); setIframeKey(k => k + 1); }}
-                    className="text-xs text-ink-dim border border-line rounded-lg px-3 py-1.5 hover:text-ink transition-colors"
-                  >Next →</button>
-                </>
-              )}
-              <a
-                href={embedUrl}
-                target="_blank"
-                rel="noreferrer"
-                title="Open in new tab"
-                className="text-xs text-ink-dim border border-line rounded-lg px-2.5 py-1.5 hover:text-ink transition-colors inline-flex items-center"
-              >
-                <ExternalLink size={12} />
-              </a>
-              <button
-                onClick={() => setPlayerOpen(false)}
-                className="text-xs text-ink-dim border border-line rounded-lg px-3 py-1.5 hover:text-ink transition-colors"
-              >✕</button>
-            </div>
-          </div>
-
-          <iframe
-            key={`${serverId}-${selectedSeason}-${selectedEp}-${iframeKey}`}
-            src={embedUrl}
-            className="flex-1 w-full border-0 bg-black"
-            allowFullScreen
-            allow="autoplay; encrypted-media; fullscreen; picture-in-picture"
-            referrerPolicy="no-referrer"
-            title={title.name}
-          />
-        </div>
-      )}
+      {/* Fullscreen player — extracted to VideoPlayer component (Fix #1) */}
+      <VideoPlayer
+        title={title}
+        playerOpen={playerOpen}
+        setPlayerOpen={setPlayerOpen}
+        serverId={serverId}
+        switchServer={switchServer}
+        iframeKey={iframeKey}
+        setIframeKey={setIframeKey}
+        selectedSeason={selectedSeason}
+        selectedEp={selectedEp}
+        setSelectedEp={setSelectedEp}
+        embedUrl={embedUrl}
+      />
     </div>
   );
 }
