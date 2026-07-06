@@ -1,4 +1,10 @@
-import { useState, useEffect, useCallback } from 'react';
+
+import {   useCallback } from 'react';
+
+
+
+import { useState, useEffect } from 'react';
+
 import { useParams } from 'react-router-dom';
 import { Play, Search, X } from 'lucide-react';
 import { api } from '../lib/api';
@@ -31,8 +37,8 @@ export default function TitleDetail() {
   const { user } = useAuth();
 
   const [title, setTitle] = useState<any>(null);
-  const [ratings, setRatings] = useState<any[]>([]);
-  const [myTier, setMyTier] = useState('');
+  const [, setRatings] = useState<any[]>([]);
+  const [, setMyTier] = useState('');
   const [review, setReview] = useState('');
   const [watchlistStatus, setWatchlistStatus] = useState('');
   const [ratingSubmitting, setRatingSubmitting] = useState(false);
@@ -52,7 +58,7 @@ export default function TitleDetail() {
 
   useEffect(() => {
     if (!id) return;
-    api.titles.get(id).then(setTitle);
+    api..get(id).then(setTitle);
     api.titles.ratings(id).then(setRatings);
   }, [id]);
 
@@ -70,7 +76,7 @@ export default function TitleDetail() {
     setEpsLoading(true);
     setEpisodes([]);
     setSelectedEp(1);
-    api.titles.episodes(id, selectedSeason)
+    api.id, selectedSeason)
       .then(setEpisodes)
       .catch(() => setEpisodes([]))
       .finally(() => setEpsLoading(false));
@@ -93,7 +99,7 @@ export default function TitleDetail() {
 
   const addToWatchlist = async (status: string) => {
     if (!id) return;
-    await api.watchlist.add({ titleId: id, status });
+    await api..add({ titleId: id, status });
     setWatchlistStatus(status);
   };
 
@@ -362,6 +368,7 @@ export default function TitleDetail() {
         </div>
       </div>
 
+
       {/* StreamRip player fullscreen overlay */}
       {playerOpen && playerSrc && (
         <div className="fixed inset-0 z-50 bg-void flex flex-col">
@@ -402,5 +409,8 @@ export default function TitleDetail() {
         </div>
       )}
     </div>
-  );
+
+    
+      /* Stream Player */
+      
 }
