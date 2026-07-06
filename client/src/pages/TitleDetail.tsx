@@ -3,6 +3,11 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { api } from '../lib/api';
 import { useAuth } from '../lib/auth';
 import { searchAnime } from '../lib/anilist';
+import {
+  searchAnime as anicrushSearch,
+  getEpisodeCount as fetchAnicrushEpCount,
+  getEmbedUrl as anicrushEmbed,
+} from '../lib/anicrush';
 import { SERVERS } from '../components/VideoPlayer';
 import '@/styles/MovieDetailPage.css';
 import type { Tier } from '../components/RatingWidget';
@@ -110,34 +115,19 @@ export default function TitleDetail() {
 
     const run = async () => {
       try {
-        const searchRes = await fetch(
-          `/api/anicrush/search?keyword=${encodeURIComponent(title.name)}`,
-          { signal }
-        );
-        if (!searchRes.ok) throw new Error(`Search failed (${searchRes.status})`);
-        const searchData = await searchRes.json();
+        // Call anicrush directly from the browser — bypasses Cloudflare's
+        // datacenter IP block that affects server-side proxy requests (521).
+        const movies = await anicrushSearch(title.name);
         if (signal.aborted) return;
 
-        const movies: any[] = searchData?.result?.movies ?? [];
         if (!movies.length) throw new Error('Not found on Anicrush');
 
         const movieId: string = movies[0].id;
         setAnicrushMovieId(movieId);
 
-        const epRes = await fetch(
-          `/api/anicrush/episodes?movieId=${encodeURIComponent(movieId)}`,
-          { signal }
-        );
-        if (epRes.ok) {
-          const epData = await epRes.json();
-          if (signal.aborted) return;
-          const count: number =
-            epData?.result?.totalItems ??
-            epData?.result?.items?.length ??
-            movies[0].totalEpisodes ??
-            0;
-          setAnicrushEpCount(count);
-        }
+        const count = await fetchAnicrushEpCount(movieId);
+        if (signal.aborted) return;
+        setAnicrushEpCount(count || movies[0].totalEpisodes || 0);
         setSelectedEp(1);
       } catch (err: any) {
         if (err?.name === 'AbortError') return;
@@ -173,14 +163,8 @@ export default function TitleDetail() {
     setAnimeEmbedLoading(true);
 
     try {
-      const res = await fetch(
-        `/api/anicrush/embed?movieId=${encodeURIComponent(anicrushMovieId)}&episode=${bounded}`
-      );
+      const data = await anicrushEmbed(anicrushMovieId, bounded);
       if (embedReqRef.current !== reqId) return;
-      if (!res.ok) throw new Error(`Episode unavailable (${res.status})`);
-      const data = await res.json();
-      if (embedReqRef.current !== reqId) return;
-      if (!data.embedUrl) throw new Error('No embed URL returned');
       setAnimeEmbedUrl(data.embedUrl);
       setIsIframeLoading(true);
       setIsPlaying(true);
