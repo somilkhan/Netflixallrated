@@ -3,10 +3,9 @@
 @tailwind utilities;
 
 @layer base {
-  ::selection { background: #00D4FF; color: #04080F; }
-  :focus-visible { outline: 1.5px solid #00D4FF; outline-offset: 2px; border-radius: 4px; }
+  ::selection { background: #7A2530; color: #fff; }
+  :focus-visible { outline: 2px solid #C2434F; outline-offset: 2px; border-radius: 4px; }
   html { scroll-behavior: smooth; }
-  body { font-family: 'Space Grotesk', sans-serif; }
   @media (prefers-reduced-motion: reduce) { * { animation: none !important; transition: none !important; } }
 }
 
@@ -19,21 +18,8 @@
   .scrollbar-hide::-webkit-scrollbar { display: none; }
   .scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
 
-  /* Shared aspect-ratio tokens */
-  .poster-ratio   { aspect-ratio: 2 / 3; }
-  .backdrop-ratio { aspect-ratio: 16 / 9; }
-  .player-ratio   { aspect-ratio: 16 / 9; }
-
-  /* Subtle grid overlay for futuristic panels */
-  .grid-overlay {
-    background-image:
-      linear-gradient(rgba(0,212,255,0.03) 1px, transparent 1px),
-      linear-gradient(90deg, rgba(0,212,255,0.03) 1px, transparent 1px);
-    background-size: 32px 32px;
-  }
-
-  /* Cyan glow border on hover */
-  .glow-border {
-    box-shadow: 0 0 0 1px rgba(0,212,255,0.4), 0 0 16px rgba(0,212,255,0.12);
-  }
+  /* Shared aspect-ratio tokens — use these everywhere instead of hardcoding */
+  .poster-ratio   { aspect-ratio: 2 / 3; }   /* title cards, search grid */
+  .backdrop-ratio { aspect-ratio: 16 / 9; }  /* hero banners, detail page backdrop */
+  .player-ratio   { aspect-ratio: 16 / 9; }  /* video player iframe wrapper */
 }

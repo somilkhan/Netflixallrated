@@ -30,19 +30,16 @@ export default function Register() {
     return (
       <div className="min-h-[70vh] flex items-center justify-center px-5">
         <div className="w-full max-w-sm text-center space-y-4">
-          <div className="w-12 h-12 rounded-full border border-maroon-bright flex items-center justify-center mx-auto mb-4 shadow-cyan-md">
-            <span className="text-maroon-bright text-xl">✓</span>
-          </div>
-          <h1 className="font-sans text-2xl font-bold text-ink">Check your email</h1>
+          <h1 className="font-serif text-3xl font-semibold">Check your email</h1>
           <p className="text-ink-dim text-sm">
-            Confirmation link sent to <strong className="text-ink font-mono">{email}</strong>.
-            Click it to activate your account.
+            We sent a confirmation link to <strong className="text-ink">{email}</strong>.
+            Click it to activate your account, then come back and sign in.
           </p>
           <button
             onClick={() => nav('/login')}
-            className="text-maroon-bright hover:underline text-sm font-mono tracking-wide"
+            className="text-maroon-bright hover:underline text-sm"
           >
-            ← BACK TO SIGN IN
+            Back to sign in
           </button>
         </div>
       </div>
@@ -52,66 +49,46 @@ export default function Register() {
   return (
     <div className="min-h-[70vh] flex items-center justify-center px-5">
       <form onSubmit={submit} className="w-full max-w-sm space-y-4">
-        {/* Header */}
-        <div className="mb-8">
-          <p className="font-mono text-[10px] text-maroon-bright tracking-[0.2em] uppercase mb-2">ALLRATED · AUTH</p>
-          <h1 className="font-sans text-3xl font-bold text-ink">Create account</h1>
-          <p className="text-ink-dim text-sm mt-1">Join the community</p>
-        </div>
-
+        <h1 className="font-serif text-3xl font-semibold mb-6">Create account</h1>
         {error && (
-          <div className="p-3 bg-red-500/10 border border-red-500/30 rounded-md text-sm text-red-400 font-mono">
+          <div className="p-3 bg-maroon/20 border border-maroon rounded-lg text-sm text-maroon-bright">
             {error}
           </div>
         )}
-
-        <div className="space-y-3">
-          <div>
-            <label className="font-mono text-[10px] text-ink-faint tracking-widest uppercase block mb-1.5">DISPLAY NAME</label>
-            <input
-              type="text"
-              value={displayName}
-              onChange={e => setDisplayName(e.target.value)}
-              placeholder="Your name"
-              className="w-full bg-surface border border-line rounded-md px-4 py-3 text-sm text-ink placeholder:text-ink-faint focus:border-maroon-bright focus:shadow-[0_0_0_2px_rgba(0,212,255,0.1)] outline-none transition-all"
-            />
-          </div>
-          <div>
-            <label className="font-mono text-[10px] text-ink-faint tracking-widest uppercase block mb-1.5">EMAIL</label>
-            <input
-              type="email"
-              value={email}
-              onChange={e => setEmail(e.target.value)}
-              placeholder="you@example.com"
-              required
-              className="w-full bg-surface border border-line rounded-md px-4 py-3 text-sm text-ink placeholder:text-ink-faint focus:border-maroon-bright focus:shadow-[0_0_0_2px_rgba(0,212,255,0.1)] outline-none transition-all font-mono"
-            />
-          </div>
-          <div>
-            <label className="font-mono text-[10px] text-ink-faint tracking-widest uppercase block mb-1.5">PASSWORD</label>
-            <input
-              type="password"
-              value={password}
-              onChange={e => setPassword(e.target.value)}
-              placeholder="Min. 6 characters"
-              required
-              minLength={6}
-              className="w-full bg-surface border border-line rounded-md px-4 py-3 text-sm text-ink placeholder:text-ink-faint focus:border-maroon-bright focus:shadow-[0_0_0_2px_rgba(0,212,255,0.1)] outline-none transition-all font-mono"
-            />
-          </div>
-        </div>
-
+        <input
+          type="text"
+          value={displayName}
+          onChange={e => setDisplayName(e.target.value)}
+          placeholder="Display name"
+          className="w-full bg-surface border border-line rounded-lg px-4 py-3 text-sm focus:border-maroon outline-none"
+        />
+        <input
+          type="email"
+          value={email}
+          onChange={e => setEmail(e.target.value)}
+          placeholder="Email"
+          required
+          className="w-full bg-surface border border-line rounded-lg px-4 py-3 text-sm focus:border-maroon outline-none"
+        />
+        <input
+          type="password"
+          value={password}
+          onChange={e => setPassword(e.target.value)}
+          placeholder="Password (min 6 characters)"
+          required
+          minLength={6}
+          className="w-full bg-surface border border-line rounded-lg px-4 py-3 text-sm focus:border-maroon outline-none"
+        />
         <button
           type="submit"
           disabled={loading}
-          className="w-full bg-maroon-bright text-void font-bold py-3 rounded-md hover:opacity-90 transition-all disabled:opacity-50 shadow-cyan-md tracking-wide text-sm mt-2"
+          className="w-full bg-ink text-void font-semibold py-3 rounded-lg hover:bg-ink-dim transition-colors disabled:opacity-50"
         >
-          {loading ? 'CREATING…' : 'CREATE ACCOUNT'}
+          {loading ? 'Creating account…' : 'Create Account'}
         </button>
-
-        <p className="text-center text-sm text-ink-dim pt-2">
+        <p className="text-center text-sm text-ink-dim">
           Already have one?{' '}
-          <button type="button" onClick={() => nav('/login')} className="text-maroon-bright hover:underline font-semibold">
+          <button type="button" onClick={() => nav('/login')} className="text-maroon-bright hover:underline">
             Sign in
           </button>
         </p>

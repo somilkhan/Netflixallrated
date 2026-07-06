@@ -18,7 +18,7 @@ export default function BottomNav() {
   ];
 
   return (
-    <div className="fixed bottom-4 left-1/2 -translate-x-1/2 flex gap-1 items-center bg-surface/95 backdrop-blur-xl border border-line rounded-full p-1.5 z-50 shadow-[0_8px_32px_rgba(0,0,0,0.4)]">
+    <div className="fixed bottom-4 left-1/2 -translate-x-1/2 flex gap-1.5 items-center bg-surface/90 backdrop-blur-xl border border-line rounded-full p-2 z-50">
       {items.map(item => {
         const active = loc.pathname === item.path || (item.path !== '/' && loc.pathname.startsWith(item.path));
         return (
@@ -27,12 +27,10 @@ export default function BottomNav() {
             onClick={() => nav(item.path)}
             title={item.label}
             className={`w-[38px] h-[38px] rounded-full flex items-center justify-center transition-all ${
-              active
-                ? 'text-void bg-maroon-bright shadow-cyan-sm'
-                : 'text-ink-faint hover:text-ink-dim'
+              active ? 'text-void bg-ink' : 'text-ink-faint hover:text-ink-dim'
             }`}
           >
-            <item.icon size={17} />
+            <item.icon size={18} />
           </button>
         );
       })}
