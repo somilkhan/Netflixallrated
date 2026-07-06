@@ -43,19 +43,23 @@ function TrailerBg({ youtubeId }: { youtubeId: string }) {
 
 function ImageBg({ backdropUrl, colorFrom, colorTo }: { backdropUrl?: string; colorFrom?: string; colorTo?: string }) {
   const fallback = colorFrom && colorTo
-    ? `radial-gradient(90% 70% at 12% 0%, ${colorFrom}cc 0%, ${colorTo}88 55%), radial-gradient(70% 60% at 88% 10%, #1a2030 0%, transparent 50%), linear-gradient(160deg, #1a1215, #0B0908 75%)`
-    : 'radial-gradient(90% 70% at 12% 0%, #341318 0%, transparent 55%), linear-gradient(160deg, #1a1110, #0B0908 75%)';
+    ? `radial-gradient(90% 70% at 12% 0%, ${colorFrom}88 0%, ${colorTo}44 55%), radial-gradient(70% 60% at 88% 10%, #0a1830 0%, transparent 50%), linear-gradient(160deg, #0a1220, #04080F 75%)`
+    : 'radial-gradient(90% 70% at 12% 0%, #0a1a2e 0%, transparent 55%), linear-gradient(160deg, #0a1220, #04080F 75%)';
 
   return (
     <div
       className="absolute inset-[-4%] z-0 animate-drift will-change-transform bg-cover bg-center"
       style={{
         backgroundImage: backdropUrl
-          ? `linear-gradient(160deg, rgba(26,17,16,0.55), rgba(11,9,8,0.88) 75%), url(${backdropUrl})`
+          ? `linear-gradient(160deg, rgba(4,8,15,0.45), rgba(4,8,15,0.85) 75%), url(${backdropUrl})`
           : fallback,
       }}
     >
-      <div className="absolute inset-0 opacity-[0.04] pointer-events-none" style={{ backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E")` }} />
+      {/* Subtle scanline overlay for futuristic feel */}
+      <div className="absolute inset-0 opacity-[0.025] pointer-events-none" style={{
+        backgroundImage: 'repeating-linear-gradient(0deg, rgba(0,212,255,0.4) 0px, transparent 1px, transparent 3px)',
+        backgroundSize: '100% 4px',
+      }} />
     </div>
   );
 }
@@ -108,84 +112,86 @@ export default function HeroCarousel({ titles }: { titles: any[] }) {
       }
 
       {/* Bottom fade scrim */}
-      <div className="absolute inset-0 z-[1] bg-gradient-to-b from-transparent via-void/30 to-void pointer-events-none" />
+      <div className="absolute inset-0 z-[1] bg-gradient-to-b from-transparent via-void/20 to-void pointer-events-none" />
+      {/* Left vignette */}
+      <div className="absolute inset-0 z-[1] bg-gradient-to-r from-void/80 via-void/30 to-transparent pointer-events-none" />
 
-      {/* Content — pb-16 so it never hides under the floating BottomNav */}
+      {/* Content */}
       <div className="relative z-[2] w-full max-w-[660px] space-y-4 pb-16">
-        <div className="font-mono text-[11px] tracking-widest text-ink-dim uppercase flex items-center gap-2">
-          <span className="w-4 h-px bg-maroon-bright" />
-          {idx === 0 ? 'Featured Today' : `Trending #${idx + 1}`}
+        <div className="font-mono text-[10px] tracking-[0.2em] text-maroon-bright uppercase flex items-center gap-2">
+          <span className="w-4 h-px bg-maroon-bright" style={{ boxShadow: '0 0 6px rgba(0,212,255,0.8)' }} />
+          {idx === 0 ? 'FEATURED TODAY' : `TRENDING · #${String(idx + 1).padStart(2, '0')}`}
         </div>
 
-        <h1 className="font-serif font-semibold text-[clamp(38px,8vw,72px)] leading-[0.97] tracking-tight animate-fadeUp drop-shadow-lg">
+        <h1 className="font-sans font-bold text-[clamp(34px,7vw,68px)] leading-[0.95] tracking-tight animate-fadeUp drop-shadow-lg text-ink">
           {title.name}
         </h1>
 
-        <p className="text-ink-dim text-sm leading-relaxed max-w-[440px] line-clamp-3 animate-fadeUp" style={{ animationDelay: '0.1s' }}>
+        <p className="text-ink-dim text-sm leading-relaxed max-w-[440px] line-clamp-3 animate-fadeUp font-light" style={{ animationDelay: '0.1s' }}>
           {title.synopsis}
         </p>
 
-        <div className="flex items-center gap-4 pb-5 border-b border-line/50 flex-wrap animate-fadeUp" style={{ animationDelay: '0.2s' }}>
-          <div className="font-mono text-xs text-ink-dim flex gap-2 items-center">
+        <div className="flex items-center gap-3 flex-wrap animate-fadeUp" style={{ animationDelay: '0.2s' }}>
+          <div className="font-mono text-[11px] text-ink-dim flex gap-2 items-center">
             <span>{title.year}</span>
             <span className="text-ink-faint">·</span>
             <span>{title.runtimeMinutes ? `${Math.floor(title.runtimeMinutes / 60)}H ${title.runtimeMinutes % 60}M` : title.type}</span>
             <span className="text-ink-faint">·</span>
-            <span className="uppercase">{title.type}</span>
+            <span className="uppercase text-maroon-bright/70">{title.type}</span>
           </div>
           {title.genres?.slice(0, 3).map((g: string) => (
-            <span key={g} className="text-[10px] font-mono text-ink-faint border border-line/60 rounded px-1.5 py-0.5">{g}</span>
+            <span key={g} className="text-[9px] font-mono text-maroon-bright/70 border border-maroon-bright/20 rounded-sm px-1.5 py-0.5 tracking-widest uppercase">{g}</span>
           ))}
         </div>
 
-        <div className="flex gap-2.5 animate-fadeUp" style={{ animationDelay: '0.3s' }}>
+        <div className="flex gap-2.5 animate-fadeUp pt-1" style={{ animationDelay: '0.3s' }}>
           {embedSrc ? (
             <button
               onClick={() => setShowPlayer(true)}
-              className="flex items-center gap-2 bg-ink text-void font-semibold text-[13.5px] px-5 py-3 rounded-lg active:scale-[0.97] transition-transform shadow-lg"
+              className="flex items-center gap-2 bg-maroon-bright text-void font-bold text-[13px] px-5 py-2.5 rounded-md active:scale-[0.97] transition-transform shadow-cyan-md tracking-wide"
             >
-              <Play size={13} fill="currentColor" /> Play Now
+              <Play size={12} fill="currentColor" /> PLAY NOW
             </button>
           ) : (
             <button
               onClick={() => nav(`/title/${title.id}`)}
-              className="flex items-center gap-2 bg-ink text-void font-semibold text-[13.5px] px-5 py-3 rounded-lg active:scale-[0.97] transition-transform"
+              className="flex items-center gap-2 bg-maroon-bright text-void font-bold text-[13px] px-5 py-2.5 rounded-md active:scale-[0.97] transition-transform shadow-cyan-md tracking-wide"
             >
-              <Play size={13} fill="currentColor" /> Play
+              <Play size={12} fill="currentColor" /> PLAY
             </button>
           )}
           <button
             onClick={() => nav(`/title/${title.id}`)}
-            className="flex items-center gap-2 bg-surface/80 backdrop-blur-sm text-ink font-semibold text-[13.5px] px-5 py-3 rounded-lg border border-line-bright hover:bg-surface transition-colors"
+            className="flex items-center gap-2 bg-surface/80 backdrop-blur-sm text-ink font-semibold text-[13px] px-5 py-2.5 rounded-md border border-line-bright hover:border-maroon-bright hover:text-maroon-bright transition-all"
           >
-            <Info size={14} /> More info
+            <Info size={13} /> More info
           </button>
         </div>
 
         {titles.length > 1 && (
-          <div className="flex items-center gap-3 pt-2 animate-fadeUp" style={{ animationDelay: '0.4s' }}>
-            <button onClick={() => advance(-1)} className="text-ink-dim hover:text-ink transition-colors">
-              <ChevronLeft size={18} />
+          <div className="flex items-center gap-3 pt-1 animate-fadeUp" style={{ animationDelay: '0.4s' }}>
+            <button onClick={() => advance(-1)} className="text-ink-faint hover:text-maroon-bright transition-colors">
+              <ChevronLeft size={16} />
             </button>
             <div className="flex gap-1.5">
               {titles.map((_, i) => (
                 <button
                   key={i}
                   onClick={() => { setIdx(i); setProgress(0); setShowPlayer(false); }}
-                  className="relative h-[3px] rounded-full overflow-hidden transition-all duration-300"
-                  style={{ width: i === idx ? 28 : 12, background: 'rgba(255,255,255,0.2)' }}
+                  className="relative h-[2px] rounded-full overflow-hidden transition-all duration-300"
+                  style={{ width: i === idx ? 28 : 10, background: 'rgba(0,212,255,0.15)' }}
                 >
                   {i === idx && (
                     <span
-                      className="absolute inset-y-0 left-0 bg-ink rounded-full"
-                      style={{ width: `${progress}%`, transition: 'width 50ms linear' }}
+                      className="absolute inset-y-0 left-0 bg-maroon-bright rounded-full"
+                      style={{ width: `${progress}%`, transition: 'width 50ms linear', boxShadow: '0 0 6px rgba(0,212,255,0.8)' }}
                     />
                   )}
                 </button>
               ))}
             </div>
-            <button onClick={() => advance(1)} className="text-ink-dim hover:text-ink transition-colors">
-              <ChevronRight size={18} />
+            <button onClick={() => advance(1)} className="text-ink-faint hover:text-maroon-bright transition-colors">
+              <ChevronRight size={16} />
             </button>
           </div>
         )}
@@ -193,18 +199,18 @@ export default function HeroCarousel({ titles }: { titles: any[] }) {
 
       {/* Inline StreamRip player overlay */}
       {showPlayer && embedSrc && (
-        <div className="fixed inset-0 z-50 bg-void/95 backdrop-blur-sm flex flex-col">
-          <div className="flex items-center justify-between px-5 py-4 border-b border-line shrink-0">
+        <div className="fixed inset-0 z-50 bg-void/98 backdrop-blur-sm flex flex-col">
+          <div className="flex items-center justify-between px-5 py-4 border-b border-line shrink-0 grid-overlay">
             <div>
-              <p className="font-serif text-lg font-semibold">{title.name}</p>
-              <p className="text-xs text-ink-dim font-mono">{title.year} · {title.type}</p>
+              <p className="font-sans text-base font-semibold text-ink">{title.name}</p>
+              <p className="text-[11px] text-ink-dim font-mono tracking-wide">{title.year} · {title.type}</p>
             </div>
             <div className="flex gap-2">
-              <button onClick={() => nav(`/title/${title.id}`)} className="text-xs text-ink-dim border border-line rounded-lg px-3 py-1.5 hover:text-ink transition-colors">
-                More info
+              <button onClick={() => nav(`/title/${title.id}`)} className="text-[11px] font-mono text-ink-dim border border-line rounded-md px-3 py-1.5 hover:text-maroon-bright hover:border-maroon-bright transition-all tracking-wide">
+                MORE INFO
               </button>
-              <button onClick={() => setShowPlayer(false)} className="text-xs text-ink-dim border border-line rounded-lg px-3 py-1.5 hover:text-ink transition-colors">
-                ✕ Close
+              <button onClick={() => setShowPlayer(false)} className="text-[11px] font-mono text-ink-dim border border-line rounded-md px-3 py-1.5 hover:text-maroon-bright hover:border-maroon-bright transition-all tracking-wide">
+                ✕ CLOSE
               </button>
             </div>
           </div>

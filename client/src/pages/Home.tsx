@@ -191,11 +191,13 @@ export default function Home() {
 
       {/* Fallback — empty state */}
       {top10.length === 0 && trending.length === 0 && recent.length === 0 && (
-        <div className="px-5 py-20 text-center">
-          <p className="text-5xl mb-5">🎬</p>
-          <p className="font-serif text-2xl font-semibold mb-2">Building your catalog…</p>
-          <p className="text-ink-faint text-sm max-w-sm mx-auto">
-            The catalog is being populated from TMDB. It'll be ready shortly — check back in a moment.
+        <div className="px-5 py-24 text-center">
+          <div className="w-16 h-16 rounded-full border border-maroon-bright/30 flex items-center justify-center mx-auto mb-6 shadow-cyan-sm">
+            <span className="font-mono text-2xl text-maroon-bright">⬡</span>
+          </div>
+          <p className="font-sans text-xl font-semibold mb-2 text-ink">Building catalog…</p>
+          <p className="text-ink-faint text-sm max-w-sm mx-auto font-mono">
+            Populating from TMDB. Ready shortly.
           </p>
         </div>
       )}

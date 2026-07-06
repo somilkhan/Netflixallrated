@@ -27,38 +27,55 @@ export default function Login() {
   return (
     <div className="min-h-[70vh] flex items-center justify-center px-5">
       <form onSubmit={submit} className="w-full max-w-sm space-y-4">
-        <h1 className="font-serif text-3xl font-semibold mb-6">Welcome back</h1>
+        {/* Header */}
+        <div className="mb-8">
+          <p className="font-mono text-[10px] text-maroon-bright tracking-[0.2em] uppercase mb-2">ALLRATED · AUTH</p>
+          <h1 className="font-sans text-3xl font-bold text-ink">Welcome back</h1>
+          <p className="text-ink-dim text-sm mt-1">Sign in to your account</p>
+        </div>
+
         {error && (
-          <div className="p-3 bg-maroon/20 border border-maroon rounded-lg text-sm text-maroon-bright">
+          <div className="p-3 bg-red-500/10 border border-red-500/30 rounded-md text-sm text-red-400 font-mono">
             {error}
           </div>
         )}
-        <input
-          type="email"
-          value={email}
-          onChange={e => setEmail(e.target.value)}
-          placeholder="Email"
-          required
-          className="w-full bg-surface border border-line rounded-lg px-4 py-3 text-sm focus:border-maroon outline-none"
-        />
-        <input
-          type="password"
-          value={password}
-          onChange={e => setPassword(e.target.value)}
-          placeholder="Password"
-          required
-          className="w-full bg-surface border border-line rounded-lg px-4 py-3 text-sm focus:border-maroon outline-none"
-        />
+
+        <div className="space-y-3">
+          <div>
+            <label className="font-mono text-[10px] text-ink-faint tracking-widest uppercase block mb-1.5">EMAIL</label>
+            <input
+              type="email"
+              value={email}
+              onChange={e => setEmail(e.target.value)}
+              placeholder="you@example.com"
+              required
+              className="w-full bg-surface border border-line rounded-md px-4 py-3 text-sm text-ink placeholder:text-ink-faint focus:border-maroon-bright focus:shadow-[0_0_0_2px_rgba(0,212,255,0.1)] outline-none transition-all font-mono"
+            />
+          </div>
+          <div>
+            <label className="font-mono text-[10px] text-ink-faint tracking-widest uppercase block mb-1.5">PASSWORD</label>
+            <input
+              type="password"
+              value={password}
+              onChange={e => setPassword(e.target.value)}
+              placeholder="••••••••"
+              required
+              className="w-full bg-surface border border-line rounded-md px-4 py-3 text-sm text-ink placeholder:text-ink-faint focus:border-maroon-bright focus:shadow-[0_0_0_2px_rgba(0,212,255,0.1)] outline-none transition-all font-mono"
+            />
+          </div>
+        </div>
+
         <button
           type="submit"
           disabled={loading}
-          className="w-full bg-ink text-void font-semibold py-3 rounded-lg hover:bg-ink-dim transition-colors disabled:opacity-50"
+          className="w-full bg-maroon-bright text-void font-bold py-3 rounded-md hover:opacity-90 transition-all disabled:opacity-50 shadow-cyan-md tracking-wide text-sm mt-2"
         >
-          {loading ? 'Signing in…' : 'Sign In'}
+          {loading ? 'SIGNING IN…' : 'SIGN IN'}
         </button>
-        <p className="text-center text-sm text-ink-dim">
+
+        <p className="text-center text-sm text-ink-dim pt-2">
           No account?{' '}
-          <button type="button" onClick={() => nav('/register')} className="text-maroon-bright hover:underline">
+          <button type="button" onClick={() => nav('/register')} className="text-maroon-bright hover:underline font-semibold">
             Create one
           </button>
         </p>
