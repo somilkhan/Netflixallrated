@@ -1,5 +1,6 @@
 import { useEffect, useRef } from 'react';
 import { SERVERS } from './VideoPlayer';
+import '@/styles/PlayerModal.css';
 
 interface PlayerModalProps {
   title: any;
