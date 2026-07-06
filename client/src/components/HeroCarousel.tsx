@@ -99,7 +99,7 @@ export default function HeroCarousel({ titles }: { titles: any[] }) {
       {/* Embla viewport — full-bleed slides with backgrounds */}
       <div className="absolute inset-0" ref={emblaRef}>
         <div className="flex h-full">
-          {titles.map((t, i) => (
+          {titles.map((t) => (
             <div key={t.id} className="relative flex-[0_0_100%] h-full overflow-hidden">
               {t.trailerYoutubeId
                 ? <TrailerBg youtubeId={t.trailerYoutubeId} />
