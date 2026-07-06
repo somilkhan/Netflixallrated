@@ -15,48 +15,35 @@ interface Server {
   getUrl: (tmdbId: number, type: string, season: number, ep: number) => string;
 }
 
+// Movie / TV servers (TMDB-ID based)
 const SERVERS: Server[] = [
   {
-    id: 'vidsrc',
-    label: 'VidSrc',
+    id: 'vidzen',
+    label: 'VidZen',
     getUrl: (id, type, s, e) =>
       type === 'MOVIE'
-        ? `https://vidsrc.to/embed/movie/${id}`
-        : `https://vidsrc.to/embed/tv/${id}/${s}/${e}`,
+        ? `https://vidzen.fun/movie/${id}`
+        : `https://vidzen.fun/tv/${id}/${s}/${e}`,
   },
   {
-    id: 'vidsrc2',
-    label: 'VidSrc 2',
+    id: 'vidcore',
+    label: 'VidCore',
     getUrl: (id, type, s, e) =>
       type === 'MOVIE'
-        ? `https://vidsrc.me/embed/movie?tmdb=${id}`
-        : `https://vidsrc.me/embed/tv?tmdb=${id}&season=${s}&episode=${e}`,
+        ? `https://vidcore.net/movie/${id}`
+        : `https://vidcore.net/tv/${id}/${s}/${e}`,
   },
   {
-    id: 'embedsu',
-    label: 'Embed.su',
+    id: 'filmu',
+    label: 'FilmU',
     getUrl: (id, type, s, e) =>
       type === 'MOVIE'
-        ? `https://embed.su/embed/movie/${id}`
-        : `https://embed.su/embed/tv/${id}/${s}/${e}`,
-  },
-  {
-    id: 'twoembed',
-    label: '2Embed',
-    getUrl: (id, type, s, e) =>
-      type === 'MOVIE'
-        ? `https://www.2embed.cc/embed/${id}`
-        : `https://www.2embed.cc/embedtv/${id}&s=${s}&e=${e}`,
-  },
-  {
-    id: 'smashystream',
-    label: 'SmashyStream',
-    getUrl: (id, type, s, e) =>
-      type === 'MOVIE'
-        ? `https://embed.smashystream.com/playere.php?tmdb=${id}`
-        : `https://embed.smashystream.com/playere.php?tmdb=${id}&season=${s}&episode=${e}`,
+        ? `https://embed.filmu.in/movie/${id}`
+        : `https://embed.filmu.in/tv/${id}/${s}/${e}`,
   },
 ];
+
+const MYAPI_BASE = 'https://myapi-psi-wheat.vercel.app';
 
 // ── Tier config ────────────────────────────────────────────────────────────────
 const tiers = ['SKIP', 'TIMEPASS', 'GOFORIT', 'PERFECTION'] as const;
@@ -85,8 +72,14 @@ export default function TitleDetail() {
 
   // Player
   const [playerOpen, setPlayerOpen] = useState(false);
-  const [serverId, setServerId] = useState('vidsrc');
+  const [serverId, setServerId] = useState('vidzen');
   const [iframeKey, setIframeKey] = useState(0); // force reload on server switch
+
+  // Anime session state (MyAPI / AnimePahe)
+  const [animeSession, setAnimeSession] = useState<string | null>(null);
+  const [animeEpisodeSessions, setAnimeEpisodeSessions] = useState<Record<number, string>>({});
+  const [animeSessionLoading, setAnimeSessionLoading] = useState(false);
+  const [animeSessionError, setAnimeSessionError] = useState<string | null>(null);
 
   // Season / episode (SERIES only)
   const [seasons, setSeasons] = useState<any[]>([]);
@@ -121,11 +114,70 @@ export default function TitleDetail() {
       .finally(() => setEpsLoading(false));
   }, [selectedSeason, title, id]);
 
+  // Fetch AnimePahe session + episode sessions for ANIME titles
+  useEffect(() => {
+    if (!title || title.type !== 'ANIME') return;
+    setAnimeSession(null);
+    setAnimeEpisodeSessions({});
+    setAnimeSessionError(null);
+    setAnimeSessionLoading(true);
+
+    const controller = new AbortController();
+    const { signal } = controller;
+
+    const run = async () => {
+      try {
+        const searchRes = await fetch(
+          `${MYAPI_BASE}/search?q=${encodeURIComponent(title.name)}`,
+          { signal }
+        );
+        if (!searchRes.ok) throw new Error(`Search failed: ${searchRes.status}`);
+        const results = await searchRes.json();
+        if (signal.aborted) return;
+        if (!Array.isArray(results) || results.length === 0) {
+          setAnimeSessionError('Not found on AnimePahe');
+          return;
+        }
+        const session: string = results[0].session;
+        setAnimeSession(session);
+
+        const epsRes = await fetch(`${MYAPI_BASE}/episodes?session=${session}`, { signal });
+        if (!epsRes.ok) throw new Error(`Episodes failed: ${epsRes.status}`);
+        const epsData = await epsRes.json();
+        if (signal.aborted) return;
+        if (Array.isArray(epsData)) {
+          const map: Record<number, string> = {};
+          epsData.forEach((ep: any) => {
+            if (ep.number != null && ep.session) map[Number(ep.number)] = ep.session;
+          });
+          setAnimeEpisodeSessions(map);
+          // Reset selected episode to first available episode in this anime
+          const firstEp = Math.min(...epsData.map((ep: any) => Number(ep.number)).filter(n => !isNaN(n)));
+          if (isFinite(firstEp)) setSelectedEp(firstEp);
+        }
+      } catch (err: any) {
+        if (err?.name === 'AbortError') return;
+        setAnimeSessionError('Failed to reach AnimePahe API');
+      } finally {
+        if (!signal.aborted) setAnimeSessionLoading(false);
+      }
+    };
+
+    run();
+    return () => controller.abort();
+  }, [title]);
+
   const getEmbedUrl = useCallback(() => {
-    if (!title?.tmdbId) return null;
+    if (!title) return null;
+    if (title.type === 'ANIME') {
+      const epSession = animeEpisodeSessions[selectedEp];
+      if (!animeSession || !epSession) return null;
+      return `${MYAPI_BASE}/embed?anime_session=${animeSession}&episode_session=${epSession}&title=${encodeURIComponent(title.name)}`;
+    }
+    if (!title.tmdbId) return null;
     const server = SERVERS.find(s => s.id === serverId) || SERVERS[0];
     return server.getUrl(title.tmdbId, title.type, selectedSeason, selectedEp);
-  }, [title, serverId, selectedSeason, selectedEp]);
+  }, [title, serverId, selectedSeason, selectedEp, animeSession, animeEpisodeSessions]);
 
   const openPlayer = useCallback((ep?: number) => {
     if (ep !== undefined) setSelectedEp(ep);
@@ -159,7 +211,10 @@ export default function TitleDetail() {
   );
 
   const embedUrl = getEmbedUrl();
-  const canPlay = !!embedUrl;
+  // For anime, playability depends on session resolution; for others, on tmdbId
+  const canPlay = title.type === 'ANIME'
+    ? !!animeSession && !!animeEpisodeSessions[selectedEp]
+    : !!title.tmdbId;
 
   const filteredEps = episodes.filter(e =>
     !epSearch ||
@@ -204,7 +259,28 @@ export default function TitleDetail() {
             </div>
 
             <div className="flex flex-wrap gap-2 pt-1">
-              {canPlay ? (
+              {title.type === 'ANIME' ? (
+                animeSessionLoading ? (
+                  <div className="flex items-center gap-2 px-4 py-2.5 rounded-lg border border-line text-ink-dim text-xs font-mono animate-pulse">
+                    Resolving anime source…
+                  </div>
+                ) : animeSessionError ? (
+                  <div className="flex items-center gap-2 px-4 py-2.5 rounded-lg border border-line text-ink-dim text-xs font-mono">
+                    {animeSessionError}
+                  </div>
+                ) : canPlay ? (
+                  <button
+                    onClick={() => openPlayer()}
+                    className="flex items-center gap-2 bg-ink text-void font-semibold text-sm px-5 py-2.5 rounded-lg hover:bg-ink/90 active:scale-[0.97] transition-all shadow-lg"
+                  >
+                    <Play size={13} fill="currentColor" /> Play
+                  </button>
+                ) : (
+                  <div className="flex items-center gap-2 px-4 py-2.5 rounded-lg border border-line text-ink-dim text-xs font-mono">
+                    Select an episode to watch
+                  </div>
+                )
+              ) : canPlay ? (
                 <button
                   onClick={() => openPlayer()}
                   className="flex items-center gap-2 bg-ink text-void font-semibold text-sm px-5 py-2.5 rounded-lg hover:bg-ink/90 active:scale-[0.97] transition-all shadow-lg"
@@ -322,11 +398,11 @@ export default function TitleDetail() {
           </div>
         )}
 
-        {/* ANIME: Episode picker */}
-        {title.type === 'ANIME' && canPlay && (
+        {/* ANIME: Episode picker — shown whenever session is resolved, regardless of canPlay */}
+        {title.type === 'ANIME' && !animeSessionLoading && !animeSessionError && animeSession && (
           <div className="mt-8 space-y-4">
             <h2 className="font-serif text-xl font-semibold">Watch Episode</h2>
-            <div className="flex items-center gap-3">
+            <div className="flex items-center gap-3 flex-wrap">
               <label className="text-sm text-ink-dim font-mono">Episode</label>
               <input
                 type="number"
@@ -337,10 +413,16 @@ export default function TitleDetail() {
               />
               <button
                 onClick={() => openPlayer()}
-                className="flex items-center gap-2 bg-ink text-void text-sm font-semibold px-4 py-2 rounded-lg hover:bg-ink/90 transition-colors"
+                disabled={!animeEpisodeSessions[selectedEp]}
+                className="flex items-center gap-2 bg-ink text-void text-sm font-semibold px-4 py-2 rounded-lg hover:bg-ink/90 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
               >
                 <Play size={12} fill="currentColor" /> Watch
               </button>
+              {!animeEpisodeSessions[selectedEp] && (
+                <span className="text-xs text-ink-faint font-mono">
+                  Episode {selectedEp} not available
+                </span>
+              )}
             </div>
           </div>
         )}
@@ -425,22 +507,29 @@ export default function TitleDetail() {
               </p>
             </div>
 
-            {/* Server selector */}
-            <div className="flex gap-1.5 flex-wrap">
-              {SERVERS.map(s => (
-                <button
-                  key={s.id}
-                  onClick={() => switchServer(s.id)}
-                  className={`text-[10px] font-mono px-2.5 py-1 rounded-full border transition-colors ${
-                    serverId === s.id
-                      ? 'border-maroon-bright bg-maroon/20 text-ink'
-                      : 'border-line text-ink-dim hover:text-ink hover:border-line-bright'
-                  }`}
-                >
-                  {s.label}
-                </button>
-              ))}
-            </div>
+            {/* Server selector — only for Movie / Series */}
+            {title.type !== 'ANIME' && (
+              <div className="flex gap-1.5 flex-wrap">
+                {SERVERS.map(s => (
+                  <button
+                    key={s.id}
+                    onClick={() => switchServer(s.id)}
+                    className={`text-[10px] font-mono px-2.5 py-1 rounded-full border transition-colors ${
+                      serverId === s.id
+                        ? 'border-maroon-bright bg-maroon/20 text-ink'
+                        : 'border-line text-ink-dim hover:text-ink hover:border-line-bright'
+                    }`}
+                  >
+                    {s.label}
+                  </button>
+                ))}
+              </div>
+            )}
+            {title.type === 'ANIME' && (
+              <span className="text-[10px] font-mono text-ink-dim border border-line rounded-full px-2.5 py-1">
+                AnimePahe
+              </span>
+            )}
 
             {/* Controls */}
             <div className="flex gap-2 shrink-0">
