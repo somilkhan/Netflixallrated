@@ -48,6 +48,10 @@ interface VideoPlayerProps {
   selectedEp: number;
   setSelectedEp: React.Dispatch<React.SetStateAction<number>>;
   embedUrl: string | null;
+  /** Called when the user clicks ← Prev inside the anime player */
+  onAnimePrev?: () => void;
+  /** Called when the user clicks Next → inside the anime player */
+  onAnimeNext?: () => void;
 }
 
 export default function VideoPlayer({
@@ -62,6 +66,8 @@ export default function VideoPlayer({
   selectedEp,
   setSelectedEp,
   embedUrl,
+  onAnimePrev,
+  onAnimeNext,
 }: VideoPlayerProps) {
   if (!playerOpen || !embedUrl) return null;
 
@@ -70,13 +76,16 @@ export default function VideoPlayer({
       {/*
        * Top bar — source-selector pills + controls all sit HERE (normal block flow).
        * They are shrink-0 so they never get squeezed by the player below.
-       * z-index is not needed between siblings in the same flex column.
        */}
       <div className="flex items-center justify-between px-4 py-2.5 border-b border-line shrink-0 bg-surface/80 backdrop-blur-sm gap-3 flex-wrap">
         <div className="shrink-0">
           <p className="font-serif text-sm font-semibold leading-tight">{title.name}</p>
           <p className="text-[10px] text-ink-dim font-mono">
-            {title.type === 'SERIES' ? `S${selectedSeason} · E${selectedEp}` : title.year}
+            {title.type === 'SERIES'
+              ? `S${selectedSeason} · E${selectedEp}`
+              : title.type === 'ANIME'
+              ? `Episode ${selectedEp}`
+              : title.year}
           </p>
         </div>
 
@@ -100,11 +109,11 @@ export default function VideoPlayer({
         )}
         {title.type === 'ANIME' && (
           <span className="text-[10px] font-mono text-ink-dim border border-line rounded-full px-2.5 py-1">
-            AnimePahe
+            Anicrush
           </span>
         )}
 
-        {/* Prev / Reload / Next controls — always outside the player box */}
+        {/* Controls — always outside the player box */}
         <div className="flex gap-2 shrink-0">
           <button
             onClick={() => setIframeKey(k => k + 1)}
@@ -113,6 +122,8 @@ export default function VideoPlayer({
           >
             <RefreshCw size={12} />
           </button>
+
+          {/* SERIES: Prev / Next */}
           {title.type === 'SERIES' && (
             <>
               <button
@@ -125,6 +136,22 @@ export default function VideoPlayer({
               >Next →</button>
             </>
           )}
+
+          {/* ANIME: Prev / Next — fetches new embed URL each time */}
+          {title.type === 'ANIME' && (
+            <>
+              <button
+                onClick={onAnimePrev}
+                disabled={selectedEp <= 1}
+                className="text-xs text-ink-dim border border-line rounded-lg px-3 py-1.5 hover:text-ink transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
+              >← Prev</button>
+              <button
+                onClick={onAnimeNext}
+                className="text-xs text-ink-dim border border-line rounded-lg px-3 py-1.5 hover:text-ink transition-colors"
+              >Next →</button>
+            </>
+          )}
+
           <a
             href={embedUrl}
             target="_blank"
@@ -143,8 +170,7 @@ export default function VideoPlayer({
 
       {/*
        * Player area: flex-1 + min-h-0 is the standard fix for flex children that
-       * would otherwise overflow their parent.  The inner player-ratio div holds
-       * the iframe in a strict 16:9 box — no overflow, no overlap with the top bar.
+       * would otherwise overflow their parent.
        */}
       <div className="flex-1 min-h-0 overflow-hidden bg-black flex items-center justify-center">
         <div className="relative player-ratio w-full overflow-hidden">

@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { useParams } from 'react-router-dom';
 import { Play, Search, X } from 'lucide-react';
 import { api } from '../lib/api';
@@ -8,8 +8,6 @@ import { searchAnime } from '../lib/anilist';
 import VideoPlayer, { SERVERS } from '../components/VideoPlayer';
 import RatingWidget from '../components/RatingWidget';
 import type { Tier } from '../components/RatingWidget';
-
-const MYAPI_BASE = 'https://myapi-psi-wheat.vercel.app';
 
 export default function TitleDetail() {
   const { id } = useParams();
@@ -30,11 +28,15 @@ export default function TitleDetail() {
   // AniList metadata (anime only)
   const [anilistData, setAnilistData] = useState<any>(null);
 
-  // Anime session state (MyAPI / AnimePahe)
-  const [animeSession, setAnimeSession] = useState<string | null>(null);
-  const [animeEpisodeSessions, setAnimeEpisodeSessions] = useState<Record<number, string>>({});
-  const [animeSessionLoading, setAnimeSessionLoading] = useState(false);
-  const [animeSessionError, setAnimeSessionError] = useState<string | null>(null);
+  // Anicrush state (anime only)
+  const [anicrushMovieId, setAnicrushMovieId] = useState<string | null>(null);
+  const [anicrushEpCount, setAnicrushEpCount] = useState<number>(0);
+  const [animeLoading, setAnimeLoading] = useState(false);
+  const [animeError, setAnimeError] = useState<string | null>(null);
+  const [animeEmbedUrl, setAnimeEmbedUrl] = useState<string | null>(null);
+  const [animeEmbedLoading, setAnimeEmbedLoading] = useState(false);
+  // Guard against race conditions when episode changes rapidly
+  const embedReqRef = useRef(0);
 
   // Season / episode (SERIES only)
   const [seasons, setSeasons] = useState<any[]>([]);
@@ -69,56 +71,65 @@ export default function TitleDetail() {
       .finally(() => setEpsLoading(false));
   }, [selectedSeason, title, id]);
 
+  // AniList metadata fetch
   useEffect(() => {
     if (!title || title.type !== 'ANIME') return;
     setAnilistData(null);
     searchAnime(title.name).then((data) => { if (data) setAnilistData(data); });
   }, [title]);
 
+  // Anicrush: resolve movieId + episode count when title loads
   useEffect(() => {
     if (!title || title.type !== 'ANIME') return;
-    setAnimeSession(null);
-    setAnimeEpisodeSessions({});
-    setAnimeSessionError(null);
-    setAnimeSessionLoading(true);
+
+    setAnicrushMovieId(null);
+    setAnicrushEpCount(0);
+    setAnimeError(null);
+    setAnimeEmbedUrl(null);
+    setAnimeLoading(true);
 
     const controller = new AbortController();
     const { signal } = controller;
 
     const run = async () => {
       try {
+        // Search anicrush by stored title name
         const searchRes = await fetch(
-          `${MYAPI_BASE}/search?q=${encodeURIComponent(title.name)}`,
+          `/api/anicrush/search?keyword=${encodeURIComponent(title.name)}`,
           { signal }
         );
-        if (!searchRes.ok) throw new Error(`Search failed: ${searchRes.status}`);
-        const results = await searchRes.json();
+        if (!searchRes.ok) throw new Error(`Search failed (${searchRes.status})`);
+        const searchData = await searchRes.json();
         if (signal.aborted) return;
-        if (!Array.isArray(results) || results.length === 0) {
-          setAnimeSessionError('Not found on AnimePahe');
-          return;
-        }
-        const session: string = results[0].session;
-        setAnimeSession(session);
 
-        const epsRes = await fetch(`${MYAPI_BASE}/episodes?session=${session}`, { signal });
-        if (!epsRes.ok) throw new Error(`Episodes failed: ${epsRes.status}`);
-        const epsData = await epsRes.json();
-        if (signal.aborted) return;
-        if (Array.isArray(epsData)) {
-          const map: Record<number, string> = {};
-          epsData.forEach((ep: any) => {
-            if (ep.number != null && ep.session) map[Number(ep.number)] = ep.session;
-          });
-          setAnimeEpisodeSessions(map);
-          const firstEp = Math.min(...epsData.map((ep: any) => Number(ep.number)).filter(n => !isNaN(n)));
-          if (isFinite(firstEp)) setSelectedEp(firstEp);
+        const movies: any[] = searchData?.result?.movies ?? [];
+        if (!movies.length) throw new Error('Not found on Anicrush');
+
+        const movieId: string = movies[0].id;
+        setAnicrushMovieId(movieId);
+
+        // Fetch episode list to get total count
+        const epRes = await fetch(
+          `/api/anicrush/episodes?movieId=${encodeURIComponent(movieId)}`,
+          { signal }
+        );
+        if (epRes.ok) {
+          const epData = await epRes.json();
+          if (signal.aborted) return;
+          const count: number =
+            epData?.result?.totalItems ??
+            epData?.result?.items?.length ??
+            movies[0].totalEpisodes ??
+            0;
+          setAnicrushEpCount(count);
         }
+
+        setSelectedEp(1);
       } catch (err: any) {
         if (err?.name === 'AbortError') return;
-        setAnimeSessionError('Failed to reach AnimePahe API');
+        setAnimeError(err.message || 'Not available on Anicrush');
       } finally {
-        if (!signal.aborted) setAnimeSessionLoading(false);
+        if (!signal.aborted) setAnimeLoading(false);
       }
     };
 
@@ -128,15 +139,47 @@ export default function TitleDetail() {
 
   const getEmbedUrl = useCallback(() => {
     if (!title) return null;
-    if (title.type === 'ANIME') {
-      const epSession = animeEpisodeSessions[selectedEp];
-      if (!animeSession || !epSession) return null;
-      return `${MYAPI_BASE}/embed?anime_session=${animeSession}&episode_session=${epSession}&title=${encodeURIComponent(title.name)}`;
-    }
+    if (title.type === 'ANIME') return animeEmbedUrl;
     if (!title.tmdbId) return null;
     const server = SERVERS.find(s => s.id === serverId) || SERVERS[0];
     return server.getUrl(title.tmdbId, title.type, selectedSeason, selectedEp);
-  }, [title, serverId, selectedSeason, selectedEp, animeSession, animeEpisodeSessions]);
+  }, [title, serverId, selectedSeason, selectedEp, animeEmbedUrl]);
+
+  // Fetch embed URL from anicrush, then open player.
+  // Uses a request-id ref to discard stale responses from rapid episode changes.
+  const openAnimePlayer = useCallback(async (ep?: number) => {
+    const epNum = ep ?? selectedEp;
+    if (!anicrushMovieId) return;
+
+    // Clamp to known bounds
+    const bounded = anicrushEpCount > 0
+      ? Math.min(Math.max(1, epNum), anicrushEpCount)
+      : Math.max(1, epNum);
+
+    const reqId = ++embedReqRef.current;
+    setSelectedEp(bounded);
+    setAnimeEmbedUrl(null);
+    setAnimeError(null);       // clear previous errors so controls stay visible
+    setAnimeEmbedLoading(true);
+
+    try {
+      const res = await fetch(
+        `/api/anicrush/embed?movieId=${encodeURIComponent(anicrushMovieId)}&episode=${bounded}`
+      );
+      if (embedReqRef.current !== reqId) return; // stale — a newer request is in-flight
+      if (!res.ok) throw new Error(`Episode unavailable (${res.status})`);
+      const data = await res.json();
+      if (embedReqRef.current !== reqId) return;
+      if (!data.embedUrl) throw new Error('No embed URL returned');
+      setAnimeEmbedUrl(data.embedUrl);
+      setPlayerOpen(true);
+    } catch (err: any) {
+      if (embedReqRef.current !== reqId) return;
+      setAnimeError(err.message || 'Failed to load episode');
+    } finally {
+      if (embedReqRef.current === reqId) setAnimeEmbedLoading(false);
+    }
+  }, [anicrushMovieId, anicrushEpCount, selectedEp]);
 
   const openPlayer = useCallback((ep?: number) => {
     if (ep !== undefined) setSelectedEp(ep);
@@ -147,6 +190,17 @@ export default function TitleDetail() {
     setServerId(id);
     setIframeKey(k => k + 1);
   };
+
+  // Prev / Next episode for anime inside the player
+  const animePrev = useCallback(() => {
+    const prev = Math.max(1, selectedEp - 1);
+    openAnimePlayer(prev);
+  }, [selectedEp, openAnimePlayer]);
+
+  const animeNext = useCallback(() => {
+    if (anicrushEpCount > 0 && selectedEp >= anicrushEpCount) return;
+    openAnimePlayer(selectedEp + 1);
+  }, [selectedEp, anicrushEpCount, openAnimePlayer]);
 
   const submitRating = async () => {
     if (!myTier || !id) return;
@@ -171,7 +225,7 @@ export default function TitleDetail() {
 
   const embedUrl = getEmbedUrl();
   const canPlay = title.type === 'ANIME'
-    ? !!animeSession && !!animeEpisodeSessions[selectedEp]
+    ? !!anicrushMovieId && !animeLoading
     : !!title.tmdbId;
 
   const filteredEps = episodes.filter(e =>
@@ -226,8 +280,8 @@ export default function TitleDetail() {
             <div className="font-mono text-xs text-ink-dim flex flex-wrap gap-2 items-center">
               <span>{title.year || anilistData?.startDate?.year}</span>·
               <span className="uppercase">{title.type}</span>
-              {title.type === 'ANIME' && anilistData?.episodes && (
-                <><span>·</span><span>{anilistData.episodes} eps</span></>
+              {title.type === 'ANIME' && anicrushEpCount > 0 && (
+                <><span>·</span><span>{anicrushEpCount} eps</span></>
               )}
               {title.type === 'ANIME' && anilistData?.averageScore && (
                 <><span>·</span>
@@ -246,20 +300,24 @@ export default function TitleDetail() {
 
             <div className="flex flex-wrap gap-2 pt-1">
               {title.type === 'ANIME' ? (
-                animeSessionLoading ? (
+                animeLoading ? (
                   <div className="flex items-center gap-2 px-4 py-2.5 rounded-lg border border-line text-ink-dim text-xs font-mono animate-pulse">
                     Resolving anime source…
                   </div>
-                ) : animeSessionError ? (
+                ) : animeError ? (
                   <div className="flex items-center gap-2 px-4 py-2.5 rounded-lg border border-line text-ink-dim text-xs font-mono">
-                    {animeSessionError}
+                    {animeError}
                   </div>
                 ) : canPlay ? (
                   <button
-                    onClick={() => openPlayer()}
-                    className="flex items-center gap-2 bg-ink text-void font-semibold text-sm px-5 py-2.5 rounded-lg hover:bg-ink/90 active:scale-[0.97] transition-all shadow-lg"
+                    onClick={() => openAnimePlayer()}
+                    disabled={animeEmbedLoading}
+                    className="flex items-center gap-2 bg-ink text-void font-semibold text-sm px-5 py-2.5 rounded-lg hover:bg-ink/90 active:scale-[0.97] transition-all shadow-lg disabled:opacity-60"
                   >
-                    <Play size={13} fill="currentColor" /> Play
+                    {animeEmbedLoading
+                      ? <span className="font-mono text-xs">Loading…</span>
+                      : <><Play size={13} fill="currentColor" /> Play</>
+                    }
                   </button>
                 ) : (
                   <div className="flex items-center gap-2 px-4 py-2.5 rounded-lg border border-line text-ink-dim text-xs font-mono">
@@ -407,7 +465,7 @@ export default function TitleDetail() {
         )}
 
         {/* ANIME: Episode picker */}
-        {title.type === 'ANIME' && !animeSessionLoading && !animeSessionError && animeSession && (
+        {title.type === 'ANIME' && !animeLoading && !animeError && anicrushMovieId && (
           <div className="mt-8 space-y-4">
             <h2 className="font-serif text-xl font-semibold">Watch Episode</h2>
             <div className="flex items-center gap-3 flex-wrap">
@@ -415,22 +473,24 @@ export default function TitleDetail() {
               <input
                 type="number"
                 min={1}
+                max={anicrushEpCount || undefined}
                 value={selectedEp}
                 onChange={e => setSelectedEp(Math.max(1, parseInt(e.target.value) || 1))}
                 className="w-20 bg-surface border border-line rounded-lg px-3 py-2 text-sm text-ink focus:border-maroon outline-none"
               />
+              {anicrushEpCount > 0 && (
+                <span className="text-xs text-ink-faint font-mono">of {anicrushEpCount}</span>
+              )}
               <button
-                onClick={() => openPlayer()}
-                disabled={!animeEpisodeSessions[selectedEp]}
+                onClick={() => openAnimePlayer()}
+                disabled={animeEmbedLoading}
                 className="flex items-center gap-2 bg-ink text-void text-sm font-semibold px-4 py-2 rounded-lg hover:bg-ink/90 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
               >
-                <Play size={12} fill="currentColor" /> Watch
+                {animeEmbedLoading
+                  ? <span className="font-mono">Loading…</span>
+                  : <><Play size={12} fill="currentColor" /> Watch</>
+                }
               </button>
-              {!animeEpisodeSessions[selectedEp] && (
-                <span className="text-xs text-ink-faint font-mono">
-                  Episode {selectedEp} not available
-                </span>
-              )}
             </div>
           </div>
         )}
@@ -451,7 +511,7 @@ export default function TitleDetail() {
           </div>
         )}
 
-        {/* Your Rating — monochrome re-skin via RatingWidget (Fix #4) */}
+        {/* Your Rating */}
         {user && (
           <RatingWidget
             myTier={myTier}
@@ -483,7 +543,7 @@ export default function TitleDetail() {
         </div>
       </div>
 
-      {/* Fullscreen player — extracted to VideoPlayer component (Fix #1) */}
+      {/* Fullscreen player */}
       <VideoPlayer
         title={title}
         playerOpen={playerOpen}
@@ -496,6 +556,8 @@ export default function TitleDetail() {
         selectedEp={selectedEp}
         setSelectedEp={setSelectedEp}
         embedUrl={embedUrl}
+        onAnimePrev={animePrev}
+        onAnimeNext={animeNext}
       />
     </div>
   );

@@ -10,6 +10,7 @@ import netmirrorRoutes from './routes/netmirror.js';
 import showboxRoutes from './routes/showbox.js';
 import configRoutes from './routes/config.js';
 import geoRoutes from './routes/geo.js';
+import anicrushRoutes from './routes/anicrush.js';
 import { prisma } from './lib/prisma.js';
 import { syncTmdbCatalog } from './lib/sync.js';
 
@@ -33,6 +34,7 @@ app.use('/api/netmirror', netmirrorRoutes);
 app.use('/api/showbox', showboxRoutes);
 app.use('/api/config', configRoutes);
 app.use('/api/geo', geoRoutes);
+app.use('/api/anicrush', anicrushRoutes);
 
 app.get('/api/health', (_req, res) => res.json({ status: 'ok' }));
 
