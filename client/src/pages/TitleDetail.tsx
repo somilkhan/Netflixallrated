@@ -6,7 +6,7 @@ import { useAuth } from '../lib/auth';
 import Meter from '../components/Meter';
 import { searchAnime } from '../lib/anilist';
 import { SERVERS } from '../components/VideoPlayer';
-import PlayerModal from '../components/PlayerModal';
+import '@/styles/MovieDetailPage.css';
 import RatingWidget from '../components/RatingWidget';
 import type { Tier } from '../components/RatingWidget';
 
@@ -22,9 +22,12 @@ export default function TitleDetail() {
   const [ratingSubmitting, setRatingSubmitting] = useState(false);
 
   // Player
-  const [playerOpen, setPlayerOpen] = useState(false);
+  const [isPlaying, setIsPlaying] = useState(false);
+  const [isIframeLoading, setIsIframeLoading] = useState(false);
+  const [showServers, setShowServers] = useState(false);
   const [serverId, setServerId] = useState('vidsrc');
   const [iframeKey, setIframeKey] = useState(0);
+  const videoSectionRef = useRef<HTMLDivElement>(null);
 
   // AniList metadata (anime only)
   const [anilistData, setAnilistData] = useState<any>(null);
@@ -173,7 +176,9 @@ export default function TitleDetail() {
       if (embedReqRef.current !== reqId) return;
       if (!data.embedUrl) throw new Error('No embed URL returned');
       setAnimeEmbedUrl(data.embedUrl);
-      setPlayerOpen(true);
+      setIsIframeLoading(true);
+      setIsPlaying(true);
+      setTimeout(() => videoSectionRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 50);
     } catch (err: any) {
       if (embedReqRef.current !== reqId) return;
       setAnimeError(err.message || 'Failed to load episode');
@@ -184,12 +189,28 @@ export default function TitleDetail() {
 
   const openPlayer = useCallback((ep?: number) => {
     if (ep !== undefined) setSelectedEp(ep);
-    setPlayerOpen(true);
+    setIsIframeLoading(true);
+    setIsPlaying(true);
+    setTimeout(() => videoSectionRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 50);
   }, []);
 
   const switchServer = (id: string) => {
     setServerId(id);
     setIframeKey(k => k + 1);
+  };
+
+  const handleClosePlayer = () => {
+    setIsPlaying(false);
+    setIsIframeLoading(false);
+    setShowServers(false);
+  };
+
+  const handleShare = () => {
+    if (navigator.share) {
+      navigator.share({ title: title?.name || '', url: window.location.href }).catch(() => {});
+    } else {
+      navigator.clipboard.writeText(window.location.href).catch(() => {});
+    }
   };
 
   // Prev / Next episode for anime inside the player
@@ -238,20 +259,58 @@ export default function TitleDetail() {
   return (
     /* Fix #3: pb-28 so the last content line never hides behind the floating BottomNav */
     <div className="pb-28">
-      {/* Backdrop — backdrop-ratio (16:9) with explicit overflow-hidden */}
-      <div className="relative w-full backdrop-ratio max-h-[480px] min-h-[260px] overflow-hidden">
-        {(() => {
-          const src = title.backdropUrl || (title.type === 'ANIME' ? anilistData?.bannerImage : null);
-          return src
-            ? <img src={src} alt="" className="w-full h-full object-cover" />
-            : <div className="w-full h-full" style={{ background: `radial-gradient(90% 70% at 30% 0%, ${title.posterColorFrom}, ${title.posterColorTo} 70%)` }} />;
-        })()}
-        <div className="absolute inset-0 bg-gradient-to-b from-void/10 via-void/50 to-void" />
-        <div className="absolute inset-0 bg-gradient-to-r from-void/60 to-transparent" />
+      {/* ── Inline video section ───────────────────────────────── */}
+      <div ref={videoSectionRef} className={`video-section${isPlaying ? ' playing' : ''}`}>
+        {isPlaying ? (
+          <>
+            {isIframeLoading && (
+              <div className="video-loading"><div className="spinner" /></div>
+            )}
+            <button className="player-close" onClick={handleClosePlayer}>
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                <line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" />
+              </svg>
+            </button>
+            <iframe
+              key={`${serverId}-${selectedSeason}-${selectedEp}-${iframeKey}`}
+              src={embedUrl || ''}
+              allowFullScreen
+              allow="autoplay; encrypted-media; fullscreen; picture-in-picture"
+              referrerPolicy="no-referrer"
+              title={title.name}
+              onLoad={() => setIsIframeLoading(false)}
+              style={{ opacity: isIframeLoading ? 0 : 1 }}
+            />
+          </>
+        ) : (
+          <div
+            className="poster-section"
+            onClick={() => {
+              if (!canPlay) return;
+              if (title.type === 'ANIME') openAnimePlayer();
+              else openPlayer();
+            }}
+          >
+            {(() => {
+              const src = title.backdropUrl || (title.type === 'ANIME' ? anilistData?.bannerImage : null);
+              return src
+                ? <img src={src} alt="" className="backdrop-img" />
+                : <div className="backdrop-img" style={{ background: `radial-gradient(90% 70% at 30% 0%, ${title.posterColorFrom}, ${title.posterColorTo} 70%)` }} />;
+            })()}
+            <div className="poster-overlay" />
+            {canPlay && (
+              <div className="play-overlay-btn">
+                <svg width="26" height="26" viewBox="0 0 24 24" fill="white">
+                  <polygon points="8,5 8,19 19,12" />
+                </svg>
+              </div>
+            )}
+          </div>
+        )}
       </div>
 
       {/* Main content */}
-      <div className="px-5 -mt-28 relative z-10 max-w-4xl mx-auto">
+      <div className="px-5 mt-0 relative z-10 max-w-4xl mx-auto">
         <div className="flex flex-col md:flex-row gap-6">
 
           {/* Poster — poster-ratio (2:3) */}
@@ -359,6 +418,61 @@ export default function TitleDetail() {
             <p className="text-ink-dim leading-relaxed mt-6 text-[15px] max-w-2xl">{synopsis}</p>
           ) : null;
         })()}
+
+        {/* Action row */}
+        <div className="action-row mt-6">
+          {user && (
+            <button
+              className={`action-btn${watchlistStatus ? ' active' : ''}`}
+              onClick={() => !watchlistStatus && addToWatchlist('PLAN_TO_WATCH')}
+            >
+              <svg width="22" height="22" viewBox="0 0 24 24" fill={watchlistStatus ? 'currentColor' : 'none'} stroke="currentColor" strokeWidth="2">
+                <line x1="12" y1="5" x2="12" y2="19" /><line x1="5" y1="12" x2="19" y2="12" />
+              </svg>
+              My List
+            </button>
+          )}
+          <button className="action-btn" onClick={handleShare}>
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <line x1="22" y1="2" x2="11" y2="13" />
+              <polygon points="22 2 15 22 11 13 2 9 22 2" />
+            </svg>
+            Share
+          </button>
+        </div>
+
+        {/* Server accordion — movie & series only */}
+        {!title.type.includes('ANIME') && canPlay && (
+          <div className="mt-4">
+            <button className="server-toggle" onClick={() => setShowServers(s => !s)}>
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <rect x="2" y="2" width="20" height="8" rx="2" /><rect x="2" y="14" width="20" height="8" rx="2" />
+              </svg>
+              Servers: <span className="active-server-name">{SERVERS.find(s => s.id === serverId)?.label ?? 'VidSrc'}</span>
+              <svg className={`server-toggle-chevron${showServers ? ' open' : ''}`} width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <polyline points="6 9 12 15 18 9" />
+              </svg>
+            </button>
+            {showServers && (
+              <div className="server-options">
+                {SERVERS.map(srv => (
+                  <button
+                    key={srv.id}
+                    className={`server-option${serverId === srv.id ? ' active' : ''}`}
+                    onClick={() => { switchServer(srv.id); setShowServers(false); }}
+                  >
+                    {srv.label}
+                    {serverId === srv.id && (
+                      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#e50914" strokeWidth="3">
+                        <polyline points="20 6 9 17 4 12" />
+                      </svg>
+                    )}
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
 
         {/* AniList genres + studio row */}
         {title.type === 'ANIME' && anilistData && (
@@ -541,26 +655,6 @@ export default function TitleDetail() {
         </div>
       </div>
 
-      {/* Player modal */}
-      <PlayerModal
-        title={title}
-        isOpen={playerOpen}
-        onClose={() => setPlayerOpen(false)}
-        serverId={serverId}
-        switchServer={switchServer}
-        iframeKey={iframeKey}
-        setIframeKey={setIframeKey}
-        seasons={seasons}
-        selectedSeason={selectedSeason}
-        setSelectedSeason={setSelectedSeason}
-        selectedEp={selectedEp}
-        setSelectedEp={setSelectedEp}
-        episodes={episodes}
-        embedUrl={embedUrl}
-        onAnimePrev={animePrev}
-        onAnimeNext={animeNext}
-        anicrushEpCount={anicrushEpCount}
-      />
     </div>
   );
 }
