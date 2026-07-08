@@ -1,6 +1,9 @@
 import express from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
+import { fileURLToPath } from 'url';
+import { dirname, join } from 'path';
+import { existsSync } from 'fs';
 import rateLimit from 'express-rate-limit';
 import authRoutes from './routes/auth.js';
 import titleRoutes from './routes/titles.js';
@@ -97,6 +100,20 @@ async function autoSyncTmdb() {
   } catch (err) {
     console.error('[auto-sync] Failed:', (err as Error).message);
   }
+}
+
+// ── Serve built client in production ──────────────────────────────────────
+// When deployed as a single Railway service the client is built into
+// ../client/dist (relative to this file's compiled location at dist/server.js).
+const __filename = fileURLToPath(import.meta.url);
+const __dirname  = dirname(__filename);
+const clientDist = join(__dirname, '../../client/dist');
+
+if (process.env.NODE_ENV === 'production' && existsSync(clientDist)) {
+  app.use(express.static(clientDist));
+  // SPA fallback — let React Router handle all non-API routes
+  app.get('*', (_req, res) => res.sendFile(join(clientDist, 'index.html')));
+  console.log(`[static] Serving client from ${clientDist}`);
 }
 
 // Centralized error handler — catches anything passed to next(err)
