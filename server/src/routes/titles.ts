@@ -204,24 +204,56 @@ function cronOrAdmin(req: AuthRequest, res: Response, next: NextFunction) {
   const cronSecret = process.env.CRON_SECRET;
   const authHeader = req.headers['authorization'] ?? '';
   if (cronSecret && authHeader === `Bearer ${cronSecret}`) {
+    (req as any).syncCallerType = 'cron';
     return next(); // cron secret matches — bypass user JWT
   }
+  if (!cronSecret) {
+    // No CRON_SECRET configured — Vercel Cron can never authenticate against
+    // this route, so its daily invocation will always 401 downstream. Log
+    // loudly so this is visible in server/deployment logs, not just a silent
+    // failure the admin never notices.
+    console.warn('[sync-batch] CRON_SECRET is not set — the Vercel cron job cannot authenticate and will fail every run.');
+  }
   // Fall through to standard admin middleware chain
-  authenticate(req, res, (err?: any) => err ? next(err) : requireAdmin(req, res, next));
+  authenticate(req, res, (err?: any) => {
+    if (err) return next(err);
+    (req as any).syncCallerType = 'admin';
+    requireAdmin(req, res, next);
+  });
 }
 
-router.post('/sync-batch', cronOrAdmin, async (_req: AuthRequest, res) => {
+/** Record the outcome of a sync-batch run so /sync-status can report cron health. */
+async function recordSyncRun(via: string, ok: boolean, detail?: string) {
+  const entries: [string, string][] = [
+    ['sync:last_run_at', new Date().toISOString()],
+    ['sync:last_run_via', via],
+    ['sync:last_run_ok', String(ok)],
+    ['sync:last_run_detail', detail ?? ''],
+  ];
+  await Promise.all(
+    entries.map(([key, value]) =>
+      prisma.kV.upsert({ where: { key }, create: { key, value }, update: { value } }),
+    ),
+  ).catch((err) => console.warn('[sync-batch] failed to record run status:', (err as Error).message));
+}
+
+router.post('/sync-batch', cronOrAdmin, async (req: AuthRequest, res) => {
+  const via = (req as any).syncCallerType ?? 'unknown';
   try {
     const result = await syncTmdbCatalog({ maxPages: 3 });
+    await recordSyncRun(via, true);
     res.json(result);
   } catch (err) {
+    await recordSyncRun(via, false, (err as Error).message);
     res.status(502).json({ error: 'Batch sync failed', detail: (err as Error).message });
   }
 });
 
 /**
  * GET /api/titles/sync-status
- * Returns current DB title count vs last known TMDb total.
+ * Returns current DB title count vs last known TMDb total, plus whether the
+ * daily Vercel cron is actually configured and has run recently — so an
+ * admin doesn't have to guess whether CRON_SECRET is set correctly.
  */
 router.get('/sync-status', authenticate, requireAdmin, async (_req: AuthRequest, res) => {
   try {
@@ -230,11 +262,34 @@ router.get('/sync-status', authenticate, requireAdmin, async (_req: AuthRequest,
       prisma.kV.findMany({ where: { key: { startsWith: 'sync:' } } }),
     ]);
     const kv = Object.fromEntries(kvRows.map(r => [r.key, r.value]));
+
+    const lastRunAt = kv['sync:last_run_at'] ?? null;
+    const lastRunVia = kv['sync:last_run_via'] ?? null;
+    const lastRunOk = kv['sync:last_run_ok'] === 'true';
+    const hoursSinceLastRun = lastRunAt
+      ? (Date.now() - new Date(lastRunAt).getTime()) / 3_600_000
+      : null;
+
     res.json({
       dbCount,
       lastCompletedPage: parseInt(kv['sync:last_completed_page'] ?? '0', 10),
       totalPages:        parseInt(kv['sync:total_pages'] ?? '0', 10),
       totalResults:      parseInt(kv['sync:total_results'] ?? '0', 10),
+      cron: {
+        secretConfigured: !!process.env.CRON_SECRET,
+        lastRunAt,
+        lastRunVia,
+        lastRunOk: lastRunAt ? lastRunOk : null,
+        lastRunDetail: kv['sync:last_run_detail'] || null,
+        // Vercel cron runs daily — flag as unhealthy if it's been >26h since
+        // a successful cron-triggered run (26h gives slack for scheduling jitter).
+        healthy:
+          !!process.env.CRON_SECRET &&
+          lastRunVia === 'cron' &&
+          lastRunOk &&
+          hoursSinceLastRun !== null &&
+          hoursSinceLastRun < 26,
+      },
     });
   } catch (err) {
     res.status(500).json({ error: 'Status check failed', detail: (err as Error).message });

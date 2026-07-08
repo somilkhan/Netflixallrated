@@ -1,8 +1,23 @@
-import { useState } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { api } from '../lib/api';
 import { useAuth } from '../lib/auth';
 import { TmdbSearchResult } from '../types';
+
+interface SyncStatus {
+  dbCount: number;
+  lastCompletedPage: number;
+  totalPages: number;
+  totalResults: number;
+  cron: {
+    secretConfigured: boolean;
+    lastRunAt: string | null;
+    lastRunVia: string | null;
+    lastRunOk: boolean | null;
+    lastRunDetail: string | null;
+    healthy: boolean;
+  };
+}
 
 export default function Admin() {
   const { user } = useAuth();
@@ -14,6 +29,15 @@ export default function Admin() {
   const [backfilling, setBackfilling] = useState(false);
   const [importingId, setImportingId] = useState<number | null>(null);
   const [message, setMessage] = useState('');
+  const [status, setStatus] = useState<SyncStatus | null>(null);
+  const [statusError, setStatusError] = useState('');
+
+  const loadStatus = useCallback(() => {
+    if (!user || user.role !== 'ADMIN') return;
+    api.titles.syncStatus().then(setStatus).catch((err: any) => setStatusError(err.message));
+  }, [user]);
+
+  useEffect(() => { loadStatus(); }, [loadStatus]);
 
   if (!user) return (
     <div className="p-10 text-center text-ink-dim">
@@ -59,6 +83,7 @@ export default function Admin() {
     try {
       const { imported, skipped, errors } = await api.titles.syncTmdb();
       setMessage(`Sync complete — ${imported} imported, ${skipped} already in catalog${errors ? `, ${errors} errors` : ''}.`);
+      loadStatus();
     } catch (err: any) {
       setMessage(`Sync failed: ${err.message}`);
     } finally {
@@ -116,6 +141,45 @@ export default function Admin() {
         >
           {syncing ? 'Syncing…' : 'Sync from TMDB'}
         </button>
+      </section>
+
+      {/* Daily catalog cron health */}
+      <section>
+        <h2 className="font-serif text-xl font-semibold mb-1">Daily Catalog Cron</h2>
+        <p className="text-ink-dim text-sm mb-4">
+          The Vercel cron calls <code className="font-mono text-[11px] bg-surface-2 px-1 rounded">/api/titles/sync-batch</code> once
+          a day (~60 movies/run) using <code className="font-mono text-[11px] bg-surface-2 px-1 rounded">CRON_SECRET</code>.
+          This checks whether it's actually configured and running.
+        </p>
+        {statusError && <p className="text-sm text-maroon-bright">Couldn't load status: {statusError}</p>}
+        {status && (
+          <div className="rounded-lg border border-line p-4 space-y-2 text-sm">
+            <div className="flex items-center gap-2">
+              <span
+                className={`inline-block w-2.5 h-2.5 rounded-full ${
+                  status.cron.healthy ? 'bg-green-500' : 'bg-maroon-bright'
+                }`}
+              />
+              <span className="font-semibold">{status.cron.healthy ? 'Healthy' : 'Needs attention'}</span>
+            </div>
+            <div className="text-ink-dim">
+              CRON_SECRET configured: <span className="text-ink">{status.cron.secretConfigured ? 'Yes' : 'No — set it in Vercel env vars'}</span>
+            </div>
+            <div className="text-ink-dim">
+              Last run: {status.cron.lastRunAt
+                ? <span className="text-ink">{new Date(status.cron.lastRunAt).toLocaleString()} via {status.cron.lastRunVia} — {status.cron.lastRunOk ? 'succeeded' : 'failed'}</span>
+                : <span className="text-ink">never</span>}
+            </div>
+            {status.cron.lastRunDetail && (
+              <div className="text-ink-dim">Detail: <span className="text-ink">{status.cron.lastRunDetail}</span></div>
+            )}
+            <div className="text-ink-dim">
+              Catalog: <span className="text-ink">{status.dbCount.toLocaleString()}</span> titles synced
+              {status.totalResults > 0 && <> of <span className="text-ink">{status.totalResults.toLocaleString()}</span> on TMDB (page {status.lastCompletedPage}/{status.totalPages})</>}
+            </div>
+            <button onClick={loadStatus} className="text-maroon-bright text-xs font-mono hover:underline">Refresh</button>
+          </div>
+        )}
       </section>
 
       {/* Search & import */}
