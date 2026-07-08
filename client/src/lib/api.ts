@@ -82,6 +82,23 @@ export const api = {
       return fetcher(`/showbox/link?${params.toString()}`);
     },
   },
+  screenscape: {
+    /**
+     * Search 4kHDHub for a title and resolve an embed/stream URL in one call.
+     * Returns { success, id, title, embedUrl, streamUrl }.
+     */
+    resolve: (titleName: string, type: 'movie' | 'tv', season = 1, episode = 1) => {
+      const params = new URLSearchParams({
+        title: titleName,
+        type,
+        season: String(season),
+        episode: String(episode),
+      });
+      return fetcher(`/screenscape/resolve?${params.toString()}`);
+    },
+    list: (page = 1) => fetcher(`/screenscape/list?page=${page}`),
+    search: (q: string) => fetcher(`/screenscape/search?q=${encodeURIComponent(q)}`),
+  },
   consumet: {
     animeSearch: (q: string) => fetcher(`/consumet/anime/search?q=${encodeURIComponent(q)}`),
     animeInfo: (animeId: string) => fetcher(`/consumet/anime/info/${encodeURIComponent(animeId)}`),

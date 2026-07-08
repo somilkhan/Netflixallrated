@@ -15,6 +15,7 @@ import configRoutes from './routes/config.js';
 import geoRoutes from './routes/geo.js';
 import anicrushRoutes from './routes/anicrush.js';
 import consumetRoutes from './routes/consumet.js';
+import screenscapeRoutes from './routes/screenscape.js';
 import { prisma } from './lib/prisma.js';
 import { syncTmdbCatalog } from './lib/sync.js';
 
@@ -61,6 +62,7 @@ app.use('/api/config', configRoutes);
 app.use('/api/geo', geoRoutes);
 app.use('/api/anicrush', anicrushRoutes);
 app.use('/api/consumet', consumetRoutes);
+app.use('/api/screenscape', screenscapeRoutes);
 
 app.get('/api/health', (_req, res) => res.json({ status: 'ok' }));
 

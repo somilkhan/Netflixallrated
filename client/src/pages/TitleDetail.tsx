@@ -63,6 +63,11 @@ export default function TitleDetail() {
   const [febboxLoading, setFebboxLoading] = useState(false);
   const [febboxError, setFebboxError] = useState<string | null>(null);
 
+  // 4kHDHub (ScreenScape) — alternative movie/TV source
+  const [hubUrl, setHubUrl] = useState<string | null>(null);
+  const [hubLoading, setHubLoading] = useState(false);
+  const [hubError, setHubError] = useState<string | null>(null);
+
   // AniList metadata (anime only)
   const [anilistData, setAnilistData] = useState<any>(null);
 
@@ -151,6 +156,27 @@ export default function TitleDetail() {
       .finally(() => setFebboxLoading(false));
   }, [serverId, title, selectedSeason, selectedEp]);
 
+  // 4kHDHub auto-resolve — fires when 4kHDHub server is selected for movies/TV
+  useEffect(() => {
+    if (!title || title.type === 'ANIME' || serverId !== '4khdhub') return;
+    setHubUrl(null);
+    setHubError(null);
+    setHubLoading(true);
+    api.screenscape.resolve(
+      title.name,
+      title.type === 'MOVIE' ? 'movie' : 'tv',
+      selectedSeason,
+      selectedEp,
+    )
+      .then((data: any) => {
+        const url = data?.embedUrl ?? data?.streamUrl ?? null;
+        if (url) setHubUrl(url);
+        else setHubError('4kHDHub stream not available for this title');
+      })
+      .catch((err: any) => setHubError(err?.message || '4kHDHub lookup failed — try another server'))
+      .finally(() => setHubLoading(false));
+  }, [serverId, title, selectedSeason, selectedEp]);
+
   useEffect(() => {
     if (!title || title.type !== 'ANIME') return;
     setAnilistData(null);
@@ -228,9 +254,10 @@ export default function TitleDetail() {
     if (!title.tmdbId) return null;
     if (serverId === 'flixhq') return flixhqUrl;
     if (serverId === 'febbox') return febboxUrl;
+    if (serverId === '4khdhub') return hubUrl;
     const server = SERVERS.find(s => s.id === serverId) || SERVERS[0];
     return server.getUrl(title.tmdbId, title.type, selectedSeason, selectedEp);
-  }, [title, serverId, selectedSeason, selectedEp, animeEmbedUrl, animeProvider, gogoEmbedUrl, flixhqUrl]);
+  }, [title, serverId, selectedSeason, selectedEp, animeEmbedUrl, animeProvider, gogoEmbedUrl, flixhqUrl, hubUrl]);
 
   const openAnimePlayer = useCallback(async (ep?: number) => {
     const epNum = ep ?? selectedEp;
@@ -550,9 +577,10 @@ export default function TitleDetail() {
                   <span className="status-dot" />
                   {srv.label}
                   {(srv.id === 'flixhq' && flixhqLoading && serverId === 'flixhq') ||
-                   (srv.id === 'febbox' && febboxLoading && serverId === 'febbox')
+                   (srv.id === 'febbox' && febboxLoading && serverId === 'febbox') ||
+                   (srv.id === '4khdhub' && hubLoading && serverId === '4khdhub')
                     ? <span className="quality-badge">…</span>
-                    : <span className="quality-badge">HD</span>}
+                    : <span className="quality-badge">4K</span>}
                 </button>
               ))}
             </div>
@@ -565,6 +593,11 @@ export default function TitleDetail() {
             {/* FebBox error message */}
             {serverId === 'febbox' && !febboxLoading && febboxError && (
               <div className="anime-status error" style={{ marginBottom: 10 }}>{febboxError}</div>
+            )}
+
+            {/* 4kHDHub error message */}
+            {serverId === '4khdhub' && !hubLoading && hubError && (
+              <div className="anime-status error" style={{ marginBottom: 10 }}>{hubError}</div>
             )}
 
             {/* Video container */}
