@@ -5,7 +5,22 @@
 @layer base {
   ::selection { background: #7A2530; color: #fff; }
   :focus-visible { outline: 2px solid #C2434F; outline-offset: 2px; border-radius: 4px; }
-  html { scroll-behavior: smooth; }
+  html {
+    scroll-behavior: smooth;
+    background: #0B0908;
+    overflow-x: hidden;
+    max-width: 100%;
+  }
+  body {
+    background: #0B0908;
+    overflow-x: hidden;
+    max-width: 100%;
+    min-height: 100vh;
+  }
+  #root {
+    overflow-x: hidden;
+    max-width: 100%;
+  }
   @media (prefers-reduced-motion: reduce) { * { animation: none !important; transition: none !important; } }
 }
 

@@ -21,7 +21,7 @@ function Wrap({ children }: { children: React.ReactNode }) {
 export default function App() {
   return (
     <AuthProvider>
-      <div className="min-h-screen bg-void text-ink pb-24">
+      <div className="min-h-screen bg-void text-ink pb-24 overflow-x-hidden max-w-full">
         <Navbar />
         <Routes>
           <Route path="/" element={<Wrap><Home /></Wrap>} />

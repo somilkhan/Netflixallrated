@@ -17,8 +17,10 @@
   min-height: 100vh;
   color: var(--dp-ink);
   font-family: 'Inter', system-ui, sans-serif;
-  padding-bottom: 90px;
+  padding-bottom: 110px;
   -webkit-tap-highlight-color: transparent;
+  overflow-x: hidden;
+  max-width: 100%;
 }
 
 .movie-detail-page *,

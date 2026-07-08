@@ -81,7 +81,8 @@ export default function Anime() {
           <div className="mt-3 flex gap-4 p-4 rounded-xl border border-maroon/30 bg-surface max-w-xl">
             {searchResult.coverImage?.extraLarge && (
               <img src={searchResult.coverImage.extraLarge} alt={searchResult.title.romaji}
-                className="w-[64px] h-[90px] rounded-lg object-cover border border-line shrink-0" />
+                className="w-[64px] h-[90px] rounded-lg object-cover border border-line shrink-0"
+                onError={e => { (e.target as HTMLImageElement).style.display = 'none'; }} />
             )}
             <div className="flex-1 min-w-0">
               <p className="font-serif text-base font-semibold leading-tight">
@@ -214,7 +215,7 @@ export default function Anime() {
         </div>
       )}
 
-      <div className="h-8" />
+      <div className="h-28" />
     </div>
   );
 }

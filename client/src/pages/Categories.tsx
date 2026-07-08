@@ -131,7 +131,7 @@ export default function Categories() {
             </p>
           </div>
         ) : (
-          <div className="grid grid-cols-2 gap-3 pb-8">
+          <div className="grid grid-cols-2 gap-3 pb-28">
             {filtered.map(({ genre, count }) => (
               <button
                 key={genre}
