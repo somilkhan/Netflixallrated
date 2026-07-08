@@ -56,6 +56,7 @@ export default function TitleDetail() {
   // FlixHQ (consumet) — alternative movie/TV source
   const [flixhqUrl, setFlixhqUrl] = useState<string | null>(null);
   const [flixhqLoading, setFlixhqLoading] = useState(false);
+  const [flixhqError, setFlixhqError] = useState<string | null>(null);
 
   // AniList metadata (anime only)
   const [anilistData, setAnilistData] = useState<any>(null);
@@ -113,10 +114,14 @@ export default function TitleDetail() {
   useEffect(() => {
     if (!title || title.type === 'ANIME' || serverId !== 'flixhq') return;
     setFlixhqUrl(null);
+    setFlixhqError(null);
     setFlixhqLoading(true);
     api.consumet.moviesAuto(title.name, title.type, selectedSeason, selectedEp)
-      .then((data: any) => setFlixhqUrl(data.playerUrl))
-      .catch(() => {})
+      .then((data: any) => {
+        if (data?.playerUrl) setFlixhqUrl(data.playerUrl);
+        else setFlixhqError('No stream found via FlixHQ');
+      })
+      .catch(() => setFlixhqError('FlixHQ failed to load — try another server'))
       .finally(() => setFlixhqLoading(false));
   }, [serverId, title, selectedSeason, selectedEp]);
 
@@ -165,9 +170,15 @@ export default function TitleDetail() {
     return () => controller.abort();
   }, [title]);
 
-  // GogoAnime search — runs in background when an anime title loads
+  // GogoAnime/Hianime search — runs in background when an anime title loads; resets stale state first
   useEffect(() => {
     if (!title || title.type !== 'ANIME') return;
+    // Reset so stale data from a previous title never bleeds through
+    setGogoAnimeId(null);
+    setGogoEpCount(0);
+    setGogoEpisodes([]);
+    setGogoEmbedUrl(null);
+    setGogoError(null);
     api.consumet.animeSearch(title.name)
       .then((data: any) => {
         const result = data?.results?.[0];
@@ -387,17 +398,17 @@ export default function TitleDetail() {
         <div className="hero-gradient" />
         <div className="hero-noise" />
         {/* Play button on hero only for ANIME (async embed fetch) */}
-        {title.type === 'ANIME' && canPlay && !animeEmbedLoading && (
+        {title.type === 'ANIME' && canPlay && !(animeProvider === 'gogoanime' ? gogoEmbedLoading : animeEmbedLoading) && (
           <button
             className="play-overlay-btn"
-            onClick={() => openAnimePlayer()}
+            onClick={() => animeProvider === 'gogoanime' ? openGogoPlayer() : openAnimePlayer()}
           >
             <svg width="24" height="24" viewBox="0 0 24 24" fill="white">
               <polygon points="8,5 8,19 19,12" />
             </svg>
           </button>
         )}
-        {title.type === 'ANIME' && animeEmbedLoading && (
+        {title.type === 'ANIME' && (animeProvider === 'gogoanime' ? gogoEmbedLoading : animeEmbedLoading) && (
           <div style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%,-50%)' }}>
             <div style={{ width: 40, height: 40, border: '2px solid rgba(245,240,236,0.12)', borderTopColor: '#C4485A', borderRadius: '50%', animation: 'spin 0.8s linear infinite' }} />
           </div>
@@ -517,6 +528,11 @@ export default function TitleDetail() {
                 </button>
               ))}
             </div>
+
+            {/* FlixHQ error message */}
+            {serverId === 'flixhq' && !flixhqLoading && flixhqError && (
+              <div className="anime-status error" style={{ marginBottom: 10 }}>{flixhqError}</div>
+            )}
 
             {/* Video container */}
             <div className="video-wrap">

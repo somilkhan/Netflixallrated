@@ -35,7 +35,8 @@ router.get('/anime/search', async (req: Request, res: Response) => {
     const data = await getAnilist().search(String(q));
     return res.json(data);
   } catch (err: any) {
-    return res.status(500).json({ error: err.message });
+    console.error('[consumet] anime search error:', err.message);
+    return res.status(500).json({ error: 'Anime search unavailable' });
   }
 });
 
@@ -51,7 +52,8 @@ router.get('/anime/info/:anilistId', async (req: Request, res: Response) => {
       episodes: info.episodes,
     });
   } catch (err: any) {
-    return res.status(500).json({ error: err.message });
+    console.error('[consumet] anime info error:', err.message);
+    return res.status(500).json({ error: 'Anime info unavailable' });
   }
 });
 
@@ -63,13 +65,14 @@ router.get('/anime/stream/:episodeId', async (req: Request, res: Response) => {
     const data = await getAnilist().fetchEpisodeSources(epId);
     return res.json(data);
   } catch (err: any) {
-    return res.status(500).json({ error: err.message });
+    console.error('[consumet] anime stream error:', err.message);
+    return res.status(500).json({ error: 'Episode stream unavailable' });
   }
 });
 
 // ─── Movies / TV (TMDB META → HiMovies) ────────────────────────────────────
 
-// GET /api/consumet/movies/search?q=avengers&type=Movie|TvSeries
+// GET /api/consumet/movies/search?q=avengers
 router.get('/movies/search', async (req: Request, res: Response) => {
   const { q } = req.query;
   if (!q) return res.status(400).json({ error: 'q required' });
@@ -77,30 +80,34 @@ router.get('/movies/search', async (req: Request, res: Response) => {
     const data = await getTmdb().search(String(q));
     return res.json(data);
   } catch (err: any) {
-    return res.status(500).json({ error: err.message });
+    console.error('[consumet] movies search error:', err.message);
+    return res.status(500).json({ error: 'Movie search unavailable' });
   }
 });
 
-// GET /api/consumet/movies/info/:mediaId
+// GET /api/consumet/movies/info/:mediaId?type=movie|tv
 router.get('/movies/info/:mediaId', async (req: Request, res: Response) => {
+  const { type = 'movie' } = req.query;
   try {
     const mediaId = decodeURIComponent(req.params.mediaId);
-    const info = await getTmdb().fetchMediaInfo(mediaId, 'movie');
+    const info = await getTmdb().fetchMediaInfo(mediaId, String(type));
     return res.json(info);
   } catch (err: any) {
-    return res.status(500).json({ error: err.message });
+    console.error('[consumet] movies info error:', err.message);
+    return res.status(500).json({ error: 'Media info unavailable' });
   }
 });
 
 // GET /api/consumet/movies/stream?mediaId=...&episodeId=...&type=movie|tv
 router.get('/movies/stream', async (req: Request, res: Response) => {
-  const { mediaId, episodeId, type = 'movie' } = req.query;
+  const { mediaId, episodeId } = req.query;
   if (!mediaId || !episodeId) return res.status(400).json({ error: 'mediaId and episodeId required' });
   try {
     const src = await getTmdb().fetchEpisodeSources(String(episodeId), String(mediaId));
     return res.json(src);
   } catch (err: any) {
-    return res.status(500).json({ error: err.message });
+    console.error('[consumet] movies stream error:', err.message);
+    return res.status(500).json({ error: 'Episode stream unavailable' });
   }
 });
 
@@ -148,7 +155,8 @@ router.get('/movies/auto', async (req: Request, res: Response) => {
 
     return res.json({ playerUrl, quality: m3u8.quality, title: best.title });
   } catch (err: any) {
-    return res.status(500).json({ error: err.message });
+    console.error('[consumet] movies/auto error:', err.message);
+    return res.status(500).json({ error: 'Auto stream resolution failed' });
   }
 });
 
