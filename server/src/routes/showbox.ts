@@ -16,7 +16,6 @@
  */
 import { Router, Request, Response } from 'express';
 import CryptoJS from 'crypto-js';
-import { JSDOM } from 'jsdom';
 import { getTmdbDetails } from '../lib/tmdb.js';
 import { authenticate } from '../middleware/auth.js';
 
@@ -179,6 +178,53 @@ interface FebStream {
 
 const QUALITY_ORDER = ['4k', '2160p', '1080p', '720p', '480p', '360p', '240p'];
 
+/**
+ * Parse FebBox video quality HTML using regex — avoids a jsdom/canvas native
+ * build dependency that crashes on Vercel's build environment.
+ *
+ * Each quality block looks like:
+ *   <div class="file_quality" data-url="https://..." data-quality="1080p" ...>
+ *     <div class="name">1080p</div>
+ *     <div class="size">2.3 GB</div>
+ *   </div>
+ */
+function parseFebStreamHtml(html: string): FebStream[] {
+  const streams: FebStream[] = [];
+  // Match each .file_quality div (opening tag + everything up to the next sibling/closing)
+  const blockRe =
+    /<div[^>]*class="[^"]*file_quality[^"]*"([^>]*)>([\s\S]*?)<\/div>\s*(?=<div|$)/gi;
+
+  for (const block of html.matchAll(blockRe)) {
+    const attrs = block[1] ?? '';
+    const inner = block[2] ?? '';
+
+    const url = (attrs.match(/data-url="([^"]*)"/) ?? [])[1] ?? '';
+    const quality = (attrs.match(/data-quality="([^"]*)"/) ?? [])[1] ?? '';
+    const name =
+      (inner.match(/<div[^>]*class="[^"]*name[^"]*"[^>]*>([\s\S]*?)<\/div>/) ??
+        [])[1]
+        ?.replace(/<[^>]+>/g, '')
+        .trim() ?? '';
+    const size =
+      (inner.match(/<div[^>]*class="[^"]*size[^"]*"[^>]*>([\s\S]*?)<\/div>/) ??
+        [])[1]
+        ?.replace(/<[^>]+>/g, '')
+        .trim();
+
+    if (url) streams.push({ url, quality, name, size });
+  }
+
+  return streams.sort((a, b) => {
+    const ai = QUALITY_ORDER.findIndex((q) =>
+      a.quality.toLowerCase().includes(q),
+    );
+    const bi = QUALITY_ORDER.findIndex((q) =>
+      b.quality.toLowerCase().includes(q),
+    );
+    return (ai === -1 ? 99 : ai) - (bi === -1 ? 99 : bi);
+  });
+}
+
 async function febStreamLinks(
   shareKey: string,
   fid: number,
@@ -191,27 +237,7 @@ async function febStreamLinks(
   });
   if (!res.ok) throw new Error(`FebBox quality list HTTP ${res.status}`);
   const json: any = await res.json();
-  const dom = new JSDOM(json?.html ?? '');
-  const streams: FebStream[] = Array.from(
-    dom.window.document.querySelectorAll('.file_quality'),
-  )
-    .map((el: Element) => ({
-      url: el.getAttribute('data-url') ?? '',
-      quality: el.getAttribute('data-quality') ?? '',
-      name: el.querySelector('.name')?.textContent?.trim() ?? '',
-      size: el.querySelector('.size')?.textContent?.trim(),
-    }))
-    .filter((s) => !!s.url);
-
-  return streams.sort((a, b) => {
-    const ai = QUALITY_ORDER.findIndex((q) =>
-      a.quality.toLowerCase().includes(q),
-    );
-    const bi = QUALITY_ORDER.findIndex((q) =>
-      b.quality.toLowerCase().includes(q),
-    );
-    return (ai === -1 ? 99 : ai) - (bi === -1 ? 99 : bi);
-  });
+  return parseFebStreamHtml(json?.html ?? '');
 }
 
 // ── File-tree navigation ─────────────────────────────────────────────────────
