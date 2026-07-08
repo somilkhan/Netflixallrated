@@ -201,17 +201,30 @@ router.get('/hdhub4u/resolve', authenticate, async (req: Request, res: Response)
     const normalise = (s: string) => s?.toLowerCase().replace(/[^a-z0-9]/g, '');
     const needle = normalise(titleParam);
 
-    let match: any = null;
-    for (let page = 1; page <= 3 && !match; page++) {
+    // Scan up to 3 pages; collect an exact match first, then a partial match,
+    // and keep the very first item as a last-resort fallback — but only after
+    // all pages are scanned so we don't short-circuit early.
+    let exactMatch: any = null;
+    let partialMatch: any = null;
+    let firstItem: any = null;
+
+    for (let page = 1; page <= 3; page++) {
       const data = await ssGet(`/api/hdhub4u?page=${page}`, key);
       const items: any[] = data?.data?.recentMovies ?? data?.data ?? [];
       if (!items.length) break;
 
-      match =
-        items.find((r: any) => normalise(r.title ?? '') === needle) ??
-        items.find((r: any) => normalise(r.title ?? '').includes(needle)) ??
-        (page === 1 ? items[0] : null); // first-page fallback only
+      if (page === 1) firstItem = items[0];
+
+      for (const r of items) {
+        const norm = normalise(r.title ?? '');
+        if (!exactMatch && norm === needle) { exactMatch = r; break; }
+        if (!partialMatch && norm.includes(needle)) partialMatch = r;
+      }
+
+      if (exactMatch) break; // no need to continue scanning
     }
+
+    const match = exactMatch ?? partialMatch ?? firstItem;
 
     if (!match) {
       return res.status(404).json({ success: false, error: `"${titleParam}" not found on HDHub4u` });
