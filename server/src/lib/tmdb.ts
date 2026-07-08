@@ -245,6 +245,7 @@ async function fetchMultiPage(
     });
   });
   const pages_data = await Promise.all(requests);
+  const seen = new Set<number>();
   return pages_data
     .flatMap(p => p.results || [])
     .filter((r: any) => {
@@ -253,6 +254,11 @@ async function fetchMultiPage(
       // Exclude unreleased entries regardless of endpoint support for date params
       const releaseDate = r.release_date || r.first_air_date;
       if (!releaseDate || releaseDate > today) return false;
+      // TMDB can return the same title on multiple pages when popularity
+      // ties shift between concurrent page requests — dedupe by id so
+      // callers (and their React list keys) never see the same item twice.
+      if (seen.has(r.id)) return false;
+      seen.add(r.id);
       return true;
     });
 }
