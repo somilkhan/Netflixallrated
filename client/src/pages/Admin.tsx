@@ -147,9 +147,8 @@ export default function Admin() {
       <section>
         <h2 className="font-serif text-xl font-semibold mb-1">Daily Catalog Cron</h2>
         <p className="text-ink-dim text-sm mb-4">
-          The Vercel cron calls <code className="font-mono text-[11px] bg-surface-2 px-1 rounded">/api/titles/sync-batch</code> once
-          a day (~60 movies/run) using <code className="font-mono text-[11px] bg-surface-2 px-1 rounded">CRON_SECRET</code>.
-          This checks whether it's actually configured and running.
+          A scheduled Railway service runs <code className="font-mono text-[11px] bg-surface-2 px-1 rounded">syncBatchCron</code> once
+          a day (~60 movies/run) directly against the database. This checks whether it's actually running.
         </p>
         {statusError && <p className="text-sm text-maroon-bright">Couldn't load status: {statusError}</p>}
         {status && (
@@ -162,9 +161,11 @@ export default function Admin() {
               />
               <span className="font-semibold">{status.cron.healthy ? 'Healthy' : 'Needs attention'}</span>
             </div>
-            <div className="text-ink-dim">
-              CRON_SECRET configured: <span className="text-ink">{status.cron.secretConfigured ? 'Yes' : 'No — set it in Vercel env vars'}</span>
-            </div>
+            {status.cron.secretConfigured && (
+              <div className="text-ink-dim">
+                CRON_SECRET configured: <span className="text-ink">Yes (external scheduler fallback enabled)</span>
+              </div>
+            )}
             <div className="text-ink-dim">
               Last cron run: {status.cron.lastRunAt
                 ? <span className="text-ink">{new Date(status.cron.lastRunAt).toLocaleString()} — {status.cron.lastRunOk ? 'succeeded' : 'failed'}</span>

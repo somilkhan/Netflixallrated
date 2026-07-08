@@ -4,6 +4,7 @@ import { prisma } from '../lib/prisma.js';
 import { authenticate, requireAdmin, AuthRequest } from '../middleware/auth.js';
 import { searchTmdb, getTmdbDetails, getTvSeasons, getTvEpisodes } from '../lib/tmdb.js';
 import { syncTmdbCatalog, resetSyncProgress } from '../lib/sync.js';
+import { SyncCallerType, sanitizeErrorDetail, recordSyncRun } from '../lib/syncStatus.js';
 
 const router = Router();
 
@@ -200,17 +201,8 @@ router.post('/sync-tmdb', authenticate, requireAdmin, async (req: AuthRequest, r
  *   2. Manual admin callers: send a valid admin JWT (same as other admin routes).
  *   If neither matches, the request is rejected with 401/403.
  */
-type SyncCallerType = 'cron' | 'admin';
 interface SyncRequest extends AuthRequest {
   syncCallerType?: SyncCallerType;
-}
-
-/** Strip query strings and anything that looks like a key/token/secret from an error message before it's persisted or shown to admins. */
-function sanitizeErrorDetail(message: string): string {
-  return message
-    .replace(/([?&])(api_key|key|token|secret|password)=[^&\s"']*/gi, '$1$2=[redacted]')
-    .replace(/https?:\/\/\S+/g, (url) => url.split('?')[0]) // drop query strings from any embedded URLs
-    .slice(0, 300);
 }
 
 function cronOrAdmin(req: SyncRequest, res: Response, next: NextFunction) {
@@ -220,38 +212,16 @@ function cronOrAdmin(req: SyncRequest, res: Response, next: NextFunction) {
     req.syncCallerType = 'cron';
     return next(); // cron secret matches — bypass user JWT
   }
-  if (!cronSecret) {
-    // No CRON_SECRET configured — Vercel Cron can never authenticate against
-    // this route, so its daily invocation will always 401 downstream. Log
-    // loudly so this is visible in server/deployment logs, not just a silent
-    // failure the admin never notices.
-    console.warn('[sync-batch] CRON_SECRET is not set — the Vercel cron job cannot authenticate and will fail every run.');
-  }
-  // Fall through to standard admin middleware chain
+  // Fall through to standard admin middleware chain. Note: the primary
+  // scheduled sync now runs as a standalone Railway cron service
+  // (server/src/scripts/syncBatchCron.ts) which calls syncTmdbCatalog
+  // directly — this HTTP route remains for manual/admin-triggered runs
+  // and for an optional external scheduler hitting it with CRON_SECRET.
   authenticate(req, res, (err?: any) => {
     if (err) return next(err);
     req.syncCallerType = 'admin';
     requireAdmin(req, res, next);
   });
-}
-
-/**
- * Record the outcome of a sync-batch run so /sync-status can report health.
- * Cron and admin runs are tracked under separate KV keys so a manual admin
- * sync never overwrites (or fakes) the daily cron's own health signal.
- */
-async function recordSyncRun(via: SyncCallerType, ok: boolean, detail?: string) {
-  const prefix = via === 'cron' ? 'sync:last_cron' : 'sync:last_admin';
-  const entries: [string, string][] = [
-    [`${prefix}_run_at`, new Date().toISOString()],
-    [`${prefix}_run_ok`, String(ok)],
-    [`${prefix}_run_detail`, detail ? sanitizeErrorDetail(detail) : ''],
-  ];
-  await Promise.all(
-    entries.map(([key, value]) =>
-      prisma.kV.upsert({ where: { key }, create: { key, value }, update: { value } }),
-    ),
-  ).catch((err) => console.warn('[sync-batch] failed to record run status:', (err as Error).message));
 }
 
 router.post('/sync-batch', cronOrAdmin, async (req: SyncRequest, res) => {
@@ -269,8 +239,8 @@ router.post('/sync-batch', cronOrAdmin, async (req: SyncRequest, res) => {
 /**
  * GET /api/titles/sync-status
  * Returns current DB title count vs last known TMDb total, plus whether the
- * daily Vercel cron is actually configured and has run recently — so an
- * admin doesn't have to guess whether CRON_SECRET is set correctly.
+ * daily scheduled sync (Railway cron service) has actually run recently — so
+ * an admin doesn't have to guess whether it's working.
  */
 router.get('/sync-status', authenticate, requireAdmin, async (_req: AuthRequest, res) => {
   try {
@@ -293,15 +263,18 @@ router.get('/sync-status', authenticate, requireAdmin, async (_req: AuthRequest,
       totalPages:        parseInt(kv['sync:total_pages'] ?? '0', 10),
       totalResults:      parseInt(kv['sync:total_results'] ?? '0', 10),
       cron: {
+        // CRON_SECRET is only needed for the optional HTTP fallback path
+        // (an external scheduler hitting /sync-batch). The primary path —
+        // the Railway scheduled service running syncBatchCron.ts directly —
+        // doesn't use it at all, so it's informational, not a health gate.
         secretConfigured: !!process.env.CRON_SECRET,
         lastRunAt: lastCronRunAt,
         lastRunOk: lastCronRunAt ? lastCronRunOk : null,
         lastRunDetail: kv['sync:last_cron_run_detail'] || null,
         lastManualRunAt: lastAdminRunAt,
-        // Vercel cron runs daily — flag as unhealthy if it's been >26h since
-        // a successful cron-triggered run (26h gives slack for scheduling jitter).
+        // The scheduled job runs daily — flag as unhealthy if it's been >26h
+        // since a successful cron-triggered run (26h gives slack for scheduling jitter).
         healthy:
-          !!process.env.CRON_SECRET &&
           lastCronRunOk &&
           hoursSinceLastCronRun !== null &&
           hoursSinceLastCronRun < 26,
@@ -321,7 +294,7 @@ router.get('/sync-status', authenticate, requireAdmin, async (_req: AuthRequest,
  */
 router.post('/backfill-images', authenticate, requireAdmin, async (_req: AuthRequest, res) => {
   if (!process.env.TMDB_API_KEY) {
-    return res.status(503).json({ error: 'TMDB_API_KEY is not configured — add it in Replit Secrets.' });
+    return res.status(503).json({ error: 'TMDB_API_KEY is not configured — add it in your environment variables.' });
   }
 
   const missing = await prisma.title.findMany({

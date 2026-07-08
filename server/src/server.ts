@@ -21,7 +21,19 @@ const app = express();
 app.set('trust proxy', 1);
 const PORT = process.env.PORT || 3000;
 
-app.use(cors({ origin: process.env.CLIENT_URL || 'http://localhost:5000', credentials: true }));
+// CLIENT_URL may be a single origin or a comma-separated list (e.g. Railway
+// preview domain + a custom domain), so both work in production.
+const allowedOrigins = (process.env.CLIENT_URL || 'http://localhost:5000')
+  .split(',')
+  .map((o) => o.trim())
+  .filter(Boolean);
+app.use(cors({
+  origin(origin, callback) {
+    if (!origin || allowedOrigins.includes(origin)) return callback(null, true);
+    callback(new Error('Not allowed by CORS'));
+  },
+  credentials: true,
+}));
 app.use(express.json());
 
 const limiter = rateLimit({ windowMs: 15 * 60 * 1000, max: 200, standardHeaders: true, legacyHeaders: false });
@@ -93,16 +105,13 @@ app.use((err: Error, _req: express.Request, res: express.Response, _next: expres
   res.status(500).json({ error: err.message || 'Internal server error' });
 });
 
-// Export for Vercel serverless — only bind to a port when running directly
 export default app;
 
-// Run cleanup on every cold start (local + Vercel) — purges unreleased junk
-// from the production DB that pre-dates the discover filters. Non-blocking.
+// Run cleanup on every startup — purges unreleased junk from the production
+// DB that pre-dates the discover filters. Non-blocking.
 autoCleanupJunk();
 
-if (!process.env.VERCEL) {
-  app.listen(PORT, () => {
-    console.log(`Server running on port ${PORT}`);
-    autoSyncTmdb(); // non-blocking — fires in background
-  });
-}
+app.listen(PORT, () => {
+  console.log(`Server running on port ${PORT}`);
+  autoSyncTmdb(); // non-blocking — fires in background
+});
