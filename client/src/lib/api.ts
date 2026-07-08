@@ -61,10 +61,22 @@ export const api = {
     content: (region: string) => fetcher(`/geo/content?region=${encodeURIComponent(region)}`),
   },
   showbox: {
-    link: (tmdbId: string, type: 'movie' | 'tv', season?: number, episode?: number) => {
+    /**
+     * Resolve a FebBox embed URL for a given TMDB title.
+     * Returns { success, embedUrl, shareKey, fid, streams[] }.
+     * Pass titleName to skip the server-side TMDB lookup (saves a round-trip).
+     */
+    link: (
+      tmdbId: string,
+      type: 'movie' | 'tv',
+      season?: number,
+      episode?: number,
+      titleName?: string,
+    ) => {
       const params = new URLSearchParams({ id: tmdbId, type });
       if (season) params.set('season', String(season));
       if (episode) params.set('episode', String(episode));
+      if (titleName) params.set('title', titleName);
       return fetcher(`/showbox/link?${params.toString()}`);
     },
   },

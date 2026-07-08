@@ -58,6 +58,11 @@ export default function TitleDetail() {
   const [flixhqLoading, setFlixhqLoading] = useState(false);
   const [flixhqError, setFlixhqError] = useState<string | null>(null);
 
+  // FebBox (showbox) — alternative movie/TV source
+  const [febboxUrl, setFebboxUrl] = useState<string | null>(null);
+  const [febboxLoading, setFebboxLoading] = useState(false);
+  const [febboxError, setFebboxError] = useState<string | null>(null);
+
   // AniList metadata (anime only)
   const [anilistData, setAnilistData] = useState<any>(null);
 
@@ -123,6 +128,27 @@ export default function TitleDetail() {
       })
       .catch(() => setFlixhqError('FlixHQ failed to load — try another server'))
       .finally(() => setFlixhqLoading(false));
+  }, [serverId, title, selectedSeason, selectedEp]);
+
+  // FebBox auto-resolve — fires when FebBox server is selected for movies/TV
+  useEffect(() => {
+    if (!title || title.type === 'ANIME' || serverId !== 'febbox' || !title.tmdbId) return;
+    setFebboxUrl(null);
+    setFebboxError(null);
+    setFebboxLoading(true);
+    api.showbox.link(
+      String(title.tmdbId),
+      title.type === 'MOVIE' ? 'movie' : 'tv',
+      selectedSeason,
+      selectedEp,
+      title.name,
+    )
+      .then((data: any) => {
+        if (data?.embedUrl) setFebboxUrl(data.embedUrl);
+        else setFebboxError('FebBox stream not available for this title');
+      })
+      .catch(() => setFebboxError('FebBox lookup failed — try another server'))
+      .finally(() => setFebboxLoading(false));
   }, [serverId, title, selectedSeason, selectedEp]);
 
   useEffect(() => {
@@ -201,6 +227,7 @@ export default function TitleDetail() {
     }
     if (!title.tmdbId) return null;
     if (serverId === 'flixhq') return flixhqUrl;
+    if (serverId === 'febbox') return febboxUrl;
     const server = SERVERS.find(s => s.id === serverId) || SERVERS[0];
     return server.getUrl(title.tmdbId, title.type, selectedSeason, selectedEp);
   }, [title, serverId, selectedSeason, selectedEp, animeEmbedUrl, animeProvider, gogoEmbedUrl, flixhqUrl]);
@@ -522,7 +549,8 @@ export default function TitleDetail() {
                 >
                   <span className="status-dot" />
                   {srv.label}
-                  {srv.id === 'flixhq' && flixhqLoading && serverId === 'flixhq'
+                  {(srv.id === 'flixhq' && flixhqLoading && serverId === 'flixhq') ||
+                   (srv.id === 'febbox' && febboxLoading && serverId === 'febbox')
                     ? <span className="quality-badge">…</span>
                     : <span className="quality-badge">HD</span>}
                 </button>
@@ -532,6 +560,11 @@ export default function TitleDetail() {
             {/* FlixHQ error message */}
             {serverId === 'flixhq' && !flixhqLoading && flixhqError && (
               <div className="anime-status error" style={{ marginBottom: 10 }}>{flixhqError}</div>
+            )}
+
+            {/* FebBox error message */}
+            {serverId === 'febbox' && !febboxLoading && febboxError && (
+              <div className="anime-status error" style={{ marginBottom: 10 }}>{febboxError}</div>
             )}
 
             {/* Video container */}

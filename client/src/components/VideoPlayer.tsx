@@ -43,7 +43,13 @@ export const SERVERS: Server[] = [
   {
     id: 'flixhq',
     label: 'FlixHQ',
-    // URL is resolved asynchronously by TitleDetail; returning '' is a safe no-op
+    // URL resolved asynchronously by TitleDetail
+    getUrl: () => '',
+  },
+  {
+    id: 'febbox',
+    label: 'FebBox',
+    // URL resolved asynchronously by TitleDetail via /api/showbox/link
     getUrl: () => '',
   },
 ];
