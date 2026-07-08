@@ -1,7 +1,7 @@
 {
   "version": 2,
   "installCommand": "echo 'skipping root install — buildCommand installs server/client separately'",
-  "buildCommand": "npm config set maxsockets 3 && cd server && npm install --no-audit --no-fund && npx prisma generate && sh scripts/migrate.sh && cd ../client && yarn install && yarn build",
+  "buildCommand": "cd server && yarn install && npx prisma generate && sh scripts/migrate.sh && cd ../client && yarn install && yarn build",
   "outputDirectory": "client/dist",
   "functions": {
     "api/index.ts": {
