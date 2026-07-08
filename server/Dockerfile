@@ -1,5 +1,6 @@
 FROM node:20-slim AS builder
 WORKDIR /app
+ENV NODE_ENV=development
 
 COPY package*.json ./
 COPY tsconfig.json ./
