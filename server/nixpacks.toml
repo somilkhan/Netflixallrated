@@ -1,4 +1,5 @@
 [variables]
+NODE_ENV = "production"
 NODE_OPTIONS = "--max-old-space-size=4096"
 NPM_CONFIG_LEGACY_PEER_DEPS = "true"
 NPM_CONFIG_FUND = "false"
