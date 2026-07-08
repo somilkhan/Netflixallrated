@@ -123,6 +123,7 @@ async function getFebBoxKey(
     `https://www.showbox.media/index/share_link?id=${showboxId}&type=${boxType}`,
     { signal: AbortSignal.timeout(8_000) },
   );
+  if (!res.ok) throw new Error(`FebBox share link HTTP ${res.status}`);
   const json: any = await res.json();
   const link: string | undefined = json?.data?.link;
   return link ? (link.split('/').pop() ?? null) : null;
@@ -387,9 +388,19 @@ router.get('/link', authenticate, async (req: Request, res: Response) => {
     return res.json({ success: true, embedUrl, shareKey, fid, streams });
   } catch (err: any) {
     console.error('[showbox] link error:', err.message);
-    return res
-      .status(500)
-      .json({ success: false, error: 'Stream lookup failed' });
+    // FebBox occasionally has full-site outages that return an HTML "系统发生错误"
+    // (system error) page instead of JSON — surface that distinctly so the
+    // client can tell the user this is a temporary upstream issue, not
+    // something wrong with their request.
+    const upstreamDown =
+      /HTTP 50\d/.test(err.message) ||
+      /Unexpected token '?<|not valid JSON/i.test(err.message);
+    return res.status(upstreamDown ? 503 : 500).json({
+      success: false,
+      error: upstreamDown
+        ? 'FebBox is temporarily unavailable — try another server'
+        : 'Stream lookup failed — try another server',
+    });
   }
 });
 

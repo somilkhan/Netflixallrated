@@ -147,7 +147,7 @@ export default function TitleDetail() {
         if (data?.embedUrl) setFebboxUrl(data.embedUrl);
         else setFebboxError('FebBox stream not available for this title');
       })
-      .catch(() => setFebboxError('FebBox lookup failed — try another server'))
+      .catch((err: any) => setFebboxError(err?.message || 'FebBox lookup failed — try another server'))
       .finally(() => setFebboxLoading(false));
   }, [serverId, title, selectedSeason, selectedEp]);
 

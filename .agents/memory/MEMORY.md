@@ -3,3 +3,4 @@
 - [Neon DB strategy](neon-db.md) — dev uses Replit managed PG; prod (Vercel) uses Neon DATABASE_URL; migrations via prisma migrate deploy in vercel.json build
 - [TMDB Backfill Endpoint](tmdb-backfill.md) — POST /api/titles/backfill-images (admin); guards tmdbId uniqueness; triggered from Admin page once TMDB_API_KEY is set
 - [Consumet Integration](consumet-integration.md) — ronyt99 fork has Hianime/FlixHQ not Gogoanime; META.Anilist+META.TMDB are the right wrappers; fetchMediaInfo needs explicit type arg
+- [FebBox lookup failures](febbox-outage-handling.md) — often a febbox.com full-site outage, not a code bug; isolate with a standalone script before assuming regression
