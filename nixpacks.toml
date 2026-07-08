@@ -13,13 +13,10 @@ NPM_CONFIG_CACHE = "/tmp/npm-cache"
 nixPkgs = ["nodejs_20"]
 
 [phases.install]
-cmds = [
-  "cd client && npm install",
-  "cd server && npm install"
-]
+cmds = ["true"]
 
 [phases.build]
 cmds = [
-  "cd client && npm run build",
-  "cd server && npx prisma generate && npm run build"
+  "cd client && npm install --prefer-offline=false && npm run build",
+  "cd server && npm install --prefer-offline=false && npx prisma generate && npm run build"
 ]
