@@ -4,9 +4,9 @@ RUN apt-get update -y && apt-get install -y openssl ca-certificates && rm -rf /v
 
 WORKDIR /app
 
-# --- client: install (with devDeps, so vite is present) then build ---
+# --- client: install (force devDeps, so vite is present) then build ---
 COPY client/package.json client/package-lock.json* ./client/
-RUN cd client && npm install
+RUN cd client && npm install --include=dev
 COPY client ./client
 RUN cd client && npm run build
 
