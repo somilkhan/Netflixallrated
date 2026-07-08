@@ -1,0 +1,17 @@
+[variables]
+NODE_OPTIONS = "--max-old-space-size=4096"
+NPM_CONFIG_LEGACY_PEER_DEPS = "true"
+NPM_CONFIG_FUND = "false"
+NPM_CONFIG_AUDIT = "false"
+
+[phases.install]
+cmds = [
+  "cd client && npm install",
+  "cd server && npm install"
+]
+
+[phases.build]
+cmds = [
+  "cd client && npm run build",
+  "cd server && npx prisma generate && npm run build"
+]
