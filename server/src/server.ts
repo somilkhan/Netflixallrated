@@ -30,13 +30,22 @@ const allowedOrigins = (process.env.CLIENT_URL || 'http://localhost:5000')
   .split(',')
   .map((o) => o.trim())
   .filter(Boolean);
+const isDev = process.env.NODE_ENV !== 'production';
 app.use(cors({
   origin(origin, callback) {
-    if (!origin || allowedOrigins.includes(origin)) return callback(null, true);
+    // In development (Replit), allow all origins — Vite proxies API calls so
+    // direct browser→Express requests come from *.replit.dev which won't match
+    // localhost. In production, restrict to explicitly listed origins.
+    if (!origin || isDev || allowedOrigins.includes(origin)) return callback(null, true);
     callback(new Error('Not allowed by CORS'));
   },
   credentials: true,
 }));
+if (isDev) {
+  console.log('[cors] dev mode — all origins allowed');
+} else {
+  console.log('[cors] prod mode — allowed origins:', allowedOrigins.join(', '));
+}
 app.use(express.json());
 
 const limiter = rateLimit({ windowMs: 15 * 60 * 1000, max: 200, standardHeaders: true, legacyHeaders: false });
