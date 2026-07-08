@@ -44,6 +44,19 @@ export default function TitleDetail() {
   const [iframeKey, setIframeKey] = useState(0);
   const videoSectionRef = useRef<HTMLDivElement>(null);
 
+  // GogoAnime (consumet) — alternative anime source
+  const [animeProvider, setAnimeProvider] = useState<'anicrush' | 'gogoanime'>('anicrush');
+  const [gogoAnimeId, setGogoAnimeId] = useState<string | null>(null);
+  const [gogoEpCount, setGogoEpCount] = useState(0);
+  const [gogoEpisodes, setGogoEpisodes] = useState<any[]>([]);
+  const [gogoEmbedUrl, setGogoEmbedUrl] = useState<string | null>(null);
+  const [gogoEmbedLoading, setGogoEmbedLoading] = useState(false);
+  const [gogoError, setGogoError] = useState<string | null>(null);
+
+  // FlixHQ (consumet) — alternative movie/TV source
+  const [flixhqUrl, setFlixhqUrl] = useState<string | null>(null);
+  const [flixhqLoading, setFlixhqLoading] = useState(false);
+
   // AniList metadata (anime only)
   const [anilistData, setAnilistData] = useState<any>(null);
 
@@ -96,6 +109,17 @@ export default function TitleDetail() {
       .finally(() => setEpsLoading(false));
   }, [selectedSeason, title, id]);
 
+  // FlixHQ auto-resolve — fires when FlixHQ server is selected for movies/TV
+  useEffect(() => {
+    if (!title || title.type === 'ANIME' || serverId !== 'flixhq') return;
+    setFlixhqUrl(null);
+    setFlixhqLoading(true);
+    api.consumet.moviesAuto(title.name, title.type, selectedSeason, selectedEp)
+      .then((data: any) => setFlixhqUrl(data.playerUrl))
+      .catch(() => {})
+      .finally(() => setFlixhqLoading(false));
+  }, [serverId, title, selectedSeason, selectedEp]);
+
   useEffect(() => {
     if (!title || title.type !== 'ANIME') return;
     setAnilistData(null);
@@ -141,13 +165,34 @@ export default function TitleDetail() {
     return () => controller.abort();
   }, [title]);
 
+  // GogoAnime search — runs in background when an anime title loads
+  useEffect(() => {
+    if (!title || title.type !== 'ANIME') return;
+    api.consumet.animeSearch(title.name)
+      .then((data: any) => {
+        const result = data?.results?.[0];
+        if (!result) return;
+        setGogoAnimeId(result.id);
+        api.consumet.animeInfo(result.id)
+          .then((info: any) => {
+            setGogoEpCount(info.totalEpisodes ?? info.episodes?.length ?? 0);
+            setGogoEpisodes(info.episodes ?? []);
+          })
+          .catch(() => {});
+      })
+      .catch(() => {});
+  }, [title]);
+
   const getEmbedUrl = useCallback(() => {
     if (!title) return null;
-    if (title.type === 'ANIME') return animeEmbedUrl;
+    if (title.type === 'ANIME') {
+      return animeProvider === 'gogoanime' ? gogoEmbedUrl : animeEmbedUrl;
+    }
     if (!title.tmdbId) return null;
+    if (serverId === 'flixhq') return flixhqUrl;
     const server = SERVERS.find(s => s.id === serverId) || SERVERS[0];
     return server.getUrl(title.tmdbId, title.type, selectedSeason, selectedEp);
-  }, [title, serverId, selectedSeason, selectedEp, animeEmbedUrl]);
+  }, [title, serverId, selectedSeason, selectedEp, animeEmbedUrl, animeProvider, gogoEmbedUrl, flixhqUrl]);
 
   const openAnimePlayer = useCallback(async (ep?: number) => {
     const epNum = ep ?? selectedEp;
@@ -183,6 +228,32 @@ export default function TitleDetail() {
     setIsPlaying(true);
     setTimeout(() => videoSectionRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 50);
   }, []);
+
+  /** Fetch a GogoAnime stream URL from consumet and open the HLS player iframe */
+  const openGogoPlayer = useCallback(async (ep?: number) => {
+    const epNum = ep ?? selectedEp;
+    if (!gogoAnimeId || gogoEpisodes.length === 0) return;
+    const gogoEp = gogoEpisodes.find((e: any) => e.number === epNum) ?? gogoEpisodes[epNum - 1];
+    if (!gogoEp) { setGogoError('Episode not found in GogoAnime'); return; }
+
+    setGogoEmbedLoading(true);
+    setGogoEmbedUrl(null);
+    setGogoError(null);
+    try {
+      const data = await api.consumet.animeStream(gogoEp.id);
+      const m3u8 = (data.sources as any[])?.find((s: any) => s.isM3U8) ?? data.sources?.[0];
+      if (!m3u8) throw new Error('No stream source found');
+      const url = api.consumet.playerUrl(m3u8.url, data.headers?.Referer ?? '');
+      setGogoEmbedUrl(url);
+      setIsIframeLoading(true);
+      setIsPlaying(true);
+      setTimeout(() => videoSectionRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 50);
+    } catch (err: any) {
+      setGogoError(err.message ?? 'GogoAnime stream failed');
+    } finally {
+      setGogoEmbedLoading(false);
+    }
+  }, [gogoAnimeId, gogoEpisodes, selectedEp]);
 
   const switchServer = (sid: string) => {
     setServerId(sid);
@@ -241,7 +312,7 @@ export default function TitleDetail() {
 
   const embedUrl = getEmbedUrl();
   const canPlay = title.type === 'ANIME'
-    ? !!anicrushMovieId && !animeLoading
+    ? (!!anicrushMovieId && !animeLoading) || !!gogoAnimeId
     : !!title.tmdbId;
 
   const posterUrl = title.posterUrl
@@ -385,14 +456,16 @@ export default function TitleDetail() {
           {canPlay && (
             <button
               className="dp-btn dp-btn-play"
-              onClick={() => title.type === 'ANIME' ? openAnimePlayer() : openPlayer()}
-              disabled={animeEmbedLoading}
+              onClick={() => title.type === 'ANIME'
+                ? (animeProvider === 'gogoanime' ? openGogoPlayer() : openAnimePlayer())
+                : openPlayer()}
+              disabled={animeProvider === 'gogoanime' ? gogoEmbedLoading : animeEmbedLoading}
               style={{ flex: '0 0 auto', minWidth: 110 }}
             >
               <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
                 <polygon points="8,5 8,19 19,12" />
               </svg>
-              {animeEmbedLoading ? 'Loading…' : 'Play'}
+              {(animeProvider === 'gogoanime' ? gogoEmbedLoading : animeEmbedLoading) ? 'Loading…' : 'Play'}
             </button>
           )}
           {user && (
@@ -438,7 +511,9 @@ export default function TitleDetail() {
                 >
                   <span className="status-dot" />
                   {srv.label}
-                  <span className="quality-badge">HD</span>
+                  {srv.id === 'flixhq' && flixhqLoading && serverId === 'flixhq'
+                    ? <span className="quality-badge">…</span>
+                    : <span className="quality-badge">HD</span>}
                 </button>
               ))}
             </div>
@@ -546,29 +621,81 @@ export default function TitleDetail() {
           </div>
         )}
 
-        {/* ── ANIME: episode controls ────────────────────────────── */}
-        {title.type === 'ANIME' && !animeLoading && !animeError && anicrushMovieId && (
+        {/* ── ANIME: source + episode controls ─────────────────── */}
+        {title.type === 'ANIME' && !animeLoading && (anicrushMovieId || gogoAnimeId) && (
           <div className="dp-section">
             <div className="dp-section-head">
               <span className="dp-section-title">Watch Episode</span>
-              {anicrushEpCount > 0 && (
-                <span className="dp-section-count">{anicrushEpCount} episodes</span>
+              {(animeProvider === 'anicrush' ? anicrushEpCount : gogoEpCount) > 0 && (
+                <span className="dp-section-count">
+                  {animeProvider === 'anicrush' ? anicrushEpCount : gogoEpCount} eps
+                </span>
               )}
             </div>
+
+            {/* Provider toggle */}
+            <div style={{ display: 'flex', gap: 6, marginBottom: 14, flexWrap: 'wrap' }}>
+              {anicrushMovieId && (
+                <button
+                  className={`provider-tab${animeProvider === 'anicrush' ? ' active' : ''}`}
+                  onClick={() => setAnimeProvider('anicrush')}
+                >
+                  <span className="status-dot" />Anicrush<span className="quality-badge">HD</span>
+                </button>
+              )}
+              {gogoAnimeId && (
+                <button
+                  className={`provider-tab${animeProvider === 'gogoanime' ? ' active' : ''}`}
+                  onClick={() => setAnimeProvider('gogoanime')}
+                >
+                  <span className="status-dot" />GogoAnime<span className="quality-badge">HD</span>
+                </button>
+              )}
+            </div>
+
+            {/* Episode row */}
             <div className="anime-ep-row">
-              <button className="ep-nav-btn" onClick={animePrev} disabled={selectedEp <= 1}>‹</button>
+              <button
+                className="ep-nav-btn"
+                onClick={() => {
+                  const prev = Math.max(1, selectedEp - 1);
+                  setSelectedEp(prev);
+                  if (animeProvider === 'gogoanime') openGogoPlayer(prev);
+                  else animePrev();
+                }}
+                disabled={selectedEp <= 1}
+              >‹</button>
               <span className="ep-label">Ep {selectedEp}</span>
-              <button className="ep-nav-btn" onClick={animeNext}
-                disabled={anicrushEpCount > 0 && selectedEp >= anicrushEpCount}>›</button>
+              <button
+                className="ep-nav-btn"
+                onClick={() => {
+                  const epCount = animeProvider === 'anicrush' ? anicrushEpCount : gogoEpCount;
+                  if (epCount > 0 && selectedEp >= epCount) return;
+                  const next = selectedEp + 1;
+                  setSelectedEp(next);
+                  if (animeProvider === 'gogoanime') openGogoPlayer(next);
+                  else animeNext();
+                }}
+                disabled={
+                  animeProvider === 'anicrush'
+                    ? anicrushEpCount > 0 && selectedEp >= anicrushEpCount
+                    : gogoEpCount > 0 && selectedEp >= gogoEpCount
+                }
+              >›</button>
               <button
                 className="dp-btn dp-btn-play"
                 style={{ flex: '0 0 auto' }}
-                onClick={() => openAnimePlayer()}
-                disabled={animeEmbedLoading}
+                onClick={() => animeProvider === 'gogoanime' ? openGogoPlayer() : openAnimePlayer()}
+                disabled={animeProvider === 'gogoanime' ? gogoEmbedLoading : animeEmbedLoading}
               >
-                {animeEmbedLoading ? 'Loading…' : '▶ Watch'}
+                {(animeProvider === 'gogoanime' ? gogoEmbedLoading : animeEmbedLoading) ? 'Loading…' : '▶ Watch'}
               </button>
             </div>
+
+            {/* GogoAnime error */}
+            {animeProvider === 'gogoanime' && gogoError && (
+              <div className="anime-status error" style={{ marginTop: 10 }}>{gogoError}</div>
+            )}
           </div>
         )}
 

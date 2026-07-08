@@ -73,6 +73,14 @@
   overflow: hidden;
   background: #000;
 }
+/* Mobile: roughly half the desktop height so it doesn't fill the whole screen */
+@media (max-width: 640px) {
+  .hero {
+    height: 40vh;
+    min-height: 180px;
+    max-height: 300px;
+  }
+}
 
 .hero-trailer {
   position: absolute;

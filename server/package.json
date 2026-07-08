@@ -12,6 +12,7 @@
     "db:studio": "prisma studio"
   },
   "dependencies": {
+    "@consumet/extensions": "^1.8.8",
     "@prisma/client": "^5.15.0",
     "@supabase/supabase-js": "^2.109.0",
     "bcryptjs": "^2.4.3",

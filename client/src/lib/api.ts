@@ -68,4 +68,14 @@ export const api = {
       return fetcher(`/showbox/link?${params.toString()}`);
     },
   },
+  consumet: {
+    animeSearch: (q: string) => fetcher(`/consumet/anime/search?q=${encodeURIComponent(q)}`),
+    animeInfo: (animeId: string) => fetcher(`/consumet/anime/info/${encodeURIComponent(animeId)}`),
+    animeStream: (episodeId: string) => fetcher(`/consumet/anime/stream/${encodeURIComponent(episodeId)}`),
+    moviesAuto: (title: string, type: string, season = 1, ep = 1) =>
+      fetcher(`/consumet/movies/auto?title=${encodeURIComponent(title)}&type=${encodeURIComponent(type)}&season=${season}&ep=${ep}`),
+    /** Returns a full URL for the embedded HLS player page (for use as iframe src) */
+    playerUrl: (src: string, referer = '') =>
+      `${API_URL}/consumet/player?src=${encodeURIComponent(src)}&ref=${encodeURIComponent(referer)}`,
+  },
 };

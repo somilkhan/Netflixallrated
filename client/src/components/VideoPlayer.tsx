@@ -40,6 +40,12 @@ export const SERVERS: Server[] = [
         ? `https://www.2embed.cc/embed/${id}`
         : `https://www.2embed.cc/embedtv/${id}&s=${s}&e=${e}`,
   },
+  {
+    id: 'flixhq',
+    label: 'FlixHQ',
+    // URL is resolved asynchronously by TitleDetail; returning '' is a safe no-op
+    getUrl: () => '',
+  },
 ];
 
 interface VideoPlayerProps {
