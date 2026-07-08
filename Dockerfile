@@ -1,23 +1,22 @@
 FROM node:20-slim
 
+RUN npm install -g npm@10.9.2
+
 RUN apt-get update -y && apt-get install -y openssl ca-certificates && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app
 
-# --- client: install (force devDeps, so vite is present) then build ---
 COPY client/package.json client/package-lock.json* ./client/
 RUN cd client && npm install --include=dev
 COPY client ./client
 RUN cd client && npm run build
 
-# --- server: install, generate prisma client, then build ---
 COPY server/package.json server/package-lock.json* ./server/
 COPY server/prisma ./server/prisma/
 RUN cd server && npm install
 COPY server ./server
 RUN cd server && npx prisma generate && npm run build
 
-# only switch to production mode AFTER installs/builds are done
 ENV NODE_ENV=production
 EXPOSE 3000
 
