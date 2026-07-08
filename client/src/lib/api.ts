@@ -98,6 +98,10 @@ export const api = {
     },
     list: (page = 1) => fetcher(`/screenscape/list?page=${page}`),
     search: (q: string) => fetcher(`/screenscape/search?q=${encodeURIComponent(q)}`),
+    /** Resolve an HDHub4u download page URL for a title. Returns { success, id, title, streamUrl }. */
+    hdhub4uResolve: (titleName: string) =>
+      fetcher(`/screenscape/hdhub4u/resolve?title=${encodeURIComponent(titleName)}`),
+    hdhub4uList: (page = 1) => fetcher(`/screenscape/hdhub4u?page=${page}`),
   },
   consumet: {
     animeSearch: (q: string) => fetcher(`/consumet/anime/search?q=${encodeURIComponent(q)}`),

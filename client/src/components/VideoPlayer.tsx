@@ -58,6 +58,12 @@ export const SERVERS: Server[] = [
     // URL resolved asynchronously by TitleDetail via /api/screenscape/resolve
     getUrl: () => '',
   },
+  {
+    id: 'hdhub4u',
+    label: 'HDHub4u',
+    // URL resolved asynchronously by TitleDetail via /api/screenscape/hdhub4u/resolve
+    getUrl: () => '',
+  },
 ];
 
 interface VideoPlayerProps {

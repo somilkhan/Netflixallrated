@@ -170,4 +170,63 @@ router.get('/resolve', authenticate, async (req: Request, res: Response) => {
   }
 });
 
+// ── GET /api/screenscape/hdhub4u?page=N ──────────────────────────────────────
+
+router.get('/hdhub4u', authenticate, async (req: Request, res: Response) => {
+  const key = getKey();
+  if (!key) return res.status(503).json({ success: false, error: 'SCREENSCAPE_API_KEY is not configured.' });
+
+  const page = req.query.page || '1';
+  try {
+    const data = await ssGet(`/api/hdhub4u?page=${page}`, key);
+    return res.json({ success: true, ...data });
+  } catch (err: any) {
+    console.error('[screenscape] hdhub4u list error:', err.message);
+    return res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+// ── GET /api/screenscape/hdhub4u/resolve?title=...&type=...&season=N&episode=N
+// Searches HDHub4u listing for a matching title and returns its URL.
+
+router.get('/hdhub4u/resolve', authenticate, async (req: Request, res: Response) => {
+  const key = getKey();
+  if (!key) return res.status(503).json({ success: false, error: 'SCREENSCAPE_API_KEY is not configured.' });
+
+  const titleParam = req.query.title as string;
+  if (!titleParam) return res.status(400).json({ success: false, error: 'Missing ?title= param.' });
+
+  try {
+    // Fetch multiple pages and match by title (API doesn't support real search)
+    const normalise = (s: string) => s?.toLowerCase().replace(/[^a-z0-9]/g, '');
+    const needle = normalise(titleParam);
+
+    let match: any = null;
+    for (let page = 1; page <= 3 && !match; page++) {
+      const data = await ssGet(`/api/hdhub4u?page=${page}`, key);
+      const items: any[] = data?.data?.recentMovies ?? data?.data ?? [];
+      if (!items.length) break;
+
+      match =
+        items.find((r: any) => normalise(r.title ?? '') === needle) ??
+        items.find((r: any) => normalise(r.title ?? '').includes(needle)) ??
+        (page === 1 ? items[0] : null); // first-page fallback only
+    }
+
+    if (!match) {
+      return res.status(404).json({ success: false, error: `"${titleParam}" not found on HDHub4u` });
+    }
+
+    const url: string | null = match.url ?? null;
+    if (!url) {
+      return res.status(404).json({ success: false, error: 'No URL found for this title on HDHub4u' });
+    }
+
+    return res.json({ success: true, id: match.id, title: match.title ?? titleParam, streamUrl: url });
+  } catch (err: any) {
+    console.error('[screenscape] hdhub4u resolve error:', err.message);
+    return res.status(500).json({ success: false, error: err.message });
+  }
+});
+
 export default router;
