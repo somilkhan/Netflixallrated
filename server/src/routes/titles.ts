@@ -71,23 +71,22 @@ router.get('/:id/episodes', async (req, res) => {
 router.get('/genres', async (_req, res) => {
   try {
     const currentYear = new Date().getFullYear();
-    const [genreRows, typeRows] = await Promise.all([
-      prisma.$queryRaw<{ genre: string; count: bigint }[]>`
-        SELECT unnest(genres) as genre, COUNT(*) as count
-        FROM "Title"
-        WHERE year <= ${currentYear}
-        GROUP BY genre
-        ORDER BY count DESC
-      `,
-      prisma.title.groupBy({
-        by: ['type'],
-        _count: { type: true },
-        where: { year: { lte: currentYear } },
-      }),
-    ]);
+    const titles = await prisma.title.findMany({
+      select: { genres: true, type: true },
+      where: { year: { lte: currentYear } },
+    });
+    // Count genres and types in JS — avoids raw SQL across all DB providers
+    const genreMap: Record<string, number> = {};
+    const typeMap: Record<string, number> = {};
+    for (const t of titles) {
+      for (const g of t.genres) genreMap[g] = (genreMap[g] || 0) + 1;
+      typeMap[t.type] = (typeMap[t.type] || 0) + 1;
+    }
     res.json({
-      genres: genreRows.map(r => ({ genre: r.genre, count: Number(r.count) })),
-      types: typeRows.map(r => ({ type: r.type, count: r._count.type })),
+      genres: Object.entries(genreMap)
+        .map(([genre, count]) => ({ genre, count }))
+        .sort((a, b) => b.count - a.count),
+      types: Object.entries(typeMap).map(([type, count]) => ({ type, count })),
     });
   } catch (err) {
     res.status(500).json({ error: 'Failed to fetch genres' });
