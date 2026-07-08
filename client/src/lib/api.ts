@@ -45,6 +45,7 @@ export const api = {
     syncTmdb: () => fetcher('/titles/sync-tmdb', { method: 'POST' }),
     syncStatus: () => fetcher('/titles/sync-status'),
     backfillImages: () => fetcher('/titles/backfill-images', { method: 'POST' }),
+    genres: () => fetcher('/titles/genres'),
     seasons: (id: string) => fetcher(`/titles/${id}/seasons`),
     episodes: (id: string, season: number) => fetcher(`/titles/${id}/episodes?season=${season}`),
   },

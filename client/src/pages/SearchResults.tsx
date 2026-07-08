@@ -24,7 +24,23 @@ export default function SearchResults() {
   useEffect(() => { setQuery(q); }, [q]);
 
   useEffect(() => {
-    if (!q) { setLocalResults([]); setTmdbResults([]); setLoading(false); return; }
+    if (!q) {
+      setTmdbResults([]);
+      // No query — browse by genre/type if either filter is active
+      if (!filters.genre && !filters.type) {
+        setLocalResults([]);
+        setLoading(false);
+        return;
+      }
+      setLoading(true);
+      const params: Record<string, string> = { limit: '50' };
+      if (filters.genre) params.genre = filters.genre;
+      if (filters.type) params.type = filters.type;
+      api.titles.list(params)
+        .then((d: any) => { setLocalResults(d.titles || []); setLoading(false); })
+        .catch(() => setLoading(false));
+      return;
+    }
     setLoading(true);
 
     Promise.all([
@@ -179,8 +195,8 @@ export default function SearchResults() {
         onImported={() => setTmdbKey(k => k + 1)}
       />
 
-      {/* Empty state — no query */}
-      {!q && !loading && (
+      {/* Empty state — no query and no active filter */}
+      {!q && !loading && !filters.genre && !filters.type && (
         <div className="py-16 pb-28 text-center">
           <p className="text-5xl mb-5">🎬</p>
           <p className="font-serif text-xl font-semibold mb-2">Search the catalog</p>

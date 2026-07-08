@@ -66,6 +66,34 @@ router.get('/:id/episodes', async (req, res) => {
   try { res.json(await getTvEpisodes(title.tmdbId, season)); }
   catch (err) { res.status(502).json({ error: 'TMDB episodes failed', detail: (err as Error).message }); }
 });
+
+// Returns distinct genres with counts + type counts — used by the Categories page
+router.get('/genres', async (_req, res) => {
+  try {
+    const currentYear = new Date().getFullYear();
+    const [genreRows, typeRows] = await Promise.all([
+      prisma.$queryRaw<{ genre: string; count: bigint }[]>`
+        SELECT unnest(genres) as genre, COUNT(*) as count
+        FROM "Title"
+        WHERE year <= ${currentYear}
+        GROUP BY genre
+        ORDER BY count DESC
+      `,
+      prisma.title.groupBy({
+        by: ['type'],
+        _count: { type: true },
+        where: { year: { lte: currentYear } },
+      }),
+    ]);
+    res.json({
+      genres: genreRows.map(r => ({ genre: r.genre, count: Number(r.count) })),
+      types: typeRows.map(r => ({ type: r.type, count: r._count.type })),
+    });
+  } catch (err) {
+    res.status(500).json({ error: 'Failed to fetch genres' });
+  }
+});
+
 router.get('/trending', async (_req, res) => {
   const currentYear = new Date().getFullYear();
   const titles = await prisma.title.findMany({
