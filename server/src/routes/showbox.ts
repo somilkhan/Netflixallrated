@@ -109,7 +109,9 @@ async function searchShowbox(
     keyword,
     pagelimit: 20,
   });
-  return data?.list ?? [];
+  // Showbox's Search5 module returns `data` as a plain array of results
+  // (not `{ list: [...] }`), but also tolerate a wrapped shape defensively.
+  return Array.isArray(data) ? data : (data?.list ?? []);
 }
 
 /** Returns FebBox share key, e.g. "fNBTg8at" */
