@@ -74,7 +74,6 @@ CLIENT_URL = "http://localhost:5000"
 PORT = "3000"
 TMDB_API_BASE = "https://api.themoviedb.org/3"
 TMDB_IMAGE_BASE = "https://image.tmdb.org/t/p"
-TMDB_API_KEY = "xK9mP2vLqR7tYw4nJ8bDcF3hZs6uAe1g"
 
 [rules]
 
