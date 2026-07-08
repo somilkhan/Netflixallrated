@@ -4,9 +4,9 @@ NODE_OPTIONS = "--max-old-space-size=4096"
 NPM_CONFIG_LEGACY_PEER_DEPS = "true"
 NPM_CONFIG_FUND = "false"
 NPM_CONFIG_AUDIT = "false"
-# Force npm to use a plain local cache — avoids the pnpm-store mount
-# that Nixpacks injects by default, which corrupts npm installs and
-# produces "Exit handler never called!" errors.
+NPM_CONFIG_PRODUCTION = "false"
+# Use a plain local cache — avoids the pnpm-store mount that Nixpacks injects
+# by default, which can corrupt npm installs.
 NPM_CONFIG_CACHE = "/tmp/npm-cache"
 
 [phases.setup]
@@ -14,8 +14,8 @@ nixPkgs = ["nodejs_20"]
 
 [phases.install]
 cmds = [
-  "cd client && npm ci",
-  "cd server && npm ci"
+  "cd client && npm install",
+  "cd server && npm install"
 ]
 
 [phases.build]
