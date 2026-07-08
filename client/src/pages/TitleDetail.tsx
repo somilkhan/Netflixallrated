@@ -126,7 +126,7 @@ export default function TitleDetail() {
         if (data?.playerUrl) setFlixhqUrl(data.playerUrl);
         else setFlixhqError('No stream found via FlixHQ');
       })
-      .catch(() => setFlixhqError('FlixHQ failed to load — try another server'))
+      .catch((err: any) => setFlixhqError(err?.message || 'FlixHQ failed to load — try another server'))
       .finally(() => setFlixhqLoading(false));
   }, [serverId, title, selectedSeason, selectedEp]);
 

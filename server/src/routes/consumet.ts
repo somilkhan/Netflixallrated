@@ -156,7 +156,16 @@ router.get('/movies/auto', async (req: Request, res: Response) => {
     return res.json({ playerUrl, quality: m3u8.quality, title: best.title });
   } catch (err: any) {
     console.error('[consumet] movies/auto error:', err.message);
-    return res.status(500).json({ error: 'Auto stream resolution failed' });
+    // The underlying HiMovies/FlixHQ provider (behind Cloudflare) occasionally
+    // has full outages that surface as 5xx status codes through axios —
+    // distinguish that from a real app-side failure so the UI can tell users
+    // it's a temporary upstream issue.
+    const upstreamDown = /status code 5\d\d/i.test(err.message);
+    return res.status(upstreamDown ? 503 : 500).json({
+      error: upstreamDown
+        ? 'FlixHQ is temporarily unavailable — try another server'
+        : 'Auto stream resolution failed — try another server',
+    });
   }
 });
 
