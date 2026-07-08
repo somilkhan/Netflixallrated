@@ -12,7 +12,7 @@ export default function Watchlist() {
   const [items, setItems] = useState<any[]>([]);
   const [active, setActive] = useState('PLAN_TO_WATCH');
 
-  useEffect(() => { if (!user) return; api.watchlist.mine().then(setItems); }, [user]);
+  useEffect(() => { if (!user) return; api.watchlist.mine().then(setItems).catch(() => {}); }, [user]);
   if (!user) return <div className="px-5 py-20 text-center"><p className="text-ink-dim mb-4">Sign in to view your watchlist</p><button onClick={() => nav('/login')} className="px-5 py-2 bg-maroon-bright text-white rounded-lg font-semibold">Sign In</button></div>;
   const filtered = items.filter(i => i.status === active);
 

@@ -62,7 +62,7 @@ export default function SearchResults() {
 
   useEffect(() => {
     if (!q || filters.type !== 'ANIME') { setAnilistResult(null); return; }
-    searchAnime(q).then((data) => { setAnilistResult(data); });
+    searchAnime(q).then((data) => { setAnilistResult(data); }).catch(() => {});
   }, [q, filters.type]);
 
   const buildSearchUrl = (q: string, type: string, genre: string) => {

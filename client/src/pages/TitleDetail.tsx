@@ -93,8 +93,8 @@ export default function TitleDetail() {
 
   useEffect(() => {
     if (!id) return;
-    api.titles.get(id).then(setTitle);
-    api.titles.ratings(id).then(setRatings);
+    api.titles.get(id).then(setTitle).catch(() => {});
+    api.titles.ratings(id).then(setRatings).catch(() => {});
   }, [id]);
 
   useEffect(() => {
@@ -154,7 +154,7 @@ export default function TitleDetail() {
   useEffect(() => {
     if (!title || title.type !== 'ANIME') return;
     setAnilistData(null);
-    searchAnime(title.name).then((data) => { if (data) setAnilistData(data); });
+    searchAnime(title.name).then((data) => { if (data) setAnilistData(data); }).catch(() => {});
   }, [title]);
 
   useEffect(() => {

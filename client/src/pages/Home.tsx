@@ -82,15 +82,15 @@ export default function Home() {
   };
 
   useEffect(() => {
-    // Core sections
-    api.titles.top10().then(setTop10);
-    api.titles.trending().then(setTrending);
-    api.titles.recent().then(setRecent);
+    // Core sections — .catch(() => {}) prevents unhandled rejection crashes
+    api.titles.top10().then(setTop10).catch(() => {});
+    api.titles.trending().then(setTrending).catch(() => {});
+    api.titles.recent().then(setRecent).catch(() => {});
 
     // Type sections
-    api.titles.list({ type: 'MOVIE', limit: '20' }).then(d => setMovies(d.titles || []));
-    api.titles.list({ type: 'SERIES', limit: '20' }).then(d => setSeries(d.titles || []));
-    api.titles.list({ type: 'ANIME', limit: '20' }).then(d => setAnime(d.titles || []));
+    api.titles.list({ type: 'MOVIE', limit: '20' }).then(d => setMovies(d.titles || [])).catch(() => {});
+    api.titles.list({ type: 'SERIES', limit: '20' }).then(d => setSeries(d.titles || [])).catch(() => {});
+    api.titles.list({ type: 'ANIME', limit: '20' }).then(d => setAnime(d.titles || [])).catch(() => {});
 
     // Genre sections — fetch all in parallel, keep only non-empty ones
     Promise.all(
@@ -101,7 +101,7 @@ export default function Home() {
       )
     ).then(results => {
       setGenreSections(Object.fromEntries(results.filter(([, titles]) => titles.length > 0)));
-    });
+    }).catch(() => {});
   }, []);
 
   // Map display tab names → DB enum values
