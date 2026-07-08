@@ -3,7 +3,9 @@ import {
   trendingInRegion,
   popularOnOTT,
   discoverByLanguage,
+  type TmdbRegionItem,
 } from '../lib/tmdb.js';
+import { withTmdbCache } from '../lib/tmdbCache.js';
 
 const router = Router();
 
@@ -71,7 +73,10 @@ router.get('/regions', (_req, res) => {
 
 const SUPPORTED_REGIONS = new Set(Object.keys(REGION_LABELS));
 
-// GET /api/geo/content?region=IN — fetch all geo rows in parallel from TMDB
+// GET /api/geo/content?region=IN
+// Always tries TMDB live first; falls back to the last cached result in the
+// KV table if TMDB is unreachable. Each row is cached independently so a
+// single failing row doesn't wipe out the others.
 router.get('/content', async (req, res) => {
   if (!process.env.TMDB_API_KEY) {
     return res.status(503).json({ error: 'TMDB_API_KEY not configured' });
@@ -83,7 +88,7 @@ router.get('/content', async (req, res) => {
   const languages = REGION_LANGUAGE_MAP[region] || ['en'];
   const regionLabel = REGION_LABELS[region] || region;
 
-  const rowDefs = [
+  const rowDefs: { id: string; label: string; fetch: () => Promise<TmdbRegionItem[]> }[] = [
     { id: 'trending', label: `🌍 Popular in ${regionLabel}`, fetch: () => trendingInRegion(region) },
     { id: 'ott',      label: '📺 Popular on Streaming',      fetch: () => popularOnOTT(region) },
     ...languages.map(lang => ({
@@ -93,19 +98,36 @@ router.get('/content', async (req, res) => {
     })),
   ];
 
-  // Use allSettled so one failed upstream row doesn't wipe out the rest
-  const results = await Promise.allSettled(rowDefs.map(r => r.fetch()));
+  // Each row is fetched independently: TMDB live → cached fallback.
+  // allSettled ensures one bad row never kills the whole response.
+  const results = await Promise.allSettled(
+    rowDefs.map(def =>
+      withTmdbCache<TmdbRegionItem[]>(
+        `geo:${region}:${def.id}`,
+        def.fetch,
+      )
+    )
+  );
+
+  let anyFromCache = false;
 
   const rows = rowDefs.map((def, i) => {
     const result = results[i];
-    return {
-      id:    def.id,
-      label: def.label,
-      items: result.status === 'fulfilled' ? result.value : [],
-    };
+    if (result.status === 'fulfilled') {
+      if (result.value.fromCache) anyFromCache = true;
+      return { id: def.id, label: def.label, items: result.value.data };
+    }
+    // Both TMDB and cache failed for this row — return empty
+    return { id: def.id, label: def.label, items: [] };
   });
 
-  res.json({ region, regionLabel, rows });
+  res.json({
+    region,
+    regionLabel,
+    rows,
+    // Let the client know if we're serving cached data (e.g. to show a banner)
+    ...(anyFromCache ? { cached: true } : {}),
+  });
 });
 
 export default router;
