@@ -11,7 +11,7 @@ export default defineConfig({
   server: {
     port: 5000,
     allowedHosts: true as const,
-    proxy: { '/api': { target: 'http://localhost:3000', changeOrigin: true } },
+    proxy: { '/api': { target: 'https://netflixallrated.up.railway.app', changeOrigin: true } },
   },
   preview: {
     host: '0.0.0.0',

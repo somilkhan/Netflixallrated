@@ -2,22 +2,29 @@
 
 Full-stack movie/TV/anime discovery platform with a 4-tier rating system (Skip / Timepass / Go for it / Perfection), watchlist tracking, Supabase Auth, and an admin panel for importing titles from TMDB.
 
+## ⚠️ Replit setup — READ FIRST
+
+**Replit only runs the frontend.** The backend lives on Railway:
+
+> **Railway backend URL: `https://netflixallrated.up.railway.app`**
+
+- Do NOT start or create an API Server workflow on Replit.
+- Do NOT run `cd server && npm run dev` locally.
+- The Vite proxy in `client/vite.config.ts` forwards `/api/*` to the Railway URL.
+- Any backend changes must be made in the `server/` folder and deployed to Railway via GitHub push.
+
 ## Architecture
 
-| Layer | Tech | Port |
+| Layer | Tech | Where |
 |---|---|---|
-| Frontend | React 18, Vite, Tailwind CSS | 5000 (webview) |
-| Backend API | Express, Prisma ORM | 3000 |
-| Database (dev) | Replit managed PostgreSQL | managed |
-| Database (prod) | Neon (set `DATABASE_URL` in Vercel) | — |
-| Auth | Supabase Auth (client) + token verify (server) | — |
+| Frontend | React 18, Vite, Tailwind CSS | Replit (port 5000) |
+| Backend API | Express, Prisma ORM | Railway (`https://netflixallrated.up.railway.app`) |
+| Database | PostgreSQL via Prisma | Railway (managed) |
+| Auth | Supabase Auth (client) + token verify (server) | Supabase + Railway |
 
-The client Vite dev server proxies `/api/*` to the Express server, so the browser always talks to a single origin.
+## How to run on Replit
 
-## How to run
-
-Two workflows run automatically:
-- **API Server** — `cd server && npm run dev`
+One workflow only:
 - **Start application** — `cd client && npm run dev`
 
 ## Authentication (Supabase Auth)
