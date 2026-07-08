@@ -200,11 +200,24 @@ router.post('/sync-tmdb', authenticate, requireAdmin, async (req: AuthRequest, r
  *   2. Manual admin callers: send a valid admin JWT (same as other admin routes).
  *   If neither matches, the request is rejected with 401/403.
  */
-function cronOrAdmin(req: AuthRequest, res: Response, next: NextFunction) {
+type SyncCallerType = 'cron' | 'admin';
+interface SyncRequest extends AuthRequest {
+  syncCallerType?: SyncCallerType;
+}
+
+/** Strip query strings and anything that looks like a key/token/secret from an error message before it's persisted or shown to admins. */
+function sanitizeErrorDetail(message: string): string {
+  return message
+    .replace(/([?&])(api_key|key|token|secret|password)=[^&\s"']*/gi, '$1$2=[redacted]')
+    .replace(/https?:\/\/\S+/g, (url) => url.split('?')[0]) // drop query strings from any embedded URLs
+    .slice(0, 300);
+}
+
+function cronOrAdmin(req: SyncRequest, res: Response, next: NextFunction) {
   const cronSecret = process.env.CRON_SECRET;
   const authHeader = req.headers['authorization'] ?? '';
   if (cronSecret && authHeader === `Bearer ${cronSecret}`) {
-    (req as any).syncCallerType = 'cron';
+    req.syncCallerType = 'cron';
     return next(); // cron secret matches — bypass user JWT
   }
   if (!cronSecret) {
@@ -217,18 +230,22 @@ function cronOrAdmin(req: AuthRequest, res: Response, next: NextFunction) {
   // Fall through to standard admin middleware chain
   authenticate(req, res, (err?: any) => {
     if (err) return next(err);
-    (req as any).syncCallerType = 'admin';
+    req.syncCallerType = 'admin';
     requireAdmin(req, res, next);
   });
 }
 
-/** Record the outcome of a sync-batch run so /sync-status can report cron health. */
-async function recordSyncRun(via: string, ok: boolean, detail?: string) {
+/**
+ * Record the outcome of a sync-batch run so /sync-status can report health.
+ * Cron and admin runs are tracked under separate KV keys so a manual admin
+ * sync never overwrites (or fakes) the daily cron's own health signal.
+ */
+async function recordSyncRun(via: SyncCallerType, ok: boolean, detail?: string) {
+  const prefix = via === 'cron' ? 'sync:last_cron' : 'sync:last_admin';
   const entries: [string, string][] = [
-    ['sync:last_run_at', new Date().toISOString()],
-    ['sync:last_run_via', via],
-    ['sync:last_run_ok', String(ok)],
-    ['sync:last_run_detail', detail ?? ''],
+    [`${prefix}_run_at`, new Date().toISOString()],
+    [`${prefix}_run_ok`, String(ok)],
+    [`${prefix}_run_detail`, detail ? sanitizeErrorDetail(detail) : ''],
   ];
   await Promise.all(
     entries.map(([key, value]) =>
@@ -237,15 +254,15 @@ async function recordSyncRun(via: string, ok: boolean, detail?: string) {
   ).catch((err) => console.warn('[sync-batch] failed to record run status:', (err as Error).message));
 }
 
-router.post('/sync-batch', cronOrAdmin, async (req: AuthRequest, res) => {
-  const via = (req as any).syncCallerType ?? 'unknown';
+router.post('/sync-batch', cronOrAdmin, async (req: SyncRequest, res) => {
+  const via: SyncCallerType = req.syncCallerType ?? 'admin';
   try {
     const result = await syncTmdbCatalog({ maxPages: 3 });
     await recordSyncRun(via, true);
     res.json(result);
   } catch (err) {
     await recordSyncRun(via, false, (err as Error).message);
-    res.status(502).json({ error: 'Batch sync failed', detail: (err as Error).message });
+    res.status(502).json({ error: 'Batch sync failed', detail: sanitizeErrorDetail((err as Error).message) });
   }
 });
 
@@ -263,11 +280,11 @@ router.get('/sync-status', authenticate, requireAdmin, async (_req: AuthRequest,
     ]);
     const kv = Object.fromEntries(kvRows.map(r => [r.key, r.value]));
 
-    const lastRunAt = kv['sync:last_run_at'] ?? null;
-    const lastRunVia = kv['sync:last_run_via'] ?? null;
-    const lastRunOk = kv['sync:last_run_ok'] === 'true';
-    const hoursSinceLastRun = lastRunAt
-      ? (Date.now() - new Date(lastRunAt).getTime()) / 3_600_000
+    const lastCronRunAt = kv['sync:last_cron_run_at'] ?? null;
+    const lastCronRunOk = kv['sync:last_cron_run_ok'] === 'true';
+    const lastAdminRunAt = kv['sync:last_admin_run_at'] ?? null;
+    const hoursSinceLastCronRun = lastCronRunAt
+      ? (Date.now() - new Date(lastCronRunAt).getTime()) / 3_600_000
       : null;
 
     res.json({
@@ -277,18 +294,17 @@ router.get('/sync-status', authenticate, requireAdmin, async (_req: AuthRequest,
       totalResults:      parseInt(kv['sync:total_results'] ?? '0', 10),
       cron: {
         secretConfigured: !!process.env.CRON_SECRET,
-        lastRunAt,
-        lastRunVia,
-        lastRunOk: lastRunAt ? lastRunOk : null,
-        lastRunDetail: kv['sync:last_run_detail'] || null,
+        lastRunAt: lastCronRunAt,
+        lastRunOk: lastCronRunAt ? lastCronRunOk : null,
+        lastRunDetail: kv['sync:last_cron_run_detail'] || null,
+        lastManualRunAt: lastAdminRunAt,
         // Vercel cron runs daily — flag as unhealthy if it's been >26h since
         // a successful cron-triggered run (26h gives slack for scheduling jitter).
         healthy:
           !!process.env.CRON_SECRET &&
-          lastRunVia === 'cron' &&
-          lastRunOk &&
-          hoursSinceLastRun !== null &&
-          hoursSinceLastRun < 26,
+          lastCronRunOk &&
+          hoursSinceLastCronRun !== null &&
+          hoursSinceLastCronRun < 26,
       },
     });
   } catch (err) {

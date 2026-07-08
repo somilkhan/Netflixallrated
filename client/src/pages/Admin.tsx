@@ -12,9 +12,9 @@ interface SyncStatus {
   cron: {
     secretConfigured: boolean;
     lastRunAt: string | null;
-    lastRunVia: string | null;
     lastRunOk: boolean | null;
     lastRunDetail: string | null;
+    lastManualRunAt: string | null;
     healthy: boolean;
   };
 }
@@ -166,12 +166,17 @@ export default function Admin() {
               CRON_SECRET configured: <span className="text-ink">{status.cron.secretConfigured ? 'Yes' : 'No — set it in Vercel env vars'}</span>
             </div>
             <div className="text-ink-dim">
-              Last run: {status.cron.lastRunAt
-                ? <span className="text-ink">{new Date(status.cron.lastRunAt).toLocaleString()} via {status.cron.lastRunVia} — {status.cron.lastRunOk ? 'succeeded' : 'failed'}</span>
+              Last cron run: {status.cron.lastRunAt
+                ? <span className="text-ink">{new Date(status.cron.lastRunAt).toLocaleString()} — {status.cron.lastRunOk ? 'succeeded' : 'failed'}</span>
                 : <span className="text-ink">never</span>}
             </div>
             {status.cron.lastRunDetail && (
               <div className="text-ink-dim">Detail: <span className="text-ink">{status.cron.lastRunDetail}</span></div>
+            )}
+            {status.cron.lastManualRunAt && (
+              <div className="text-ink-dim">
+                Last manual sync: <span className="text-ink">{new Date(status.cron.lastManualRunAt).toLocaleString()}</span>
+              </div>
             )}
             <div className="text-ink-dim">
               Catalog: <span className="text-ink">{status.dbCount.toLocaleString()}</span> titles synced
