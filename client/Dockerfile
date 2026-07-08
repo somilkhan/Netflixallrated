@@ -3,10 +3,10 @@ WORKDIR /app
 ENV NODE_ENV=development
 
 COPY package*.json ./
-RUN npm ci
+RUN npm install
 
 COPY . .
-RUN npm run build
+RUN ./node_modules/.bin/tsc && ./node_modules/.bin/vite build
 
 FROM node:20-alpine
 WORKDIR /app
