@@ -11,6 +11,7 @@ import Register from './pages/Register';
 import Admin from './pages/Admin';
 import TV from './pages/TV';
 import Anime from './pages/Anime';
+import Categories from './pages/Categories';
 
 export default function App() {
   return (
@@ -27,6 +28,7 @@ export default function App() {
           <Route path="/admin" element={<Admin />} />
           <Route path="/tv" element={<TV />} />
           <Route path="/anime" element={<Anime />} />
+          <Route path="/categories" element={<Categories />} />
         </Routes>
         <BottomNav />
       </div>

@@ -1,5 +1,5 @@
 import { useNavigate, useLocation } from 'react-router-dom';
-import { Home, Tv, Sword, BookMarked, User, Shield } from 'lucide-react';
+import { Home, Tv, Sword, BookMarked, User, Shield, Compass } from 'lucide-react';
 import { useAuth } from '../lib/auth';
 
 export default function BottomNav() {
@@ -8,9 +8,10 @@ export default function BottomNav() {
   const { user } = useAuth();
 
   const items = [
-    { icon: Home, path: '/', label: 'Home' },
-    { icon: Tv, path: '/tv', label: 'TV Shows' },
-    { icon: Sword, path: '/anime', label: 'Anime' },
+    { icon: Home,    path: '/',           label: 'Home' },
+    { icon: Tv,      path: '/tv',         label: 'TV Shows' },
+    { icon: Compass, path: '/categories', label: 'Browse' },
+    { icon: Sword,   path: '/anime',      label: 'Anime' },
     { icon: BookMarked, path: '/watchlist', label: 'Watchlist' },
     user?.role === 'ADMIN'
       ? { icon: Shield, path: '/admin', label: 'Admin' }
