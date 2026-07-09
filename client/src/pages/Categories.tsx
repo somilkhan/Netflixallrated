@@ -1,6 +1,17 @@
-import React, { useState, useMemo, useRef } from "react";
+import { useState, useMemo, useRef, type MouseEvent } from "react";
 import { useNavigate } from "react-router-dom";
 import { Search, ChevronRight, X } from "lucide-react";
+
+type CategoryItem = {
+  slug: string;
+  label: string;
+  tag?: string;
+  emoji?: string;
+  image?: string;
+  imageFit?: "contain" | "cover";
+};
+
+type Expanded = "type" | "genre" | "studio" | null;
 
 /*
   Allrated — Categories (bingr-style row layout, Allrated theme)
@@ -21,6 +32,8 @@ const THEME = {
   border: "rgba(255,255,255,0.08)",
 };
 
+// Counts below are live snapshots from GET /api/titles (not hardcoded
+// guesses) — refresh them by re-querying the endpoint as the catalog grows.
 const TYPES = [
   { slug: "movies", label: "Movies", tag: "12.3k titles", emoji: "🎬" },
   { slug: "tv-shows", label: "TV Shows", tag: "34 titles", emoji: "📺" },
@@ -31,31 +44,47 @@ const GENRES = [
   { slug: "drama", label: "Drama", tag: "5.3k titles", emoji: "🎭" },
   { slug: "comedy", label: "Comedy", tag: "3.8k titles", emoji: "😄" },
   { slug: "thriller", label: "Thriller", tag: "3.2k titles", emoji: "🔥" },
-  { slug: "action", label: "Action", tag: "4.1k titles", emoji: "⚡" },
-  { slug: "romance", label: "Romance", tag: "2.9k titles", emoji: "💌" },
-  { slug: "horror", label: "Horror", tag: "1.7k titles", emoji: "👻" },
-  { slug: "scifi", label: "Sci-Fi & Fantasy", tag: "2.2k titles", emoji: "🛸" },
-  { slug: "documentary", label: "Documentary", tag: "1.1k titles", emoji: "📽️" },
+  { slug: "action", label: "Action", tag: "3.1k titles", emoji: "⚡" },
+  { slug: "romance", label: "Romance", tag: "2.1k titles", emoji: "💌" },
+  { slug: "horror", label: "Horror", tag: "1.8k titles", emoji: "👻" },
+  { slug: "crime", label: "Crime", tag: "1.8k titles", emoji: "🕵️" },
+  { slug: "scifi", label: "Sci-Fi", tag: "1.4k titles", emoji: "🛸" },
+  { slug: "fantasy", label: "Fantasy", tag: "1.5k titles", emoji: "🐉" },
+  { slug: "adventure", label: "Adventure", tag: "2k titles", emoji: "🗺️" },
+  { slug: "animation", label: "Animation", tag: "1.3k titles", emoji: "🎨" },
+  { slug: "mystery", label: "Mystery", tag: "1.1k titles", emoji: "🔍" },
+  { slug: "family", label: "Family", tag: "1.3k titles", emoji: "👨‍👩‍👧" },
+  { slug: "documentary", label: "Documentary", tag: "288 titles", emoji: "📽️" },
+  { slug: "war", label: "War", tag: "370 titles", emoji: "⚔️" },
+  { slug: "music", label: "Music", tag: "345 titles", emoji: "🎵" },
+  { slug: "history", label: "History", tag: "579 titles", emoji: "📜" },
+  { slug: "western", label: "Western", tag: "209 titles", emoji: "🤠" },
 ];
 
-const STUDIOS = [
-  { slug: "disney", label: "Disney+", image: "/images/categories/disney.png", imageFit: "contain" },
-  { slug: "marvel", label: "Marvel", image: "/images/categories/marvel.png", imageFit: "contain" },
-  { slug: "pixar", label: "Pixar", image: "/images/categories/pixar.png", imageFit: "contain" },
-  { slug: "star-wars", label: "Star Wars", image: "/images/categories/starwars.png", imageFit: "contain" },
+// Real streaming platforms from the catalog (GET /api/platforms), not
+// fictional studio brands — each card filters GET /api/titles?platform=.
+const STUDIOS: CategoryItem[] = [
+  { slug: "netflix", label: "Netflix", tag: "15 titles", image: "/images/categories/netflix.jpg", imageFit: "contain" },
+  { slug: "prime-video", label: "Prime Video", tag: "17 titles", image: "/images/categories/primevideo.webp", imageFit: "contain" },
+  { slug: "hotstar", label: "Hotstar", tag: "20 titles", image: "/images/categories/hotstar.png", imageFit: "contain" },
+  { slug: "apple-tv", label: "Apple TV+", tag: "8 titles", image: "/images/categories/appletv.png", imageFit: "contain" },
+  { slug: "crunchyroll", label: "Crunchyroll", tag: "16 titles", image: "/images/categories/crunchyroll.png", imageFit: "contain" },
+  { slug: "mubi", label: "MUBI", tag: "5 titles", image: "/images/categories/mubi.png", imageFit: "contain" },
 ];
 
-const LANGUAGES = [
-  { slug: "english", label: "English", image: "/images/categories/english.webp" },
-  { slug: "japanese", label: "Japanese", image: "/images/categories/japanese.jpg" },
-  { slug: "korean", label: "Korean", image: "/images/categories/korean.jpg" },
-];
-
-function TiltCard({ item, onOpen, large }) {
-  const ref = useRef(null);
+function TiltCard({
+  item,
+  onOpen,
+  large,
+}: {
+  item: CategoryItem;
+  onOpen: (item: CategoryItem) => void;
+  large?: boolean;
+}) {
+  const ref = useRef<HTMLButtonElement>(null);
   const [tilt, setTilt] = useState({ x: 0, y: 0 });
 
-  function handleMove(e) {
+  function handleMove(e: MouseEvent<HTMLButtonElement>) {
     const el = ref.current;
     if (!el) return;
     const r = el.getBoundingClientRect();
@@ -136,7 +165,23 @@ function TiltCard({ item, onOpen, large }) {
   );
 }
 
-function Row({ title, items, onOpen, onViewAll, showSearch, query, onQuery }) {
+function Row({
+  title,
+  items,
+  onOpen,
+  onViewAll,
+  showSearch,
+  query,
+  onQuery,
+}: {
+  title: string;
+  items: CategoryItem[];
+  onOpen: (item: CategoryItem) => void;
+  onViewAll: () => void;
+  showSearch?: boolean;
+  query?: string;
+  onQuery?: (value: string) => void;
+}) {
   return (
     <div className="mb-10">
       <div className="flex items-center justify-between px-5 mb-3">
@@ -164,13 +209,13 @@ function Row({ title, items, onOpen, onViewAll, showSearch, query, onQuery }) {
             <Search size={17} style={{ color: THEME.textMuted }} />
             <input
               value={query}
-              onChange={(e) => onQuery(e.target.value)}
+              onChange={(e) => onQuery?.(e.target.value)}
               placeholder="Search genres..."
               style={{ color: THEME.text }}
               className="bg-transparent outline-none placeholder-zinc-600 text-sm w-full"
             />
             {query && (
-              <button onClick={() => onQuery("")} style={{ color: THEME.textMuted }}>
+              <button onClick={() => onQuery?.("")} style={{ color: THEME.textMuted }}>
                 <X size={15} />
               </button>
             )}
@@ -195,7 +240,17 @@ function Row({ title, items, onOpen, onViewAll, showSearch, query, onQuery }) {
   );
 }
 
-function ExpandedGrid({ title, items, onBack, onOpen }) {
+function ExpandedGrid({
+  title,
+  items,
+  onBack,
+  onOpen,
+}: {
+  title: string;
+  items: CategoryItem[];
+  onBack: () => void;
+  onOpen: (item: CategoryItem) => void;
+}) {
   return (
     <div className="px-5">
       <button
@@ -223,7 +278,7 @@ function ExpandedGrid({ title, items, onBack, onOpen }) {
 export default function CategoriesPage() {
   const navigate = useNavigate();
   const [genreQuery, setGenreQuery] = useState("");
-  const [expanded, setExpanded] = useState(null); // "type" | "genre" | "studio" | "language" | null
+  const [expanded, setExpanded] = useState<Expanded>(null);
 
   const filteredGenres = useMemo(() => {
     const q = genreQuery.trim().toLowerCase();
@@ -231,14 +286,12 @@ export default function CategoriesPage() {
     return GENRES.filter((g) => g.label.toLowerCase().includes(q));
   }, [genreQuery]);
 
-  function openItem(item) {
+  function openItem(item: CategoryItem) {
     // route matches whichever section it came from
     if (TYPES.some((t) => t.slug === item.slug)) {
       navigate(`/browse/type/${item.slug}`);
     } else if (STUDIOS.some((s) => s.slug === item.slug)) {
       navigate(`/studio/${item.slug}`);
-    } else if (LANGUAGES.some((l) => l.slug === item.slug)) {
-      navigate(`/language/${item.slug}`);
     } else {
       navigate(`/browse/genre/${item.slug}`);
     }
@@ -281,15 +334,8 @@ export default function CategoriesPage() {
           />
         ) : expanded === "studio" ? (
           <ExpandedGrid
-            title="Studios"
+            title="Where to Watch"
             items={STUDIOS}
-            onBack={() => setExpanded(null)}
-            onOpen={openItem}
-          />
-        ) : expanded === "language" ? (
-          <ExpandedGrid
-            title="Popular Languages"
-            items={LANGUAGES}
             onBack={() => setExpanded(null)}
             onOpen={openItem}
           />
@@ -312,17 +358,10 @@ export default function CategoriesPage() {
               onQuery={setGenreQuery}
             />
             <Row
-              title="Studios"
+              title="Where to Watch"
               items={STUDIOS}
               onOpen={openItem}
               onViewAll={() => setExpanded("studio")}
-              showSearch={false}
-            />
-            <Row
-              title="Popular Languages"
-              items={LANGUAGES}
-              onOpen={openItem}
-              onViewAll={() => setExpanded("language")}
               showSearch={false}
             />
           </>
