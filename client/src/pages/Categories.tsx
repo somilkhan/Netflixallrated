@@ -38,6 +38,19 @@ const GENRES = [
   { slug: "documentary", label: "Documentary", tag: "1.1k titles", emoji: "📽️" },
 ];
 
+const STUDIOS = [
+  { slug: "disney", label: "Disney+", image: "/images/categories/disney.png", imageFit: "contain" },
+  { slug: "marvel", label: "Marvel", image: "/images/categories/marvel.png", imageFit: "contain" },
+  { slug: "pixar", label: "Pixar", image: "/images/categories/pixar.png", imageFit: "contain" },
+  { slug: "star-wars", label: "Star Wars", image: "/images/categories/starwars.png", imageFit: "contain" },
+];
+
+const LANGUAGES = [
+  { slug: "english", label: "English", image: "/images/categories/english.webp" },
+  { slug: "japanese", label: "Japanese", image: "/images/categories/japanese.jpg" },
+  { slug: "korean", label: "Korean", image: "/images/categories/korean.jpg" },
+];
+
 function TiltCard({ item, onOpen, large }) {
   const ref = useRef(null);
   const [tilt, setTilt] = useState({ x: 0, y: 0 });
@@ -75,20 +88,49 @@ function TiltCard({ item, onOpen, large }) {
           background: `linear-gradient(115deg, transparent 20%, ${THEME.accent}22 45%, transparent 60%)`,
         }}
       />
+      {item.image && (
+        <img
+          src={item.image}
+          alt={item.label}
+          className={`absolute inset-0 w-full h-full ${
+            item.imageFit === "contain" ? "object-contain p-6" : "object-cover"
+          } opacity-90`}
+        />
+      )}
+      {item.image && (
+        <div
+          className="absolute inset-0"
+          style={{
+            background: `linear-gradient(180deg, transparent 40%, ${THEME.cardAlt}f2 100%)`,
+          }}
+        />
+      )}
       <div className="relative h-full flex flex-col justify-end p-4">
-        <span className="text-3xl mb-1">{item.emoji}</span>
-        <span
-          style={{ color: THEME.text, fontFamily: "'Georgia', serif" }}
-          className="text-xl font-bold leading-tight"
-        >
-          {item.label}
-        </span>
-        <span
-          style={{ color: THEME.textMuted, fontFamily: "monospace" }}
-          className="text-xs mt-1"
-        >
-          {item.tag}
-        </span>
+        {!item.image && <span className="text-3xl mb-1">{item.emoji}</span>}
+        {!item.image && (
+          <span
+            style={{ color: THEME.text, fontFamily: "'Georgia', serif" }}
+            className="text-xl font-bold leading-tight"
+          >
+            {item.label}
+          </span>
+        )}
+        {item.image && item.imageFit !== "contain" && (
+          <span
+            style={{ color: THEME.text, fontFamily: "'Georgia', serif" }}
+            className="text-sm font-bold leading-tight"
+          >
+            {item.label}
+          </span>
+        )}
+        {item.tag && (
+          <span
+            style={{ color: THEME.textMuted, fontFamily: "monospace" }}
+            className="text-xs mt-1"
+          >
+            {item.tag}
+          </span>
+        )}
       </div>
     </button>
   );
@@ -181,7 +223,7 @@ function ExpandedGrid({ title, items, onBack, onOpen }) {
 export default function CategoriesPage() {
   const navigate = useNavigate();
   const [genreQuery, setGenreQuery] = useState("");
-  const [expanded, setExpanded] = useState(null); // "type" | "genre" | null
+  const [expanded, setExpanded] = useState(null); // "type" | "genre" | "studio" | "language" | null
 
   const filteredGenres = useMemo(() => {
     const q = genreQuery.trim().toLowerCase();
@@ -191,8 +233,15 @@ export default function CategoriesPage() {
 
   function openItem(item) {
     // route matches whichever section it came from
-    const isType = TYPES.some((t) => t.slug === item.slug);
-    navigate(isType ? `/browse/type/${item.slug}` : `/browse/genre/${item.slug}`);
+    if (TYPES.some((t) => t.slug === item.slug)) {
+      navigate(`/browse/type/${item.slug}`);
+    } else if (STUDIOS.some((s) => s.slug === item.slug)) {
+      navigate(`/studio/${item.slug}`);
+    } else if (LANGUAGES.some((l) => l.slug === item.slug)) {
+      navigate(`/language/${item.slug}`);
+    } else {
+      navigate(`/browse/genre/${item.slug}`);
+    }
   }
 
   return (
@@ -230,6 +279,20 @@ export default function CategoriesPage() {
             onBack={() => setExpanded(null)}
             onOpen={openItem}
           />
+        ) : expanded === "studio" ? (
+          <ExpandedGrid
+            title="Studios"
+            items={STUDIOS}
+            onBack={() => setExpanded(null)}
+            onOpen={openItem}
+          />
+        ) : expanded === "language" ? (
+          <ExpandedGrid
+            title="Popular Languages"
+            items={LANGUAGES}
+            onBack={() => setExpanded(null)}
+            onOpen={openItem}
+          />
         ) : (
           <>
             <Row
@@ -247,6 +310,20 @@ export default function CategoriesPage() {
               showSearch
               query={genreQuery}
               onQuery={setGenreQuery}
+            />
+            <Row
+              title="Studios"
+              items={STUDIOS}
+              onOpen={openItem}
+              onViewAll={() => setExpanded("studio")}
+              showSearch={false}
+            />
+            <Row
+              title="Popular Languages"
+              items={LANGUAGES}
+              onOpen={openItem}
+              onViewAll={() => setExpanded("language")}
+              showSearch={false}
             />
           </>
         )}
