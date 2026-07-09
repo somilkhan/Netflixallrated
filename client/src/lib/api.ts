@@ -51,6 +51,7 @@ export const api = {
     resolveTmdb: (tmdbId: number, mediaType: 'movie' | 'tv') =>
       fetcher('/titles/resolve-tmdb', { method: 'POST', body: JSON.stringify({ tmdbId, mediaType }) }),
     watchProviders: (id: string, region = 'US') => fetcher(`/titles/${id}/watch-providers?region=${region}`),
+    watchProvidersList: (region = 'US') => fetcher(`/titles/watch-providers-list?region=${region}`),
     similar: (id: string) => fetcher(`/titles/${id}/similar`),
     recommendations: (id: string) => fetcher(`/titles/${id}/recommendations`),
     credits: (id: string) => fetcher(`/titles/${id}/credits`),

@@ -1,4 +1,4 @@
-import { useState, useMemo, useRef, useEffect, type MouseEvent } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Search, ChevronRight, X } from "lucide-react";
 import { api } from "../lib/api";
@@ -13,51 +13,39 @@ type CategoryItem = {
   imageFit?: "contain" | "cover";
 };
 
-type Expanded = "type" | "genre" | "studio" | null;
-
-/*
-  Allrated — Categories (bingr-style row layout, Allrated theme)
-
-  Theme tokens below are read from the "Rick and Morty" hero screenshot:
-  warm near-black background, cream headline text, crimson/red accent,
-  serif display font, monospace metadata. If your actual hex values
-  differ, only THEME needs editing — every class below reads from it.
-*/
-
-const THEME = {
-  bg: "#0b0a09",
-  card: "#171310",
-  cardAlt: "#0e0c0a",
-  text: "#f3eee3",
-  textMuted: "#8a8580",
-  accent: "#df4b60",
-  border: "rgba(255,255,255,0.08)",
+type PosterItem = {
+  key: string;
+  name: string;
+  posterUrl: string | null;
+  year: number | null;
 };
+
+type Expanded = "type" | "genre" | "studio" | null;
 
 // Emoji lookup only — purely cosmetic. The actual list of types/genres and
 // their live counts come from GET /api/titles/genres; nothing here is a
 // hardcoded catalog list.
-const TYPE_EMOJI: Record<string, string> = { MOVIE: '🎬', SERIES: '📺', ANIME: '⛩️' };
-const TYPE_LABEL: Record<string, string> = { MOVIE: 'Movies', SERIES: 'TV Shows', ANIME: 'Anime' };
-const TYPE_SLUG: Record<string, string> = { MOVIE: 'movies', SERIES: 'tv-shows', ANIME: 'anime' };
+const TYPE_EMOJI: Record<string, string> = { MOVIE: "🎬", SERIES: "📺", ANIME: "⛩️" };
+const TYPE_LABEL: Record<string, string> = { MOVIE: "Movies", SERIES: "TV Shows", ANIME: "Anime" };
+const TYPE_SLUG: Record<string, string> = { MOVIE: "movies", SERIES: "tv-shows", ANIME: "anime" };
 const GENRE_EMOJI: Record<string, string> = {
-  Drama: '🎭', Comedy: '😄', Thriller: '🔥', Action: '⚡', Romance: '💌', Horror: '👻',
-  Crime: '🕵️', 'Sci-Fi': '🛸', 'Science Fiction': '🛸', Fantasy: '🐉', Adventure: '🗺️',
-  Animation: '🎨', Mystery: '🔍', Family: '👨‍👩‍👧', Documentary: '📽️', War: '⚔️',
-  Music: '🎵', History: '📜', Western: '🤠', 'TV Movie': '📺',
+  Drama: "🎭", Comedy: "😄", Thriller: "🔥", Action: "⚡", Romance: "💌", Horror: "👻",
+  Crime: "🕵️", "Sci-Fi": "🛸", "Science Fiction": "🛸", Fantasy: "🐉", Adventure: "🗺️",
+  Animation: "🎨", Mystery: "🔍", Family: "👨‍👩‍👧", Documentary: "📽️", War: "⚔️",
+  Music: "🎵", History: "📜", Western: "🤠", "TV Movie": "📺",
 };
-// Platform logo images are static brand assets shipped with the app; the
-// platform list itself + title counts come live from GET /api/platforms.
+// Local brand logos are the fallback if a platform's name doesn't match a
+// live TMDB provider name below — never the primary source of truth.
 const PLATFORM_IMAGES: Record<string, string> = {
-  netflix: '/images/categories/netflix.jpg',
-  'prime-video': '/images/categories/primevideo.webp',
-  hotstar: '/images/categories/hotstar.png',
-  'apple-tv': '/images/categories/appletv.png',
-  crunchyroll: '/images/categories/crunchyroll.png',
-  mubi: '/images/categories/mubi.png',
+  netflix: "/images/categories/netflix.jpg",
+  "prime-video": "/images/categories/primevideo.webp",
+  hotstar: "/images/categories/hotstar.png",
+  "apple-tv": "/images/categories/appletv.png",
+  crunchyroll: "/images/categories/crunchyroll.png",
+  mubi: "/images/categories/mubi.png",
 };
 
-function TiltCard({
+function CategoryCard({
   item,
   onOpen,
   large,
@@ -66,41 +54,19 @@ function TiltCard({
   onOpen: (item: CategoryItem) => void;
   large?: boolean;
 }) {
-  const ref = useRef<HTMLButtonElement>(null);
-  const [tilt, setTilt] = useState({ x: 0, y: 0 });
-
-  function handleMove(e: MouseEvent<HTMLButtonElement>) {
-    const el = ref.current;
-    if (!el) return;
-    const r = el.getBoundingClientRect();
-    const px = (e.clientX - r.left) / r.width;
-    const py = (e.clientY - r.top) / r.height;
-    setTilt({ x: (py - 0.5) * -7, y: (px - 0.5) * 7 });
-  }
-  function handleLeave() {
-    setTilt({ x: 0, y: 0 });
-  }
-
   return (
     <button
-      ref={ref}
       onClick={() => onOpen(item)}
-      onMouseMove={handleMove}
-      onMouseLeave={handleLeave}
-      style={{
-        transform: `perspective(700px) rotateX(${tilt.x}deg) rotateY(${tilt.y}deg)`,
-        transition: "transform 150ms ease-out",
-        background: `linear-gradient(160deg, ${THEME.card}, ${THEME.cardAlt})`,
-        border: `1px solid ${THEME.border}`,
-      }}
-      className={`group relative shrink-0 rounded-2xl overflow-hidden text-left
-        ${large ? "w-full h-40" : "w-44 h-32"} focus:outline-none`}
+      className={`group relative shrink-0 overflow-hidden rounded-2xl border border-line
+        bg-surface/60 backdrop-blur-sm text-left transition-all duration-300
+        hover:border-maroon-bright/60 hover:-translate-y-1
+        hover:shadow-[0_18px_40px_-12px_rgba(194,67,79,0.45)]
+        focus:outline-none focus-visible:ring-2 focus-visible:ring-maroon-bright/70
+        ${large ? "w-full h-40" : "w-44 h-32"}`}
     >
       <div
-        className="pointer-events-none absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300"
-        style={{
-          background: `linear-gradient(115deg, transparent 20%, ${THEME.accent}22 45%, transparent 60%)`,
-        }}
+        className="pointer-events-none absolute inset-0 opacity-0 group-hover:opacity-100
+          transition-opacity duration-300 bg-gradient-to-br from-maroon/25 via-transparent to-transparent"
       />
       {item.image && (
         <img
@@ -112,39 +78,17 @@ function TiltCard({
         />
       )}
       {item.image && (
-        <div
-          className="absolute inset-0"
-          style={{
-            background: `linear-gradient(180deg, transparent 40%, ${THEME.cardAlt}f2 100%)`,
-          }}
-        />
+        <div className="absolute inset-0 bg-gradient-to-t from-void/95 via-void/10 to-transparent" />
       )}
       <div className="relative h-full flex flex-col justify-end p-4">
         {!item.image && <span className="text-3xl mb-1">{item.emoji}</span>}
         {!item.image && (
-          <span
-            style={{ color: THEME.text, fontFamily: "'Georgia', serif" }}
-            className="text-xl font-bold leading-tight"
-          >
-            {item.label}
-          </span>
+          <span className="font-serif text-xl font-semibold leading-tight text-ink">{item.label}</span>
         )}
         {item.image && item.imageFit !== "contain" && (
-          <span
-            style={{ color: THEME.text, fontFamily: "'Georgia', serif" }}
-            className="text-sm font-bold leading-tight"
-          >
-            {item.label}
-          </span>
+          <span className="font-serif text-sm font-semibold leading-tight text-ink">{item.label}</span>
         )}
-        {item.tag && (
-          <span
-            style={{ color: THEME.textMuted, fontFamily: "monospace" }}
-            className="text-xs mt-1"
-          >
-            {item.tag}
-          </span>
-        )}
+        {item.tag && <span className="mt-1 text-xs font-mono text-ink-dim">{item.tag}</span>}
       </div>
     </button>
   );
@@ -170,16 +114,10 @@ function Row({
   return (
     <div className="mb-10">
       <div className="flex items-center justify-between px-5 mb-3">
-        <h2
-          style={{ color: THEME.text, fontFamily: "'Georgia', serif" }}
-          className="text-[26px] font-bold"
-        >
-          {title}
-        </h2>
+        <h2 className="font-serif text-2xl sm:text-[26px] font-semibold text-ink">{title}</h2>
         <button
           onClick={onViewAll}
-          style={{ color: THEME.textMuted }}
-          className="flex items-center gap-1 text-sm hover:opacity-80 transition-opacity"
+          className="flex items-center gap-1 text-sm text-ink-dim hover:text-maroon-bright transition-colors"
         >
           View All <ChevronRight size={15} />
         </button>
@@ -187,20 +125,16 @@ function Row({
 
       {showSearch && (
         <div className="px-5 mb-4">
-          <div
-            style={{ background: THEME.card, border: `1px solid ${THEME.border}` }}
-            className="flex items-center gap-3 rounded-full px-4 py-3"
-          >
-            <Search size={17} style={{ color: THEME.textMuted }} />
+          <div className="flex items-center gap-3 rounded-full border border-line bg-surface/60 px-4 py-3 backdrop-blur-sm">
+            <Search size={17} className="text-ink-faint" />
             <input
               value={query}
               onChange={(e) => onQuery?.(e.target.value)}
               placeholder="Search genres..."
-              style={{ color: THEME.text }}
-              className="bg-transparent outline-none placeholder-zinc-600 text-sm w-full"
+              className="w-full bg-transparent text-sm text-ink placeholder-ink-faint outline-none"
             />
             {query && (
-              <button onClick={() => onQuery?.("")} style={{ color: THEME.textMuted }}>
+              <button onClick={() => onQuery?.("")} className="text-ink-faint hover:text-ink-dim">
                 <X size={15} />
               </button>
             )}
@@ -209,18 +143,65 @@ function Row({
       )}
 
       {items.length === 0 ? (
-        <p style={{ color: THEME.textMuted }} className="px-5 text-sm">
-          No matches.
-        </p>
+        <p className="px-5 text-sm text-ink-dim">No matches.</p>
       ) : (
         <div className="flex gap-3 overflow-x-auto px-5 pb-1 scrollbar-none snap-x snap-mandatory">
-          {items.map((item) => (
-            <div key={item.slug} className="snap-start">
-              <TiltCard item={item} onOpen={onOpen} />
+          {items.map((item, i) => (
+            <div
+              key={item.slug}
+              className="snap-start animate-fadeUp opacity-0"
+              style={{ animationDelay: `${Math.min(i, 8) * 40}ms` }}
+            >
+              <CategoryCard item={item} onOpen={onOpen} />
             </div>
           ))}
         </div>
       )}
+    </div>
+  );
+}
+
+function PosterRow({ title, items }: { title: string; items: PosterItem[] }) {
+  const navigate = useNavigate();
+  if (items.length === 0) return null;
+  return (
+    <div className="mb-10">
+      <div className="px-5 mb-3">
+        <h2 className="font-serif text-2xl sm:text-[26px] font-semibold text-ink">{title}</h2>
+      </div>
+      <div className="flex gap-3 overflow-x-auto px-5 pb-1 scrollbar-none snap-x snap-mandatory">
+        {items.map((item, i) => (
+          <button
+            key={item.key}
+            onClick={() => navigate(`/search?q=${encodeURIComponent(item.name)}`)}
+            className="group relative shrink-0 w-28 sm:w-36 aspect-[2/3] snap-start overflow-hidden rounded-xl
+              border border-line bg-surface/60 text-left transition-all duration-300
+              hover:border-maroon-bright/60 hover:-translate-y-1
+              hover:shadow-[0_18px_40px_-12px_rgba(194,67,79,0.45)]
+              focus:outline-none focus-visible:ring-2 focus-visible:ring-maroon-bright/70
+              animate-fadeUp opacity-0"
+            style={{ animationDelay: `${Math.min(i, 10) * 35}ms` }}
+          >
+            {item.posterUrl ? (
+              <img
+                src={item.posterUrl}
+                alt={item.name}
+                loading="lazy"
+                className="absolute inset-0 h-full w-full object-cover opacity-90 transition-opacity group-hover:opacity-100"
+              />
+            ) : (
+              <div className="absolute inset-0 flex items-center justify-center bg-surface-2 p-2">
+                <span className="text-center font-serif text-xs text-ink-dim">{item.name}</span>
+              </div>
+            )}
+            <div className="absolute inset-0 bg-gradient-to-t from-void/90 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
+            <div className="absolute inset-x-0 bottom-0 p-2 opacity-0 group-hover:opacity-100 transition-opacity">
+              <p className="line-clamp-2 text-xs font-medium text-ink">{item.name}</p>
+              {item.year && <p className="text-[10px] font-mono text-ink-dim">{item.year}</p>}
+            </div>
+          </button>
+        ))}
+      </div>
     </div>
   );
 }
@@ -240,25 +221,23 @@ function ExpandedGrid({
     <div className="px-5">
       <button
         onClick={onBack}
-        style={{ color: THEME.textMuted }}
-        className="mb-5 text-sm flex items-center gap-1 hover:opacity-80"
+        className="mb-5 flex items-center gap-1 text-sm text-ink-dim hover:text-maroon-bright transition-colors"
       >
         <ChevronRight size={15} className="rotate-180" /> Back
       </button>
-      <h2
-        style={{ color: THEME.text, fontFamily: "'Georgia', serif" }}
-        className="text-3xl font-bold mb-5"
-      >
-        {title}
-      </h2>
+      <h2 className="mb-5 font-serif text-3xl font-semibold text-ink">{title}</h2>
       <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 pb-16">
-        {items.map((item) => (
-          <TiltCard key={item.slug} item={item} onOpen={onOpen} large />
+        {items.map((item, i) => (
+          <div key={item.slug} className="animate-fadeUp opacity-0" style={{ animationDelay: `${Math.min(i, 12) * 30}ms` }}>
+            <CategoryCard item={item} onOpen={onOpen} large />
+          </div>
         ))}
       </div>
     </div>
   );
 }
+
+type GeoRow = { id: string; label: string; items: PosterItem[] };
 
 export default function CategoriesPage() {
   const navigate = useNavigate();
@@ -267,41 +246,78 @@ export default function CategoriesPage() {
   const [types, setTypes] = useState<CategoryItem[]>([]);
   const [genres, setGenres] = useState<CategoryItem[]>([]);
   const [studios, setStudios] = useState<CategoryItem[]>([]);
+  const [geoRows, setGeoRows] = useState<GeoRow[]>([]);
 
   // Live from the server — never hardcoded. Genres/types come from the DB
-  // aggregate (/api/titles/genres); studios/platforms from /api/platforms.
+  // aggregate (/api/titles/genres); studios/platforms from /api/platforms;
+  // poster rows from /api/geo/content (real TMDB regional/language data).
   useEffect(() => {
-    api.titles.genres().then(({ genres: g, types: t }: { genres: { genre: string; count: number }[]; types: { type: string; count: number }[] }) => {
-      setTypes(t.map(({ type, count }) => ({
-        slug: TYPE_SLUG[type] || slugify(type),
-        label: TYPE_LABEL[type] || type,
-        tag: `${count} title${count === 1 ? '' : 's'}`,
-        emoji: TYPE_EMOJI[type] || '🎞️',
-      })));
-      setGenres(g.map(({ genre, count }) => ({
-        slug: slugify(genre),
-        label: genre,
-        tag: `${count} title${count === 1 ? '' : 's'}`,
-        emoji: GENRE_EMOJI[genre] || '🎬',
-      })));
-    }).catch(() => {});
+    api.titles
+      .genres()
+      .then(({ genres: g, types: t }: { genres: { genre: string; count: number }[]; types: { type: string; count: number }[] }) => {
+        setTypes(
+          t.map(({ type, count }) => ({
+            slug: TYPE_SLUG[type] || slugify(type),
+            label: TYPE_LABEL[type] || type,
+            tag: `${count} title${count === 1 ? "" : "s"}`,
+            emoji: TYPE_EMOJI[type] || "🎞️",
+          })),
+        );
+        setGenres(
+          g.map(({ genre, count }) => ({
+            slug: slugify(genre),
+            label: genre,
+            tag: `${count} title${count === 1 ? "" : "s"}`,
+            emoji: GENRE_EMOJI[genre] || "🎬",
+          })),
+        );
+      })
+      .catch(() => {});
 
-    api.platforms.list().then((platforms: any[]) => {
-      setStudios(platforms.map(p => {
-        // Slug from the display name (not the short abbr) so it matches the
-        // logo-image lookup below and the StudioDetail route's own name-based
-        // matching — using abbr here produced slugs like "nf" that never
-        // matched "netflix" and silently dropped the logo.
-        const slug = slugify(p.name);
-        return {
-          slug,
-          label: p.name,
-          tag: `${p._count?.titles ?? 0} title${(p._count?.titles ?? 0) === 1 ? '' : 's'}`,
-          image: PLATFORM_IMAGES[slug],
-          imageFit: 'contain' as const,
-        };
-      }));
-    }).catch(() => {});
+    Promise.all([
+      api.platforms.list().catch(() => []),
+      api.titles.watchProvidersList("US").catch(() => []),
+    ]).then(([platforms, providers]: [any[], any[]]) => {
+      setStudios(
+        platforms.map((p) => {
+          // Slug from the display name (not the short abbr) so it matches
+          // both the logo lookup below and StudioDetail's own name-based
+          // matching — using abbr produced slugs like "nf" that never
+          // matched "netflix" and silently dropped the logo.
+          const slug = slugify(p.name);
+          const liveMatch = providers.find((prov: any) => {
+            const provSlug = slugify(prov.name || "");
+            return provSlug === slug || provSlug.includes(slug) || slug.includes(provSlug);
+          });
+          return {
+            slug,
+            label: p.name,
+            tag: `${p._count?.titles ?? 0} title${(p._count?.titles ?? 0) === 1 ? "" : "s"}`,
+            image: liveMatch?.logoUrl || PLATFORM_IMAGES[slug],
+            imageFit: "contain" as const,
+          };
+        }),
+      );
+    });
+
+    api.geo
+      .detect()
+      .then((d: { region?: string }) => api.geo.content(d.region || "US"))
+      .then((data: { rows: { id: string; label: string; items: any[] }[] }) => {
+        setGeoRows(
+          (data.rows || []).map((row) => ({
+            id: row.id,
+            label: row.label,
+            items: (row.items || []).slice(0, 20).map((it: any) => ({
+              key: `${row.id}-${it.mediaType}-${it.tmdbId}`,
+              name: it.name,
+              posterUrl: it.posterUrl,
+              year: it.year,
+            })),
+          })),
+        );
+      })
+      .catch(() => {});
   }, []);
 
   const filteredGenres = useMemo(() => {
@@ -322,56 +338,27 @@ export default function CategoriesPage() {
   }
 
   return (
-    <div style={{ background: THEME.bg }} className="min-h-screen pb-24">
+    <div className="min-h-screen bg-void pb-24">
       <div className="pt-8">
         <div className="px-5 mb-2 flex items-center gap-2">
-          <span style={{ background: THEME.accent }} className="w-4 h-[2px] inline-block" />
-          <span
-            style={{ color: THEME.textMuted, fontFamily: "monospace" }}
-            className="text-xs tracking-[0.2em] uppercase"
-          >
-            Categories
-          </span>
+          <span className="inline-block h-[2px] w-4 bg-maroon-bright" />
+          <span className="text-xs font-mono uppercase tracking-[0.2em] text-ink-dim">The Catalog</span>
         </div>
         <div className="px-5 mb-8">
-          <h1
-            style={{ color: THEME.text, fontFamily: "'Georgia', serif" }}
-            className="text-[38px] font-bold leading-tight"
-          >
+          <h1 className="font-serif text-4xl sm:text-[42px] font-semibold leading-tight text-ink">
             Browse Everything
           </h1>
         </div>
 
         {expanded === "type" ? (
-          <ExpandedGrid
-            title="Browse by Type"
-            items={types}
-            onBack={() => setExpanded(null)}
-            onOpen={openItem}
-          />
+          <ExpandedGrid title="Browse by Type" items={types} onBack={() => setExpanded(null)} onOpen={openItem} />
         ) : expanded === "genre" ? (
-          <ExpandedGrid
-            title="Browse by Genre"
-            items={filteredGenres}
-            onBack={() => setExpanded(null)}
-            onOpen={openItem}
-          />
+          <ExpandedGrid title="Browse by Genre" items={filteredGenres} onBack={() => setExpanded(null)} onOpen={openItem} />
         ) : expanded === "studio" ? (
-          <ExpandedGrid
-            title="Where to Watch"
-            items={studios}
-            onBack={() => setExpanded(null)}
-            onOpen={openItem}
-          />
+          <ExpandedGrid title="Where to Watch" items={studios} onBack={() => setExpanded(null)} onOpen={openItem} />
         ) : (
           <>
-            <Row
-              title="Browse by Type"
-              items={types}
-              onOpen={openItem}
-              onViewAll={() => setExpanded("type")}
-              showSearch={false}
-            />
+            <Row title="Browse by Type" items={types} onOpen={openItem} onViewAll={() => setExpanded("type")} showSearch={false} />
             <Row
               title="Browse by Genre"
               items={filteredGenres}
@@ -381,13 +368,10 @@ export default function CategoriesPage() {
               query={genreQuery}
               onQuery={setGenreQuery}
             />
-            <Row
-              title="Where to Watch"
-              items={studios}
-              onOpen={openItem}
-              onViewAll={() => setExpanded("studio")}
-              showSearch={false}
-            />
+            <Row title="Where to Watch" items={studios} onOpen={openItem} onViewAll={() => setExpanded("studio")} showSearch={false} />
+            {geoRows.map((row) => (
+              <PosterRow key={row.id} title={row.label} items={row.items} />
+            ))}
           </>
         )}
       </div>

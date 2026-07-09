@@ -53,6 +53,28 @@ export function tmdbImageUrl(path: string | null, size: 'w92' | 'w342' | 'w500' 
   return path ? `${TMDB_IMAGE_BASE}/${size}${path}` : null;
 }
 
+export interface TmdbWatchProvider {
+  providerId: number;
+  name: string;
+  logoUrl: string | null;
+}
+
+/**
+ * Region's most-used watch providers for movies, ranked by TMDB's own
+ * display_priority. Used to show real streaming-service logos on the
+ * Categories page's "Where to Watch" row (falls back to local static
+ * logos client-side if a name doesn't match).
+ */
+export async function listWatchProviders(region = 'US'): Promise<TmdbWatchProvider[]> {
+  const data = await tmdbFetch('/watch/providers/movie', { watch_region: region });
+  return (data.results || [])
+    .map((p: any) => ({
+      providerId: p.provider_id,
+      name: p.provider_name,
+      logoUrl: tmdbImageUrl(p.logo_path, 'w92'),
+    }));
+}
+
 export interface TmdbSearchResult {
   tmdbId: number;
   mediaType: 'movie' | 'tv';

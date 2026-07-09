@@ -6,6 +6,7 @@ import { authenticate, requireAdmin, AuthRequest } from '../middleware/auth.js';
 import {
   searchTmdb, getTmdbDetails, getTvSeasons, getTvEpisodes,
   getWatchProviders, getSimilarTmdb, getRecommendationsTmdb, getCreditsTmdb, getTmdbCategory,
+  listWatchProviders,
 } from '../lib/tmdb.js';
 import { syncTmdbCatalog, resetSyncProgress } from '../lib/sync.js';
 import { SyncCallerType, sanitizeErrorDetail, recordSyncRun } from '../lib/syncStatus.js';
@@ -181,6 +182,19 @@ router.post('/resolve-tmdb', resolveTmdbLimiter, async (req, res) => {
     }
   } catch (err) {
     res.status(502).json({ error: 'Could not resolve title', detail: sanitizeErrorDetail((err as Error).message) });
+  }
+});
+
+// Region's real streaming-service logos (Netflix, Prime Video, etc.) for the
+// Categories page's "Where to Watch" row. Must be declared before the
+// `/:id/watch-providers` route below, or Express would match "watch-providers-list"
+// as an `:id` and 404 against Prisma instead.
+router.get('/watch-providers-list', async (req, res) => {
+  const region = (req.query.region as string) || 'US';
+  try {
+    res.json(await listWatchProviders(region));
+  } catch (err) {
+    res.status(502).json({ error: 'Watch providers list failed', detail: sanitizeErrorDetail((err as Error).message) });
   }
 });
 
