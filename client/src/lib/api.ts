@@ -48,6 +48,14 @@ export const api = {
     genres: () => fetcher('/titles/genres'),
     seasons: (id: string) => fetcher(`/titles/${id}/seasons`),
     episodes: (id: string, season: number) => fetcher(`/titles/${id}/episodes?season=${season}`),
+    resolveTmdb: (tmdbId: number, mediaType: 'movie' | 'tv') =>
+      fetcher('/titles/resolve-tmdb', { method: 'POST', body: JSON.stringify({ tmdbId, mediaType }) }),
+    watchProviders: (id: string, region = 'US') => fetcher(`/titles/${id}/watch-providers?region=${region}`),
+    similar: (id: string) => fetcher(`/titles/${id}/similar`),
+    recommendations: (id: string) => fetcher(`/titles/${id}/recommendations`),
+    credits: (id: string) => fetcher(`/titles/${id}/credits`),
+    category: (mediaType: 'movie' | 'tv', category: string) =>
+      fetcher(`/titles/tmdb-category?mediaType=${mediaType}&category=${category}`),
   },
   watchlist: {
     add: (data: { titleId: string; status: string }) =>

@@ -1,6 +1,7 @@
-import { useState, useMemo, useRef, type MouseEvent } from "react";
+import { useState, useMemo, useRef, useEffect, type MouseEvent } from "react";
 import { useNavigate } from "react-router-dom";
 import { Search, ChevronRight, X } from "lucide-react";
+import { api } from "../lib/api";
 
 type CategoryItem = {
   slug: string;
@@ -32,45 +33,30 @@ const THEME = {
   border: "rgba(255,255,255,0.08)",
 };
 
-// Counts below are live snapshots from GET /api/titles (not hardcoded
-// guesses) — refresh them by re-querying the endpoint as the catalog grows.
-const TYPES = [
-  { slug: "movies", label: "Movies", tag: "12.3k titles", emoji: "🎬" },
-  { slug: "tv-shows", label: "TV Shows", tag: "34 titles", emoji: "📺" },
-  { slug: "anime", label: "Anime", tag: "20 titles", emoji: "⛩️" },
-];
+// Emoji lookup only — purely cosmetic. The actual list of types/genres and
+// their live counts come from GET /api/titles/genres; nothing here is a
+// hardcoded catalog list.
+const TYPE_EMOJI: Record<string, string> = { MOVIE: '🎬', SERIES: '📺', ANIME: '⛩️' };
+const TYPE_LABEL: Record<string, string> = { MOVIE: 'Movies', SERIES: 'TV Shows', ANIME: 'Anime' };
+const TYPE_SLUG: Record<string, string> = { MOVIE: 'movies', SERIES: 'tv-shows', ANIME: 'anime' };
+const GENRE_EMOJI: Record<string, string> = {
+  Drama: '🎭', Comedy: '😄', Thriller: '🔥', Action: '⚡', Romance: '💌', Horror: '👻',
+  Crime: '🕵️', 'Sci-Fi': '🛸', 'Science Fiction': '🛸', Fantasy: '🐉', Adventure: '🗺️',
+  Animation: '🎨', Mystery: '🔍', Family: '👨‍👩‍👧', Documentary: '📽️', War: '⚔️',
+  Music: '🎵', History: '📜', Western: '🤠', 'TV Movie': '📺',
+};
+function slugify(s: string) { return s.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, ''); }
 
-const GENRES = [
-  { slug: "drama", label: "Drama", tag: "5.3k titles", emoji: "🎭" },
-  { slug: "comedy", label: "Comedy", tag: "3.8k titles", emoji: "😄" },
-  { slug: "thriller", label: "Thriller", tag: "3.2k titles", emoji: "🔥" },
-  { slug: "action", label: "Action", tag: "3.1k titles", emoji: "⚡" },
-  { slug: "romance", label: "Romance", tag: "2.1k titles", emoji: "💌" },
-  { slug: "horror", label: "Horror", tag: "1.8k titles", emoji: "👻" },
-  { slug: "crime", label: "Crime", tag: "1.8k titles", emoji: "🕵️" },
-  { slug: "scifi", label: "Sci-Fi", tag: "1.4k titles", emoji: "🛸" },
-  { slug: "fantasy", label: "Fantasy", tag: "1.5k titles", emoji: "🐉" },
-  { slug: "adventure", label: "Adventure", tag: "2k titles", emoji: "🗺️" },
-  { slug: "animation", label: "Animation", tag: "1.3k titles", emoji: "🎨" },
-  { slug: "mystery", label: "Mystery", tag: "1.1k titles", emoji: "🔍" },
-  { slug: "family", label: "Family", tag: "1.3k titles", emoji: "👨‍👩‍👧" },
-  { slug: "documentary", label: "Documentary", tag: "288 titles", emoji: "📽️" },
-  { slug: "war", label: "War", tag: "370 titles", emoji: "⚔️" },
-  { slug: "music", label: "Music", tag: "345 titles", emoji: "🎵" },
-  { slug: "history", label: "History", tag: "579 titles", emoji: "📜" },
-  { slug: "western", label: "Western", tag: "209 titles", emoji: "🤠" },
-];
-
-// Real streaming platforms from the catalog (GET /api/platforms), not
-// fictional studio brands — each card filters GET /api/titles?platform=.
-const STUDIOS: CategoryItem[] = [
-  { slug: "netflix", label: "Netflix", tag: "15 titles", image: "/images/categories/netflix.jpg", imageFit: "contain" },
-  { slug: "prime-video", label: "Prime Video", tag: "17 titles", image: "/images/categories/primevideo.webp", imageFit: "contain" },
-  { slug: "hotstar", label: "Hotstar", tag: "20 titles", image: "/images/categories/hotstar.png", imageFit: "contain" },
-  { slug: "apple-tv", label: "Apple TV+", tag: "8 titles", image: "/images/categories/appletv.png", imageFit: "contain" },
-  { slug: "crunchyroll", label: "Crunchyroll", tag: "16 titles", image: "/images/categories/crunchyroll.png", imageFit: "contain" },
-  { slug: "mubi", label: "MUBI", tag: "5 titles", image: "/images/categories/mubi.png", imageFit: "contain" },
-];
+// Platform logo images are static brand assets shipped with the app; the
+// platform list itself + title counts come live from GET /api/platforms.
+const PLATFORM_IMAGES: Record<string, string> = {
+  netflix: '/images/categories/netflix.jpg',
+  'prime-video': '/images/categories/primevideo.webp',
+  hotstar: '/images/categories/hotstar.png',
+  'apple-tv': '/images/categories/appletv.png',
+  crunchyroll: '/images/categories/crunchyroll.png',
+  mubi: '/images/categories/mubi.png',
+};
 
 function TiltCard({
   item,
@@ -279,18 +265,53 @@ export default function CategoriesPage() {
   const navigate = useNavigate();
   const [genreQuery, setGenreQuery] = useState("");
   const [expanded, setExpanded] = useState<Expanded>(null);
+  const [types, setTypes] = useState<CategoryItem[]>([]);
+  const [genres, setGenres] = useState<CategoryItem[]>([]);
+  const [studios, setStudios] = useState<CategoryItem[]>([]);
+
+  // Live from the server — never hardcoded. Genres/types come from the DB
+  // aggregate (/api/titles/genres); studios/platforms from /api/platforms.
+  useEffect(() => {
+    api.titles.genres().then(({ genres: g, types: t }: { genres: { genre: string; count: number }[]; types: { type: string; count: number }[] }) => {
+      setTypes(t.map(({ type, count }) => ({
+        slug: TYPE_SLUG[type] || slugify(type),
+        label: TYPE_LABEL[type] || type,
+        tag: `${count} title${count === 1 ? '' : 's'}`,
+        emoji: TYPE_EMOJI[type] || '🎞️',
+      })));
+      setGenres(g.map(({ genre, count }) => ({
+        slug: slugify(genre),
+        label: genre,
+        tag: `${count} title${count === 1 ? '' : 's'}`,
+        emoji: GENRE_EMOJI[genre] || '🎬',
+      })));
+    }).catch(() => {});
+
+    api.platforms.list().then((platforms: any[]) => {
+      setStudios(platforms.map(p => {
+        const slug = slugify(p.abbr || p.name);
+        return {
+          slug,
+          label: p.name,
+          tag: `${p._count?.titles ?? 0} title${(p._count?.titles ?? 0) === 1 ? '' : 's'}`,
+          image: PLATFORM_IMAGES[slug],
+          imageFit: 'contain' as const,
+        };
+      }));
+    }).catch(() => {});
+  }, []);
 
   const filteredGenres = useMemo(() => {
     const q = genreQuery.trim().toLowerCase();
-    if (!q) return GENRES;
-    return GENRES.filter((g) => g.label.toLowerCase().includes(q));
-  }, [genreQuery]);
+    if (!q) return genres;
+    return genres.filter((g) => g.label.toLowerCase().includes(q));
+  }, [genreQuery, genres]);
 
   function openItem(item: CategoryItem) {
     // route matches whichever section it came from
-    if (TYPES.some((t) => t.slug === item.slug)) {
+    if (types.some((t) => t.slug === item.slug)) {
       navigate(`/browse/type/${item.slug}`);
-    } else if (STUDIOS.some((s) => s.slug === item.slug)) {
+    } else if (studios.some((s) => s.slug === item.slug)) {
       navigate(`/studio/${item.slug}`);
     } else {
       navigate(`/browse/genre/${item.slug}`);
@@ -321,7 +342,7 @@ export default function CategoriesPage() {
         {expanded === "type" ? (
           <ExpandedGrid
             title="Browse by Type"
-            items={TYPES}
+            items={types}
             onBack={() => setExpanded(null)}
             onOpen={openItem}
           />
@@ -335,7 +356,7 @@ export default function CategoriesPage() {
         ) : expanded === "studio" ? (
           <ExpandedGrid
             title="Where to Watch"
-            items={STUDIOS}
+            items={studios}
             onBack={() => setExpanded(null)}
             onOpen={openItem}
           />
@@ -343,7 +364,7 @@ export default function CategoriesPage() {
           <>
             <Row
               title="Browse by Type"
-              items={TYPES}
+              items={types}
               onOpen={openItem}
               onViewAll={() => setExpanded("type")}
               showSearch={false}
@@ -359,7 +380,7 @@ export default function CategoriesPage() {
             />
             <Row
               title="Where to Watch"
-              items={STUDIOS}
+              items={studios}
               onOpen={openItem}
               onViewAll={() => setExpanded("studio")}
               showSearch={false}

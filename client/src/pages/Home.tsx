@@ -10,18 +10,18 @@ import TmdbCard from '../components/TmdbCard';
 import type { TmdbItem } from '../components/TmdbCard';
 import RegionPicker from '../components/RegionPicker';
 
-const GENRE_SECTIONS = [
-  { genre: 'Action', label: 'Action & Thrills', emoji: '⚡' },
-  { genre: 'Drama', label: 'Drama', emoji: '🎭' },
-  { genre: 'Sci-Fi', label: 'Sci-Fi & Future', emoji: '🚀' },
-  { genre: 'Comedy', label: 'Comedy', emoji: '😄' },
-  { genre: 'Horror', label: 'Horror', emoji: '👻' },
-  { genre: 'Romance', label: 'Romance', emoji: '💫' },
-  { genre: 'Crime', label: 'Crime & Mystery', emoji: '🔍' },
-  { genre: 'Animation', label: 'Animation', emoji: '🎨' },
-  { genre: 'Fantasy', label: 'Fantasy & Adventure', emoji: '🗡️' },
-  { genre: 'Documentary', label: 'Documentary', emoji: '📽️' },
-];
+// Cosmetic emoji per genre — purely presentational, the genre list itself is
+// fetched live from /api/titles/genres (never hardcoded).
+const GENRE_EMOJI: Record<string, string> = {
+  Action: '⚡', Drama: '🎭', 'Sci-Fi': '🚀', 'Science Fiction': '🚀', Comedy: '😄',
+  Horror: '👻', Romance: '💫', Crime: '🔍', Mystery: '🔍', Animation: '🎨',
+  Fantasy: '🗡️', Adventure: '🗡️', Documentary: '📽️', Thriller: '🔪', Family: '👪',
+  War: '⚔️', History: '📜', Music: '🎵', Western: '🤠', 'TV Movie': '📺',
+};
+const GENRE_LABEL_SUFFIX: Record<string, string> = {
+  Action: ' & Thrills', 'Sci-Fi': ' & Future', 'Science Fiction': ' & Future',
+  Crime: ' & Mystery', Fantasy: ' & Adventure',
+};
 
 interface GeoRow {
   id: string;
@@ -38,6 +38,7 @@ export default function Home() {
   const [series, setSeries] = useState<any[]>([]);
   const [anime, setAnime] = useState<any[]>([]);
   const [genreSections, setGenreSections] = useState<Record<string, any[]>>({});
+  const [genreList, setGenreList] = useState<string[]>([]);
 
   // Geo state
   const [region, setRegion] = useState<string>(() => normalizeRegion(getRegionCookie()));
@@ -92,15 +93,20 @@ export default function Home() {
     api.titles.list({ type: 'SERIES', limit: '20' }).then(d => setSeries(d.titles || [])).catch(() => {});
     api.titles.list({ type: 'ANIME', limit: '20' }).then(d => setAnime(d.titles || [])).catch(() => {});
 
-    // Genre sections — fetch all in parallel, keep only non-empty ones
-    Promise.all(
-      GENRE_SECTIONS.map(({ genre }) =>
-        api.titles.list({ genre, limit: '20' })
-          .then(d => [genre, d.titles || []] as [string, any[]])
-          .catch(() => [genre, []] as [string, any[]])
-      )
-    ).then(results => {
-      setGenreSections(Object.fromEntries(results.filter(([, titles]) => titles.length > 0)));
+    // Genre list — fetched live (never hardcoded), then each genre's titles
+    // are fetched in parallel, keeping only the non-empty ones.
+    api.titles.genres().then(({ genres }: { genres: { genre: string; count: number }[] }) => {
+      const top = genres.slice(0, 10).map(g => g.genre);
+      setGenreList(top);
+      Promise.all(
+        top.map(genre =>
+          api.titles.list({ genre, limit: '20' })
+            .then((d: any) => [genre, d.titles || []] as [string, any[]])
+            .catch(() => [genre, []] as [string, any[]])
+        )
+      ).then(results => {
+        setGenreSections(Object.fromEntries(results.filter(([, titles]) => titles.length > 0)));
+      }).catch(() => {});
     }).catch(() => {});
   }, []);
 
@@ -181,10 +187,13 @@ export default function Home() {
         </>
       )}
 
-      {/* Genre sections — only in "All" tab */}
-      {showGenre && GENRE_SECTIONS.map(({ genre, label, emoji }) => {
+      {/* Genre sections — only in "All" tab. Genre list itself comes from the
+          server (live DB genre counts); only the emoji/suffix are cosmetic. */}
+      {showGenre && genreList.map(genre => {
         const titles = genreSections[genre];
         if (!titles || titles.length === 0) return null;
+        const emoji = GENRE_EMOJI[genre] || '🎬';
+        const label = `${genre}${GENRE_LABEL_SUFFIX[genre] || ''}`;
         return (
           <Section key={genre} title={`${emoji} ${label}`} count={`${titles.length}`} viewAllPath={`/search?q=${genre}&genre=${genre}`}>
             {titles.map(t => <Card key={t.id} title={t} />)}

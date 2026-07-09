@@ -1,5 +1,12 @@
-/** Card for raw TMDB items (geo rows). Tapping searches our catalog for the title. */
+/**
+ * Card for raw TMDB items (geo rows) that don't have a local DB row yet.
+ * Tapping resolves (get-or-create) the title on the backend, then navigates
+ * to the standard /title/:id detail/player page — same destination as every
+ * other card.
+ */
+import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { api } from '../lib/api';
 
 export interface TmdbItem {
   tmdbId: number;
@@ -12,12 +19,28 @@ export interface TmdbItem {
 
 export default function TmdbCard({ item }: { item: TmdbItem }) {
   const nav = useNavigate();
-  const typeFilter = item.mediaType === 'movie' ? 'MOVIE' : 'SERIES';
+  const [resolving, setResolving] = useState(false);
+
+  const handleClick = async () => {
+    if (resolving) return;
+    setResolving(true);
+    try {
+      const { id } = await api.titles.resolveTmdb(item.tmdbId, item.mediaType);
+      nav(`/title/${id}`);
+    } catch {
+      // Backend couldn't resolve/create the title (e.g. TMDB unreachable) —
+      // fall back to search rather than leaving the tap dead.
+      const typeFilter = item.mediaType === 'movie' ? 'MOVIE' : 'SERIES';
+      nav(`/search?q=${encodeURIComponent(item.name)}&type=${typeFilter}`);
+    } finally {
+      setResolving(false);
+    }
+  };
 
   return (
     <div
-      className="shrink-0 w-[142px] md:w-[172px] scroll-snap-start group cursor-pointer"
-      onClick={() => nav(`/search?q=${encodeURIComponent(item.name)}&type=${typeFilter}`)}
+      className={`shrink-0 w-[142px] md:w-[172px] scroll-snap-start group cursor-pointer${resolving ? ' opacity-60 pointer-events-none' : ''}`}
+      onClick={handleClick}
     >
       <div
         className="relative w-full poster-ratio rounded-[11px] border border-line overflow-hidden flex flex-col justify-end p-2 bg-cover bg-center transition-all duration-200 group-hover:border-maroon group-hover:-translate-y-1 group-hover:shadow-[0_16px_32px_-12px_rgba(0,0,0,0.6),0_0_0_1px_#7A2530]"

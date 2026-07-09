@@ -2,7 +2,10 @@ import { Router, Response, NextFunction } from 'express';
 import { z } from 'zod';
 import { prisma } from '../lib/prisma.js';
 import { authenticate, requireAdmin, AuthRequest } from '../middleware/auth.js';
-import { searchTmdb, getTmdbDetails, getTvSeasons, getTvEpisodes } from '../lib/tmdb.js';
+import {
+  searchTmdb, getTmdbDetails, getTvSeasons, getTvEpisodes,
+  getWatchProviders, getSimilarTmdb, getRecommendationsTmdb, getCreditsTmdb, getTmdbCategory,
+} from '../lib/tmdb.js';
 import { syncTmdbCatalog, resetSyncProgress } from '../lib/sync.js';
 import { SyncCallerType, sanitizeErrorDetail, recordSyncRun } from '../lib/syncStatus.js';
 
@@ -90,6 +93,105 @@ router.get('/genres', async (_req, res) => {
     });
   } catch (err) {
     res.status(500).json({ error: 'Failed to fetch genres' });
+  }
+});
+
+/**
+ * POST /api/titles/resolve-tmdb
+ * Public, idempotent "get-or-create" for a raw TMDB item (e.g. a geo/discover
+ * row card that has no local DB row yet). Returns the local title id so the
+ * client can navigate straight to /title/:id — the standard detail/player
+ * flow — instead of falling back to search.
+ */
+router.post('/resolve-tmdb', async (req, res) => {
+  const schema = z.object({ tmdbId: z.number(), mediaType: z.enum(['movie', 'tv']) });
+  const parsed = schema.safeParse(req.body);
+  if (!parsed.success) return res.status(400).json({ error: parsed.error.flatten() });
+  const { tmdbId, mediaType } = parsed.data;
+
+  try {
+    const existing = await prisma.title.findUnique({ where: { tmdbId } });
+    if (existing) return res.json({ id: existing.id });
+
+    const details = await getTmdbDetails(tmdbId, mediaType);
+    const palette = randomPalette();
+    const created = await prisma.title.create({
+      data: {
+        name: details.name,
+        type: mediaType === 'movie' ? 'MOVIE' : 'SERIES',
+        year: details.year,
+        runtimeMinutes: details.runtimeMinutes ?? undefined,
+        genres: details.genres,
+        synopsis: details.synopsis,
+        posterColorFrom: palette.from,
+        posterColorTo: palette.to,
+        trailerYoutubeId: details.trailerYoutubeId ?? undefined,
+        tmdbId: details.tmdbId,
+        posterUrl: details.posterUrl ?? undefined,
+        backdropUrl: details.backdropUrl ?? undefined,
+        officialWatchLinks: [],
+      },
+    });
+    res.json({ id: created.id });
+  } catch (err) {
+    res.status(502).json({ error: 'Could not resolve title', detail: (err as Error).message });
+  }
+});
+
+// --- Live TMDB extras (per-title, addressed by our local title id) -------
+router.get('/:id/watch-providers', async (req, res) => {
+  const title = await prisma.title.findUnique({ where: { id: req.params.id }, select: { tmdbId: true, type: true } });
+  if (!title?.tmdbId || title.type === 'ANIME') return res.json({ link: null, flatrate: [], rent: [], buy: [] });
+  const region = (req.query.region as string) || 'US';
+  try {
+    res.json(await getWatchProviders(title.tmdbId, title.type === 'MOVIE' ? 'movie' : 'tv', region));
+  } catch (err) {
+    res.status(502).json({ error: 'Watch providers failed', detail: (err as Error).message });
+  }
+});
+
+router.get('/:id/similar', async (req, res) => {
+  const title = await prisma.title.findUnique({ where: { id: req.params.id }, select: { tmdbId: true, type: true } });
+  if (!title?.tmdbId || title.type === 'ANIME') return res.json([]);
+  try {
+    res.json(await getSimilarTmdb(title.tmdbId, title.type === 'MOVIE' ? 'movie' : 'tv'));
+  } catch (err) {
+    res.status(502).json({ error: 'Similar titles failed', detail: (err as Error).message });
+  }
+});
+
+router.get('/:id/recommendations', async (req, res) => {
+  const title = await prisma.title.findUnique({ where: { id: req.params.id }, select: { tmdbId: true, type: true } });
+  if (!title?.tmdbId || title.type === 'ANIME') return res.json([]);
+  try {
+    res.json(await getRecommendationsTmdb(title.tmdbId, title.type === 'MOVIE' ? 'movie' : 'tv'));
+  } catch (err) {
+    res.status(502).json({ error: 'Recommendations failed', detail: (err as Error).message });
+  }
+});
+
+router.get('/:id/credits', async (req, res) => {
+  const title = await prisma.title.findUnique({ where: { id: req.params.id }, select: { tmdbId: true, type: true } });
+  if (!title?.tmdbId || title.type === 'ANIME') return res.json({ cast: [], crew: [] });
+  try {
+    res.json(await getCreditsTmdb(title.tmdbId, title.type === 'MOVIE' ? 'movie' : 'tv'));
+  } catch (err) {
+    res.status(502).json({ error: 'Credits failed', detail: (err as Error).message });
+  }
+});
+
+// --- TMDB category rows (Top Rated / Now Playing / Upcoming / Airing Today / On The Air) ---
+const MOVIE_CATEGORIES = new Set(['top_rated', 'now_playing', 'upcoming', 'popular']);
+const TV_CATEGORIES = new Set(['top_rated', 'airing_today', 'on_the_air', 'popular']);
+router.get('/tmdb-category', async (req, res) => {
+  const mediaType = (req.query.mediaType as string) === 'tv' ? 'tv' : 'movie';
+  const category = (req.query.category as string) || 'popular';
+  const valid = mediaType === 'tv' ? TV_CATEGORIES : MOVIE_CATEGORIES;
+  if (!valid.has(category)) return res.status(400).json({ error: 'Invalid category' });
+  try {
+    res.json(await getTmdbCategory(mediaType, category, Number(req.query.page) || 1));
+  } catch (err) {
+    res.status(502).json({ error: 'TMDB category failed', detail: (err as Error).message });
   }
 });
 

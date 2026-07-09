@@ -1,14 +1,10 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { api } from '../lib/api';
-import { searchAnime } from '../lib/anilist';
+import { searchAnime, getAnimePage, getAnimeGenresAndTags } from '../lib/anilist';
 import Card from '../components/Card';
 import Section from '../components/Section';
 import { AniListMedia } from '../lib/anilist';
-
-const ANIME_GENRES = ['Action', 'Adventure', 'Fantasy', 'Sci-Fi', 'Romance', 'Comedy', 'Drama', 'Horror', 'Mystery', 'Slice of Life', 'Sports', 'Supernatural'];
-
-const POPULAR_ANIME = ['Naruto', 'One Piece', 'Attack on Titan', 'Demon Slayer', 'My Hero Academia', 'Dragon Ball', 'Death Note', 'Fullmetal Alchemist', 'Jujutsu Kaisen', 'Bleach'];
 
 export default function Anime() {
   const nav = useNavigate();
@@ -19,24 +15,28 @@ export default function Anime() {
   const [searchQuery, setSearchQuery] = useState('');
   const [searchResult, setSearchResult] = useState<AniListMedia | null>(null);
   const [searchLoading, setSearchLoading] = useState(false);
+  const [animeGenres, setAnimeGenres] = useState<string[]>([]);
+
+  // Live genre list from AniList — never hardcoded.
+  useEffect(() => {
+    getAnimeGenresAndTags().then(({ genres }) => setAnimeGenres(genres)).catch(() => {});
+  }, []);
 
   useEffect(() => {
     api.titles.list({ type: 'ANIME', limit: '50', ...(selectedGenre ? { genre: selectedGenre } : {}) })
       .then(d => setDbAnime(d.titles || []));
   }, [selectedGenre]);
 
-  // Pre-load popular anime from AniList
+  // Trending anime straight from AniList's live feed — genre-filtered when selected.
   useEffect(() => {
-    if (selectedGenre) return;
     setAnilistLoading(true);
-    Promise.all(POPULAR_ANIME.slice(0, 5).map(name => searchAnime(name).catch(() => null)))
-      .then(results => {
-        const valid = results.filter(Boolean) as AniListMedia[];
+    getAnimePage({ sort: 'TRENDING_DESC', perPage: 15, genre: selectedGenre || undefined })
+      .then((media: AniListMedia[]) => {
         const seen = new Set<number>();
-        const deduped = valid.filter(a => { if (seen.has(a.id)) return false; seen.add(a.id); return true; });
+        const deduped = media.filter(a => { if (seen.has(a.id)) return false; seen.add(a.id); return true; });
         setAnilistResults(deduped);
-        setAnilistLoading(false);
-      });
+      })
+      .finally(() => setAnilistLoading(false));
   }, [selectedGenre]);
 
   const handleAnilistSearch = (e: React.FormEvent) => {
@@ -125,7 +125,7 @@ export default function Anime() {
             !selectedGenre ? 'bg-ink text-void border-ink' : 'bg-surface border-line text-ink-faint hover:text-ink hover:border-line-bright'
           }`}
         >All</button>
-        {ANIME_GENRES.map(g => (
+        {animeGenres.map(g => (
           <button key={g} onClick={() => setSelectedGenre(g === selectedGenre ? '' : g)}
             className={`shrink-0 font-mono text-xs px-3.5 py-1.5 rounded-full border transition-all ${
               selectedGenre === g ? 'bg-maroon/20 border-maroon text-ink' : 'bg-surface border-line text-ink-faint hover:text-ink hover:border-line-bright'
@@ -197,20 +197,23 @@ export default function Anime() {
         </div>
       )}
 
-      {/* Browse suggestions */}
-      {!selectedGenre && dbAnime.length === 0 && (
+      {/* Browse suggestions — pulled from the same live trending feed above */}
+      {!selectedGenre && dbAnime.length === 0 && anilistResults.length > 0 && (
         <div className="px-5 pt-6 pb-4">
           <p className="font-mono text-[11px] text-ink-faint uppercase tracking-wider mb-3">Browse by name</p>
           <div className="flex flex-wrap gap-2">
-            {POPULAR_ANIME.map(name => (
-              <button
-                key={name}
-                onClick={() => nav(`/search?q=${encodeURIComponent(name)}&type=ANIME`)}
-                className="font-mono text-xs px-3 py-1.5 rounded-full border border-line text-ink-faint hover:border-maroon hover:text-ink transition-all"
-              >
-                {name}
-              </button>
-            ))}
+            {anilistResults.map(anime => {
+              const name = anime.title.english || anime.title.romaji;
+              return (
+                <button
+                  key={anime.id}
+                  onClick={() => nav(`/search?q=${encodeURIComponent(name)}&type=ANIME`)}
+                  className="font-mono text-xs px-3 py-1.5 rounded-full border border-line text-ink-faint hover:border-maroon hover:text-ink transition-all"
+                >
+                  {name}
+                </button>
+              );
+            })}
           </div>
         </div>
       )}

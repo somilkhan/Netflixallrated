@@ -47,7 +47,7 @@ async function tmdbFetch(
   throw new Error(`TMDB request failed after ${retries + 1} retries (persistent 429): ${url}`);
 }
 
-export function tmdbImageUrl(path: string | null, size: 'w342' | 'w500' | 'w780' | 'original' = 'w500') {
+export function tmdbImageUrl(path: string | null, size: 'w92' | 'w342' | 'w500' | 'w780' | 'original' = 'w500') {
   return path ? `${TMDB_IMAGE_BASE}/${size}${path}` : null;
 }
 
@@ -298,6 +298,100 @@ export async function discoverByLanguage(language: string, region = 'IN'): Promi
 }
 
 // ── Full details (admin import) ───────────────────────────────────────────
+
+export interface WatchProvider {
+  providerId: number;
+  name: string;
+  logoUrl: string | null;
+}
+
+export interface WatchProviders {
+  link: string | null;
+  flatrate: WatchProvider[];
+  rent: WatchProvider[];
+  buy: WatchProvider[];
+}
+
+function mapProviders(list: any[] = []): WatchProvider[] {
+  return list.map((p: any) => ({
+    providerId: p.provider_id,
+    name: p.provider_name,
+    logoUrl: tmdbImageUrl(p.logo_path, 'w92'),
+  }));
+}
+
+/** Watch providers (Netflix, Prime Video, Disney+, etc.) for a title in a given region. */
+export async function getWatchProviders(tmdbId: number, mediaType: 'movie' | 'tv', region = 'US'): Promise<WatchProviders> {
+  const path = mediaType === 'movie' ? `/movie/${tmdbId}/watch/providers` : `/tv/${tmdbId}/watch/providers`;
+  const data = await tmdbFetch(path);
+  const forRegion = data.results?.[region] || data.results?.US || {};
+  return {
+    link: forRegion.link || null,
+    flatrate: mapProviders(forRegion.flatrate),
+    rent: mapProviders(forRegion.rent),
+    buy: mapProviders(forRegion.buy),
+  };
+}
+
+/** Similar titles from TMDB. */
+export async function getSimilarTmdb(tmdbId: number, mediaType: 'movie' | 'tv'): Promise<TmdbSearchResult[]> {
+  const path = mediaType === 'movie' ? `/movie/${tmdbId}/similar` : `/tv/${tmdbId}/similar`;
+  const data = await tmdbFetch(path);
+  return (data.results || []).map((r: any) => ({
+    tmdbId: r.id,
+    mediaType,
+    name: r.title || r.name,
+    year: (r.release_date || r.first_air_date) ? Number((r.release_date || r.first_air_date).slice(0, 4)) : null,
+    posterUrl: tmdbImageUrl(r.poster_path),
+    overview: r.overview || '',
+  }));
+}
+
+/** Recommended titles from TMDB. */
+export async function getRecommendationsTmdb(tmdbId: number, mediaType: 'movie' | 'tv'): Promise<TmdbSearchResult[]> {
+  const path = mediaType === 'movie' ? `/movie/${tmdbId}/recommendations` : `/tv/${tmdbId}/recommendations`;
+  const data = await tmdbFetch(path);
+  return (data.results || []).map((r: any) => ({
+    tmdbId: r.id,
+    mediaType,
+    name: r.title || r.name,
+    year: (r.release_date || r.first_air_date) ? Number((r.release_date || r.first_air_date).slice(0, 4)) : null,
+    posterUrl: tmdbImageUrl(r.poster_path),
+    overview: r.overview || '',
+  }));
+}
+
+export interface CastMember { id: number; name: string; character: string; profileUrl: string | null; }
+export interface CrewMember { id: number; name: string; job: string; profileUrl: string | null; }
+
+/** Cast & crew for a title. */
+export async function getCreditsTmdb(tmdbId: number, mediaType: 'movie' | 'tv'): Promise<{ cast: CastMember[]; crew: CrewMember[] }> {
+  const path = mediaType === 'movie' ? `/movie/${tmdbId}/credits` : `/tv/${tmdbId}/credits`;
+  const data = await tmdbFetch(path);
+  return {
+    cast: (data.cast || []).slice(0, 20).map((c: any) => ({
+      id: c.id, name: c.name, character: c.character, profileUrl: tmdbImageUrl(c.profile_path, 'w342'),
+    })),
+    crew: (data.crew || []).slice(0, 10).map((c: any) => ({
+      id: c.id, name: c.name, job: c.job, profileUrl: tmdbImageUrl(c.profile_path, 'w342'),
+    })),
+  };
+}
+
+/** Simple category rows: top_rated / now_playing / upcoming (movie) and top_rated / airing_today / on_the_air (tv). */
+export async function getTmdbCategory(mediaType: 'movie' | 'tv', category: string, page = 1): Promise<TmdbSearchResult[]> {
+  const data = await tmdbFetch(`/${mediaType}/${category}`, { page: String(page) });
+  return (data.results || [])
+    .filter((r: any) => r.poster_path)
+    .map((r: any) => ({
+      tmdbId: r.id,
+      mediaType,
+      name: r.title || r.name,
+      year: (r.release_date || r.first_air_date) ? Number((r.release_date || r.first_air_date).slice(0, 4)) : null,
+      posterUrl: tmdbImageUrl(r.poster_path),
+      overview: r.overview || '',
+    }));
+}
 
 export async function getTmdbDetails(tmdbId: number, mediaType: 'movie' | 'tv'): Promise<TmdbDetails> {
   const path = mediaType === 'movie' ? `/movie/${tmdbId}` : `/tv/${tmdbId}`;

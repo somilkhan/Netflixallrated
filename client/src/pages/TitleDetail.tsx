@@ -85,6 +85,9 @@ export default function TitleDetail() {
   const [animeEmbedLoading, setAnimeEmbedLoading] = useState(false);
   const embedReqRef = useRef(0);
 
+  // TMDB Watch Providers (Netflix, Prime Video, Disney+, etc. — movie/TV only)
+  const [watchProviders, setWatchProviders] = useState<{ flatrate: any[]; rent: any[]; buy: any[]; link: string | null } | null>(null);
+
   // Season / episode (SERIES only)
   const [seasons, setSeasons] = useState<any[]>([]);
   const [episodes, setEpisodes] = useState<any[]>([]);
@@ -197,6 +200,11 @@ export default function TitleDetail() {
       .catch((err: any) => setHubError(err?.message || '4kHDHub lookup failed — try another server'))
       .finally(() => setHubLoading(false));
   }, [serverId, title, selectedSeason, selectedEp]);
+
+  useEffect(() => {
+    if (!title || title.type === 'ANIME' || !title.tmdbId) { setWatchProviders(null); return; }
+    api.titles.watchProviders(id!).then(setWatchProviders).catch(() => setWatchProviders(null));
+  }, [title, id]);
 
   useEffect(() => {
     if (!title || title.type !== 'ANIME') return;
@@ -881,8 +889,39 @@ export default function TitleDetail() {
           </div>
         )}
 
-        {/* ── Where to watch ────────────────────────────────────── */}
-        {title.officialWatchLinks?.length > 0 && (
+        {/* ── Where to watch — live TMDB providers with logos ─────── */}
+        {(watchProviders && (watchProviders.flatrate.length || watchProviders.rent.length || watchProviders.buy.length)) ? (
+          <div className="dp-section">
+            <div className="dp-section-head">
+              <span className="dp-section-title">Where to watch</span>
+            </div>
+            <div className="platform-chips">
+              {[...watchProviders.flatrate, ...watchProviders.rent, ...watchProviders.buy]
+                .filter((p, i, arr) => arr.findIndex(x => x.providerId === p.providerId) === i)
+                .map((p: any) => (
+                  <a
+                    key={p.providerId}
+                    href={watchProviders.link || '#'}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="platform-chip"
+                    title={p.name}
+                    style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}
+                  >
+                    {p.logoUrl && (
+                      <img
+                        src={p.logoUrl}
+                        alt={p.name}
+                        loading="lazy"
+                        style={{ width: 18, height: 18, borderRadius: 4, objectFit: 'cover' }}
+                      />
+                    )}
+                    {p.name}
+                  </a>
+                ))}
+            </div>
+          </div>
+        ) : title.officialWatchLinks?.length > 0 && (
           <div className="dp-section">
             <div className="dp-section-head">
               <span className="dp-section-title">Where to watch</span>

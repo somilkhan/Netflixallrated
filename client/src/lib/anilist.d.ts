@@ -36,3 +36,13 @@ export interface AniListMedia {
 
 export declare function searchAnime(name: string): Promise<AniListMedia | null>;
 export declare function getAnimeById(id: number): Promise<AniListMedia | null>;
+export declare function getAnimePage(opts?: {
+  sort?: string;
+  page?: number;
+  perPage?: number;
+  genre?: string;
+  season?: string;
+  seasonYear?: number;
+  status?: string;
+}): Promise<AniListMedia[]>;
+export declare function getAnimeGenresAndTags(): Promise<{ genres: string[]; tags: string[] }>;
