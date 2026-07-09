@@ -4,14 +4,23 @@ import { api } from '../lib/api';
 import Card from '../components/Card';
 import Section from '../components/Section';
 
-const GENRE_LIST = ['Action', 'Drama', 'Comedy', 'Sci-Fi', 'Thriller', 'Horror', 'Romance', 'Crime', 'Fantasy', 'Animation', 'Mystery', 'Documentary'];
-
 export default function TV() {
   const nav = useNavigate();
   const [selectedGenre, setSelectedGenre] = useState('');
   const [all, setAll] = useState<any[]>([]);
   const [genreSections, setGenreSections] = useState<Record<string, any[]>>({});
   const [loading, setLoading] = useState(true);
+  // Live genre list (never hardcoded) — using the actual catalog's genre
+  // names avoids mismatches like "Sci-Fi" vs the real "Science Fiction".
+  const [genreList, setGenreList] = useState<string[]>([]);
+
+  useEffect(() => {
+    api.titles.genres()
+      .then(({ genres }: { genres: { genre: string; count: number }[] }) => {
+        setGenreList(genres.slice(0, 12).map(g => g.genre));
+      })
+      .catch(() => {});
+  }, []);
 
   useEffect(() => {
     setLoading(true);
@@ -22,9 +31,9 @@ export default function TV() {
   }, [selectedGenre]);
 
   useEffect(() => {
-    if (selectedGenre) return;
+    if (selectedGenre || genreList.length === 0) return;
     Promise.all(
-      GENRE_LIST.map(g =>
+      genreList.map(g =>
         api.titles.list({ type: 'SERIES', genre: g, limit: '20' })
           .then(d => [g, d.titles || []] as [string, any[]])
           .catch(() => [g, []] as [string, any[]])
@@ -32,7 +41,7 @@ export default function TV() {
     ).then(results => {
       setGenreSections(Object.fromEntries(results.filter(([, t]) => t.length > 0)));
     });
-  }, [selectedGenre]);
+  }, [selectedGenre, genreList]);
 
   return (
     <div className="min-h-screen">
@@ -53,7 +62,7 @@ export default function TV() {
             !selectedGenre ? 'bg-ink text-void border-ink' : 'bg-surface border-line text-ink-faint hover:text-ink hover:border-line-bright'
           }`}
         >All</button>
-        {GENRE_LIST.map(g => (
+        {genreList.map(g => (
           <button
             key={g}
             onClick={() => setSelectedGenre(g === selectedGenre ? '' : g)}
@@ -97,7 +106,7 @@ export default function TV() {
               {all.map(t => <Card key={t.id} title={t} />)}
             </Section>
           )}
-          {GENRE_LIST.map(g => {
+          {genreList.map(g => {
             const titles = genreSections[g];
             if (!titles || titles.length === 0) return null;
             return (

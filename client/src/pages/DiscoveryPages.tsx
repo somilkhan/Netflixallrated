@@ -1,6 +1,8 @@
 import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { ChevronLeft } from "lucide-react";
+import { api } from "../lib/api";
+import { slugify } from "../lib/slug";
 
 /*
   Shared discovery pages: Platform / Genre / Type detail.
@@ -214,27 +216,47 @@ function DetailShell({
 
 // ---- pages --------------------------------------------------------
 
-// /studio/:slug — real streaming platforms (Netflix, Prime Video, Hotstar,
-// Apple TV+, Crunchyroll, MUBI), filtered via the real `platform` query param.
-const PLATFORM_ABBR: Record<string, string> = {
-  netflix: "NF",
-  "prime-video": "PV",
-  hotstar: "HS",
-  "apple-tv": "AT",
-  crunchyroll: "CR",
-  mubi: "MU",
-};
-
+// /studio/:slug — real streaming platforms, resolved live from GET
+// /api/platforms and matched by slugify(name) so this always stays in sync
+// with whatever platforms actually exist in the catalog (never hardcoded).
 export function StudioDetail() {
   const { slug = "" } = useParams();
   const [tab, setTab] = useState<MediaType>("MOVIE");
-  const abbr = PLATFORM_ABBR[slug] || slug.toUpperCase();
-  const { items, loading, error } = useTitles({ type: tab, platform: abbr });
+  const [platform, setPlatform] = useState<{ name: string; abbr: string } | null>(null);
+  const [platformsLoading, setPlatformsLoading] = useState(true);
+
+  useEffect(() => {
+    let cancelled = false;
+    api.platforms.list()
+      .then((platforms: { name: string; abbr: string }[]) => {
+        if (cancelled) return;
+        const match = platforms.find((p) => slugify(p.name) === slug);
+        setPlatform(match || null);
+        setPlatformsLoading(false);
+      })
+      .catch(() => { if (!cancelled) setPlatformsLoading(false); });
+    return () => { cancelled = true; };
+  }, [slug]);
+
+  const { items, loading, error } = useTitles({
+    type: tab,
+    platform: platform?.abbr,
+  });
 
   return (
-    <DetailShell title={slug.replace(/-/g, " ")}>
+    <DetailShell title={platform?.name || slug.replace(/-/g, " ")}>
       <Tabs active={tab} onChange={setTab} />
-      <PosterGrid items={items} loading={loading} error={error} />
+      {platformsLoading ? (
+        <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
+          {Array.from({ length: 6 }).map((_, i) => (
+            <div key={i} className="aspect-[2/3] rounded-xl bg-zinc-900/60 animate-pulse" />
+          ))}
+        </div>
+      ) : !platform ? (
+        <p className="text-zinc-500 text-sm">This streaming platform doesn't exist in the catalog.</p>
+      ) : (
+        <PosterGrid items={items} loading={loading} error={error} />
+      )}
     </DetailShell>
   );
 }
@@ -253,38 +275,45 @@ export function LanguageDetail() {
   );
 }
 
-// /browse/genre/:slug
-const GENRE_SLUG_TO_NAME: Record<string, string> = {
-  action: "Action",
-  adventure: "Adventure",
-  animation: "Animation",
-  comedy: "Comedy",
-  crime: "Crime",
-  documentary: "Documentary",
-  drama: "Drama",
-  family: "Family",
-  fantasy: "Fantasy",
-  history: "History",
-  horror: "Horror",
-  music: "Music",
-  mystery: "Mystery",
-  romance: "Romance",
-  scifi: "Science Fiction",
-  thriller: "Thriller",
-  war: "War",
-  western: "Western",
-};
-
+// /browse/genre/:slug — resolved live from GET /api/titles/genres and
+// matched by slugify(genre), so it always agrees with whatever slug
+// Categories.tsx generated for the same genre (never a hardcoded map that
+// can drift out of sync and silently return zero results).
 export function GenreDetail() {
   const { slug = "" } = useParams();
   const [tab, setTab] = useState<MediaType>("MOVIE");
-  const genreName = GENRE_SLUG_TO_NAME[slug] || slug;
-  const { items, loading, error } = useTitles({ type: tab, genre: genreName });
+  const [genreName, setGenreName] = useState<string | null>(null);
+  const [genresLoading, setGenresLoading] = useState(true);
+
+  useEffect(() => {
+    let cancelled = false;
+    api.titles.genres()
+      .then(({ genres }: { genres: { genre: string; count: number }[] }) => {
+        if (cancelled) return;
+        const match = genres.find((g) => slugify(g.genre) === slug);
+        setGenreName(match?.genre || null);
+        setGenresLoading(false);
+      })
+      .catch(() => { if (!cancelled) setGenresLoading(false); });
+    return () => { cancelled = true; };
+  }, [slug]);
+
+  const { items, loading, error } = useTitles({ type: tab, genre: genreName || undefined });
 
   return (
-    <DetailShell title={genreName} subtitle="Genre">
+    <DetailShell title={genreName || slug.replace(/-/g, " ")} subtitle="Genre">
       <Tabs active={tab} onChange={setTab} />
-      <PosterGrid items={items} loading={loading} error={error} />
+      {genresLoading ? (
+        <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
+          {Array.from({ length: 6 }).map((_, i) => (
+            <div key={i} className="aspect-[2/3] rounded-xl bg-zinc-900/60 animate-pulse" />
+          ))}
+        </div>
+      ) : !genreName ? (
+        <p className="text-zinc-500 text-sm">This genre doesn't exist in the catalog.</p>
+      ) : (
+        <PosterGrid items={items} loading={loading} error={error} />
+      )}
     </DetailShell>
   );
 }

@@ -24,6 +24,25 @@ const POSTER_PALETTE = [
 ];
 function randomPalette() { return POSTER_PALETTE[Math.floor(Math.random() * POSTER_PALETTE.length)]; }
 
+/** Attach each title's real most-common rating tier (or null if unrated) —
+ * used by rows that show a community-verdict badge, so it's never faked. */
+async function attachTopTier<T extends { id: string }>(titles: T[]): Promise<(T & { topTier: string | null })[]> {
+  if (titles.length === 0) return [];
+  const grouped = await prisma.rating.groupBy({
+    by: ['titleId', 'tier'],
+    where: { titleId: { in: titles.map(t => t.id) } },
+    _count: { tier: true },
+  });
+  const best: Record<string, { tier: string; count: number }> = {};
+  for (const row of grouped) {
+    const current = best[row.titleId];
+    if (!current || row._count.tier > current.count) {
+      best[row.titleId] = { tier: row.tier, count: row._count.tier };
+    }
+  }
+  return titles.map(t => ({ ...t, topTier: best[t.id]?.tier ?? null }));
+}
+
 router.get('/', async (req, res) => {
   const { type, genre, platform, search, page = '1', limit = '20' } = req.query;
   const skip = (parseInt(page as string) - 1) * parseInt(limit as string);
@@ -52,7 +71,7 @@ router.get('/top10', async (_req, res) => {
     orderBy: [{ ratings: { _count: 'desc' } }, { year: 'desc' }],
     include: { platforms: { include: { platform: true } }, _count: { select: { ratings: true } } },
   });
-  res.json(titles);
+  res.json(await attachTopTier(titles));
 });
 
 // Must be defined before /:id to avoid Express treating "seasons"/"episodes" as an ID
@@ -230,7 +249,7 @@ router.get('/trending', async (_req, res) => {
     orderBy: [{ year: 'desc' }, { ratings: { _count: 'desc' } }],
     include: { platforms: { include: { platform: true } }, _count: { select: { ratings: true } } },
   });
-  res.json(titles);
+  res.json(await attachTopTier(titles));
 });
 
 router.get('/recent', async (_req, res) => {
@@ -241,7 +260,7 @@ router.get('/recent', async (_req, res) => {
     orderBy: { createdAt: 'desc' },
     include: { platforms: { include: { platform: true } } },
   });
-  res.json(titles);
+  res.json(await attachTopTier(titles));
 });
 
 // --- Public live search (DB + optional TMDB fallback) -------------------

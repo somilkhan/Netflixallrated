@@ -5,9 +5,6 @@ import { api } from '../lib/api';
 import { searchAnime } from '../lib/anilist';
 import SearchResultsGrid from '../components/SearchResultsGrid';
 
-const GENRES = ['Action', 'Drama', 'Comedy', 'Sci-Fi', 'Thriller', 'Horror', 'Romance',
-  'Animation', 'Crime', 'Mystery', 'Fantasy', 'Adventure', 'Documentary', 'Family'];
-
 export default function SearchResults() {
   const [params] = useSearchParams();
   const nav = useNavigate();
@@ -19,7 +16,19 @@ export default function SearchResults() {
   const [anilistResult, setAnilistResult] = useState<any>(null);
   const [loading, setLoading] = useState(false);
   const [tmdbKey, setTmdbKey] = useState(0);
+  // Live genre list (never hardcoded) — keeps this dropdown in sync with the
+  // real catalog instead of a static array that could drift (e.g. "Sci-Fi"
+  // vs the real "Science Fiction" genre name, which silently returned ~0 results).
+  const [genres, setGenres] = useState<string[]>([]);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useEffect(() => {
+    api.titles.genres()
+      .then(({ genres: g }: { genres: { genre: string; count: number }[] }) => {
+        setGenres(g.slice(0, 14).map(x => x.genre));
+      })
+      .catch(() => {});
+  }, []);
 
   useEffect(() => { setQuery(q); }, [q]);
 
@@ -135,7 +144,7 @@ export default function SearchResults() {
           className="bg-surface border border-line rounded-full px-3.5 py-2 text-xs font-mono text-ink-faint focus:border-maroon focus:text-ink outline-none transition-all cursor-pointer"
         >
           <option value="">All Genres</option>
-          {GENRES.map(g => <option key={g} value={g}>{g}</option>)}
+          {genres.map(g => <option key={g} value={g}>{g}</option>)}
         </select>
       </div>
 

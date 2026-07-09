@@ -2,6 +2,7 @@ import { useState, useMemo, useRef, useEffect, type MouseEvent } from "react";
 import { useNavigate } from "react-router-dom";
 import { Search, ChevronRight, X } from "lucide-react";
 import { api } from "../lib/api";
+import { slugify } from "../lib/slug";
 
 type CategoryItem = {
   slug: string;
@@ -45,8 +46,6 @@ const GENRE_EMOJI: Record<string, string> = {
   Animation: '🎨', Mystery: '🔍', Family: '👨‍👩‍👧', Documentary: '📽️', War: '⚔️',
   Music: '🎵', History: '📜', Western: '🤠', 'TV Movie': '📺',
 };
-function slugify(s: string) { return s.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, ''); }
-
 // Platform logo images are static brand assets shipped with the app; the
 // platform list itself + title counts come live from GET /api/platforms.
 const PLATFORM_IMAGES: Record<string, string> = {
@@ -289,7 +288,11 @@ export default function CategoriesPage() {
 
     api.platforms.list().then((platforms: any[]) => {
       setStudios(platforms.map(p => {
-        const slug = slugify(p.abbr || p.name);
+        // Slug from the display name (not the short abbr) so it matches the
+        // logo-image lookup below and the StudioDetail route's own name-based
+        // matching — using abbr here produced slugs like "nf" that never
+        // matched "netflix" and silently dropped the logo.
+        const slug = slugify(p.name);
         return {
           slug,
           label: p.name,
