@@ -1,4 +1,5 @@
 import { Router, Response, NextFunction } from 'express';
+import rateLimit from 'express-rate-limit';
 import { z } from 'zod';
 import { prisma } from '../lib/prisma.js';
 import { authenticate, requireAdmin, AuthRequest } from '../middleware/auth.js';
@@ -59,7 +60,7 @@ router.get('/:id/seasons', async (req, res) => {
   const title = await prisma.title.findUnique({ where: { id: req.params.id }, select: { tmdbId: true, type: true } });
   if (!title || !title.tmdbId || title.type !== 'SERIES') return res.json([]);
   try { res.json(await getTvSeasons(title.tmdbId)); }
-  catch (err) { res.status(502).json({ error: 'TMDB seasons failed', detail: (err as Error).message }); }
+  catch (err) { res.status(502).json({ error: 'TMDB seasons failed', detail: sanitizeErrorDetail((err as Error).message) }); }
 });
 
 router.get('/:id/episodes', async (req, res) => {
@@ -67,7 +68,7 @@ router.get('/:id/episodes', async (req, res) => {
   if (!title || !title.tmdbId || title.type !== 'SERIES') return res.json([]);
   const season = Math.max(1, parseInt(req.query.season as string) || 1);
   try { res.json(await getTvEpisodes(title.tmdbId, season)); }
-  catch (err) { res.status(502).json({ error: 'TMDB episodes failed', detail: (err as Error).message }); }
+  catch (err) { res.status(502).json({ error: 'TMDB episodes failed', detail: sanitizeErrorDetail((err as Error).message) }); }
 });
 
 // Returns distinct genres with counts + type counts — used by the Categories page
@@ -103,9 +104,24 @@ router.get('/genres', async (_req, res) => {
  * client can navigate straight to /title/:id — the standard detail/player
  * flow — instead of falling back to search.
  */
-router.post('/resolve-tmdb', async (req, res) => {
-  const schema = z.object({ tmdbId: z.number(), mediaType: z.enum(['movie', 'tv']) });
-  const parsed = schema.safeParse(req.body);
+const resolveTmdbSchema = z.object({
+  // TMDB ids are positive integers well under 1e9 — bounding the input keeps
+  // this public endpoint from being used to probe/spam arbitrary values.
+  tmdbId: z.number().int().positive().max(1_000_000_000),
+  mediaType: z.enum(['movie', 'tv']),
+});
+
+// Tighter than the global limiter — this endpoint can create DB rows and
+// burn TMDB quota, so it needs its own per-IP ceiling.
+const resolveTmdbLimiter = rateLimit({
+  windowMs: 60 * 1000,
+  max: 30,
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+
+router.post('/resolve-tmdb', resolveTmdbLimiter, async (req, res) => {
+  const parsed = resolveTmdbSchema.safeParse(req.body);
   if (!parsed.success) return res.status(400).json({ error: parsed.error.flatten() });
   const { tmdbId, mediaType } = parsed.data;
 
@@ -115,26 +131,37 @@ router.post('/resolve-tmdb', async (req, res) => {
 
     const details = await getTmdbDetails(tmdbId, mediaType);
     const palette = randomPalette();
-    const created = await prisma.title.create({
-      data: {
-        name: details.name,
-        type: mediaType === 'movie' ? 'MOVIE' : 'SERIES',
-        year: details.year,
-        runtimeMinutes: details.runtimeMinutes ?? undefined,
-        genres: details.genres,
-        synopsis: details.synopsis,
-        posterColorFrom: palette.from,
-        posterColorTo: palette.to,
-        trailerYoutubeId: details.trailerYoutubeId ?? undefined,
-        tmdbId: details.tmdbId,
-        posterUrl: details.posterUrl ?? undefined,
-        backdropUrl: details.backdropUrl ?? undefined,
-        officialWatchLinks: [],
-      },
-    });
-    res.json({ id: created.id });
+    try {
+      const created = await prisma.title.create({
+        data: {
+          name: details.name,
+          type: mediaType === 'movie' ? 'MOVIE' : 'SERIES',
+          year: details.year,
+          runtimeMinutes: details.runtimeMinutes ?? undefined,
+          genres: details.genres,
+          synopsis: details.synopsis,
+          posterColorFrom: palette.from,
+          posterColorTo: palette.to,
+          trailerYoutubeId: details.trailerYoutubeId ?? undefined,
+          tmdbId: details.tmdbId,
+          posterUrl: details.posterUrl ?? undefined,
+          backdropUrl: details.backdropUrl ?? undefined,
+          officialWatchLinks: [],
+        },
+      });
+      res.json({ id: created.id });
+    } catch (createErr: any) {
+      // Concurrent requests for the same tmdbId can race past the initial
+      // findUnique — on a unique-constraint violation, just return the row
+      // the other request created instead of a spurious 502.
+      if (createErr?.code === 'P2002') {
+        const race = await prisma.title.findUnique({ where: { tmdbId } });
+        if (race) return res.json({ id: race.id });
+      }
+      throw createErr;
+    }
   } catch (err) {
-    res.status(502).json({ error: 'Could not resolve title', detail: (err as Error).message });
+    res.status(502).json({ error: 'Could not resolve title', detail: sanitizeErrorDetail((err as Error).message) });
   }
 });
 
@@ -146,7 +173,7 @@ router.get('/:id/watch-providers', async (req, res) => {
   try {
     res.json(await getWatchProviders(title.tmdbId, title.type === 'MOVIE' ? 'movie' : 'tv', region));
   } catch (err) {
-    res.status(502).json({ error: 'Watch providers failed', detail: (err as Error).message });
+    res.status(502).json({ error: 'Watch providers failed', detail: sanitizeErrorDetail((err as Error).message) });
   }
 });
 
@@ -156,7 +183,7 @@ router.get('/:id/similar', async (req, res) => {
   try {
     res.json(await getSimilarTmdb(title.tmdbId, title.type === 'MOVIE' ? 'movie' : 'tv'));
   } catch (err) {
-    res.status(502).json({ error: 'Similar titles failed', detail: (err as Error).message });
+    res.status(502).json({ error: 'Similar titles failed', detail: sanitizeErrorDetail((err as Error).message) });
   }
 });
 
@@ -166,7 +193,7 @@ router.get('/:id/recommendations', async (req, res) => {
   try {
     res.json(await getRecommendationsTmdb(title.tmdbId, title.type === 'MOVIE' ? 'movie' : 'tv'));
   } catch (err) {
-    res.status(502).json({ error: 'Recommendations failed', detail: (err as Error).message });
+    res.status(502).json({ error: 'Recommendations failed', detail: sanitizeErrorDetail((err as Error).message) });
   }
 });
 
@@ -176,7 +203,7 @@ router.get('/:id/credits', async (req, res) => {
   try {
     res.json(await getCreditsTmdb(title.tmdbId, title.type === 'MOVIE' ? 'movie' : 'tv'));
   } catch (err) {
-    res.status(502).json({ error: 'Credits failed', detail: (err as Error).message });
+    res.status(502).json({ error: 'Credits failed', detail: sanitizeErrorDetail((err as Error).message) });
   }
 });
 
@@ -191,7 +218,7 @@ router.get('/tmdb-category', async (req, res) => {
   try {
     res.json(await getTmdbCategory(mediaType, category, Number(req.query.page) || 1));
   } catch (err) {
-    res.status(502).json({ error: 'TMDB category failed', detail: (err as Error).message });
+    res.status(502).json({ error: 'TMDB category failed', detail: sanitizeErrorDetail((err as Error).message) });
   }
 });
 
@@ -244,7 +271,7 @@ router.get('/live-search', async (req, res) => {
 
     res.json({ local: dbResults, tmdb: tmdbResults });
   } catch (err) {
-    res.status(500).json({ error: 'Search failed', detail: (err as Error).message });
+    res.status(500).json({ error: 'Search failed', detail: sanitizeErrorDetail((err as Error).message) });
   }
 });
 
@@ -256,7 +283,7 @@ router.get('/tmdb-search', authenticate, requireAdmin, async (req: AuthRequest, 
     const results = await searchTmdb(q);
     res.json(results);
   } catch (err) {
-    res.status(502).json({ error: 'TMDB lookup failed', detail: (err as Error).message });
+    res.status(502).json({ error: 'TMDB lookup failed', detail: sanitizeErrorDetail((err as Error).message) });
   }
 });
 
@@ -290,7 +317,7 @@ router.post('/import-tmdb', authenticate, requireAdmin, async (req: AuthRequest,
     });
     res.status(201).json(title);
   } catch (err) {
-    res.status(502).json({ error: 'TMDB import failed', detail: (err as Error).message });
+    res.status(502).json({ error: 'TMDB import failed', detail: sanitizeErrorDetail((err as Error).message) });
   }
 });
 
@@ -315,7 +342,7 @@ router.post('/sync-tmdb', authenticate, requireAdmin, async (req: AuthRequest, r
 
     res.json(result);
   } catch (err) {
-    res.status(502).json({ error: 'TMDB sync failed', detail: (err as Error).message });
+    res.status(502).json({ error: 'TMDB sync failed', detail: sanitizeErrorDetail((err as Error).message) });
   }
 });
 
@@ -410,7 +437,7 @@ router.get('/sync-status', authenticate, requireAdmin, async (_req: AuthRequest,
       },
     });
   } catch (err) {
-    res.status(500).json({ error: 'Status check failed', detail: (err as Error).message });
+    res.status(500).json({ error: 'Status check failed', detail: sanitizeErrorDetail((err as Error).message) });
   }
 });
 
