@@ -13,6 +13,7 @@ import Admin from './pages/Admin';
 import TV from './pages/TV';
 import Anime from './pages/Anime';
 import Categories from './pages/Categories';
+import { StudioDetail, LanguageDetail, GenreDetail, TypeDetail } from './pages/DiscoveryPages';
 
 function Wrap({ children }: { children: React.ReactNode }) {
   return <ErrorBoundary>{children}</ErrorBoundary>;
@@ -34,6 +35,10 @@ export default function App() {
           <Route path="/tv" element={<Wrap><TV /></Wrap>} />
           <Route path="/anime" element={<Wrap><Anime /></Wrap>} />
           <Route path="/categories" element={<Wrap><Categories /></Wrap>} />
+          <Route path="/studio/:slug" element={<Wrap><StudioDetail /></Wrap>} />
+          <Route path="/language/:slug" element={<Wrap><LanguageDetail /></Wrap>} />
+          <Route path="/browse/genre/:slug" element={<Wrap><GenreDetail /></Wrap>} />
+          <Route path="/browse/type/:slug" element={<Wrap><TypeDetail /></Wrap>} />
         </Routes>
         <BottomNav />
       </div>
