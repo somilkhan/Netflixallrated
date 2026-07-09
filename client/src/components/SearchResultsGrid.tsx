@@ -159,7 +159,6 @@ export default function SearchResultsGrid({
 
       {total === 0 && (
         <div className="py-20 text-center">
-          <p className="text-5xl mb-5">🔍</p>
           <p className="font-serif text-xl font-semibold mb-2">No results for "{q}"</p>
           <p className="text-ink-faint text-sm">Try different keywords or adjust your filters</p>
         </div>

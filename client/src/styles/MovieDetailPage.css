@@ -469,7 +469,7 @@
 
 /* ===== TITLE & META ===== */
 .detail-title {
-  font-family: 'Fraunces', serif;
+  font-family: 'Cormorant Garamond', Georgia, serif;
   font-weight: 600;
   font-size: 28px;
   line-height: 1.06;
@@ -640,7 +640,7 @@
   margin-bottom: 14px;
 }
 .dp-section-title {
-  font-family: 'Fraunces', serif;
+  font-family: 'Cormorant Garamond', Georgia, serif;
   font-size: 18px;
   font-weight: 600;
   color: var(--dp-ink);
@@ -840,7 +840,7 @@
   letter-spacing: 0.05em;
 }
 .rating-summary-value {
-  font-family: 'Fraunces', serif;
+  font-family: 'Cormorant Garamond', Georgia, serif;
   font-size: 21px;
   font-weight: 600;
   color: var(--dp-ink);

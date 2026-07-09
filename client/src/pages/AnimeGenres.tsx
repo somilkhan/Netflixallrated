@@ -1,21 +1,21 @@
 /**
  * AnimeGenres — browse every AniList genre and media tag.
  *
- * Fetches the complete live genre list and tag collection from AniList,
- * lets the user search/filter them, and shows an inline live preview row
- * when a genre or tag is selected.
+ * Genre clicks navigate to /browse/genre/:slug (the existing GenreDetail page).
+ * Tag clicks show an inline live preview row (no dedicated tag-detail page exists).
  */
 import { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { Search, X, ChevronLeft } from 'lucide-react';
 import { getAnimeGenresAndTags, getAnimePage } from '../lib/anilist';
 import AniCard from '../components/AniCard';
 import { GlassCardSkeleton } from '../components/GlassCard';
+import { slugify } from '../lib/slug';
 
 interface TagEntry { name: string; category: string }
 
-type SelectionType = { kind: 'genre' | 'tag'; value: string } | null;
+type SelectionType = { kind: 'tag'; value: string } | null;
 
-// ── Tag category colours (subtle tints) ────────────────────────────────────
 const CATEGORY_HUE: Record<string, string> = {
   'Cast-Main Character':   'rgba(194,67,79,0.12)',
   'Cast-Supporting':       'rgba(122,37,48,0.12)',
@@ -30,21 +30,14 @@ const fallbackBg = 'rgba(255,255,255,0.04)';
 export default function AnimeGenres() {
   const nav = useNavigate();
 
-  // ── Metadata ──────────────────────────────────────────────────────────────
-  const [genres, setGenres]     = useState<string[]>([]);
-  const [tags, setTags]         = useState<TagEntry[]>([]);
-  const [metaState, setMetaState] = useState<'loading' | 'done' | 'error'>('loading');
+  const [genres, setGenres]         = useState<string[]>([]);
+  const [tags, setTags]             = useState<TagEntry[]>([]);
+  const [metaState, setMetaState]   = useState<'loading' | 'done' | 'error'>('loading');
+  const [filter, setFilter]         = useState('');
+  const [tagSelection, setTagSel]   = useState<SelectionType>(null);
+  const [preview, setPreview]       = useState<any[]>([]);
+  const [previewState, setPreviewState] = useState<'idle' | 'loading' | 'done' | 'error'>('idle');
 
-  // ── Filter input ──────────────────────────────────────────────────────────
-  const [filter, setFilter] = useState('');
-
-  // ── Selected genre / tag and its preview row ──────────────────────────────
-  const [selection, setSelection]     = useState<SelectionType>(null);
-  const [preview, setPreview]         = useState<any[]>([]);
-  const [previewState, setPreviewState] =
-    useState<'idle' | 'loading' | 'done' | 'error'>('idle');
-
-  // ── Fetch metadata on mount ───────────────────────────────────────────────
   useEffect(() => {
     getAnimeGenresAndTags()
       .then(({ genres: g, tags: t }) => {
@@ -55,50 +48,43 @@ export default function AnimeGenres() {
       .catch(() => setMetaState('error'));
   }, []);
 
-  // ── Handle selection ──────────────────────────────────────────────────────
-  const handleSelect = useCallback(
-    (kind: 'genre' | 'tag', value: string) => {
-      // Toggle off
-      if (selection?.value === value) {
-        setSelection(null);
-        setPreview([]);
-        setPreviewState('idle');
-        return;
-      }
-      setSelection({ kind, value });
+  // Genre click → navigate to genre detail page
+  const handleGenreClick = useCallback((genre: string) => {
+    nav(`/browse/genre/${slugify(genre)}`);
+  }, [nav]);
+
+  // Tag click → show inline preview row
+  const handleTagClick = useCallback((tag: string) => {
+    if (tagSelection?.value === tag) {
+      setTagSel(null);
       setPreview([]);
-      setPreviewState('loading');
+      setPreviewState('idle');
+      return;
+    }
+    setTagSel({ kind: 'tag', value: tag });
+    setPreview([]);
+    setPreviewState('loading');
+    getAnimePage({ tag, sort: 'POPULARITY_DESC', perPage: 16 })
+      .then((media: any[]) => { setPreview(media); setPreviewState('done'); })
+      .catch(() => setPreviewState('error'));
+  }, [tagSelection]);
 
-      const params = kind === 'genre'
-        ? { genre: value, sort: 'POPULARITY_DESC', perPage: 16 }
-        : { tag: value,   sort: 'POPULARITY_DESC', perPage: 16 };
-
-      getAnimePage(params)
-        .then((media: any[]) => { setPreview(media); setPreviewState('done'); })
-        .catch(() => setPreviewState('error'));
-    },
-    [selection]
-  );
-
-  // ── Filtered lists ────────────────────────────────────────────────────────
   const q = filter.toLowerCase();
   const filteredGenres = genres.filter(g => g.toLowerCase().includes(q));
   const filteredTags   = tags.filter(t => t.name.toLowerCase().includes(q));
 
-  // Group tags by category for better scanability
   const tagsByCategory = filteredTags.reduce<Record<string, TagEntry[]>>((acc, t) => {
     const cat = t.category || 'Other';
     if (!acc[cat]) acc[cat] = [];
     acc[cat].push(t);
     return acc;
   }, {});
-
   const tagCategories = Object.keys(tagsByCategory).sort();
 
   return (
     <div className="min-h-screen bg-void">
 
-      {/* ── Header ──────────────────────────────────────────────────────── */}
+      {/* Header */}
       <div className="relative overflow-hidden">
         <div className="pointer-events-none absolute inset-0
           bg-[radial-gradient(ellipse_80%_100%_at_10%_0%,rgba(122,37,48,0.22),transparent_65%)]" />
@@ -109,9 +95,7 @@ export default function AnimeGenres() {
             className="flex items-center gap-1.5 font-mono text-[11px] text-ink-faint
               hover:text-ink transition-colors mb-6"
           >
-            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2">
-              <polyline points="15 18 9 12 15 6" />
-            </svg>
+            <ChevronLeft size={13} strokeWidth={2.2} />
             Back to Anime
           </button>
 
@@ -124,38 +108,32 @@ export default function AnimeGenres() {
             Browse All
           </h1>
           <p className="font-mono text-sm text-ink-faint">
-            Genres &amp; media tags — select one to see a live preview
+            Genres navigate to the genre page · Tags show a live preview row
           </p>
         </div>
 
         <div className="absolute inset-x-0 bottom-0 h-6 bg-gradient-to-t from-void to-transparent pointer-events-none" />
       </div>
 
-      {/* ── Sticky search bar ────────────────────────────────────────────── */}
+      {/* Sticky search bar */}
       <div className="sticky top-0 z-20 px-5 py-3 bg-void/85 backdrop-blur-md border-b border-line">
         <div className="relative max-w-md">
-          <svg
-            className="absolute left-3.5 top-1/2 -translate-y-1/2 text-ink-faint pointer-events-none"
-            width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2"
-          >
-            <circle cx="11" cy="11" r="8" /><line x1="21" y1="21" x2="16.65" y2="16.65" />
-          </svg>
+          <Search size={13} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-ink-faint pointer-events-none" />
           <input
             type="text"
             value={filter}
             onChange={e => setFilter(e.target.value)}
-            placeholder="Filter genres &amp; tags…"
-            className="w-full bg-surface/70 border border-line rounded-full pl-9 pr-4 py-2
+            placeholder="Filter genres & tags…"
+            className="w-full bg-surface/70 border border-line rounded-full pl-9 pr-9 py-2
               text-sm text-ink placeholder:text-ink-faint outline-none
               focus:border-maroon-bright/50 transition-colors"
           />
           {filter && (
             <button
               onClick={() => setFilter('')}
-              className="absolute right-3.5 top-1/2 -translate-y-1/2 text-ink-faint hover:text-ink
-                transition-colors font-mono text-xs"
+              className="absolute right-3.5 top-1/2 -translate-y-1/2 text-ink-faint hover:text-ink transition-colors"
             >
-              ✕
+              <X size={12} />
             </button>
           )}
         </div>
@@ -168,29 +146,25 @@ export default function AnimeGenres() {
         )}
       </div>
 
-      {/* ── Live preview row ──────────────────────────────────────────────── */}
-      {selection && (
+      {/* Tag preview row */}
+      {tagSelection && (
         <div className="border-b border-line bg-surface/30">
           <div className="px-5 pt-5 pb-2">
             <div className="flex items-center gap-2 mb-1">
-              <span className="font-serif text-xl font-semibold">{selection.value}</span>
+              <span className="font-serif text-xl font-semibold">{tagSelection.value}</span>
               <span className="font-mono text-[9px] uppercase tracking-widest px-1.5 py-0.5
-                rounded-full border border-line text-ink-faint">
-                {selection.kind}
-              </span>
+                rounded-full border border-line text-ink-faint">tag</span>
               <button
-                onClick={() => { setSelection(null); setPreview([]); setPreviewState('idle'); }}
-                className="ml-auto font-mono text-xs text-ink-faint hover:text-ink transition-colors"
+                onClick={() => { setTagSel(null); setPreview([]); setPreviewState('idle'); }}
+                className="ml-auto text-ink-faint hover:text-ink transition-colors"
               >
-                ✕
+                <X size={14} />
               </button>
             </div>
-            <p className="font-mono text-[10px] text-ink-faint mb-4">
-              live · anilist
-            </p>
+            <p className="font-mono text-[10px] text-ink-faint mb-4">live · anilist</p>
 
             {previewState === 'loading' && (
-              <div className="flex gap-4 overflow-x-auto scrollbar-hide pb-3">
+              <div className="flex gap-3.5 overflow-x-auto scrollbar-hide pb-3">
                 {Array.from({ length: 7 }).map((_, i) => <GlassCardSkeleton key={i} />)}
               </div>
             )}
@@ -198,13 +172,10 @@ export default function AnimeGenres() {
               <p className="font-mono text-sm text-ink-faint py-4">Failed to load preview.</p>
             )}
             {previewState === 'done' && preview.length === 0 && (
-              <p className="font-mono text-sm text-ink-faint py-4">No anime found for this {selection.kind}.</p>
+              <p className="font-mono text-sm text-ink-faint py-4">No anime found for this tag.</p>
             )}
             {previewState === 'done' && preview.length > 0 && (
-              <div
-                className="flex gap-4 overflow-x-auto pb-3 scrollbar-hide overscroll-x-contain"
-                style={{ scrollSnapType: 'x mandatory' }}
-              >
+              <div className="flex gap-3.5 overflow-x-auto pb-3 scrollbar-hide" style={{ scrollSnapType: 'x mandatory' }}>
                 {preview.map(anime => <AniCard key={anime.id} anime={anime} />)}
               </div>
             )}
@@ -212,7 +183,7 @@ export default function AnimeGenres() {
         </div>
       )}
 
-      {/* ── Loading / error state for metadata ───────────────────────────── */}
+      {/* Loading skeleton */}
       {metaState === 'loading' && (
         <div className="px-5 pt-10">
           <div className="font-mono text-[11px] uppercase tracking-widest text-ink-faint mb-4">Genres</div>
@@ -236,62 +207,48 @@ export default function AnimeGenres() {
         <div className="px-5 pt-20 text-center">
           <p className="font-mono text-sm text-ink-faint">
             Failed to load genres &amp; tags.{' '}
-            <button
-              onClick={() => window.location.reload()}
-              className="text-maroon-bright hover:underline"
-            >
-              Retry
-            </button>
+            <button onClick={() => window.location.reload()} className="text-maroon-bright hover:underline">Retry</button>
           </p>
         </div>
       )}
 
-      {/* ── Genres ───────────────────────────────────────────────────────── */}
+      {/* Genres */}
       {metaState === 'done' && (
         <div className="px-5 pt-8">
           <div className="flex items-center gap-2 mb-4">
-            <span className="font-mono text-[11px] uppercase tracking-widest text-ink-faint">
-              Genres
-            </span>
+            <span className="font-mono text-[11px] uppercase tracking-widest text-ink-faint">Genres</span>
             <span className="font-mono text-[10px] text-ink-faint/50">{filteredGenres.length}</span>
+            <span className="font-mono text-[9px] text-ink-faint/40 ml-auto">click to open genre page</span>
           </div>
 
           {filteredGenres.length === 0 ? (
             <p className="font-mono text-sm text-ink-faint py-2">No genres match "{filter}".</p>
           ) : (
             <div className="flex flex-wrap gap-2">
-              {filteredGenres.map(genre => {
-                const active = selection?.value === genre;
-                return (
-                  <button
-                    key={genre}
-                    onClick={() => handleSelect('genre', genre)}
-                    className={`font-mono text-xs px-4 py-1.5 rounded-full border transition-all duration-200 ${
-                      active
-                        ? 'bg-maroon/30 border-maroon text-ink shadow-[0_0_14px_-4px_rgba(194,67,79,0.4)]'
-                        : 'bg-surface/60 border-line text-ink-faint hover:text-ink hover:border-line-bright'
-                    }`}
-                  >
-                    {genre}
-                    {active && (
-                      <span className="ml-1.5 inline-block w-1.5 h-1.5 rounded-full bg-maroon-bright" />
-                    )}
-                  </button>
-                );
-              })}
+              {filteredGenres.map(genre => (
+                <button
+                  key={genre}
+                  onClick={() => handleGenreClick(genre)}
+                  className="font-mono text-xs px-4 py-1.5 rounded-full border transition-all duration-200
+                    bg-surface/60 border-line text-ink-faint
+                    hover:text-ink hover:border-maroon/60 hover:bg-maroon/10
+                    hover:shadow-[0_0_12px_-4px_rgba(194,67,79,0.3)]"
+                >
+                  {genre}
+                </button>
+              ))}
             </div>
           )}
         </div>
       )}
 
-      {/* ── Tags (grouped by category) ───────────────────────────────────── */}
+      {/* Tags (grouped by category) */}
       {metaState === 'done' && (
         <div className="px-5 pt-10 pb-24">
           <div className="flex items-center gap-2 mb-6">
-            <span className="font-mono text-[11px] uppercase tracking-widest text-ink-faint">
-              Media Tags
-            </span>
+            <span className="font-mono text-[11px] uppercase tracking-widest text-ink-faint">Media Tags</span>
             <span className="font-mono text-[10px] text-ink-faint/50">{filteredTags.length}</span>
+            <span className="font-mono text-[9px] text-ink-faint/40 ml-auto">click to preview</span>
           </div>
 
           {filteredTags.length === 0 ? (
@@ -300,20 +257,17 @@ export default function AnimeGenres() {
             <div className="space-y-8">
               {tagCategories.map(cat => (
                 <div key={cat}>
-                  {/* Only show category header when not filtering */}
                   {!filter && (
-                    <div className="font-mono text-[10px] uppercase tracking-widest text-ink-faint/60 mb-2.5">
-                      {cat}
-                    </div>
+                    <div className="font-mono text-[10px] uppercase tracking-widest text-ink-faint/60 mb-2.5">{cat}</div>
                   )}
                   <div className="flex flex-wrap gap-1.5">
                     {tagsByCategory[cat].map(tag => {
-                      const active = selection?.value === tag.name;
+                      const active = tagSelection?.value === tag.name;
                       const bg = CATEGORY_HUE[cat] || fallbackBg;
                       return (
                         <button
                           key={tag.name}
-                          onClick={() => handleSelect('tag', tag.name)}
+                          onClick={() => handleTagClick(tag.name)}
                           className={`font-mono text-[10.5px] px-3 py-1 rounded-full border transition-all duration-200 ${
                             active
                               ? 'border-maroon/60 text-ink shadow-[0_0_10px_-4px_rgba(194,67,79,0.35)]'
@@ -322,9 +276,7 @@ export default function AnimeGenres() {
                           style={{ background: active ? 'rgba(122,37,48,0.25)' : bg }}
                         >
                           {tag.name}
-                          {active && (
-                            <span className="ml-1 inline-block w-1 h-1 rounded-full bg-maroon-bright" />
-                          )}
+                          {active && <span className="ml-1 inline-block w-1 h-1 rounded-full bg-maroon-bright" />}
                         </button>
                       );
                     })}

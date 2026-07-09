@@ -207,7 +207,6 @@ export default function SearchResults() {
       {/* Empty state — no query and no active filter */}
       {!q && !loading && !filters.genre && !filters.type && (
         <div className="py-16 pb-28 text-center">
-          <p className="text-5xl mb-5">🎬</p>
           <p className="font-serif text-xl font-semibold mb-2">Search the catalog</p>
           <p className="text-ink-faint text-sm mb-8">Movies, TV shows, anime — all in one place</p>
           <div className="flex flex-wrap gap-2 justify-center max-w-sm mx-auto">

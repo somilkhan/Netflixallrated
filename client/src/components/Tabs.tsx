@@ -1,24 +1,42 @@
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, memo } from 'react';
 
-const tabs = ['All', 'Movies', 'Series', 'Anime'];
+const TABS = ['All', 'Movies', 'Series', 'Anime'];
 
-export default function Tabs({ active, onChange }: { active: string; onChange: (t: string) => void }) {
+const Tabs = memo(function Tabs({ active, onChange }: { active: string; onChange: (t: string) => void }) {
   const [indicator, setIndicator] = useState({ left: 0, width: 0 });
   const containerRef = useRef<HTMLDivElement>(null);
   const btnRefs = useRef<(HTMLButtonElement | null)[]>([]);
 
   useEffect(() => {
-    const idx = tabs.indexOf(active);
+    const idx = TABS.indexOf(active);
     const btn = btnRefs.current[idx];
-    if (btn && containerRef.current) setIndicator({ left: btn.offsetLeft, width: btn.offsetWidth - 22 });
+    if (btn && containerRef.current) {
+      setIndicator({ left: btn.offsetLeft, width: btn.offsetWidth });
+    }
   }, [active]);
 
   return (
-    <div ref={containerRef} className="relative flex px-5 pt-4 border-b border-line">
-      {tabs.map((t, i) => (
-        <button key={t} ref={el => btnRefs.current[i] = el} onClick={() => onChange(t)} className={`font-mono text-xs pb-3 mr-5 transition-colors ${active === t ? 'text-ink' : 'text-ink-faint hover:text-ink-dim'}`}>{t}</button>
+    <div ref={containerRef} className="relative flex items-center px-5 pt-5 pb-0 border-b border-line/50 gap-1">
+      {TABS.map((t, i) => (
+        <button
+          key={t}
+          ref={el => { btnRefs.current[i] = el; }}
+          onClick={() => onChange(t)}
+          className={`
+            relative font-sans text-[12.5px] font-medium pb-3 px-3 transition-colors duration-150
+            ${active === t ? 'text-ink' : 'text-ink-faint hover:text-ink-dim'}
+          `}
+        >
+          {t}
+        </button>
       ))}
-      <div className="absolute bottom-[-1px] h-[2px] bg-maroon-bright transition-all duration-300" style={{ left: indicator.left, width: indicator.width }} />
+      {/* Sliding indicator */}
+      <div
+        className="absolute bottom-[-1px] h-[2px] bg-maroon-bright rounded-full transition-all duration-300 ease-spring"
+        style={{ left: indicator.left + 12, width: Math.max(0, indicator.width - 24) }}
+      />
     </div>
   );
-}
+});
+
+export default Tabs;

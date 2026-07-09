@@ -5,11 +5,15 @@
 @layer base {
   ::selection { background: #7A2530; color: #fff; }
   :focus-visible { outline: 2px solid #C2434F; outline-offset: 2px; border-radius: 4px; }
+
   html {
     scroll-behavior: smooth;
     background: #0B0908;
     overflow-x: hidden;
     max-width: 100%;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    text-rendering: optimizeLegibility;
   }
   body {
     background: #0B0908;
@@ -21,15 +25,18 @@
     overflow-x: hidden;
     max-width: 100%;
   }
-  @media (prefers-reduced-motion: reduce) { * { animation: none !important; transition: none !important; } }
+
+  @media (prefers-reduced-motion: reduce) {
+    * { animation: none !important; transition: none !important; }
+  }
 }
 
-/* Embla Carousel */
+/* ── Embla Carousel ─────────────────────────────────────────────────────── */
 .embla__viewport { overflow: hidden; }
 .embla__container { display: flex; touch-action: pan-y pinch-zoom; }
 .embla__slide { flex: 0 0 100%; min-width: 0; }
 
-/* ── GlassLoader — premium burgundy-glass loading mark ─────────────────── */
+/* ── GlassLoader ────────────────────────────────────────────────────────── */
 .glass-loader-mark { position: relative; display: flex; align-items: center; justify-content: center; }
 .glass-loader-glow {
   position: absolute; inset: -30%;
@@ -53,20 +60,46 @@
 @keyframes glSpin { to { transform: rotate(360deg); } }
 @keyframes glGlowPulse { 0%, 100% { opacity: 0.65; transform: scale(0.94); } 50% { opacity: 1; transform: scale(1.06); } }
 @keyframes glPulse { 0%, 100% { opacity: 0.55; } 50% { opacity: 1; } }
-@keyframes glShimmer { 0% { background-position: 0% 50%; } 50% { background-position: 100% 50%; } 100% { background-position: 0% 50%; } }
 @media (prefers-reduced-motion: reduce) {
   .glass-loader-ring, .glass-loader-glow { animation: none; }
 }
 
+/* ── Scrollbars ─────────────────────────────────────────────────────────── */
 @layer utilities {
   .scrollbar-hide::-webkit-scrollbar { display: none; }
   .scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
 
-  /* Shared aspect-ratio tokens — use these everywhere instead of hardcoding */
-  .poster-ratio   { aspect-ratio: 2 / 3; }   /* title cards, search grid */
-  .backdrop-ratio { aspect-ratio: 16 / 9; }  /* hero banners, detail page backdrop */
-  .player-ratio   { aspect-ratio: 16 / 9; }  /* video player iframe wrapper */
+  /* Shared aspect-ratio tokens */
+  .poster-ratio   { aspect-ratio: 2 / 3; }
+  .backdrop-ratio { aspect-ratio: 16 / 9; }
+  .player-ratio   { aspect-ratio: 16 / 9; }
 }
 
-/* Player modal & action button styles live in src/styles/PlayerModal.css
-   and are imported directly by PlayerModal.tsx */
+/* ── Shimmer keyframe (used by GlassCard skeleton) ──────────────────────── */
+@keyframes glShimmer {
+  0%   { background-position: -200% 0; }
+  100% { background-position:  200% 0; }
+}
+
+/* ── Smooth horizontal scroll for all sliders ──────────────────────────── */
+.slider-scroll {
+  display: flex;
+  gap: 14px;
+  overflow-x: auto;
+  overflow-y: visible;
+  padding-bottom: 10px;
+  -webkit-overflow-scrolling: touch;
+  scroll-snap-type: x mandatory;
+  scrollbar-width: none;
+}
+.slider-scroll::-webkit-scrollbar { display: none; }
+.slider-scroll > * { scroll-snap-align: start; }
+
+/* ── Page fade-in on route change ──────────────────────────────────────── */
+@keyframes pageFadeIn {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.page-enter {
+  animation: pageFadeIn 0.35s cubic-bezier(.16,1,.3,1) forwards;
+}

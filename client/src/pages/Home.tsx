@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
+import { Film } from 'lucide-react';
 import { api } from '../lib/api';
 import { getRegionCookie, setRegionCookie, normalizeRegion } from '../lib/regionConfig';
 import Ticker from '../components/Ticker';
@@ -10,19 +11,6 @@ import TmdbCard from '../components/TmdbCard';
 import type { TmdbItem } from '../components/TmdbCard';
 import RegionPicker from '../components/RegionPicker';
 import { GlassCardSkeleton } from '../components/GlassCard';
-
-// Cosmetic emoji per genre — purely presentational, the genre list itself is
-// fetched live from /api/titles/genres (never hardcoded).
-const GENRE_EMOJI: Record<string, string> = {
-  Action: '⚡', Drama: '🎭', 'Sci-Fi': '🚀', 'Science Fiction': '🚀', Comedy: '😄',
-  Horror: '👻', Romance: '💫', Crime: '🔍', Mystery: '🔍', Animation: '🎨',
-  Fantasy: '🗡️', Adventure: '🗡️', Documentary: '📽️', Thriller: '🔪', Family: '👪',
-  War: '⚔️', History: '📜', Music: '🎵', Western: '🤠', 'TV Movie': '📺',
-};
-const GENRE_LABEL_SUFFIX: Record<string, string> = {
-  Action: ' & Thrills', 'Sci-Fi': ' & Future', 'Science Fiction': ' & Future',
-  Crime: ' & Mystery', Fantasy: ' & Adventure',
-};
 
 interface GeoRow {
   id: string;
@@ -42,12 +30,10 @@ export default function Home() {
   const [genreList, setGenreList] = useState<string[]>([]);
   const [initialLoading, setInitialLoading] = useState(true);
 
-  // Geo state
   const [region, setRegion] = useState<string>(() => normalizeRegion(getRegionCookie()));
   const [geoRows, setGeoRows] = useState<GeoRow[]>([]);
   const [geoLoading, setGeoLoading] = useState(false);
 
-  // Fetch geo rows whenever region changes
   const loadGeoContent = useCallback(async (r: string) => {
     setGeoLoading(true);
     try {
@@ -60,13 +46,11 @@ export default function Home() {
     }
   }, []);
 
-  // On mount: resolve region from cookie → detect from IP if missing → fetch content
   useEffect(() => {
     const cookie = getRegionCookie();
     if (cookie) {
       loadGeoContent(cookie);
     } else {
-      // Auto-detect from IP
       api.geo.detect()
         .then((data: { region: string }) => {
           const detected = data.region || 'IN';
@@ -85,20 +69,16 @@ export default function Home() {
   };
 
   useEffect(() => {
-    // Core sections — .catch(() => {}) prevents unhandled rejection crashes
     const core = Promise.all([
       api.titles.top10().then(setTop10).catch(() => {}),
       api.titles.trending().then(setTrending).catch(() => {}),
       api.titles.recent().then(setRecent).catch(() => {}),
     ]);
 
-    // Type sections
     api.titles.list({ type: 'MOVIE', limit: '20' }).then(d => setMovies(d.titles || [])).catch(() => {});
     api.titles.list({ type: 'SERIES', limit: '20' }).then(d => setSeries(d.titles || [])).catch(() => {});
     api.titles.list({ type: 'ANIME', limit: '20' }).then(d => setAnime(d.titles || [])).catch(() => {});
 
-    // Genre list — fetched live (never hardcoded), then each genre's titles
-    // are fetched in parallel, keeping only the non-empty ones.
     api.titles.genres().then(({ genres }: { genres: { genre: string; count: number }[] }) => {
       const top = genres.slice(0, 10).map(g => g.genre);
       setGenreList(top);
@@ -116,11 +96,9 @@ export default function Home() {
     core.finally(() => setInitialLoading(false));
   }, []);
 
-  // Map display tab names → DB enum values
   const TAB_TYPE: Record<string, string> = { Movies: 'MOVIE', Series: 'SERIES', Anime: 'ANIME' };
 
-  // Filter by active tab AND deduplicate by id so React never sees duplicate keys
-  const filter = (list: any[]) => {
+  const filterList = (list: any[]) => {
     const type = TAB_TYPE[activeTab];
     const filtered = type ? list.filter(t => t.type === type) : list;
     const seen = new Set<string>();
@@ -128,7 +106,6 @@ export default function Home() {
   };
 
   const heroTitles = (top10.length ? top10 : trending).slice(0, 10);
-
   const showGenre = activeTab === 'All';
   const typeSpecificItems = TAB_TYPE[activeTab]
     ? (activeTab === 'Movies' ? movies : activeTab === 'Series' ? series : anime)
@@ -141,19 +118,17 @@ export default function Home() {
       <Tabs active={activeTab} onChange={setActiveTab} />
 
       {initialLoading && (
-        <div className="px-5 py-6 flex gap-4 overflow-x-auto scrollbar-hide">
+        <div className="px-5 py-6 flex gap-3.5 overflow-x-auto scrollbar-hide">
           {Array.from({ length: 8 }).map((_, i) => <GlassCardSkeleton key={i} />)}
         </div>
       )}
 
-      {/* Top 10 — shown always, filtered by tab */}
-      {filter(top10).length > 0 && (
-        <Section title="Top 10 Today" count={`${filter(top10).length} titles`} viewAllPath={`/search?q=&type=${TAB_TYPE[activeTab] ?? ''}`}>
-          {filter(top10).map((t, i) => <Card key={t.id} title={t} rank={i + 1} />)}
+      {filterList(top10).length > 0 && (
+        <Section title="Top 10 Today" count={`${filterList(top10).length}`} viewAllPath={`/search?q=&type=${TAB_TYPE[activeTab] ?? ''}`}>
+          {filterList(top10).map((t, i) => <Card key={t.id} title={t} rank={i + 1} />)}
         </Section>
       )}
 
-      {/* Type-specific section when filtered */}
       {activeTab !== 'All' && typeSpecificItems.length > 0 && (
         <Section
           title={activeTab === 'Movies' ? 'All Movies' : activeTab === 'Series' ? 'TV Shows' : 'Anime'}
@@ -164,59 +139,50 @@ export default function Home() {
         </Section>
       )}
 
-      {/* Trending */}
-      {filter(trending).length > 0 && (
-        <Section title="Trending Now" count={`${filter(trending).length}`} viewAllPath="/search?q=trending">
-          {filter(trending).map(t => <Card key={t.id} title={t} />)}
+      {filterList(trending).length > 0 && (
+        <Section title="Trending Now" count={`${filterList(trending).length}`} viewAllPath="/search?q=trending">
+          {filterList(trending).map(t => <Card key={t.id} title={t} />)}
         </Section>
       )}
 
-      {/* Recently Added */}
-      {filter(recent).length > 0 && (
-        <Section title="Recently Added" count={`${filter(recent).length}`} viewAllPath="/search?q=">
-          {filter(recent).map(t => <Card key={t.id} title={t} />)}
+      {filterList(recent).length > 0 && (
+        <Section title="Recently Added" count={`${filterList(recent).length}`} viewAllPath="/search?q=">
+          {filterList(recent).map(t => <Card key={t.id} title={t} />)}
         </Section>
       )}
 
-      {/* ── Geo-personalised rows (All tab only) ─────────────────────────── */}
       {showGenre && (
         <>
           <RegionPicker region={region} onChange={handleRegionChange} />
           {geoLoading && geoRows.length === 0 && (
-            <div className="px-5 py-6 flex gap-4 overflow-x-auto scrollbar-hide">
+            <div className="px-5 py-6 flex gap-3.5 overflow-x-auto scrollbar-hide">
               {Array.from({ length: 6 }).map((_, i) => <GlassCardSkeleton key={i} />)}
             </div>
           )}
           {geoRows.map(row =>
             row.items.length > 0 ? (
               <Section key={row.id} title={row.label} count={`${row.items.length}`}>
-                {row.items.map(item => (
-                  <TmdbCard key={item.tmdbId} item={item} />
-                ))}
+                {row.items.map(item => <TmdbCard key={item.tmdbId} item={item} />)}
               </Section>
             ) : null
           )}
         </>
       )}
 
-      {/* Genre sections — only in "All" tab. Genre list itself comes from the
-          server (live DB genre counts); only the emoji/suffix are cosmetic. */}
+      {/* Genre sections — plain genre names, no emoji */}
       {showGenre && genreList.map(genre => {
         const titles = genreSections[genre];
         if (!titles || titles.length === 0) return null;
-        const emoji = GENRE_EMOJI[genre] || '🎬';
-        const label = `${genre}${GENRE_LABEL_SUFFIX[genre] || ''}`;
         return (
-          <Section key={genre} title={`${emoji} ${label}`} count={`${titles.length}`} viewAllPath={`/search?q=${genre}&genre=${genre}`}>
+          <Section key={genre} title={genre} count={`${titles.length}`} viewAllPath={`/search?q=${genre}&genre=${genre}`}>
             {titles.map(t => <Card key={t.id} title={t} />)}
           </Section>
         );
       })}
 
-      {/* Fallback — empty state */}
-      {top10.length === 0 && trending.length === 0 && recent.length === 0 && (
+      {top10.length === 0 && trending.length === 0 && recent.length === 0 && !initialLoading && (
         <div className="px-5 py-20 text-center">
-          <p className="text-5xl mb-5">🎬</p>
+          <Film size={40} className="mx-auto text-ink-faint/30 mb-5" />
           <p className="font-serif text-2xl font-semibold mb-2">Building your catalog…</p>
           <p className="text-ink-faint text-sm max-w-sm mx-auto">
             The catalog is being populated from TMDB. It'll be ready shortly — check back in a moment.

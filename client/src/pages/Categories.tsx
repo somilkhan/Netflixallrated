@@ -9,7 +9,6 @@ type CategoryItem = {
   slug: string;
   label: string;
   tag?: string;
-  emoji?: string;
   image?: string;
   imageFit?: "contain" | "cover";
 };
@@ -19,42 +18,27 @@ type PosterItem = {
   name: string;
   posterUrl: string | null;
   year: number | null;
+  tmdbId?: number;
+  mediaType?: string;
 };
 
 type Expanded = "type" | "genre" | "studio" | null;
 
-// Emoji lookup only — purely cosmetic. The actual list of types/genres and
-// their live counts come from GET /api/titles/genres; nothing here is a
-// hardcoded catalog list.
-const TYPE_EMOJI: Record<string, string> = { MOVIE: "🎬", SERIES: "📺", ANIME: "⛩️" };
 const TYPE_LABEL: Record<string, string> = { MOVIE: "Movies", SERIES: "TV Shows", ANIME: "Anime" };
-const TYPE_SLUG: Record<string, string> = { MOVIE: "movies", SERIES: "tv-shows", ANIME: "anime" };
-const GENRE_EMOJI: Record<string, string> = {
-  Drama: "🎭", Comedy: "😄", Thriller: "🔥", Action: "⚡", Romance: "💌", Horror: "👻",
-  Crime: "🕵️", "Sci-Fi": "🛸", "Science Fiction": "🛸", Fantasy: "🐉", Adventure: "🗺️",
-  Animation: "🎨", Mystery: "🔍", Family: "👨‍👩‍👧", Documentary: "📽️", War: "⚔️",
-  Music: "🎵", History: "📜", Western: "🤠", "TV Movie": "📺",
-};
-// Local brand logos are the fallback if a platform's name doesn't match a
-// live TMDB provider name below — never the primary source of truth.
+const TYPE_SLUG:  Record<string, string> = { MOVIE: "movies", SERIES: "tv-shows", ANIME: "anime" };
+
 const PLATFORM_IMAGES: Record<string, string> = {
-  netflix: "/images/categories/netflix.jpg",
+  netflix:       "/images/categories/netflix.jpg",
   "prime-video": "/images/categories/primevideo.webp",
-  hotstar: "/images/categories/hotstar.png",
-  "apple-tv": "/images/categories/appletv.png",
-  crunchyroll: "/images/categories/crunchyroll.png",
-  mubi: "/images/categories/mubi.png",
+  hotstar:       "/images/categories/hotstar.png",
+  "apple-tv":    "/images/categories/appletv.png",
+  crunchyroll:   "/images/categories/crunchyroll.png",
+  mubi:          "/images/categories/mubi.png",
 };
 
 function CategoryCard({
-  item,
-  onOpen,
-  large,
-}: {
-  item: CategoryItem;
-  onOpen: (item: CategoryItem) => void;
-  large?: boolean;
-}) {
+  item, onOpen, large,
+}: { item: CategoryItem; onOpen: (item: CategoryItem) => void; large?: boolean }) {
   return (
     <button
       onClick={() => onOpen(item)}
@@ -65,15 +49,11 @@ function CategoryCard({
         focus:outline-none focus-visible:ring-2 focus-visible:ring-maroon-bright/70
         ${large ? "w-full h-40" : "w-44 h-32"}`}
     >
-      <div
-        className="pointer-events-none absolute inset-0 opacity-0 group-hover:opacity-100
-          transition-opacity duration-300 bg-gradient-to-br from-maroon/20 via-transparent to-transparent"
-      />
+      <div className="pointer-events-none absolute inset-0 opacity-0 group-hover:opacity-100
+        transition-opacity duration-300 bg-gradient-to-br from-maroon/20 via-transparent to-transparent" />
       {item.image && (
         <img
-          src={item.image}
-          alt={item.label}
-          loading="lazy"
+          src={item.image} alt={item.label} loading="lazy"
           className={`absolute inset-0 w-full h-full ${
             item.imageFit === "contain" ? "object-contain p-6" : "object-cover"
           } opacity-90 transition-transform duration-300 group-hover:scale-105`}
@@ -83,12 +63,9 @@ function CategoryCard({
         <div className="absolute inset-0 bg-gradient-to-t from-void/95 via-void/10 to-transparent" />
       )}
       <div className="relative h-full flex flex-col justify-end p-4 backdrop-blur-[2px]">
-        {!item.image && <span className="text-3xl mb-1">{item.emoji}</span>}
-        {!item.image && (
+        {/* No emoji — use label only */}
+        {(!item.image || item.imageFit !== "contain") && (
           <span className="font-serif text-xl font-semibold leading-tight text-ink">{item.label}</span>
-        )}
-        {item.image && item.imageFit !== "contain" && (
-          <span className="font-serif text-sm font-semibold leading-tight text-ink">{item.label}</span>
         )}
         {item.tag && <span className="mt-1 text-xs font-mono text-ink-dim">{item.tag}</span>}
       </div>
@@ -97,13 +74,7 @@ function CategoryCard({
 }
 
 function Row({
-  title,
-  items,
-  onOpen,
-  onViewAll,
-  showSearch,
-  query,
-  onQuery,
+  title, items, onOpen, onViewAll, showSearch, query, onQuery,
 }: {
   title: string;
   items: CategoryItem[];
@@ -117,10 +88,7 @@ function Row({
     <div className="mb-10">
       <div className="flex items-center justify-between px-5 mb-3">
         <h2 className="font-serif text-2xl sm:text-[26px] font-semibold text-ink">{title}</h2>
-        <button
-          onClick={onViewAll}
-          className="flex items-center gap-1 text-sm text-ink-dim hover:text-maroon-bright transition-colors"
-        >
+        <button onClick={onViewAll} className="flex items-center gap-1 text-sm text-ink-dim hover:text-maroon-bright transition-colors">
           View All <ChevronRight size={15} />
         </button>
       </div>
@@ -149,11 +117,7 @@ function Row({
       ) : (
         <div className="flex gap-3 overflow-x-auto px-5 pb-1 scrollbar-none snap-x snap-mandatory">
           {items.map((item, i) => (
-            <div
-              key={item.slug}
-              className="snap-start animate-fadeUp opacity-0"
-              style={{ animationDelay: `${Math.min(i, 8) * 40}ms` }}
-            >
+            <div key={item.slug} className="snap-start animate-fadeUp opacity-0" style={{ animationDelay: `${Math.min(i, 8) * 40}ms` }}>
               <CategoryCard item={item} onOpen={onOpen} />
             </div>
           ))}
@@ -166,6 +130,21 @@ function Row({
 function PosterRow({ title, items }: { title: string; items: PosterItem[] }) {
   const navigate = useNavigate();
   if (items.length === 0) return null;
+
+  const handleClick = async (item: PosterItem) => {
+    // Try to resolve to local title via TMDB id if available
+    if (item.tmdbId && item.mediaType) {
+      try {
+        const { id } = await api.titles.resolveTmdb(item.tmdbId, item.mediaType === "movie" ? "movie" : "tv");
+        navigate(`/title/${id}`);
+        return;
+      } catch {
+        // not in catalog — fall through to search
+      }
+    }
+    navigate(`/search?q=${encodeURIComponent(item.name)}`);
+  };
+
   return (
     <div className="mb-10">
       <div className="px-5 mb-3">
@@ -178,7 +157,7 @@ function PosterRow({ title, items }: { title: string; items: PosterItem[] }) {
               title={item.name}
               year={item.year}
               posterUrl={item.posterUrl}
-              onClick={() => navigate(`/search?q=${encodeURIComponent(item.name)}`)}
+              onClick={() => handleClick(item)}
             />
           </div>
         ))}
@@ -187,23 +166,12 @@ function PosterRow({ title, items }: { title: string; items: PosterItem[] }) {
   );
 }
 
-function ExpandedGrid({
-  title,
-  items,
-  onBack,
-  onOpen,
-}: {
-  title: string;
-  items: CategoryItem[];
-  onBack: () => void;
-  onOpen: (item: CategoryItem) => void;
+function ExpandedGrid({ title, items, onBack, onOpen }: {
+  title: string; items: CategoryItem[]; onBack: () => void; onOpen: (item: CategoryItem) => void;
 }) {
   return (
     <div className="px-5">
-      <button
-        onClick={onBack}
-        className="mb-5 flex items-center gap-1 text-sm text-ink-dim hover:text-maroon-bright transition-colors"
-      >
+      <button onClick={onBack} className="mb-5 flex items-center gap-1 text-sm text-ink-dim hover:text-maroon-bright transition-colors">
         <ChevronRight size={15} className="rotate-180" /> Back
       </button>
       <h2 className="mb-5 font-serif text-3xl font-semibold text-ink">{title}</h2>
@@ -230,9 +198,6 @@ export default function CategoriesPage() {
   const [geoRows, setGeoRows] = useState<GeoRow[]>([]);
   const [loading, setLoading] = useState(true);
 
-  // Live from the server — never hardcoded. Genres/types come from the DB
-  // aggregate (/api/titles/genres); studios/platforms from /api/platforms;
-  // poster rows from /api/geo/content (real TMDB regional/language data).
   useEffect(() => {
     api.titles
       .genres()
@@ -242,7 +207,6 @@ export default function CategoriesPage() {
             slug: TYPE_SLUG[type] || slugify(type),
             label: TYPE_LABEL[type] || type,
             tag: `${count} title${count === 1 ? "" : "s"}`,
-            emoji: TYPE_EMOJI[type] || "🎞️",
           })),
         );
         setGenres(
@@ -250,7 +214,6 @@ export default function CategoriesPage() {
             slug: slugify(genre),
             label: genre,
             tag: `${count} title${count === 1 ? "" : "s"}`,
-            emoji: GENRE_EMOJI[genre] || "🎬",
           })),
         );
       })
@@ -263,10 +226,6 @@ export default function CategoriesPage() {
     ]).then(([platforms, providers]: [any[], any[]]) => {
       setStudios(
         platforms.map((p) => {
-          // Slug from the display name (not the short abbr) so it matches
-          // both the logo lookup below and StudioDetail's own name-based
-          // matching — using abbr produced slugs like "nf" that never
-          // matched "netflix" and silently dropped the logo.
           const slug = slugify(p.name);
           const liveMatch = providers.find((prov: any) => {
             const provSlug = slugify(prov.name || "");
@@ -296,6 +255,8 @@ export default function CategoriesPage() {
               name: it.name,
               posterUrl: it.posterUrl,
               year: it.year,
+              tmdbId: it.tmdbId,
+              mediaType: it.mediaType,
             })),
           })),
         );
@@ -310,7 +271,6 @@ export default function CategoriesPage() {
   }, [genreQuery, genres]);
 
   function openItem(item: CategoryItem) {
-    // route matches whichever section it came from
     if (types.some((t) => t.slug === item.slug)) {
       navigate(`/browse/type/${item.slug}`);
     } else if (studios.some((s) => s.slug === item.slug)) {

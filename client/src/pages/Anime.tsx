@@ -8,17 +8,16 @@
  */
 import { useState, useRef, useCallback, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { Search, X, ArrowRight } from 'lucide-react';
 import { getAnimePage, getCurrentSeason, formatSeason } from '../lib/anilist';
 import AnimeRow from '../components/AnimeRow';
 import AniCard from '../components/AniCard';
 import { GlassCardSkeleton } from '../components/GlassCard';
 
-// ── Season constants (computed once at module load) ──────────────────────────
-const SEASON = getCurrentSeason() as string;
+const SEASON      = getCurrentSeason() as string;
 const SEASON_YEAR = new Date().getFullYear();
 const SEASON_LABEL = `${formatSeason(SEASON)} ${SEASON_YEAR}`;
 
-// ── Genre rows — no hardcoding of data, only display labels ──────────────────
 const GENRE_ROWS: { title: string; genre?: string; tag?: string }[] = [
   { title: 'Romance',       genre: 'Romance' },
   { title: 'Action',        genre: 'Action' },
@@ -38,15 +37,13 @@ const GENRE_ROWS: { title: string; genre?: string; tag?: string }[] = [
 export default function Anime() {
   const nav = useNavigate();
 
-  // ── Search state ──────────────────────────────────────────────────────────
-  const [query, setQuery]               = useState('');
-  const [searchItems, setSearchItems]   = useState<any[]>([]);
-  const [searchState, setSearchState]   = useState<'idle' | 'loading' | 'done' | 'error'>('idle');
+  const [query, setQuery]             = useState('');
+  const [searchItems, setSearchItems] = useState<any[]>([]);
+  const [searchState, setSearchState] = useState<'idle' | 'loading' | 'done' | 'error'>('idle');
 
-  // ── Deduplication for the top (non-genre) rows ────────────────────────────
   const seenIds = useRef<number[]>([]);
-  const [trendingIds, setTrendingIds]   = useState<number[]>([]);
-  const [popularIds,  setPopularIds]    = useState<number[]>([]);
+  const [trendingIds, setTrendingIds] = useState<number[]>([]);
+  const [popularIds,  setPopularIds]  = useState<number[]>([]);
 
   const onTrendingLoaded = useCallback((ids: number[]) => {
     seenIds.current = [...seenIds.current, ...ids];
@@ -58,7 +55,6 @@ export default function Anime() {
     setPopularIds(ids);
   }, []);
 
-  // ── Search handler ────────────────────────────────────────────────────────
   const handleSearch = useCallback(async (e: React.FormEvent) => {
     e.preventDefault();
     const q = query.trim();
@@ -80,25 +76,21 @@ export default function Anime() {
     setSearchState('idle');
   };
 
-  // Auto-search with debounce when input is cleared
   useEffect(() => {
-    if (query === '') { clearSearch(); }
-  }, [query]);
+    if (query === '') clearSearch();
+  }, [query]); // eslint-disable-line react-hooks/exhaustive-deps
 
   return (
     <div className="min-h-screen bg-void">
 
-      {/* ── Hero ────────────────────────────────────────────────────────── */}
+      {/* Hero */}
       <div className="relative overflow-hidden">
-        {/* Ambient glows */}
         <div className="pointer-events-none absolute inset-0">
           <div className="absolute -top-20 -left-20 w-[600px] h-[600px] rounded-full
             bg-[radial-gradient(circle,rgba(122,37,48,0.28)_0%,transparent_65%)]" />
           <div className="absolute top-10 right-0 w-[400px] h-[400px] rounded-full
             bg-[radial-gradient(circle,rgba(194,67,79,0.10)_0%,transparent_65%)]" />
         </div>
-
-        {/* Noise grain overlay */}
         <div
           className="pointer-events-none absolute inset-0 opacity-[0.03]"
           style={{
@@ -108,7 +100,6 @@ export default function Anime() {
         />
 
         <div className="relative px-5 pt-14 pb-10">
-          {/* Label row */}
           <div className="flex items-center justify-between mb-3">
             <span className="font-mono text-[10px] uppercase tracking-[0.22em] text-maroon-bright/70 flex items-center gap-1.5">
               <span className="inline-block w-1.5 h-1.5 rounded-full bg-maroon-bright animate-pulse" />
@@ -119,13 +110,10 @@ export default function Anime() {
               className="font-mono text-[11px] text-ink-dim hover:text-ink transition-colors flex items-center gap-1"
             >
               Browse all genres &amp; tags
-              <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-                <line x1="5" y1="12" x2="19" y2="12" /><polyline points="12 5 19 12 12 19" />
-              </svg>
+              <ArrowRight size={11} strokeWidth={2.2} />
             </button>
           </div>
 
-          {/* Title */}
           <h1 className="font-serif text-[52px] md:text-[68px] font-semibold tracking-tight leading-none text-ink mb-2">
             Anime
           </h1>
@@ -133,15 +121,9 @@ export default function Anime() {
             Trending, seasonal &amp; genre picks — updated in real time
           </p>
 
-          {/* Search */}
           <form onSubmit={handleSearch} className="flex gap-2 max-w-md">
             <div className="flex-1 relative">
-              <svg
-                className="absolute left-3.5 top-1/2 -translate-y-1/2 text-ink-faint pointer-events-none"
-                width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2"
-              >
-                <circle cx="11" cy="11" r="8" /><line x1="21" y1="21" x2="16.65" y2="16.65" />
-              </svg>
+              <Search size={14} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-ink-faint pointer-events-none" />
               <input
                 type="text"
                 value={query}
@@ -164,19 +146,18 @@ export default function Anime() {
               <button
                 type="button"
                 onClick={clearSearch}
-                className="font-mono text-xs text-ink-faint hover:text-ink transition-colors px-2"
+                className="text-ink-faint hover:text-ink transition-colors px-1"
               >
-                ✕
+                <X size={14} />
               </button>
             )}
           </form>
         </div>
 
-        {/* Bottom fade */}
         <div className="absolute inset-x-0 bottom-0 h-8 bg-gradient-to-t from-void to-transparent pointer-events-none" />
       </div>
 
-      {/* ── Search results ──────────────────────────────────────────────── */}
+      {/* Search results */}
       {searchState !== 'idle' && (
         <div className="px-5 pt-6 pb-2 border-b border-line">
           <div className="flex items-center gap-2 mb-4">
@@ -189,7 +170,7 @@ export default function Anime() {
           </div>
 
           {searchState === 'loading' && (
-            <div className="flex gap-4 overflow-x-auto scrollbar-hide pb-3">
+            <div className="flex gap-3.5 overflow-x-auto scrollbar-hide pb-3">
               {Array.from({ length: 6 }).map((_, i) => <GlassCardSkeleton key={i} />)}
             </div>
           )}
@@ -208,76 +189,24 @@ export default function Anime() {
           )}
 
           {searchState === 'done' && searchItems.length > 0 && (
-            <div
-              className="flex gap-4 overflow-x-auto pb-3 scrollbar-hide overscroll-x-contain"
-              style={{ scrollSnapType: 'x mandatory' }}
-            >
+            <div className="flex gap-3.5 overflow-x-auto pb-3 scrollbar-hide" style={{ scrollSnapType: 'x mandatory' }}>
               {searchItems.map(anime => <AniCard key={anime.id} anime={anime} />)}
             </div>
           )}
         </div>
       )}
 
-      {/* ── Main rows ───────────────────────────────────────────────────── */}
+      <AnimeRow title="Trending Now" badge="LIVE" sort="TRENDING_DESC" perPage={20} onLoaded={onTrendingLoaded} />
+      <AnimeRow title="Popular on AniList" badge="LIVE" sort="POPULARITY_DESC" perPage={20} notIds={trendingIds} onLoaded={onPopularLoaded} />
+      <AnimeRow title="Top Rated" sort="SCORE_DESC" perPage={20} notIds={[...trendingIds, ...popularIds]} />
+      <AnimeRow title="Airing Now" badge="NOW" sort="TRENDING_DESC" status="RELEASING" perPage={20} />
+      <AnimeRow title={`Seasonal Picks — ${SEASON_LABEL}`} sort="POPULARITY_DESC" season={SEASON} seasonYear={SEASON_YEAR} perPage={20} />
 
-      {/* 1 · Trending Now */}
-      <AnimeRow
-        title="Trending Now"
-        badge="LIVE"
-        sort="TRENDING_DESC"
-        perPage={20}
-        onLoaded={onTrendingLoaded}
-      />
-
-      {/* 2 · Popular on AniList */}
-      <AnimeRow
-        title="Popular on AniList"
-        badge="LIVE"
-        sort="POPULARITY_DESC"
-        perPage={20}
-        notIds={trendingIds}
-        onLoaded={onPopularLoaded}
-      />
-
-      {/* 3 · Top Rated */}
-      <AnimeRow
-        title="Top Rated"
-        sort="SCORE_DESC"
-        perPage={20}
-        notIds={[...trendingIds, ...popularIds]}
-      />
-
-      {/* 4 · Airing Now */}
-      <AnimeRow
-        title="Airing Now"
-        badge="NOW"
-        sort="TRENDING_DESC"
-        status="RELEASING"
-        perPage={20}
-      />
-
-      {/* 5 · Seasonal Picks */}
-      <AnimeRow
-        title={`Seasonal Picks — ${SEASON_LABEL}`}
-        sort="POPULARITY_DESC"
-        season={SEASON}
-        seasonYear={SEASON_YEAR}
-        perPage={20}
-      />
-
-      {/* 6–18 · Genre & tag rows */}
       {GENRE_ROWS.map(row => (
-        <AnimeRow
-          key={row.title}
-          title={row.title}
-          genre={row.genre}
-          tag={row.tag}
-          sort="POPULARITY_DESC"
-          perPage={16}
-        />
+        <AnimeRow key={row.title} title={row.title} genre={row.genre} tag={row.tag} sort="POPULARITY_DESC" perPage={16} />
       ))}
 
-      {/* ── Browse All Genres CTA ────────────────────────────────────────── */}
+      {/* Browse All Genres CTA */}
       <div className="px-5 pt-12 pb-8">
         <button
           onClick={() => nav('/anime/genres')}
@@ -286,12 +215,10 @@ export default function Anime() {
             hover:border-maroon/60 transition-all duration-300
             hover:shadow-[0_0_40px_-8px_rgba(194,67,79,0.3)]"
         >
-          {/* Glow on hover */}
           <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500
             bg-[radial-gradient(ellipse_80%_60%_at_50%_50%,rgba(194,67,79,0.08),transparent_70%)]" />
 
-          <div className="relative flex flex-col md:flex-row items-start md:items-center justify-between
-            gap-4 px-7 py-7">
+          <div className="relative flex flex-col md:flex-row items-start md:items-center justify-between gap-4 px-7 py-7">
             <div>
               <div className="font-mono text-[10px] uppercase tracking-[0.2em] text-maroon-bright/70 mb-2">
                 AniList · Live data
@@ -303,14 +230,9 @@ export default function Anime() {
                 Every genre and media tag from AniList — searchable, filterable, with live previews.
               </p>
             </div>
-            <div
-              className="shrink-0 flex items-center gap-2 font-mono text-sm text-maroon-bright
-                group-hover:translate-x-1 transition-transform duration-300"
-            >
-              Explore
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2">
-                <line x1="5" y1="12" x2="19" y2="12" /><polyline points="12 5 19 12 12 19" />
-              </svg>
+            <div className="shrink-0 flex items-center gap-2 font-mono text-sm text-maroon-bright
+              group-hover:translate-x-1 transition-transform duration-300">
+              Explore <ArrowRight size={16} strokeWidth={2.2} />
             </div>
           </div>
         </button>

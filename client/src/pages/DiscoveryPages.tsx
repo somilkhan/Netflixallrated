@@ -96,8 +96,10 @@ function BackButton() {
   );
 }
 
-function Tabs({ active, onChange }: { active: MediaType; onChange: (value: MediaType) => void }) {
-  const options: MediaType[] = ["MOVIE", "SERIES"];
+const TAB_LABEL: Record<MediaType, string> = { MOVIE: "Movies", SERIES: "Series", ANIME: "Anime" };
+
+function Tabs({ active, onChange, includeAnime = false }: { active: MediaType; onChange: (value: MediaType) => void; includeAnime?: boolean }) {
+  const options: MediaType[] = includeAnime ? ["MOVIE", "SERIES", "ANIME"] : ["MOVIE", "SERIES"];
   return (
     <div className="flex gap-6 border-b border-line mb-6">
       {options.map((key) => (
@@ -107,7 +109,7 @@ function Tabs({ active, onChange }: { active: MediaType; onChange: (value: Media
           className={`pb-3 text-lg font-semibold transition-colors relative
             ${active === key ? "text-ink" : "text-ink-faint hover:text-ink-dim"}`}
         >
-          {key === "MOVIE" ? "Movies" : "Series"}
+          {TAB_LABEL[key]}
           {active === key && (
             <span className="absolute left-0 right-0 -bottom-px h-[2px] bg-maroon-bright rounded-full" />
           )}
@@ -289,7 +291,7 @@ export function GenreDetail() {
 
   return (
     <DetailShell title={genreName || slug.replace(/-/g, " ")} subtitle="Genre">
-      <Tabs active={tab} onChange={setTab} />
+      <Tabs active={tab} onChange={setTab} includeAnime />
       {genresLoading ? (
         <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
           {Array.from({ length: 6 }).map((_, i) => (
