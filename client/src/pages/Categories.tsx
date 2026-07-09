@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { Search, ChevronRight, X } from "lucide-react";
 import { api } from "../lib/api";
 import { slugify } from "../lib/slug";
-import GlassCard from "../components/GlassCard";
+import GlassCard, { GlassCardSkeleton } from "../components/GlassCard";
 
 type CategoryItem = {
   slug: string;
@@ -228,6 +228,7 @@ export default function CategoriesPage() {
   const [genres, setGenres] = useState<CategoryItem[]>([]);
   const [studios, setStudios] = useState<CategoryItem[]>([]);
   const [geoRows, setGeoRows] = useState<GeoRow[]>([]);
+  const [loading, setLoading] = useState(true);
 
   // Live from the server — never hardcoded. Genres/types come from the DB
   // aggregate (/api/titles/genres); studios/platforms from /api/platforms;
@@ -253,7 +254,8 @@ export default function CategoriesPage() {
           })),
         );
       })
-      .catch(() => {});
+      .catch(() => {})
+      .finally(() => setLoading(false));
 
     Promise.all([
       api.platforms.list().catch(() => []),
@@ -331,7 +333,16 @@ export default function CategoriesPage() {
           </h1>
         </div>
 
-        {expanded === "type" ? (
+        {loading ? (
+          <div className="mb-10">
+            <div className="px-5 mb-3 h-6 w-40 rounded bg-surface animate-pulse" />
+            <div className="flex gap-3 overflow-x-auto px-5 pb-1">
+              {Array.from({ length: 6 }).map((_, i) => (
+                <GlassCardSkeleton key={i} />
+              ))}
+            </div>
+          </div>
+        ) : expanded === "type" ? (
           <ExpandedGrid title="Browse by Type" items={types} onBack={() => setExpanded(null)} onOpen={openItem} />
         ) : expanded === "genre" ? (
           <ExpandedGrid title="Browse by Genre" items={filteredGenres} onBack={() => setExpanded(null)} onOpen={openItem} />

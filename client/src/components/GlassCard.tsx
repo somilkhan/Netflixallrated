@@ -180,11 +180,11 @@ export default function GlassCard({
   );
 }
 
-export function GlassCardSkeleton({ className = '' }: { className?: string }) {
+export function GlassCardSkeleton({ className = '', fluid = false }: { className?: string; fluid?: boolean }) {
   return (
-    <div className={`shrink-0 w-[142px] md:w-[172px] ${className}`}>
+    <div className={`shrink-0 ${fluid ? 'w-full' : 'w-[142px] md:w-[172px]'} ${className}`}>
       <div className="relative w-full poster-ratio rounded-[20px] border border-white/[0.08] bg-surface overflow-hidden">
-        <div className="absolute inset-0 bg-surface-2 animate-pulse" />
+        <div className="absolute inset-0 bg-gradient-to-br from-surface-2 via-surface to-surface-2 bg-[length:200%_200%] animate-[glShimmer_1.8s_ease-in-out_infinite]" />
         <div className="absolute inset-x-0 bottom-0 p-2.5 bg-black/40 backdrop-blur-md border-t border-white/[0.06]">
           <div className="h-3 w-4/5 rounded bg-white/10 animate-pulse" />
           <div className="mt-1.5 h-2.5 w-1/2 rounded bg-white/10 animate-pulse" />

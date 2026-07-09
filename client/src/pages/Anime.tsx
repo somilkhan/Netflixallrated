@@ -4,12 +4,14 @@ import { api } from '../lib/api';
 import { searchAnime, getAnimePage, getAnimeGenresAndTags } from '../lib/anilist';
 import Card from '../components/Card';
 import Section from '../components/Section';
+import { GlassCardSkeleton } from '../components/GlassCard';
 import { AniListMedia } from '../lib/anilist';
 
 export default function Anime() {
   const nav = useNavigate();
   const [selectedGenre, setSelectedGenre] = useState('');
   const [dbAnime, setDbAnime] = useState<any[]>([]);
+  const [dbAnimeLoading, setDbAnimeLoading] = useState(true);
   const [anilistResults, setAnilistResults] = useState<AniListMedia[]>([]);
   const [anilistLoading, setAnilistLoading] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
@@ -23,9 +25,11 @@ export default function Anime() {
   }, []);
 
   useEffect(() => {
+    setDbAnimeLoading(true);
     api.titles.list({ type: 'ANIME', limit: '50', ...(selectedGenre ? { genre: selectedGenre } : {}) })
       .then(d => setDbAnime(d.titles || []))
-      .catch(() => setDbAnime([]));
+      .catch(() => setDbAnime([]))
+      .finally(() => setDbAnimeLoading(false));
   }, [selectedGenre]);
 
   // Trending anime straight from AniList's live feed — genre-filtered when selected.
@@ -137,7 +141,11 @@ export default function Anime() {
       </div>
 
       {/* Catalog anime */}
-      {dbAnime.length > 0 ? (
+      {dbAnimeLoading ? (
+        <div className="px-5 pt-8 flex gap-4 overflow-x-auto scrollbar-hide">
+          {Array.from({ length: 6 }).map((_, i) => <GlassCardSkeleton key={i} />)}
+        </div>
+      ) : dbAnime.length > 0 ? (
         <Section title="In Your Catalog" count={`${dbAnime.length}`} viewAllPath="/search?q=&type=ANIME">
           {dbAnime.map(t => <Card key={t.id} title={t} />)}
         </Section>
@@ -158,10 +166,7 @@ export default function Anime() {
           {anilistLoading ? (
             <div className="flex gap-4">
               {Array.from({ length: 5 }).map((_, i) => (
-                <div key={i} className="shrink-0 w-[142px]">
-                  <div className="w-[142px] h-[200px] rounded-[11px] bg-surface animate-pulse" />
-                  <div className="mt-2 h-3 bg-surface rounded w-3/4 animate-pulse" />
-                </div>
+                <GlassCardSkeleton key={i} />
               ))}
             </div>
           ) : (

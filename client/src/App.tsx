@@ -1,19 +1,27 @@
+import { Suspense, lazy } from 'react';
 import { Routes, Route } from 'react-router-dom';
 import { AuthProvider } from './lib/auth';
 import Navbar from './components/Navbar';
 import BottomNav from './components/BottomNav';
 import ErrorBoundary from './components/ErrorBoundary';
-import Home from './pages/Home';
-import TitleDetail from './pages/TitleDetail';
-import SearchResults from './pages/SearchResults';
-import Watchlist from './pages/Watchlist';
-import Login from './pages/Login';
-import Register from './pages/Register';
-import Admin from './pages/Admin';
-import TV from './pages/TV';
-import Anime from './pages/Anime';
-import Categories from './pages/Categories';
-import { StudioDetail, LanguageDetail, GenreDetail, TypeDetail } from './pages/DiscoveryPages';
+import GlassLoader from './components/GlassLoader';
+
+// Route-level code splitting — each page loads on demand, with the shared
+// GlassLoader shown via Suspense while its chunk downloads.
+const Home = lazy(() => import('./pages/Home'));
+const TitleDetail = lazy(() => import('./pages/TitleDetail'));
+const SearchResults = lazy(() => import('./pages/SearchResults'));
+const Watchlist = lazy(() => import('./pages/Watchlist'));
+const Login = lazy(() => import('./pages/Login'));
+const Register = lazy(() => import('./pages/Register'));
+const Admin = lazy(() => import('./pages/Admin'));
+const TV = lazy(() => import('./pages/TV'));
+const Anime = lazy(() => import('./pages/Anime'));
+const Categories = lazy(() => import('./pages/Categories'));
+const StudioDetail = lazy(() => import('./pages/DiscoveryPages').then(m => ({ default: m.StudioDetail })));
+const LanguageDetail = lazy(() => import('./pages/DiscoveryPages').then(m => ({ default: m.LanguageDetail })));
+const GenreDetail = lazy(() => import('./pages/DiscoveryPages').then(m => ({ default: m.GenreDetail })));
+const TypeDetail = lazy(() => import('./pages/DiscoveryPages').then(m => ({ default: m.TypeDetail })));
 
 function Wrap({ children }: { children: React.ReactNode }) {
   return <ErrorBoundary>{children}</ErrorBoundary>;
@@ -24,22 +32,24 @@ export default function App() {
     <AuthProvider>
       <div className="min-h-screen bg-void text-ink pb-24 overflow-x-hidden max-w-full">
         <Navbar />
-        <Routes>
-          <Route path="/" element={<Wrap><Home /></Wrap>} />
-          <Route path="/title/:id" element={<Wrap><TitleDetail /></Wrap>} />
-          <Route path="/search" element={<Wrap><SearchResults /></Wrap>} />
-          <Route path="/watchlist" element={<Wrap><Watchlist /></Wrap>} />
-          <Route path="/login" element={<Wrap><Login /></Wrap>} />
-          <Route path="/register" element={<Wrap><Register /></Wrap>} />
-          <Route path="/admin" element={<Wrap><Admin /></Wrap>} />
-          <Route path="/tv" element={<Wrap><TV /></Wrap>} />
-          <Route path="/anime" element={<Wrap><Anime /></Wrap>} />
-          <Route path="/categories" element={<Wrap><Categories /></Wrap>} />
-          <Route path="/studio/:slug" element={<Wrap><StudioDetail /></Wrap>} />
-          <Route path="/language/:slug" element={<Wrap><LanguageDetail /></Wrap>} />
-          <Route path="/browse/genre/:slug" element={<Wrap><GenreDetail /></Wrap>} />
-          <Route path="/browse/type/:slug" element={<Wrap><TypeDetail /></Wrap>} />
-        </Routes>
+        <Suspense fallback={<GlassLoader visible label="Loading your experience…" />}>
+          <Routes>
+            <Route path="/" element={<Wrap><Home /></Wrap>} />
+            <Route path="/title/:id" element={<Wrap><TitleDetail /></Wrap>} />
+            <Route path="/search" element={<Wrap><SearchResults /></Wrap>} />
+            <Route path="/watchlist" element={<Wrap><Watchlist /></Wrap>} />
+            <Route path="/login" element={<Wrap><Login /></Wrap>} />
+            <Route path="/register" element={<Wrap><Register /></Wrap>} />
+            <Route path="/admin" element={<Wrap><Admin /></Wrap>} />
+            <Route path="/tv" element={<Wrap><TV /></Wrap>} />
+            <Route path="/anime" element={<Wrap><Anime /></Wrap>} />
+            <Route path="/categories" element={<Wrap><Categories /></Wrap>} />
+            <Route path="/studio/:slug" element={<Wrap><StudioDetail /></Wrap>} />
+            <Route path="/language/:slug" element={<Wrap><LanguageDetail /></Wrap>} />
+            <Route path="/browse/genre/:slug" element={<Wrap><GenreDetail /></Wrap>} />
+            <Route path="/browse/type/:slug" element={<Wrap><TypeDetail /></Wrap>} />
+          </Routes>
+        </Suspense>
         <BottomNav />
       </div>
     </AuthProvider>

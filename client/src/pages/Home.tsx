@@ -9,6 +9,7 @@ import Card from '../components/Card';
 import TmdbCard from '../components/TmdbCard';
 import type { TmdbItem } from '../components/TmdbCard';
 import RegionPicker from '../components/RegionPicker';
+import { GlassCardSkeleton } from '../components/GlassCard';
 
 // Cosmetic emoji per genre — purely presentational, the genre list itself is
 // fetched live from /api/titles/genres (never hardcoded).
@@ -39,6 +40,7 @@ export default function Home() {
   const [anime, setAnime] = useState<any[]>([]);
   const [genreSections, setGenreSections] = useState<Record<string, any[]>>({});
   const [genreList, setGenreList] = useState<string[]>([]);
+  const [initialLoading, setInitialLoading] = useState(true);
 
   // Geo state
   const [region, setRegion] = useState<string>(() => normalizeRegion(getRegionCookie()));
@@ -84,9 +86,11 @@ export default function Home() {
 
   useEffect(() => {
     // Core sections — .catch(() => {}) prevents unhandled rejection crashes
-    api.titles.top10().then(setTop10).catch(() => {});
-    api.titles.trending().then(setTrending).catch(() => {});
-    api.titles.recent().then(setRecent).catch(() => {});
+    const core = Promise.all([
+      api.titles.top10().then(setTop10).catch(() => {}),
+      api.titles.trending().then(setTrending).catch(() => {}),
+      api.titles.recent().then(setRecent).catch(() => {}),
+    ]);
 
     // Type sections
     api.titles.list({ type: 'MOVIE', limit: '20' }).then(d => setMovies(d.titles || [])).catch(() => {});
@@ -108,6 +112,8 @@ export default function Home() {
         setGenreSections(Object.fromEntries(results.filter(([, titles]) => titles.length > 0)));
       }).catch(() => {});
     }).catch(() => {});
+
+    core.finally(() => setInitialLoading(false));
   }, []);
 
   // Map display tab names → DB enum values
@@ -133,6 +139,12 @@ export default function Home() {
       <Ticker />
       <Hero titles={heroTitles} />
       <Tabs active={activeTab} onChange={setActiveTab} />
+
+      {initialLoading && (
+        <div className="px-5 py-6 flex gap-4 overflow-x-auto scrollbar-hide">
+          {Array.from({ length: 8 }).map((_, i) => <GlassCardSkeleton key={i} />)}
+        </div>
+      )}
 
       {/* Top 10 — shown always, filtered by tab */}
       {filter(top10).length > 0 && (
@@ -171,8 +183,8 @@ export default function Home() {
         <>
           <RegionPicker region={region} onChange={handleRegionChange} />
           {geoLoading && geoRows.length === 0 && (
-            <div className="px-5 py-6 font-mono text-[11px] text-ink-faint animate-pulse">
-              Loading regional content…
+            <div className="px-5 py-6 flex gap-4 overflow-x-auto scrollbar-hide">
+              {Array.from({ length: 6 }).map((_, i) => <GlassCardSkeleton key={i} />)}
             </div>
           )}
           {geoRows.map(row =>

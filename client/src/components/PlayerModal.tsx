@@ -1,5 +1,6 @@
 import { useEffect, useRef } from 'react';
 import { SERVERS } from './VideoPlayer';
+import { InlineLoader } from './GlassLoader';
 import '@/styles/PlayerModal.css';
 
 interface PlayerModalProps {
@@ -154,8 +155,8 @@ export default function PlayerModal({
               title={title.name}
             />
           ) : (
-            <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#666', fontFamily: 'monospace', fontSize: '0.875rem' }}>
-              Loading stream…
+            <div style={{ position: 'absolute', inset: 0 }}>
+              <InlineLoader label="Loading stream…" minHeight={0} size={48} className="h-full" />
             </div>
           )}
         </div>

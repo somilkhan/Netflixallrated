@@ -9,6 +9,7 @@ import {
   getEmbedUrl as anicrushEmbed,
 } from '../lib/anicrush';
 import { SERVERS } from '../components/VideoPlayer';
+import { InlineLoader } from '../components/GlassLoader';
 import '@/styles/MovieDetailPage.css';
 import type { Tier } from '../components/RatingWidget';
 
@@ -398,10 +399,8 @@ export default function TitleDetail() {
   };
 
   if (!title) return (
-    <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#060505' }}>
-      <div style={{ fontFamily: 'IBM Plex Mono, monospace', fontSize: 12, color: 'rgba(245,240,236,0.4)', animation: 'pulseFade 1.5s ease-in-out infinite' }}>
-        Loading…
-      </div>
+    <div style={{ minHeight: '100vh', background: '#090909' }}>
+      <InlineLoader label="Loading title…" minHeight={window.innerHeight ? window.innerHeight - 80 : 600} />
     </div>
   );
 

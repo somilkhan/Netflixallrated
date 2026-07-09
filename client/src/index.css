@@ -29,6 +29,35 @@
 .embla__container { display: flex; touch-action: pan-y pinch-zoom; }
 .embla__slide { flex: 0 0 100%; min-width: 0; }
 
+/* ── GlassLoader — premium burgundy-glass loading mark ─────────────────── */
+.glass-loader-mark { position: relative; display: flex; align-items: center; justify-content: center; }
+.glass-loader-glow {
+  position: absolute; inset: -30%;
+  background: radial-gradient(circle, rgba(194,67,79,0.35) 0%, rgba(194,67,79,0.08) 55%, transparent 75%);
+  filter: blur(6px);
+  animation: glGlowPulse 2.2s ease-in-out infinite;
+  pointer-events: none;
+}
+.glass-loader-disc {
+  position: absolute; inset: 14%;
+  border-radius: 999px;
+  background: rgba(24,16,17,0.55);
+  border: 1px solid rgba(245,240,236,0.1);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  display: flex; align-items: center; justify-content: center;
+  box-shadow: inset 0 0 12px rgba(0,0,0,0.4), 0 0 18px -4px rgba(194,67,79,0.35);
+}
+.glass-loader-disc svg { margin-left: 2px; }
+.glass-loader-ring { animation: glSpin 1.15s cubic-bezier(.5,.15,.5,.85) infinite; transform-origin: 50% 50%; }
+@keyframes glSpin { to { transform: rotate(360deg); } }
+@keyframes glGlowPulse { 0%, 100% { opacity: 0.65; transform: scale(0.94); } 50% { opacity: 1; transform: scale(1.06); } }
+@keyframes glPulse { 0%, 100% { opacity: 0.55; } 50% { opacity: 1; } }
+@keyframes glShimmer { 0% { background-position: 0% 50%; } 50% { background-position: 100% 50%; } 100% { background-position: 0% 50%; } }
+@media (prefers-reduced-motion: reduce) {
+  .glass-loader-ring, .glass-loader-glow { animation: none; }
+}
+
 @layer utilities {
   .scrollbar-hide::-webkit-scrollbar { display: none; }
   .scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }

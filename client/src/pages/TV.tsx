@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { api } from '../lib/api';
 import Card from '../components/Card';
 import Section from '../components/Section';
+import { GlassCardSkeleton } from '../components/GlassCard';
 
 export default function TV() {
   const nav = useNavigate();
@@ -83,7 +84,7 @@ export default function TV() {
           {loading ? (
             <div className="flex flex-wrap gap-4">
               {Array.from({ length: 10 }).map((_, i) => (
-                <div key={i} className="w-[142px] md:w-[172px] poster-ratio rounded-[11px] bg-surface animate-pulse" />
+                <GlassCardSkeleton key={i} />
               ))}
             </div>
           ) : all.length > 0 ? (
@@ -97,6 +98,10 @@ export default function TV() {
               <p className="text-ink-faint text-sm mt-1">Check back soon as the catalog grows</p>
             </div>
           )}
+        </div>
+      ) : loading ? (
+        <div className="px-5 pt-8 flex flex-wrap gap-4">
+          {Array.from({ length: 10 }).map((_, i) => <GlassCardSkeleton key={i} />)}
         </div>
       ) : (
         /* Genre sections view */

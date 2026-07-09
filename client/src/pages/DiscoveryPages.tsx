@@ -3,6 +3,7 @@ import { useParams, useNavigate } from "react-router-dom";
 import { ChevronLeft } from "lucide-react";
 import { api } from "../lib/api";
 import { slugify } from "../lib/slug";
+import { GlassCardSkeleton } from "../components/GlassCard";
 
 /*
   Shared discovery pages: Platform / Genre / Type detail.
@@ -170,7 +171,7 @@ function PosterGrid({
     return (
       <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
         {Array.from({ length: 6 }).map((_, i) => (
-          <div key={i} className="aspect-[2/3] rounded-xl bg-zinc-900/60 animate-pulse" />
+          <GlassCardSkeleton key={i} fluid />
         ))}
       </div>
     );
@@ -249,7 +250,7 @@ export function StudioDetail() {
       {platformsLoading ? (
         <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
           {Array.from({ length: 6 }).map((_, i) => (
-            <div key={i} className="aspect-[2/3] rounded-xl bg-zinc-900/60 animate-pulse" />
+            <GlassCardSkeleton key={i} fluid />
           ))}
         </div>
       ) : !platform ? (
@@ -306,7 +307,7 @@ export function GenreDetail() {
       {genresLoading ? (
         <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
           {Array.from({ length: 6 }).map((_, i) => (
-            <div key={i} className="aspect-[2/3] rounded-xl bg-zinc-900/60 animate-pulse" />
+            <GlassCardSkeleton key={i} fluid />
           ))}
         </div>
       ) : !genreName ? (
