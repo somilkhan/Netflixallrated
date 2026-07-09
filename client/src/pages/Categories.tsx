@@ -1,131 +1,261 @@
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useRef } from "react";
 import { useNavigate } from "react-router-dom";
-import { Search } from "lucide-react";
+import { Search, ChevronRight, X } from "lucide-react";
 
 /*
-  Allrated — Categories page
-  Fix summary:
-  1. Each type/genre card has its OWN onClick + navigate call.
-     Nothing wraps the whole grid in a shared click handler.
-  2. Search input only filters the `genres` array in local state.
-     It does NOT open, submit, or trigger navigation on its own —
-     pressing Enter or clicking a result are two separate actions.
-  3. Genre click and search are fully independent state:
-     `query` (string) vs `navigate(path)` (side effect). They never
-     touch the same handler, so typing can't fire a click and
-     clicking can't reopen search.
+  Allrated — Categories (bingr-style row layout, Allrated theme)
+
+  Theme tokens below are read from the "Rick and Morty" hero screenshot:
+  warm near-black background, cream headline text, crimson/red accent,
+  serif display font, monospace metadata. If your actual hex values
+  differ, only THEME needs editing — every class below reads from it.
 */
 
+const THEME = {
+  bg: "#0b0a09",
+  card: "#171310",
+  cardAlt: "#0e0c0a",
+  text: "#f3eee3",
+  textMuted: "#8a8580",
+  accent: "#df4b60",
+  border: "rgba(255,255,255,0.08)",
+};
+
 const TYPES = [
-  { slug: "movies", label: "Movies", emoji: "🎬", count: "12.3k titles" },
-  { slug: "tv-shows", label: "TV Shows", emoji: "📺", count: "34 titles" },
-  { slug: "anime", label: "Anime", emoji: "⛩️", count: "20 titles" },
+  { slug: "movies", label: "Movies", tag: "12.3k titles", emoji: "🎬" },
+  { slug: "tv-shows", label: "TV Shows", tag: "34 titles", emoji: "📺" },
+  { slug: "anime", label: "Anime", tag: "20 titles", emoji: "⛩️" },
 ];
 
 const GENRES = [
-  { slug: "drama", label: "Drama", emoji: "🎭", count: "5.3k titles" },
-  { slug: "comedy", label: "Comedy", emoji: "😄", count: "3.8k titles" },
-  { slug: "thriller", label: "Thriller", emoji: "🔥", count: "3.2k titles" },
-  { slug: "action", label: "Action", emoji: "⚡", count: "4.1k titles" },
-  { slug: "romance", label: "Romance", emoji: "💌", count: "2.9k titles" },
-  { slug: "horror", label: "Horror", emoji: "👻", count: "1.7k titles" },
-  { slug: "scifi", label: "Sci-Fi", emoji: "🛸", count: "2.2k titles" },
-  { slug: "documentary", label: "Documentary", emoji: "📽️", count: "1.1k titles" },
+  { slug: "drama", label: "Drama", tag: "5.3k titles", emoji: "🎭" },
+  { slug: "comedy", label: "Comedy", tag: "3.8k titles", emoji: "😄" },
+  { slug: "thriller", label: "Thriller", tag: "3.2k titles", emoji: "🔥" },
+  { slug: "action", label: "Action", tag: "4.1k titles", emoji: "⚡" },
+  { slug: "romance", label: "Romance", tag: "2.9k titles", emoji: "💌" },
+  { slug: "horror", label: "Horror", tag: "1.7k titles", emoji: "👻" },
+  { slug: "scifi", label: "Sci-Fi & Fantasy", tag: "2.2k titles", emoji: "🛸" },
+  { slug: "documentary", label: "Documentary", tag: "1.1k titles", emoji: "📽️" },
 ];
 
-function TypeCard({ item }) {
-  const navigate = useNavigate();
-  return (
-    <button
-      type="button"
-      onClick={() => navigate(`/browse/type/${item.slug}`)}
-      className="flex flex-col items-start gap-3 bg-zinc-900/60 border border-white/10
-                 rounded-2xl p-6 text-left hover:border-white/25 hover:bg-zinc-900
-                 transition-colors focus:outline-none focus-visible:ring-1 focus-visible:ring-white/40"
-    >
-      <span className="text-3xl">{item.emoji}</span>
-      <span className="text-white text-xl font-semibold">{item.label}</span>
-      <span className="text-zinc-500 text-sm font-mono">{item.count}</span>
-    </button>
-  );
-}
+function TiltCard({ item, onOpen, large }) {
+  const ref = useRef(null);
+  const [tilt, setTilt] = useState({ x: 0, y: 0 });
 
-function GenreCard({ item }) {
-  const navigate = useNavigate();
+  function handleMove(e) {
+    const el = ref.current;
+    if (!el) return;
+    const r = el.getBoundingClientRect();
+    const px = (e.clientX - r.left) / r.width;
+    const py = (e.clientY - r.top) / r.height;
+    setTilt({ x: (py - 0.5) * -7, y: (px - 0.5) * 7 });
+  }
+  function handleLeave() {
+    setTilt({ x: 0, y: 0 });
+  }
+
   return (
     <button
-      type="button"
-      onClick={() => navigate(`/browse/genre/${item.slug}`)}
-      className="flex items-center justify-between gap-3 bg-zinc-900/60 border border-white/10
-                 rounded-2xl px-5 py-4 text-left hover:border-white/25 hover:bg-zinc-900
-                 transition-colors focus:outline-none focus-visible:ring-1 focus-visible:ring-white/40"
+      ref={ref}
+      onClick={() => onOpen(item)}
+      onMouseMove={handleMove}
+      onMouseLeave={handleLeave}
+      style={{
+        transform: `perspective(700px) rotateX(${tilt.x}deg) rotateY(${tilt.y}deg)`,
+        transition: "transform 150ms ease-out",
+        background: `linear-gradient(160deg, ${THEME.card}, ${THEME.cardAlt})`,
+        border: `1px solid ${THEME.border}`,
+      }}
+      className={`group relative shrink-0 rounded-2xl overflow-hidden text-left
+        ${large ? "w-full h-40" : "w-44 h-32"} focus:outline-none`}
     >
-      <span className="flex items-center gap-3">
-        <span className="text-2xl">{item.emoji}</span>
-        <span>
-          <span className="block text-white text-lg font-semibold">{item.label}</span>
-          <span className="block text-zinc-500 text-xs font-mono">{item.count}</span>
+      <div
+        className="pointer-events-none absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300"
+        style={{
+          background: `linear-gradient(115deg, transparent 20%, ${THEME.accent}22 45%, transparent 60%)`,
+        }}
+      />
+      <div className="relative h-full flex flex-col justify-end p-4">
+        <span className="text-3xl mb-1">{item.emoji}</span>
+        <span
+          style={{ color: THEME.text, fontFamily: "'Georgia', serif" }}
+          className="text-xl font-bold leading-tight"
+        >
+          {item.label}
         </span>
-      </span>
-      <span className="text-zinc-500">›</span>
+        <span
+          style={{ color: THEME.textMuted, fontFamily: "monospace" }}
+          className="text-xs mt-1"
+        >
+          {item.tag}
+        </span>
+      </div>
     </button>
   );
 }
 
-export default function Categories() {
-  const [query, setQuery] = useState("");
-
-  // Pure derived state. Typing only ever changes this filtered list —
-  // it can't call navigate, and it can't be triggered by a card click.
-  const filteredGenres = useMemo(() => {
-    const q = query.trim().toLowerCase();
-    if (!q) return GENRES;
-    return GENRES.filter((g) => g.label.toLowerCase().includes(q));
-  }, [query]);
-
+function Row({ title, items, onOpen, onViewAll, showSearch, query, onQuery }) {
   return (
-    <div className="min-h-screen bg-black px-5 pt-8 pb-24">
-      <header className="mb-8">
-        <div className="text-4xl mb-2">🎞️</div>
-        <h1 className="text-white text-4xl font-serif">Categories</h1>
-        <p className="text-zinc-500 mt-1">Browse by genre, type, or format</p>
-      </header>
+    <div className="mb-10">
+      <div className="flex items-center justify-between px-5 mb-3">
+        <h2
+          style={{ color: THEME.text, fontFamily: "'Georgia', serif" }}
+          className="text-[26px] font-bold"
+        >
+          {title}
+        </h2>
+        <button
+          onClick={onViewAll}
+          style={{ color: THEME.textMuted }}
+          className="flex items-center gap-1 text-sm hover:opacity-80 transition-opacity"
+        >
+          View All <ChevronRight size={15} />
+        </button>
+      </div>
 
-      <section className="mb-10">
-        <h2 className="text-white text-2xl font-serif mb-4">Browse by Type</h2>
-        <div className="grid grid-cols-3 gap-3">
-          {TYPES.map((t) => (
-            <TypeCard key={t.slug} item={t} />
+      {showSearch && (
+        <div className="px-5 mb-4">
+          <div
+            style={{ background: THEME.card, border: `1px solid ${THEME.border}` }}
+            className="flex items-center gap-3 rounded-full px-4 py-3"
+          >
+            <Search size={17} style={{ color: THEME.textMuted }} />
+            <input
+              value={query}
+              onChange={(e) => onQuery(e.target.value)}
+              placeholder="Search genres..."
+              style={{ color: THEME.text }}
+              className="bg-transparent outline-none placeholder-zinc-600 text-sm w-full"
+            />
+            {query && (
+              <button onClick={() => onQuery("")} style={{ color: THEME.textMuted }}>
+                <X size={15} />
+              </button>
+            )}
+          </div>
+        </div>
+      )}
+
+      {items.length === 0 ? (
+        <p style={{ color: THEME.textMuted }} className="px-5 text-sm">
+          No matches.
+        </p>
+      ) : (
+        <div className="flex gap-3 overflow-x-auto px-5 pb-1 scrollbar-none snap-x snap-mandatory">
+          {items.map((item) => (
+            <div key={item.slug} className="snap-start">
+              <TiltCard item={item} onOpen={onOpen} />
+            </div>
           ))}
         </div>
-      </section>
+      )}
+    </div>
+  );
+}
 
-      <section>
-        <div className="flex items-baseline gap-2 mb-4">
-          <h2 className="text-white text-2xl font-serif">Browse by Genre</h2>
-          <span className="text-zinc-500 text-sm font-mono">{GENRES.length} genres</span>
+function ExpandedGrid({ title, items, onBack, onOpen }) {
+  return (
+    <div className="px-5">
+      <button
+        onClick={onBack}
+        style={{ color: THEME.textMuted }}
+        className="mb-5 text-sm flex items-center gap-1 hover:opacity-80"
+      >
+        <ChevronRight size={15} className="rotate-180" /> Back
+      </button>
+      <h2
+        style={{ color: THEME.text, fontFamily: "'Georgia', serif" }}
+        className="text-3xl font-bold mb-5"
+      >
+        {title}
+      </h2>
+      <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 pb-16">
+        {items.map((item) => (
+          <TiltCard key={item.slug} item={item} onOpen={onOpen} large />
+        ))}
+      </div>
+    </div>
+  );
+}
+
+export default function CategoriesPage() {
+  const navigate = useNavigate();
+  const [genreQuery, setGenreQuery] = useState("");
+  const [expanded, setExpanded] = useState(null); // "type" | "genre" | null
+
+  const filteredGenres = useMemo(() => {
+    const q = genreQuery.trim().toLowerCase();
+    if (!q) return GENRES;
+    return GENRES.filter((g) => g.label.toLowerCase().includes(q));
+  }, [genreQuery]);
+
+  function openItem(item) {
+    // route matches whichever section it came from
+    const isType = TYPES.some((t) => t.slug === item.slug);
+    navigate(isType ? `/browse/type/${item.slug}` : `/browse/genre/${item.slug}`);
+  }
+
+  return (
+    <div style={{ background: THEME.bg }} className="min-h-screen pb-24">
+      <div className="pt-8">
+        <div className="px-5 mb-2 flex items-center gap-2">
+          <span style={{ background: THEME.accent }} className="w-4 h-[2px] inline-block" />
+          <span
+            style={{ color: THEME.textMuted, fontFamily: "monospace" }}
+            className="text-xs tracking-[0.2em] uppercase"
+          >
+            Categories
+          </span>
+        </div>
+        <div className="px-5 mb-8">
+          <h1
+            style={{ color: THEME.text, fontFamily: "'Georgia', serif" }}
+            className="text-[38px] font-bold leading-tight"
+          >
+            Browse Everything
+          </h1>
         </div>
 
-        <div className="flex items-center gap-3 bg-zinc-900/60 border border-white/10 rounded-full px-4 py-3 mb-5">
-          <Search size={17} className="text-zinc-500 shrink-0" />
-          <input
-            value={query}
-            onChange={(e) => setQuery(e.target.value)}
-            placeholder="Search genres..."
-            className="bg-transparent outline-none text-white placeholder-zinc-600 text-sm w-full"
+        {expanded === "type" ? (
+          <ExpandedGrid
+            title="Browse by Type"
+            items={TYPES}
+            onBack={() => setExpanded(null)}
+            onOpen={openItem}
           />
-        </div>
-
-        {filteredGenres.length === 0 ? (
-          <p className="text-zinc-500 text-sm">No genres match "{query}".</p>
+        ) : expanded === "genre" ? (
+          <ExpandedGrid
+            title="Browse by Genre"
+            items={filteredGenres}
+            onBack={() => setExpanded(null)}
+            onOpen={openItem}
+          />
         ) : (
-          <div className="grid grid-cols-2 gap-3">
-            {filteredGenres.map((g) => (
-              <GenreCard key={g.slug} item={g} />
-            ))}
-          </div>
+          <>
+            <Row
+              title="Browse by Type"
+              items={TYPES}
+              onOpen={openItem}
+              onViewAll={() => setExpanded("type")}
+              showSearch={false}
+            />
+            <Row
+              title="Browse by Genre"
+              items={filteredGenres}
+              onOpen={openItem}
+              onViewAll={() => setExpanded("genre")}
+              showSearch
+              query={genreQuery}
+              onQuery={setGenreQuery}
+            />
+          </>
         )}
-      </section>
+      </div>
+
+      <style>{`
+        .scrollbar-none::-webkit-scrollbar { display: none; }
+        .scrollbar-none { -ms-overflow-style: none; scrollbar-width: none; }
+      `}</style>
     </div>
   );
 }
