@@ -17,6 +17,7 @@ const Register = lazy(() => import('./pages/Register'));
 const Admin = lazy(() => import('./pages/Admin'));
 const TV = lazy(() => import('./pages/TV'));
 const Anime = lazy(() => import('./pages/Anime'));
+const AnimeGenres = lazy(() => import('./pages/AnimeGenres'));
 const Categories = lazy(() => import('./pages/Categories'));
 const StudioDetail = lazy(() => import('./pages/DiscoveryPages').then(m => ({ default: m.StudioDetail })));
 const LanguageDetail = lazy(() => import('./pages/DiscoveryPages').then(m => ({ default: m.LanguageDetail })));
@@ -43,6 +44,7 @@ export default function App() {
             <Route path="/admin" element={<Wrap><Admin /></Wrap>} />
             <Route path="/tv" element={<Wrap><TV /></Wrap>} />
             <Route path="/anime" element={<Wrap><Anime /></Wrap>} />
+            <Route path="/anime/genres" element={<Wrap><AnimeGenres /></Wrap>} />
             <Route path="/categories" element={<Wrap><Categories /></Wrap>} />
             <Route path="/studio/:slug" element={<Wrap><StudioDetail /></Wrap>} />
             <Route path="/language/:slug" element={<Wrap><LanguageDetail /></Wrap>} />
