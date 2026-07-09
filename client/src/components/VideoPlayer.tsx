@@ -17,6 +17,22 @@ export interface Server {
 
 export const SERVERS: Server[] = [
   {
+    id: 'vidrock',
+    label: 'VidRock',
+    getUrl: (id, type, s, e) =>
+      type === 'MOVIE'
+        ? `https://vidrock.ru/movie/${id}`
+        : `https://vidrock.ru/tv/${id}/${s}/${e}`,
+  },
+  {
+    id: 'vidnest',
+    label: 'VidNest',
+    getUrl: (id, type, s, e) =>
+      type === 'MOVIE'
+        ? `https://vidnest.fun/movie/${id}`
+        : `https://vidnest.fun/tv/${id}/${s}/${e}`,
+  },
+  {
     id: 'nebulaflix',
     label: 'NebulaFlix',
     getUrl: (id, type, s, e) =>
