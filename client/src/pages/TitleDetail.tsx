@@ -868,7 +868,7 @@ export default function TitleDetail() {
                   >
                     <div className="ep-thumb">
                       {ep.stillUrl
-                        ? <img src={ep.stillUrl} alt="" />
+                        ? <img src={ep.stillUrl} alt="" loading="lazy" />
                         : <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><polygon points="8,5 8,19 19,12"/></svg>
                       }
                     </div>

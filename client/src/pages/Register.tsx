@@ -60,6 +60,7 @@ export default function Register() {
           value={displayName}
           onChange={e => setDisplayName(e.target.value)}
           placeholder="Display name"
+          autoComplete="name"
           className="w-full bg-surface border border-line rounded-lg px-4 py-3 text-sm focus:border-maroon outline-none"
         />
         <input
@@ -67,6 +68,7 @@ export default function Register() {
           value={email}
           onChange={e => setEmail(e.target.value)}
           placeholder="Email"
+          autoComplete="email"
           required
           className="w-full bg-surface border border-line rounded-lg px-4 py-3 text-sm focus:border-maroon outline-none"
         />
@@ -75,6 +77,7 @@ export default function Register() {
           value={password}
           onChange={e => setPassword(e.target.value)}
           placeholder="Password (min 6 characters)"
+          autoComplete="new-password"
           required
           minLength={6}
           className="w-full bg-surface border border-line rounded-lg px-4 py-3 text-sm focus:border-maroon outline-none"

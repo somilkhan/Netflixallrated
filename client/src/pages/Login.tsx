@@ -38,6 +38,7 @@ export default function Login() {
           value={email}
           onChange={e => setEmail(e.target.value)}
           placeholder="Email"
+          autoComplete="email"
           required
           className="w-full bg-surface border border-line rounded-lg px-4 py-3 text-sm focus:border-maroon outline-none"
         />
@@ -46,6 +47,7 @@ export default function Login() {
           value={password}
           onChange={e => setPassword(e.target.value)}
           placeholder="Password"
+          autoComplete="current-password"
           required
           className="w-full bg-surface border border-line rounded-lg px-4 py-3 text-sm focus:border-maroon outline-none"
         />

@@ -123,8 +123,12 @@ export default function HeroCarousel({ titles }: { titles: any[] }) {
           <div className="flex items-center gap-4 pb-5 border-b border-line/50 flex-wrap animate-fadeUp" style={{ animationDelay: '0.2s' }}>
             <div className="font-mono text-xs text-ink-dim flex gap-2 items-center">
               <span>{title.year}</span>
-              <span className="text-ink-faint">·</span>
-              <span>{title.runtimeMinutes ? `${Math.floor(title.runtimeMinutes / 60)}H ${title.runtimeMinutes % 60}M` : title.type}</span>
+              {title.runtimeMinutes ? (
+                <>
+                  <span className="text-ink-faint">·</span>
+                  <span>{`${Math.floor(title.runtimeMinutes / 60)}H ${title.runtimeMinutes % 60}M`}</span>
+                </>
+              ) : null}
               <span className="text-ink-faint">·</span>
               <span className="uppercase">{title.type}</span>
             </div>

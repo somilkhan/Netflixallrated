@@ -24,7 +24,8 @@ export default function Anime() {
 
   useEffect(() => {
     api.titles.list({ type: 'ANIME', limit: '50', ...(selectedGenre ? { genre: selectedGenre } : {}) })
-      .then(d => setDbAnime(d.titles || []));
+      .then(d => setDbAnime(d.titles || []))
+      .catch(() => setDbAnime([]));
   }, [selectedGenre]);
 
   // Trending anime straight from AniList's live feed — genre-filtered when selected.
@@ -81,6 +82,7 @@ export default function Anime() {
           <div className="mt-3 flex gap-4 p-4 rounded-xl border border-maroon/30 bg-surface max-w-xl">
             {searchResult.coverImage?.extraLarge && (
               <img src={searchResult.coverImage.extraLarge} alt={searchResult.title.romaji}
+                loading="lazy"
                 className="w-[64px] h-[90px] rounded-lg object-cover border border-line shrink-0"
                 onError={e => { (e.target as HTMLImageElement).style.display = 'none'; }} />
             )}
