@@ -1,0 +1,27 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
+  <defs>
+    <linearGradient id="g-tr" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#F0A5AD" /><stop offset="100%" stop-color="#C2434F" />
+    </linearGradient>
+    <linearGradient id="g-br" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#C2434F" /><stop offset="100%" stop-color="#7A2530" />
+    </linearGradient>
+    <linearGradient id="g-bl" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#7A2530" /><stop offset="100%" stop-color="#3D1219" />
+    </linearGradient>
+    <linearGradient id="g-tl" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#C2434F" /><stop offset="100%" stop-color="#7A2530" />
+    </linearGradient>
+    <clipPath id="clip"><path d="M50 3.5 C54.5 28 71 44.5 96.5 50 C71 55.5 54.5 72 50 96.5 C45.5 72 29 55.5 3.5 50 C29 44.5 45.5 28 50 3.5 Z" /></clipPath>
+  </defs>
+  <rect width="100" height="100" fill="#090909" />
+  <g clip-path="url(#clip)">
+    <path d="M50 50 L50 3.5 L96.5 50 Z" fill="url(#g-tr)" />
+    <path d="M50 50 L96.5 50 L50 96.5 Z" fill="url(#g-br)" />
+    <path d="M50 50 L50 96.5 L3.5 50 Z" fill="url(#g-bl)" />
+    <path d="M50 50 L3.5 50 L50 3.5 Z" fill="url(#g-tl)" />
+    <path d="M50 3.5 L96.5 50 L50 50 Z" fill="#F5F0EC" opacity="0.14" />
+    <path d="M45.5 42.5 L45.5 57.5 L58 50 Z" fill="#090909" />
+  </g>
+  <path d="M50 3.5 C54.5 28 71 44.5 96.5 50 C71 55.5 54.5 72 50 96.5 C45.5 72 29 55.5 3.5 50 C29 44.5 45.5 28 50 3.5 Z" fill="none" stroke="#F5F0EC" stroke-opacity="0.16" stroke-width="1.2" />
+</svg>

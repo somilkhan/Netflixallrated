@@ -5,3 +5,4 @@
 - [Consumet Integration](consumet-integration.md) — ronyt99 fork has Hianime/FlixHQ not Gogoanime; META.Anilist+META.TMDB are the right wrappers; fetchMediaInfo needs explicit type arg
 - [FebBox lookup failures](febbox-outage-handling.md) — often a febbox.com full-site outage, not a code bug; isolate with a standalone script before assuming regression
 - [Title schema real-data limits](titles-schema-limits.md) — only genre/type/platform are real filterable fields; no language or studio field exists
+- [Aperture Star brand identity](brand-identity-aperture-star.md) — logo system lives in client/src/brand/, review at /brand, WebGL fallback caveat for headless screenshots

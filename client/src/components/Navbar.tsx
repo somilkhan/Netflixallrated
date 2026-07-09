@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import { Search, Shield, LogOut, LogIn } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../lib/auth';
+import { NavbarLogo } from '../brand';
 
 const placeholders = ['Search movies...', 'Search anime...', 'Search series...', 'Search reviews...'];
 
@@ -53,9 +54,8 @@ export default function Navbar() {
   return (
     <nav className="sticky top-0 z-50 flex items-center gap-4 px-5 py-3.5 bg-void/90 backdrop-blur-md border-b border-line">
       {/* Logo */}
-      <button onClick={() => nav('/')} className="w-[34px] h-[34px] rounded-[9px] bg-gradient-to-br from-surface-2 to-surface border border-line-bright flex items-center justify-center font-serif font-bold text-[17px] text-ink relative shrink-0 hover:border-maroon transition-colors">
-        A
-        <span className="absolute bottom-1 right-1 w-[5px] h-[5px] rounded-full bg-maroon-bright shadow-[0_0_6px_rgba(194,67,79,0.8)]" />
+      <button onClick={() => nav('/')} className="shrink-0 rounded-[9px]" aria-label="NetflixAllrated home">
+        <NavbarLogo size={34} />
       </button>
 
       {/* Search */}

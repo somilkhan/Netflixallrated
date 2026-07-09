@@ -23,6 +23,7 @@ const StudioDetail = lazy(() => import('./pages/DiscoveryPages').then(m => ({ de
 const LanguageDetail = lazy(() => import('./pages/DiscoveryPages').then(m => ({ default: m.LanguageDetail })));
 const GenreDetail = lazy(() => import('./pages/DiscoveryPages').then(m => ({ default: m.GenreDetail })));
 const TypeDetail = lazy(() => import('./pages/DiscoveryPages').then(m => ({ default: m.TypeDetail })));
+const BrandShowcase = lazy(() => import('./pages/BrandShowcase'));
 
 function Wrap({ children }: { children: React.ReactNode }) {
   return <ErrorBoundary>{children}</ErrorBoundary>;
@@ -50,6 +51,7 @@ export default function App() {
             <Route path="/language/:slug" element={<Wrap><LanguageDetail /></Wrap>} />
             <Route path="/browse/genre/:slug" element={<Wrap><GenreDetail /></Wrap>} />
             <Route path="/browse/type/:slug" element={<Wrap><TypeDetail /></Wrap>} />
+            <Route path="/brand" element={<Wrap><BrandShowcase /></Wrap>} />
           </Routes>
         </Suspense>
         <BottomNav />

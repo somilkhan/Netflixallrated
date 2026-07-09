@@ -9,25 +9,25 @@
  * - `InlineLoader` — same visual, laid out in normal flow with a reserved
  *   min-height so content never jumps when it's swapped for real data.
  */
-import { useEffect, useState } from 'react';
+import { useEffect, useId, useState } from 'react';
+import { LogoMark } from '../brand';
 
 function LoaderMark({ size = 56 }: { size?: number }) {
+  const gradId = `glr-grad-${useId().replace(/:/g, '')}`;
   return (
     <div className="glass-loader-mark" style={{ width: size, height: size }}>
       <div className="glass-loader-glow" />
       <div className="glass-loader-disc">
-        <svg viewBox="0 0 24 24" width={size * 0.32} height={size * 0.32} fill="none">
-          <polygon points="8,5 8,19 19,12" fill="#F5F0EC" fillOpacity="0.85" />
-        </svg>
+        <LogoMark size={size * 0.5} detailed={size >= 40} aria-hidden />
       </div>
       <svg className="glass-loader-ring" viewBox="0 0 100 100" width={size} height={size}>
         <circle cx="50" cy="50" r="44" fill="none" stroke="rgba(245,240,236,0.08)" strokeWidth="3" />
         <circle
-          cx="50" cy="50" r="44" fill="none" stroke="url(#glr-grad)" strokeWidth="3"
+          cx="50" cy="50" r="44" fill="none" stroke={`url(#${gradId})`} strokeWidth="3"
           strokeLinecap="round" strokeDasharray="70 207"
         />
         <defs>
-          <linearGradient id="glr-grad" x1="0%" y1="0%" x2="100%" y2="100%">
+          <linearGradient id={gradId} x1="0%" y1="0%" x2="100%" y2="100%">
             <stop offset="0%" stopColor="#C2434F" stopOpacity="0" />
             <stop offset="55%" stopColor="#C2434F" stopOpacity="1" />
             <stop offset="100%" stopColor="#F0A5AD" stopOpacity="1" />
