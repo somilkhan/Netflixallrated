@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { Search, ChevronRight, X } from "lucide-react";
 import { api } from "../lib/api";
 import { slugify } from "../lib/slug";
+import GlassCard from "../components/GlassCard";
 
 type CategoryItem = {
   slug: string;
@@ -57,30 +58,31 @@ function CategoryCard({
   return (
     <button
       onClick={() => onOpen(item)}
-      className={`group relative shrink-0 overflow-hidden rounded-2xl border border-line
-        bg-surface/60 backdrop-blur-sm text-left transition-all duration-300
-        hover:border-maroon-bright/60 hover:-translate-y-1
-        hover:shadow-[0_18px_40px_-12px_rgba(194,67,79,0.45)]
+      className={`group relative shrink-0 overflow-hidden rounded-[22px] border border-white/[0.08]
+        bg-surface/50 backdrop-blur-md text-left transition-all duration-300 ease-out
+        hover:-translate-y-1 hover:scale-[1.02] hover:border-maroon-bright/50
+        hover:shadow-[0_18px_40px_-14px_rgba(0,0,0,0.6),0_0_0_1px_rgba(194,67,79,0.3),0_0_24px_-8px_rgba(194,67,79,0.4)]
         focus:outline-none focus-visible:ring-2 focus-visible:ring-maroon-bright/70
         ${large ? "w-full h-40" : "w-44 h-32"}`}
     >
       <div
         className="pointer-events-none absolute inset-0 opacity-0 group-hover:opacity-100
-          transition-opacity duration-300 bg-gradient-to-br from-maroon/25 via-transparent to-transparent"
+          transition-opacity duration-300 bg-gradient-to-br from-maroon/20 via-transparent to-transparent"
       />
       {item.image && (
         <img
           src={item.image}
           alt={item.label}
+          loading="lazy"
           className={`absolute inset-0 w-full h-full ${
             item.imageFit === "contain" ? "object-contain p-6" : "object-cover"
-          } opacity-90`}
+          } opacity-90 transition-transform duration-300 group-hover:scale-105`}
         />
       )}
       {item.image && (
         <div className="absolute inset-0 bg-gradient-to-t from-void/95 via-void/10 to-transparent" />
       )}
-      <div className="relative h-full flex flex-col justify-end p-4">
+      <div className="relative h-full flex flex-col justify-end p-4 backdrop-blur-[2px]">
         {!item.image && <span className="text-3xl mb-1">{item.emoji}</span>}
         {!item.image && (
           <span className="font-serif text-xl font-semibold leading-tight text-ink">{item.label}</span>
@@ -171,35 +173,14 @@ function PosterRow({ title, items }: { title: string; items: PosterItem[] }) {
       </div>
       <div className="flex gap-3 overflow-x-auto px-5 pb-1 scrollbar-none snap-x snap-mandatory">
         {items.map((item, i) => (
-          <button
-            key={item.key}
-            onClick={() => navigate(`/search?q=${encodeURIComponent(item.name)}`)}
-            className="group relative shrink-0 w-28 sm:w-36 aspect-[2/3] snap-start overflow-hidden rounded-xl
-              border border-line bg-surface/60 text-left transition-all duration-300
-              hover:border-maroon-bright/60 hover:-translate-y-1
-              hover:shadow-[0_18px_40px_-12px_rgba(194,67,79,0.45)]
-              focus:outline-none focus-visible:ring-2 focus-visible:ring-maroon-bright/70
-              animate-fadeUp opacity-0"
-            style={{ animationDelay: `${Math.min(i, 10) * 35}ms` }}
-          >
-            {item.posterUrl ? (
-              <img
-                src={item.posterUrl}
-                alt={item.name}
-                loading="lazy"
-                className="absolute inset-0 h-full w-full object-cover opacity-90 transition-opacity group-hover:opacity-100"
-              />
-            ) : (
-              <div className="absolute inset-0 flex items-center justify-center bg-surface-2 p-2">
-                <span className="text-center font-serif text-xs text-ink-dim">{item.name}</span>
-              </div>
-            )}
-            <div className="absolute inset-0 bg-gradient-to-t from-void/90 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
-            <div className="absolute inset-x-0 bottom-0 p-2 opacity-0 group-hover:opacity-100 transition-opacity">
-              <p className="line-clamp-2 text-xs font-medium text-ink">{item.name}</p>
-              {item.year && <p className="text-[10px] font-mono text-ink-dim">{item.year}</p>}
-            </div>
-          </button>
+          <div key={item.key} className="snap-start animate-fadeUp opacity-0" style={{ animationDelay: `${Math.min(i, 10) * 35}ms` }}>
+            <GlassCard
+              title={item.name}
+              year={item.year}
+              posterUrl={item.posterUrl}
+              onClick={() => navigate(`/search?q=${encodeURIComponent(item.name)}`)}
+            />
+          </div>
         ))}
       </div>
     </div>

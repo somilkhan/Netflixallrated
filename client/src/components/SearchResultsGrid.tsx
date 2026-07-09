@@ -11,6 +11,7 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { api } from '../lib/api';
 import Card from './Card';
+import GlassCard, { GlassCardSkeleton } from './GlassCard';
 
 interface TmdbItem {
   tmdbId: number;
@@ -26,6 +27,17 @@ function TmdbResultCard({ item, onImported }: { item: TmdbItem; onImported?: () 
   const [status, setStatus] = useState<'idle' | 'importing' | 'done' | 'exists' | 'noauth'>('idle');
 
   const handleImport = async () => {
+    if (status === 'exists') {
+      // Already in the catalog — resolve straight to its detail page instead
+      // of re-attempting an import that will just fail again.
+      try {
+        const { id } = await api.titles.resolveTmdb(item.tmdbId, item.mediaType as 'movie' | 'tv');
+        nav(`/title/${id}`);
+      } catch {
+        nav(`/search?q=${encodeURIComponent(item.name)}`);
+      }
+      return;
+    }
     setStatus('importing');
     try {
       const result = await api.titles.importTmdb({
@@ -49,48 +61,38 @@ function TmdbResultCard({ item, onImported }: { item: TmdbItem; onImported?: () 
   };
 
   return (
-    <div
-      className="shrink-0 w-[142px] md:w-[172px] group cursor-pointer"
-      onClick={status === 'idle' ? handleImport : undefined}
-    >
-      {/* poster-ratio = 2:3, consistent across all search result cards */}
-      <div
-        className="relative w-full poster-ratio rounded-[11px] border border-line overflow-hidden flex flex-col justify-end p-2 bg-cover bg-center transition-all duration-200 group-hover:border-maroon group-hover:-translate-y-1"
-        style={{
-          backgroundImage: item.posterUrl
-            ? `linear-gradient(to bottom, rgba(0,0,0,0.05), rgba(0,0,0,0.72)), url(${item.posterUrl})`
-            : 'radial-gradient(120% 100% at 30% 0%, #1a1215, #0a0708 70%)',
-        }}
-      >
-        <div className="absolute inset-0 bg-gradient-to-b from-transparent via-transparent to-black/60 pointer-events-none" />
-        <div className="relative z-10">
-          <span className="font-mono text-[9px] px-1.5 py-0.5 rounded border border-line/60 bg-surface/60 text-ink-faint uppercase tracking-wide">
-            {item.mediaType === 'movie' ? 'Movie' : 'Series'} · TMDB
-          </span>
-        </div>
-        {status === 'importing' && (
-          <div className="absolute inset-0 bg-void/70 flex items-center justify-center">
-            <span className="text-[11px] font-mono text-ink-dim animate-pulse">Adding…</span>
-          </div>
-        )}
-        {status === 'done' && (
-          <div className="absolute inset-0 bg-void/70 flex items-center justify-center">
-            <span className="text-[11px] font-mono text-maroon-bright">Added ✓</span>
-          </div>
-        )}
-        {status === 'noauth' && (
-          <div className="absolute inset-0 bg-void/80 flex items-center justify-center p-2">
-            <span className="text-[10px] font-mono text-ink-dim text-center leading-snug">Admin only</span>
-          </div>
-        )}
-      </div>
-      {/* Title — truncate prevents wrapping */}
-      <div className="mt-2.5 text-[13.5px] font-semibold truncate">{item.name}</div>
-      {/* Metadata — single truncated line, never wraps */}
-      <div className="font-mono text-[10.5px] text-ink-faint truncate">
-        {item.year ?? '—'} · {item.mediaType === 'movie' ? 'Movie' : 'Series'}
-      </div>
-    </div>
+    <GlassCard
+      title={item.name}
+      typeLabel={`${item.mediaType === 'movie' ? 'Movie' : 'Series'} · TMDB`}
+      year={item.year}
+      posterUrl={item.posterUrl}
+      onClick={status === 'idle' || status === 'exists' ? handleImport : undefined}
+      className={status === 'importing' || status === 'noauth' ? 'pointer-events-none' : ''}
+      overlay={
+        <>
+          {status === 'importing' && (
+            <div className="absolute inset-0 z-20 bg-void/70 flex items-center justify-center">
+              <span className="text-[11px] font-mono text-ink-dim animate-pulse">Adding…</span>
+            </div>
+          )}
+          {status === 'done' && (
+            <div className="absolute inset-0 z-20 bg-void/70 flex items-center justify-center">
+              <span className="text-[11px] font-mono text-maroon-bright">Added ✓</span>
+            </div>
+          )}
+          {status === 'exists' && (
+            <div className="absolute inset-0 z-20 bg-void/70 flex items-center justify-center p-2">
+              <span className="text-[10px] font-mono text-ink-dim text-center leading-snug">Already added · tap to view</span>
+            </div>
+          )}
+          {status === 'noauth' && (
+            <div className="absolute inset-0 z-20 bg-void/80 flex items-center justify-center p-2">
+              <span className="text-[10px] font-mono text-ink-dim text-center leading-snug">Admin only</span>
+            </div>
+          )}
+        </>
+      }
+    />
   );
 }
 
@@ -118,12 +120,7 @@ export default function SearchResultsGrid({
       /* pb-28 clears the floating BottomNav (~64px pill + 16px gap + margin) */
       <div className="flex flex-wrap gap-4 pb-28">
         {Array.from({ length: 8 }).map((_, i) => (
-          <div key={i} className="shrink-0 w-[142px] md:w-[172px]">
-            {/* poster-ratio skeleton matches real card proportions exactly */}
-            <div className="w-full poster-ratio rounded-[11px] border border-line bg-surface animate-pulse" />
-            <div className="mt-2.5 h-3.5 bg-surface rounded w-4/5 animate-pulse" />
-            <div className="mt-1 h-2.5 bg-surface rounded w-1/2 animate-pulse" />
-          </div>
+          <GlassCardSkeleton key={i} />
         ))}
       </div>
     );
