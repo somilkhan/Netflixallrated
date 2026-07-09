@@ -1,11 +1,25 @@
 /**
- * GlassCard — shared premium poster card used for movies, TV, anime and TMDB
- * results across the app (Home rows, search grid, geo rows). Poster fills the
- * card, a frosted-glass panel anchors info at the bottom, and hovering
- * expands the panel to reveal genres/overview plus a center Play button.
+ * GlassCard — the unified premium poster card for every content surface in
+ * NetflixAllRated (Home rows, Movies, TV, Anime, Search, Categories,
+ * Recommendations, Similar titles, Watchlist, Continue Watching).
  *
- * Pure presentational component — callers own click/navigation/import
- * behaviour and can render extra overlays (e.g. "Adding…") as `overlay`.
+ * Design language: near-black void, deep mehroon/burgundy glassmorphism,
+ * frosted backdrop-blur, thin glass borders, soft burgundy glow on hover.
+ *
+ * Layout:
+ *  · 2:3 poster fills the card — almost no wasted space
+ *  · Rounded corners 22px
+ *  · Slim frosted glass panel anchored to the bottom:
+ *      — Title (up to 2 lines)
+ *      — Year · Runtime · Genre (one mono line)
+ *      — Streaming provider logos
+ *  · Floating badges:
+ *      — Top-left: tier rating  OR  rank number (rank takes priority)
+ *      — Top-right: media type label
+ *  · On hover (desktop): lift -2px + scale 1.03, stronger burgundy glow,
+ *      centred play button fades in, panel expands to reveal
+ *      genre chips + overview snippet
+ *  · `fluid` prop: fills parent width (for grid layouts)
  */
 import { useState } from 'react';
 import { Play, Star, Film } from 'lucide-react';
@@ -32,162 +46,312 @@ export interface GlassCardProps {
   onPlay?: () => void;
   className?: string;
   overlay?: React.ReactNode;
+  fluid?: boolean;
 }
 
 const TIER_STYLE: Record<string, string> = {
-  PERFECTION: 'text-amber border-amber/40 bg-amber/10',
-  GOFORIT: 'text-maroon-bright border-maroon-bright/40 bg-maroon-bright/10',
-  TIMEPASS: 'text-ink-dim border-line-bright bg-surface-2/60',
-  SKIP: 'text-ink-faint border-line bg-surface-2/40',
+  PERFECTION: 'text-amber border-amber/40 bg-amber/15',
+  GOFORIT:    'text-maroon-bright border-maroon-bright/40 bg-maroon-bright/15',
+  TIMEPASS:   'text-ink-dim border-line-bright bg-surface-2/70',
+  SKIP:       'text-ink-faint border-line bg-surface-2/50',
 };
 const TIER_LABEL: Record<string, string> = {
-  PERFECTION: 'Perfection', GOFORIT: 'Go For It', TIMEPASS: 'Timepass', SKIP: 'Skip',
+  PERFECTION: 'Perfection',
+  GOFORIT:    'Go For It',
+  TIMEPASS:   'Timepass',
+  SKIP:       'Skip',
 };
 
 export default function GlassCard({
   posterUrl, posterColorFrom, posterColorTo, title, typeLabel, year, runtimeMinutes,
-  genres = [], overview, ratingLabel, providers = [], rank, onClick, onPlay, className = '', overlay,
+  genres = [], overview, ratingLabel, providers = [], rank, onClick, onPlay,
+  className = '', overlay, fluid = false,
 }: GlassCardProps) {
   const [loaded, setLoaded] = useState(false);
   const [errored, setErrored] = useState(false);
-  const hasImage = !!posterUrl && !errored;
-  const runtime = runtimeMinutes ? `${Math.floor(runtimeMinutes / 60)}h ${runtimeMinutes % 60}m` : null;
-  const tierChip = ratingLabel && TIER_STYLE[ratingLabel] ? (
-    <span className={`inline-flex items-center gap-1 rounded-full border px-1.5 py-[1px] text-[9px] font-mono uppercase tracking-wide ${TIER_STYLE[ratingLabel]}`}>
-      <Star size={9} className="fill-current" />{TIER_LABEL[ratingLabel]}
-    </span>
-  ) : null;
+
+  const hasImage     = !!posterUrl && !errored;
+  const runtime      = runtimeMinutes
+    ? `${Math.floor(runtimeMinutes / 60)}h ${runtimeMinutes % 60}m`
+    : null;
+  const tierStyle    = ratingLabel ? TIER_STYLE[ratingLabel] : null;
+  const tierLabel    = ratingLabel ? TIER_LABEL[ratingLabel] : null;
+  const hasTier      = !!tierStyle && !!tierLabel;
+  const metaParts    = [year, runtime, genres[0]].filter(Boolean).join(' · ');
 
   return (
     <div
       role={onClick ? 'button' : undefined}
       tabIndex={onClick ? 0 : undefined}
-      className={`relative shrink-0 w-[142px] md:w-[172px] cursor-pointer scroll-snap-start group focus:outline-none focus-visible:ring-2 focus-visible:ring-maroon-bright/70 rounded-[20px] ${className}`}
+      aria-label={onClick ? title : undefined}
+      className={`
+        relative cursor-pointer group
+        focus:outline-none focus-visible:ring-2 focus-visible:ring-maroon-bright/70
+        rounded-[22px]
+        ${fluid ? 'w-full' : 'shrink-0 w-[148px] md:w-[178px] scroll-snap-start'}
+        ${className}
+      `}
       onClick={onClick}
-      onKeyDown={onClick ? (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onClick(); } } : undefined}
+      onKeyDown={onClick
+        ? (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onClick(); } }
+        : undefined
+      }
     >
+      {/* ── Inner card — carries the poster-ratio and all visual layers ── */}
       <div
-        className="relative w-full poster-ratio rounded-[20px] overflow-hidden border border-white/[0.08]
-          bg-surface transition-all duration-300 ease-out
-          group-hover:-translate-y-1.5 group-hover:scale-[1.03] group-hover:border-maroon-bright/50
-          group-hover:shadow-[0_20px_44px_-14px_rgba(0,0,0,0.65),0_0_0_1px_rgba(194,67,79,0.35),0_0_28px_-6px_rgba(194,67,79,0.45)]"
+        className="
+          relative w-full poster-ratio rounded-[22px] overflow-hidden
+          bg-surface border border-white/[0.07]
+          transition-all duration-300 ease-out will-change-transform
+          group-hover:-translate-y-[7px] group-hover:scale-[1.03]
+          group-hover:border-maroon/30
+          group-hover:shadow-[0_28px_56px_-10px_rgba(0,0,0,0.85),0_0_0_1px_rgba(122,37,48,0.22),0_0_36px_-4px_rgba(194,67,79,0.32)]
+        "
       >
-        {/* Poster / fallback */}
+        {/* ── Poster ── */}
         {hasImage ? (
           <>
-            {!loaded && <div className="absolute inset-0 bg-surface-2 animate-pulse" />}
+            {!loaded && (
+              <div className="absolute inset-0 bg-surface-2 animate-pulse" />
+            )}
             <img
               src={posterUrl!}
               alt={title}
               loading="lazy"
               onLoad={() => setLoaded(true)}
               onError={() => setErrored(true)}
-              className={`absolute inset-0 h-full w-full object-cover transition-opacity duration-500 ${loaded ? 'opacity-100' : 'opacity-0'}`}
+              className={`
+                absolute inset-0 h-full w-full object-cover
+                transition-opacity duration-500
+                ${loaded ? 'opacity-100' : 'opacity-0'}
+              `}
             />
           </>
         ) : (
           <div
-            className="absolute inset-0 flex items-center justify-center"
-            style={{ background: `radial-gradient(120% 100% at 30% 0%, ${posterColorFrom || '#1a1510'}, ${posterColorTo || '#0a0908'} 70%)` }}
+            className="absolute inset-0 flex flex-col items-center justify-center gap-2 px-3"
+            style={{
+              background: `radial-gradient(130% 110% at 30% 0%,
+                ${posterColorFrom || '#221416'},
+                ${posterColorTo  || '#090909'} 72%)`,
+            }}
           >
-            <Film size={28} className="text-ink-faint/50" />
+            <Film size={24} className="text-ink-faint/35" />
+            <span className="text-[9px] font-mono text-ink-faint/40 text-center leading-tight line-clamp-3">
+              {title}
+            </span>
           </div>
         )}
 
-        {/* Dark gradient for readability, deepens on hover */}
-        <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/10 to-transparent pointer-events-none transition-opacity duration-300 group-hover:from-black/92" />
+        {/* ── Gradient vignette — slim bottom only ── */}
+        <div
+          className="
+            absolute inset-x-0 bottom-0 pointer-events-none
+            transition-opacity duration-300
+          "
+          style={{ height: '55%', background: 'linear-gradient(to top, rgba(0,0,0,0.82) 0%, rgba(0,0,0,0.22) 45%, transparent 100%)' }}
+        />
 
-        {/* Rank */}
-        {rank && (
-          <span
-            className="absolute top-1 left-2 z-10 font-serif font-bold text-[36px] text-transparent leading-none pointer-events-none"
-            style={{ WebkitTextStroke: '1px rgba(245,240,236,0.32)' }}
-          >
-            {String(rank).padStart(2, '0')}
+        {/* ── Top-left badge: rank (takes priority) OR tier ── */}
+        {rank != null ? (
+          <div className="
+            absolute top-2.5 left-2.5 z-10
+            h-[26px] w-[26px] flex items-center justify-center
+            rounded-full bg-void/80 border border-white/[0.14] backdrop-blur-md
+            font-serif font-bold text-[12px] text-ink-dim leading-none
+          ">
+            {rank}
+          </div>
+        ) : hasTier ? (
+          <span className={`
+            absolute top-2.5 left-2.5 z-10
+            inline-flex items-center gap-[3px] rounded-full border
+            px-[7px] py-[3px] text-[7.5px] font-mono uppercase tracking-[0.07em]
+            backdrop-blur-sm leading-none
+            ${tierStyle}
+          `}>
+            <Star size={6} className="fill-current shrink-0" />
+            {tierLabel}
           </span>
-        )}
+        ) : null}
 
-        {/* Type badge */}
+        {/* ── Top-right badge: media type ── */}
         {typeLabel && (
-          <span className="absolute top-2 right-2 z-10 font-mono text-[8.5px] px-1.5 py-0.5 rounded-full border border-white/15 bg-black/40 backdrop-blur-sm text-ink-faint uppercase tracking-wide">
+          <span className="
+            absolute top-2.5 right-2.5 z-10
+            font-mono text-[7.5px] px-[7px] py-[3px] rounded-full
+            border border-white/[0.11] bg-black/55 backdrop-blur-sm
+            text-ink-faint/75 uppercase tracking-[0.07em] leading-none
+          ">
             {typeLabel}
           </span>
         )}
 
-        {/* Center play button on hover */}
+        {/* ── Centre play button — appears on hover ── */}
         <button
           type="button"
           aria-label={`Play ${title}`}
-          onClick={(e) => { e.stopPropagation(); onPlay ? onPlay() : onClick?.(); }}
-          className="absolute inset-0 z-10 m-auto h-10 w-10 flex items-center justify-center rounded-full
-            bg-white/10 border border-white/25 backdrop-blur-md text-ink
+          onClick={(e) => {
+            e.stopPropagation();
+            onPlay ? onPlay() : onClick?.();
+          }}
+          className="
+            absolute z-20 top-1/2 left-1/2 -translate-x-1/2 -translate-y-[58%]
+            h-[42px] w-[42px] flex items-center justify-center rounded-full
+            bg-white/[0.12] border border-white/[0.18] backdrop-blur-md text-ink
             opacity-0 scale-75 pointer-events-none
             transition-all duration-300 ease-out
             group-hover:opacity-100 group-hover:scale-100 group-hover:pointer-events-auto
-            hover:bg-maroon-bright/80 hover:border-maroon-bright hover:shadow-[0_0_18px_rgba(194,67,79,0.65)]"
+            hover:bg-maroon/90 hover:border-maroon-bright/60
+            hover:shadow-[0_0_22px_-2px_rgba(194,67,79,0.7)]
+          "
         >
-          <Play size={15} className="fill-current ml-0.5" />
+          <Play size={15} className="fill-current ml-[2px]" />
         </button>
 
-        {/* Frosted glass info panel — expands on hover */}
-        <div
-          className="absolute inset-x-0 bottom-0 z-10 px-2.5 pt-2 pb-2 bg-black/45 backdrop-blur-md
-            border-t border-white/[0.08] transition-all duration-300 ease-out
-            group-hover:pb-2.5 group-hover:bg-black/60"
-        >
-          <div className="text-[12.5px] font-semibold text-ink truncate leading-tight">{title}</div>
-          <div className="mt-1 flex items-center gap-1.5 min-w-0">
-            {tierChip}
-            <span className="font-mono text-[10px] text-ink-faint truncate">
-              {[year, runtime].filter(Boolean).join(' · ')}
-            </span>
-          </div>
+        {/* ── Frosted glass info panel ── */}
+        <div className="
+          absolute inset-x-0 bottom-0 z-10
+          px-2.5 pt-[9px] pb-[9px]
+          bg-black/55 backdrop-blur-[18px]
+          border-t border-white/[0.07]
+          transition-all duration-300 ease-out
+          group-hover:bg-black/68 group-hover:pb-[11px]
+        ">
+          {/* Title — up to 2 lines */}
+          <p className="
+            text-[12px] font-semibold leading-[1.25] line-clamp-2 text-ink
+          ">
+            {title}
+          </p>
 
+          {/* Year · Runtime · Genre */}
+          {metaParts && (
+            <p className="mt-[3px] font-mono text-[9.5px] text-ink-faint/80 truncate leading-none">
+              {metaParts}
+            </p>
+          )}
+
+          {/* Provider logos */}
           {providers.length > 0 && (
-            <div className="mt-1.5 flex items-center gap-1">
-              {providers.slice(0, 4).map((p, i) => (
+            <div className="mt-[6px] flex items-center gap-[5px]">
+              {providers.slice(0, 4).map((p, i) =>
                 p.logoUrl ? (
-                  <img key={i} src={p.logoUrl} alt={p.name} title={p.name} className="h-4 w-4 rounded-[4px] object-cover border border-white/10" />
+                  <img
+                    key={i} src={p.logoUrl} alt={p.name} title={p.name}
+                    className="h-[15px] w-[15px] rounded-[3px] object-cover border border-white/[0.08]"
+                  />
                 ) : (
-                  <span key={i} className="h-4 px-1 rounded-[4px] border border-white/10 bg-white/5 text-[8px] font-mono flex items-center text-ink-faint">
+                  <span
+                    key={i}
+                    className="h-[15px] px-[5px] rounded-[3px] border border-white/[0.08]
+                      bg-white/[0.05] text-[7px] font-mono flex items-center text-ink-faint"
+                  >
                     {p.name.slice(0, 3)}
                   </span>
                 )
-              ))}
+              )}
             </div>
           )}
 
-          {/* Expanded content — genres + overview, revealed on hover */}
-          <div className="grid grid-rows-[0fr] group-hover:grid-rows-[1fr] transition-[grid-template-rows] duration-300 ease-out">
+          {/* ── Expanded content on hover ── */}
+          <div className="
+            grid grid-rows-[0fr] group-hover:grid-rows-[1fr]
+            transition-[grid-template-rows] duration-300 ease-out
+          ">
             <div className="overflow-hidden">
+              {/* Tier chip when rank occupies top-left */}
+              {rank != null && hasTier && (
+                <span className={`
+                  mt-[7px] inline-flex items-center gap-[3px] rounded-full border
+                  px-[7px] py-[3px] text-[7.5px] font-mono uppercase tracking-[0.07em]
+                  leading-none ${tierStyle}
+                `}>
+                  <Star size={6} className="fill-current" />{tierLabel}
+                </span>
+              )}
+
+              {/* Genre chips */}
               {genres.length > 0 && (
-                <div className="mt-1.5 flex flex-wrap gap-1">
+                <div className="mt-[7px] flex flex-wrap gap-1">
                   {genres.slice(0, 2).map((g) => (
-                    <span key={g} className="text-[8.5px] font-mono px-1.5 py-0.5 rounded-full border border-white/10 text-ink-dim">{g}</span>
+                    <span
+                      key={g}
+                      className="
+                        text-[8px] font-mono px-[6px] py-[2.5px] rounded-full
+                        border border-white/[0.08] bg-white/[0.04] text-ink-dim/75
+                        leading-none
+                      "
+                    >
+                      {g}
+                    </span>
                   ))}
                 </div>
               )}
+
+              {/* Overview snippet */}
               {overview && (
-                <p className="mt-1.5 text-[9.5px] leading-snug text-ink-dim line-clamp-3">{overview}</p>
+                <p className="mt-[6px] text-[9px] leading-[1.45] text-ink-faint/70 line-clamp-3">
+                  {overview}
+                </p>
               )}
             </div>
           </div>
         </div>
 
+        {/* Caller-provided overlay (e.g. AniList score badge, import states) */}
         {overlay}
       </div>
     </div>
   );
 }
 
-export function GlassCardSkeleton({ className = '', fluid = false }: { className?: string; fluid?: boolean }) {
+// ── Skeleton ─────────────────────────────────────────────────────────────────
+
+export function GlassCardSkeleton({
+  className = '',
+  fluid = false,
+}: {
+  className?: string;
+  fluid?: boolean;
+}) {
   return (
-    <div className={`shrink-0 ${fluid ? 'w-full' : 'w-[142px] md:w-[172px]'} ${className}`}>
-      <div className="relative w-full poster-ratio rounded-[20px] border border-white/[0.08] bg-surface overflow-hidden">
-        <div className="absolute inset-0 bg-gradient-to-br from-surface-2 via-surface to-surface-2 bg-[length:200%_200%] animate-[glShimmer_1.8s_ease-in-out_infinite]" />
-        <div className="absolute inset-x-0 bottom-0 p-2.5 bg-black/40 backdrop-blur-md border-t border-white/[0.06]">
-          <div className="h-3 w-4/5 rounded bg-white/10 animate-pulse" />
-          <div className="mt-1.5 h-2.5 w-1/2 rounded bg-white/10 animate-pulse" />
+    <div
+      className={`
+        ${fluid ? 'w-full' : 'shrink-0 w-[148px] md:w-[178px]'}
+        ${className}
+      `}
+    >
+      <div className="
+        relative w-full poster-ratio rounded-[22px]
+        border border-white/[0.06] bg-surface overflow-hidden
+      ">
+        {/* Shimmer body */}
+        <div className="
+          absolute inset-0
+          bg-gradient-to-br from-surface-2 via-surface to-surface-2
+          bg-[length:200%_200%]
+          animate-[glShimmer_1.8s_ease-in-out_infinite]
+        " />
+
+        {/* Subtle bottom vignette */}
+        <div className="absolute inset-x-0 bottom-0 h-[40%] bg-gradient-to-t from-black/40 to-transparent pointer-events-none" />
+
+        {/* Fake badge placeholders */}
+        <div className="absolute top-2.5 left-2.5 h-[22px] w-[44px] rounded-full bg-white/[0.06] animate-pulse" />
+        <div className="absolute top-2.5 right-2.5 h-[18px] w-[32px] rounded-full bg-white/[0.05] animate-pulse" />
+
+        {/* Glass panel */}
+        <div className="
+          absolute inset-x-0 bottom-0 px-2.5 pt-2.5 pb-[11px]
+          bg-black/40 backdrop-blur-[18px] border-t border-white/[0.06]
+        ">
+          <div className="h-3 w-[82%] rounded-full bg-white/[0.09] animate-pulse mb-[5px]" />
+          <div className="h-2.5 w-[55%] rounded-full bg-white/[0.07] animate-pulse mb-[7px]" />
+          <div className="flex gap-[5px]">
+            <div className="h-[15px] w-[15px] rounded-[3px] bg-white/[0.07] animate-pulse" />
+            <div className="h-[15px] w-[15px] rounded-[3px] bg-white/[0.06] animate-pulse" />
+          </div>
         </div>
       </div>
     </div>
