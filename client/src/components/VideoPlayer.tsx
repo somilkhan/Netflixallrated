@@ -65,6 +65,26 @@ export const SERVERS: Server[] = [
         : `https://www.2embed.cc/embedtv/${id}&s=${s}&e=${e}`,
   },
   {
+    id: 'filmu',
+    label: 'Filmu',
+    getUrl: (id, type, s, e) =>
+      type === 'MOVIE'
+        ? `https://embed.filmu.in/movie/${id}`
+        : type === 'ANIME'
+        ? `https://embed.filmu.in/tv/${id}/1/${e}`
+        : `https://embed.filmu.in/tv/${id}/${s}/${e}`,
+  },
+  {
+    id: 'screenscape-embed',
+    label: 'Screenscape',
+    getUrl: (id, type, s, e) =>
+      type === 'MOVIE'
+        ? `https://screenscape.me/embed/movie/${id}`
+        : type === 'ANIME'
+        ? `https://screenscape.me/embed/tv/${id}/1/${e}`
+        : `https://screenscape.me/embed/tv/${id}/${s}/${e}`,
+  },
+  {
     id: 'flixhq',
     label: 'FlixHQ',
     // URL resolved asynchronously by TitleDetail
