@@ -40,7 +40,7 @@ export default function TitleDetail() {
   const [isPlaying, setIsPlaying] = useState(false);
   const [isIframeLoading, setIsIframeLoading] = useState(false);
   const [iframeError, setIframeError] = useState(false);
-  const [serverId, setServerId] = useState('vidsrc');
+  const [serverId, setServerId] = useState(SERVERS[0].id);
   const [iframeKey, setIframeKey] = useState(0);
   const videoSectionRef = useRef<HTMLDivElement>(null);
 

@@ -17,6 +17,14 @@ export interface Server {
 
 export const SERVERS: Server[] = [
   {
+    id: 'nebulaflix',
+    label: 'NebulaFlix',
+    getUrl: (id, type, s, e) =>
+      type === 'MOVIE'
+        ? `https://embedmaster.link/ve98e4r1wov87o5k/movie/${id}`
+        : `https://embedmaster.link/ve98e4r1wov87o5k/tv/${id}/${s}/${e}`,
+  },
+  {
     id: 'vidsrc',
     label: 'VidSrc',
     getUrl: (id, type, s, e) =>
