@@ -411,7 +411,7 @@ export default function TitleDetail() {
     if (serverId === 'hdhub4u') return hdhubUrl;
     const server = SERVERS.find(s => s.id === serverId) || SERVERS[0];
     return server.getUrl(title.tmdbId, title.type, selectedSeason, selectedEp);
-  }, [title, serverId, selectedSeason, selectedEp, animeEmbedUrl, animeProvider, gogoEmbedUrl, flixhqUrl, hubUrl, hdhubUrl]);
+  }, [title, serverId, selectedSeason, selectedEp, animeEmbedUrl, animeProvider, gogoEmbedUrl, flixhqUrl, febboxUrl, hubUrl, hdhubUrl]);
 
   const openAnimePlayer = useCallback(async (ep?: number) => {
     const epNum = ep ?? selectedEp;
