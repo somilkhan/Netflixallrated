@@ -93,6 +93,7 @@ const Navbar = memo(function Navbar() {
               type="button"
               onClick={() => setQuery('')}
               className="shrink-0 text-ink-faint hover:text-ink transition-colors"
+              aria-label="Clear search"
             >
               <X size={12} />
             </button>
@@ -116,6 +117,8 @@ const Navbar = memo(function Navbar() {
             <>
               <button
                 onClick={() => setMenuOpen(o => !o)}
+                aria-label="Account menu"
+                aria-expanded={menuOpen}
                 className="
                   w-[32px] h-[32px] rounded-full
                   bg-gradient-to-br from-maroon to-maroon-bright

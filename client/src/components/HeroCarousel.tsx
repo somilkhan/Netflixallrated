@@ -195,7 +195,7 @@ export default function HeroCarousel({ titles }: { titles: any[] }) {
               className="flex items-center gap-2.5 animate-fadeUp"
               style={{ animationDelay: '0.32s' }}
             >
-              <button onClick={scrollPrev} className="text-ink-faint/60 hover:text-ink transition-colors">
+              <button onClick={scrollPrev} aria-label="Previous slide" className="text-ink-faint/60 hover:text-ink transition-colors">
                 <ChevronLeft size={16} />
               </button>
               <div className="flex gap-1.5 items-center">
@@ -203,6 +203,8 @@ export default function HeroCarousel({ titles }: { titles: any[] }) {
                   <button
                     key={i}
                     onClick={() => scrollTo(i)}
+                    aria-label={`Go to slide ${i + 1}`}
+                    aria-current={i === selectedIdx}
                     className="relative h-[2.5px] rounded-full overflow-hidden transition-all duration-300"
                     style={{ width: i === selectedIdx ? 24 : 8, background: 'rgba(255,255,255,0.18)' }}
                   >
@@ -215,7 +217,7 @@ export default function HeroCarousel({ titles }: { titles: any[] }) {
                   </button>
                 ))}
               </div>
-              <button onClick={scrollNext} className="text-ink-faint/60 hover:text-ink transition-colors">
+              <button onClick={scrollNext} aria-label="Next slide" className="text-ink-faint/60 hover:text-ink transition-colors">
                 <ChevronRight size={16} />
               </button>
             </div>

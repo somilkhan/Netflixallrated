@@ -134,6 +134,7 @@ function ImgCard({
       {img && imgOk && (
         <img
           src={img} alt={label}
+          loading="lazy" decoding="async"
           onError={() => setImgOk(false)}
           style={{
             position: "absolute", inset: 0,
