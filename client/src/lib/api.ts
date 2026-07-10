@@ -5,7 +5,7 @@ const inflight = new Map<string, Promise<any>>();
 async function fetcher(path: string, options?: RequestInit) {
   const token = localStorage.getItem('token');
   const method = (options?.method || 'GET').toUpperCase();
-  const dedupeKey = method === 'GET' ? `${path}` : null;
+  const dedupeKey = method === 'GET' ? `${token || 'anon'}::${path}` : null;
 
   if (dedupeKey && inflight.has(dedupeKey)) {
     return inflight.get(dedupeKey);

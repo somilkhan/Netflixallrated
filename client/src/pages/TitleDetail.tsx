@@ -165,26 +165,34 @@ export default function TitleDetail() {
 
   useEffect(() => {
     if (!id) return;
-    api.titles.get(id).then(setTitle).catch(() => {});
-    api.titles.ratings(id).then(setRatings).catch(() => {});
+    let cancelled = false;
+    api.titles.get(id).then((data) => { if (!cancelled) setTitle(data); }).catch(() => {});
+    api.titles.ratings(id).then((data) => { if (!cancelled) setRatings(data); }).catch(() => {});
+    return () => { cancelled = true; };
   }, [id]);
 
   useEffect(() => {
     if (!title || title.type !== 'SERIES' || !id) return;
+    let cancelled = false;
     setSeasonsLoading(true);
     api.titles.seasons(id)
-      .then(setSeasons).catch(() => setSeasons([]))
-      .finally(() => setSeasonsLoading(false));
+      .then((data) => { if (!cancelled) setSeasons(data); })
+      .catch(() => { if (!cancelled) setSeasons([]); })
+      .finally(() => { if (!cancelled) setSeasonsLoading(false); });
+    return () => { cancelled = true; };
   }, [title, id]);
 
   useEffect(() => {
     if (!title || title.type !== 'SERIES' || !id) return;
+    let cancelled = false;
     setEpsLoading(true);
     setEpisodes([]);
     setSelectedEp(1);
     api.titles.episodes(id, selectedSeason)
-      .then(setEpisodes).catch(() => setEpisodes([]))
-      .finally(() => setEpsLoading(false));
+      .then((data) => { if (!cancelled) setEpisodes(data); })
+      .catch(() => { if (!cancelled) setEpisodes([]); })
+      .finally(() => { if (!cancelled) setEpsLoading(false); });
+    return () => { cancelled = true; };
   }, [selectedSeason, title, id]);
 
   // FlixHQ auto-resolve — fires when FlixHQ server is selected for movies/TV
@@ -290,7 +298,11 @@ export default function TitleDetail() {
 
   useEffect(() => {
     if (!title || !title.tmdbId) { setWatchProviders(null); return; }
-    api.titles.watchProviders(id!).then(setWatchProviders).catch(() => setWatchProviders(null));
+    let cancelled = false;
+    api.titles.watchProviders(id!)
+      .then((data) => { if (!cancelled) setWatchProviders(data); })
+      .catch(() => { if (!cancelled) setWatchProviders(null); });
+    return () => { cancelled = true; };
   }, [title, id]);
 
   // Recommendations / Similar titles — TMDB-backed; available whenever a
@@ -299,19 +311,27 @@ export default function TitleDetail() {
   const [recommendedTitles, setRecommendedTitles] = useState<any[]>([]);
   useEffect(() => {
     if (!title || !title.tmdbId || !id) { setSimilarTitles([]); setRecommendedTitles([]); return; }
-    api.titles.similar(id).then(setSimilarTitles).catch(() => setSimilarTitles([]));
-    api.titles.recommendations(id).then(setRecommendedTitles).catch(() => setRecommendedTitles([]));
+    let cancelled = false;
+    api.titles.similar(id)
+      .then((data) => { if (!cancelled) setSimilarTitles(data); })
+      .catch(() => { if (!cancelled) setSimilarTitles([]); });
+    api.titles.recommendations(id)
+      .then((data) => { if (!cancelled) setRecommendedTitles(data); })
+      .catch(() => { if (!cancelled) setRecommendedTitles([]); });
+    return () => { cancelled = true; };
   }, [title, id]);
 
   useEffect(() => {
     if (!title || title.type !== 'ANIME') return;
     setAnilistData(null);
+    let cancelled = false;
     // AniList is used ONLY for anime-specific metadata (episodes, studios,
     // season, status, relations, characters, genres, score) — TMDB (via
     // title.tmdbId/posterUrl/backdropUrl) remains the primary artwork source.
     getAnimeDetail(title.anilistId ? { id: title.anilistId } : { name: title.name })
-      .then((data) => { if (data) setAnilistData(data); })
+      .then((data) => { if (!cancelled && data) setAnilistData(data); })
       .catch(() => {});
+    return () => { cancelled = true; };
   }, [title]);
 
   useEffect(() => {
