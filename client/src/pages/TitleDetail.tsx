@@ -81,6 +81,7 @@ export default function TitleDetail() {
   const [ratings, setRatings] = useState<any[]>([]);
   const [myTier, setMyTier] = useState<Tier | ''>('');
   const [review, setReview] = useState('');
+  const [titleError, setTitleError] = useState(false);
   const [watchlistStatus, setWatchlistStatus] = useState('');
   const [ratingSubmitting, setRatingSubmitting] = useState(false);
   const [scrolled, setScrolled] = useState(false);
@@ -166,7 +167,11 @@ export default function TitleDetail() {
   useEffect(() => {
     if (!id) return;
     let cancelled = false;
-    api.titles.get(id).then((data) => { if (!cancelled) setTitle(data); }).catch(() => {});
+    setTitle(null);
+    setTitleError(false);
+    api.titles.get(id)
+      .then((data) => { if (!cancelled) setTitle(data); })
+      .catch(() => { if (!cancelled) setTitleError(true); });
     api.titles.ratings(id).then((data) => { if (!cancelled) setRatings(data); }).catch(() => {});
     return () => { cancelled = true; };
   }, [id]);
@@ -540,6 +545,21 @@ export default function TitleDetail() {
     await api.watchlist.add({ titleId: id, status });
     setWatchlistStatus(status);
   };
+
+  if (titleError) return (
+    <div style={{ minHeight: '100vh', background: '#090909', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+      <div style={{ textAlign: 'center', color: 'rgba(255,255,255,0.7)', padding: '0 20px' }}>
+        <p style={{ marginBottom: 16 }}>This title couldn't be found or failed to load.</p>
+        <button
+          onClick={() => navigate('/')}
+          className="dp-btn dp-btn-save"
+          style={{ padding: '10px 20px', borderRadius: 8 }}
+        >
+          Back to Home
+        </button>
+      </div>
+    </div>
+  );
 
   if (!title) return (
     <div style={{ minHeight: '100vh', background: '#090909' }}>
