@@ -1,10 +1,11 @@
-import { useState, useMemo, useEffect } from "react";
+import { useState, useMemo, useEffect, type CSSProperties } from "react";
 import { useNavigate } from "react-router-dom";
-import { Search, ChevronRight, X } from "lucide-react";
+import { ChevronRight, X } from "lucide-react";
 import { api } from "../lib/api";
 import { slugify } from "../lib/slug";
 import GlassCard, { GlassCardSkeleton } from "../components/GlassCard";
 
+/* ─── Types ──────────────────────────────────────────────── */
 type CategoryItem = {
   slug: string;
   label: string;
@@ -12,7 +13,6 @@ type CategoryItem = {
   image?: string;
   imageFit?: "contain" | "cover";
 };
-
 type PosterItem = {
   key: string;
   name: string;
@@ -21,136 +21,328 @@ type PosterItem = {
   tmdbId?: number;
   mediaType?: string;
 };
-
 type Expanded = "type" | "genre" | "studio" | null;
 
+/* ─── Static maps ────────────────────────────────────────── */
 const TYPE_LABEL: Record<string, string> = { MOVIE: "Movies", SERIES: "TV Shows", ANIME: "Anime" };
 const TYPE_SLUG:  Record<string, string> = { MOVIE: "movies", SERIES: "tv-shows", ANIME: "anime" };
 
-const PLATFORM_IMAGES: Record<string, string> = {
-  netflix:       "/images/categories/netflix.jpg",
-  "prime-video": "/images/categories/primevideo.webp",
-  hotstar:       "/images/categories/hotstar.png",
-  "apple-tv":    "/images/categories/appletv.png",
-  crunchyroll:   "/images/categories/crunchyroll.png",
-  mubi:          "/images/categories/mubi.png",
+const TMDB = "https://image.tmdb.org/t/p/w780";
+
+// Tint colors + backdrop images per genre (tint at 60% opacity — bingr style)
+const GENRE_VISUAL: Record<string, { img?: string; tint: string }> = {
+  "Action":    { img: `${TMDB}/or06FN3Dka5tukK1e9sl16pB3iy.jpg`, tint: "rgba(200,50,40,0.60)"  },
+  "Drama":     { img: `${TMDB}/fm6KqXpk3M2HVveHwCrBSSBaO0V.jpg`, tint: "rgba(180,110,30,0.60)" },
+  "Horror":    { img: `${TMDB}/6MKr3KgBuTfMVuar57mJQEcIx8x.jpg`, tint: "rgba(80,10,10,0.60)"   },
+  "Sci-Fi":    { img: `${TMDB}/rAiYTfKGqDCRIIqo664sY9XZIvQ.jpg`, tint: "rgba(30,80,200,0.60)"  },
+  "Science Fiction": { img: `${TMDB}/rAiYTfKGqDCRIIqo664sY9XZIvQ.jpg`, tint: "rgba(30,80,200,0.60)" },
+  "Romance":   { img: `${TMDB}/1MGABCxFbGuQSHRmqST7gBJMnSN.jpg`, tint: "rgba(190,80,80,0.60)"  },
+  "Thriller":  { img: `${TMDB}/or06FN3Dka5tukK1e9sl16pB3iy.jpg`, tint: "rgba(20,80,50,0.60)"   },
+  "Comedy":    { img: `${TMDB}/fm6KqXpk3M2HVveHwCrBSSBaO0V.jpg`, tint: "rgba(180,150,0,0.60)"  },
+  "Animation": { img: `${TMDB}/39wmItIWsg5sZMyRUHLkWBcuVCM.jpg`, tint: "rgba(110,40,200,0.60)" },
+  "Crime":     { tint: "rgba(60,60,60,0.60)" },
+  "Fantasy":   { tint: "rgba(60,20,140,0.60)" },
+  "Adventure": { tint: "rgba(20,120,80,0.60)" },
+  "Mystery":   { tint: "rgba(40,20,80,0.60)" },
+  "Documentary": { tint: "rgba(20,60,100,0.60)" },
+  "Family":    { tint: "rgba(140,100,20,0.60)" },
+  "Music":     { tint: "rgba(180,40,140,0.60)" },
+  "War":       { tint: "rgba(80,60,20,0.60)" },
+  "Western":   { tint: "rgba(160,80,10,0.60)" },
+  "History":   { tint: "rgba(120,80,20,0.60)" },
 };
 
-function CategoryCard({
-  item, onOpen, large,
-}: { item: CategoryItem; onOpen: (item: CategoryItem) => void; large?: boolean }) {
+// Tint + backdrop for type cards
+const TYPE_VISUAL: Record<string, { img: string; tint: string }> = {
+  movies:    { img: `${TMDB}/xOMo8BRK7PfcJv9JCnx7s5hj0PX.jpg`, tint: "rgba(100,70,200,0.60)" },
+  "tv-shows":{ img: `${TMDB}/uKvVjHNqB5VmOrdxqAt2F7J78ED.jpg`, tint: "rgba(40,140,100,0.60)" },
+  anime:     { img: `${TMDB}/suopoADq0k8YZr4dQXcU6pToj6s.jpg`, tint: "rgba(190,50,60,0.60)"  },
+};
+
+// Known platform logo styling
+const PLATFORM_LOGO: Record<string, { logo: string; color: string }> = {
+  netflix:       { logo: "NETFLIX",     color: "#E50914" },
+  "prime-video": { logo: "prime video", color: "#00A8E1" },
+  hotstar:       { logo: "hotstar",     color: "#1A6CF2" },
+  crunchyroll:   { logo: "crunchyroll", color: "#F47521" },
+  "apple-tv":    { logo: "Apple TV+",   color: "#F0F0F2" },
+  mubi:          { logo: "MUBI",        color: "#D4A84B" },
+};
+
+// Static Era row
+const ERAS = [
+  { label: "Classics", sub: "Pre-2000", img: `${TMDB}/fm6KqXpk3M2HVveHwCrBSSBaO0V.jpg`, tint: "rgba(120,80,20,0.60)"  },
+  { label: "90s",      sub: "1990–99",  img: `${TMDB}/or06FN3Dka5tukK1e9sl16pB3iy.jpg`, tint: "rgba(160,90,20,0.60)"  },
+  { label: "2000s",    sub: "2000–09",  img: `${TMDB}/xOMo8BRK7PfcJv9JCnx7s5hj0PX.jpg`, tint: "rgba(40,100,160,0.60)" },
+  { label: "2010s",    sub: "2010–19",  img: `${TMDB}/39wmItIWsg5sZMyRUHLkWBcuVCM.jpg`, tint: "rgba(30,120,80,0.60)"  },
+  { label: "2020s",    sub: "2020–Now", img: `${TMDB}/uKvVjHNqB5VmOrdxqAt2F7J78ED.jpg`, tint: "rgba(70,40,180,0.60)"  },
+];
+
+// Static Mood row (gradient-only cards, like bingr's "Sparks")
+const MOODS = [
+  { label: "Dark & Gritty",  slug: "thriller", grad: "linear-gradient(135deg,#1a0a0a 0%,#3a1010 50%,#200808 100%)" },
+  { label: "Feel-Good",      slug: "comedy",   grad: "linear-gradient(135deg,#0d2010 0%,#1a4a20 50%,#0a2510 100%)" },
+  { label: "Mind-Bending",   slug: "sci-fi",   grad: "linear-gradient(135deg,#0d0a20 0%,#2a1060 50%,#150830 100%)" },
+  { label: "Heartwarming",   slug: "romance",  grad: "linear-gradient(135deg,#200a0a 0%,#4a1520 50%,#280a10 100%)" },
+  { label: "Adrenaline",     slug: "action",   grad: "linear-gradient(135deg,#1a0a00 0%,#3a1a00 50%,#200800 100%)" },
+];
+
+/* ─── Design tokens (inline — Tailwind can't handle dynamic tints) ── */
+const BG      = "#09040A";
+const CARD_BG = "#141014";
+const MAROON  = "#C2434F";
+const DIM_RED = "#8B1A24";
+const WHITE   = "#EDE6E8";
+const DIM     = "#6E6070";
+const BORDER  = "rgba(255,255,255,0.045)";
+const W = 165;   // card width
+const H = 115;   // card height
+const R = 13;    // border-radius
+
+/* ─── Skeleton ───────────────────────────────────────────── */
+function CardSkeleton() {
+  return (
+    <div style={{
+      flexShrink: 0, width: W, height: H, borderRadius: R,
+      background: CARD_BG, border: `1px solid ${BORDER}`,
+      animation: "pulse 1.5s ease-in-out infinite",
+    }} />
+  );
+}
+
+/* ─── Image card ─────────────────────────────────────────── */
+function ImgCard({
+  label, sub, img, tint, onClick,
+}: {
+  label: string; sub?: string; img?: string; tint: string;
+  onClick?: () => void;
+}) {
+  const [imgOk, setImgOk] = useState(!!img);
   return (
     <button
-      onClick={() => onOpen(item)}
-      className={`group relative shrink-0 overflow-hidden rounded-[22px] border border-white/[0.08]
-        bg-surface/50 backdrop-blur-md text-left transition-all duration-300 ease-out
-        hover:-translate-y-1 hover:scale-[1.02] hover:border-maroon-bright/50
-        hover:shadow-[0_18px_40px_-14px_rgba(0,0,0,0.6),0_0_0_1px_rgba(194,67,79,0.3),0_0_24px_-8px_rgba(194,67,79,0.4)]
-        focus:outline-none focus-visible:ring-2 focus-visible:ring-maroon-bright/70
-        ${large ? "w-full h-40" : "w-44 h-32"}`}
+      onClick={onClick}
+      style={{
+        flexShrink: 0, position: "relative",
+        width: W, height: H, borderRadius: R,
+        overflow: "hidden", cursor: "pointer",
+        background: CARD_BG,
+        border: `1px solid ${BORDER}`,
+        padding: 0, textAlign: "left",
+      }}
     >
-      <div className="pointer-events-none absolute inset-0 opacity-0 group-hover:opacity-100
-        transition-opacity duration-300 bg-gradient-to-br from-maroon/20 via-transparent to-transparent" />
-      {item.image && (
+      {/* Image */}
+      {img && imgOk && (
         <img
-          src={item.image} alt={item.label} loading="lazy"
-          className={`absolute inset-0 w-full h-full ${
-            item.imageFit === "contain" ? "object-contain p-6" : "object-cover"
-          } opacity-90 transition-transform duration-300 group-hover:scale-105`}
+          src={img} alt={label}
+          onError={() => setImgOk(false)}
+          style={{
+            position: "absolute", inset: 0,
+            width: "100%", height: "100%",
+            objectFit: "cover", objectPosition: "center",
+            filter: "brightness(0.82) saturate(0.88)",
+          }}
         />
       )}
-      {item.image && (
-        <div className="absolute inset-0 bg-gradient-to-t from-void/95 via-void/10 to-transparent" />
-      )}
-      <div className="relative h-full flex flex-col justify-end p-4 backdrop-blur-[2px]">
-        {/* No emoji — use label only */}
-        {(!item.image || item.imageFit !== "contain") && (
-          <span className="font-serif text-xl font-semibold leading-tight text-ink">{item.label}</span>
+
+      {/* Bingr-style colored tint */}
+      <div style={{ position: "absolute", inset: 0, background: tint }} />
+
+      {/* Bottom fade for text readability */}
+      <div style={{
+        position: "absolute", inset: 0,
+        background:
+          "linear-gradient(to top,rgba(9,4,10,0.92) 0%,rgba(9,4,10,0.45) 42%,transparent 66%)",
+      }} />
+
+      {/* Label */}
+      <div style={{ position: "absolute", bottom: 0, left: 0, right: 0, padding: "0 10px 9px" }}>
+        <p style={{
+          fontFamily: "'Inter',sans-serif",
+          fontWeight: 700, fontSize: 15,
+          color: WHITE, margin: 0, lineHeight: 1.2,
+          textShadow: "0 1px 4px rgba(0,0,0,0.6)",
+        }}>{label}</p>
+        {sub && (
+          <p style={{
+            fontFamily: "'Inter',sans-serif",
+            fontWeight: 400, fontSize: 10,
+            color: "rgba(255,255,255,0.50)",
+            margin: "1px 0 0",
+          }}>{sub}</p>
         )}
-        {item.tag && <span className="mt-1 text-xs font-mono text-ink-dim">{item.tag}</span>}
       </div>
     </button>
   );
 }
 
-function Row({
-  title, items, onOpen, onViewAll, showSearch, query, onQuery,
+/* ─── Platform / logo card ───────────────────────────────── */
+function LogoCard({
+  label, color, logo, onClick,
 }: {
-  title: string;
-  items: CategoryItem[];
-  onOpen: (item: CategoryItem) => void;
-  onViewAll: () => void;
-  showSearch?: boolean;
-  query?: string;
-  onQuery?: (value: string) => void;
+  label: string; color: string; logo: string; onClick?: () => void;
 }) {
+  const isNetflix = logo === "NETFLIX", isMubi = logo === "MUBI";
+  const isPrime   = logo === "prime video", isApple = logo === "Apple TV+";
   return (
-    <div className="mb-10">
-      <div className="flex items-center justify-between px-5 mb-3">
-        <h2 className="font-serif text-2xl sm:text-[26px] font-semibold text-ink">{title}</h2>
-        <button onClick={onViewAll} className="flex items-center gap-1 text-sm text-ink-dim hover:text-maroon-bright transition-colors">
-          View All <ChevronRight size={15} />
-        </button>
+    <button
+      onClick={onClick}
+      style={{
+        flexShrink: 0, position: "relative",
+        width: W, height: H, borderRadius: R,
+        overflow: "hidden", cursor: "pointer",
+        background: CARD_BG,
+        border: `1px solid ${BORDER}`,
+        display: "flex", alignItems: "center", justifyContent: "center",
+        padding: 0,
+      }}
+    >
+      <div style={{
+        position: "absolute", inset: 0,
+        background: `radial-gradient(ellipse at center,${color}16 0%,transparent 70%)`,
+      }} />
+      <span style={{
+        position: "relative",
+        fontFamily: isNetflix || isMubi
+          ? "'Montserrat',sans-serif"
+          : isApple
+          ? "-apple-system,'SF Pro Display',sans-serif"
+          : "'Plus Jakarta Sans',sans-serif",
+        fontWeight: isPrime ? 400 : 700,
+        fontStyle:  isPrime ? "italic" : "normal",
+        fontSize:   isNetflix ? 18 : isMubi ? 22 : isPrime ? 13 : isApple ? 14 : 16,
+        letterSpacing: isNetflix ? "0.15em" : isMubi ? "0.22em" : "0.02em",
+        textTransform: (isNetflix || isMubi ? "uppercase" : "none") as CSSProperties["textTransform"],
+        color,
+        textShadow: `0 0 28px ${color}55`,
+      }}>{logo}</span>
+    </button>
+  );
+}
+
+/* ─── Mood card (gradient-only, editorial) ───────────────── */
+function MoodCard({ label, grad, onClick }: { label: string; grad: string; onClick?: () => void }) {
+  return (
+    <button
+      onClick={onClick}
+      style={{
+        flexShrink: 0, position: "relative",
+        width: W, height: H, borderRadius: R,
+        overflow: "hidden", cursor: "pointer",
+        background: grad,
+        border: `1px solid ${BORDER}`,
+        padding: 0, textAlign: "left",
+      }}
+    >
+      <div style={{ position: "absolute", bottom: 0, left: 0, right: 0, padding: "0 10px 9px" }}>
+        <p style={{
+          fontFamily: "'Inter',sans-serif",
+          fontWeight: 700, fontSize: 15,
+          color: WHITE, margin: 0, lineHeight: 1.2,
+          textShadow: "0 1px 5px rgba(0,0,0,0.8)",
+        }}>{label}</p>
       </div>
+    </button>
+  );
+}
 
-      {showSearch && (
-        <div className="px-5 mb-4">
-          <div className="flex items-center gap-3 rounded-full border border-line bg-surface/60 px-4 py-3 backdrop-blur-sm">
-            <Search size={17} className="text-ink-faint" />
-            <input
-              value={query}
-              onChange={(e) => onQuery?.(e.target.value)}
-              placeholder="Search genres..."
-              className="w-full bg-transparent text-sm text-ink placeholder-ink-faint outline-none"
-            />
-            {query && (
-              <button onClick={() => onQuery?.("")} className="text-ink-faint hover:text-ink-dim">
-                <X size={15} />
-              </button>
-            )}
-          </div>
-        </div>
-      )}
+/* ─── Shared scroll row ──────────────────────────────────── */
+function Row({ children }: { children: React.ReactNode }) {
+  return (
+    <div style={{
+      display: "flex", overflowX: "auto", gap: 10,
+      paddingLeft: 16, paddingRight: 16,
+      scrollbarWidth: "none",
+      WebkitOverflowScrolling: "touch",
+    } as CSSProperties}>
+      {children}
+    </div>
+  );
+}
 
-      {items.length === 0 ? (
-        <p className="px-5 text-sm text-ink-dim">No matches.</p>
-      ) : (
-        <div className="flex gap-3 overflow-x-auto px-5 pb-1 scrollbar-none snap-x snap-mandatory">
-          {items.map((item, i) => (
-            <div key={item.slug} className="snap-start animate-fadeUp opacity-0" style={{ animationDelay: `${Math.min(i, 8) * 40}ms` }}>
-              <CategoryCard item={item} onOpen={onOpen} />
-            </div>
-          ))}
-        </div>
+/* ─── Section header ─────────────────────────────────────── */
+function SectionHeader({ title, onViewAll }: { title: string; onViewAll?: () => void }) {
+  return (
+    <div style={{
+      display: "flex", alignItems: "center", justifyContent: "space-between",
+      padding: "0 16px", marginBottom: 11,
+    }}>
+      <span style={{
+        fontFamily: "'Inter',sans-serif",
+        fontWeight: 700, fontSize: 19,
+        color: WHITE, letterSpacing: "-0.01em",
+      }}>{title}</span>
+      {onViewAll && (
+        <button
+          onClick={onViewAll}
+          style={{
+            display: "flex", alignItems: "center", gap: 2,
+            fontFamily: "'Inter',sans-serif",
+            fontWeight: 500, fontSize: 13, color: MAROON,
+            background: "none", border: "none", cursor: "pointer", padding: 0,
+          }}
+        >
+          View All <ChevronRight size={13} strokeWidth={2.5} />
+        </button>
       )}
     </div>
   );
 }
 
+/* ─── Expanded grid (full view all) ─────────────────────── */
+function ExpandedGrid({ title, items, onBack, onOpen }: {
+  title: string; items: CategoryItem[]; onBack: () => void; onOpen: (item: CategoryItem) => void;
+}) {
+  return (
+    <div className="px-4">
+      <button
+        onClick={onBack}
+        className="mb-5 flex items-center gap-1 text-sm text-ink-dim hover:text-maroon-bright transition-colors"
+      >
+        <ChevronRight size={15} className="rotate-180" /> Back
+      </button>
+      <h2 className="mb-5 font-serif text-3xl font-semibold text-ink">{title}</h2>
+      <div className="grid grid-cols-2 gap-3 pb-20">
+        {items.map((item, i) => {
+          const v = GENRE_VISUAL[item.label];
+          return (
+            <div key={item.slug} className="animate-fadeUp opacity-0" style={{ animationDelay: `${Math.min(i, 12) * 30}ms` }}>
+              <ImgCard
+                label={item.label}
+                sub={item.tag}
+                img={v?.img}
+                tint={v?.tint ?? "rgba(100,100,100,0.60)"}
+                onClick={() => onOpen(item)}
+              />
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+/* ─── Poster row (geo / trending content) ───────────────── */
 function PosterRow({ title, items }: { title: string; items: PosterItem[] }) {
   const navigate = useNavigate();
   if (items.length === 0) return null;
 
   const handleClick = async (item: PosterItem) => {
-    // Try to resolve to local title via TMDB id if available
     if (item.tmdbId && item.mediaType) {
       try {
         const { id } = await api.titles.resolveTmdb(item.tmdbId, item.mediaType === "movie" ? "movie" : "tv");
         navigate(`/title/${id}`);
         return;
       } catch {
-        // not in catalog — fall through to search
+        // not in catalog
       }
     }
     navigate(`/search?q=${encodeURIComponent(item.name)}`);
   };
 
   return (
-    <div className="mb-10">
-      <div className="px-5 mb-3">
-        <h2 className="font-serif text-2xl sm:text-[26px] font-semibold text-ink">{title}</h2>
-      </div>
-      <div className="flex gap-3 overflow-x-auto px-5 pb-1 scrollbar-none snap-x snap-mandatory">
+    <div style={{ marginBottom: 30 }}>
+      <SectionHeader title={title} />
+      <div className="flex gap-3 overflow-x-auto px-4 pb-1 scrollbar-none snap-x snap-mandatory">
         {items.map((item, i) => (
           <div key={item.key} className="snap-start animate-fadeUp opacity-0" style={{ animationDelay: `${Math.min(i, 10) * 35}ms` }}>
             <GlassCard
@@ -166,37 +358,18 @@ function PosterRow({ title, items }: { title: string; items: PosterItem[] }) {
   );
 }
 
-function ExpandedGrid({ title, items, onBack, onOpen }: {
-  title: string; items: CategoryItem[]; onBack: () => void; onOpen: (item: CategoryItem) => void;
-}) {
-  return (
-    <div className="px-5">
-      <button onClick={onBack} className="mb-5 flex items-center gap-1 text-sm text-ink-dim hover:text-maroon-bright transition-colors">
-        <ChevronRight size={15} className="rotate-180" /> Back
-      </button>
-      <h2 className="mb-5 font-serif text-3xl font-semibold text-ink">{title}</h2>
-      <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 pb-16">
-        {items.map((item, i) => (
-          <div key={item.slug} className="animate-fadeUp opacity-0" style={{ animationDelay: `${Math.min(i, 12) * 30}ms` }}>
-            <CategoryCard item={item} onOpen={onOpen} large />
-          </div>
-        ))}
-      </div>
-    </div>
-  );
-}
-
 type GeoRow = { id: string; label: string; items: PosterItem[] };
 
+/* ─── Page ───────────────────────────────────────────────── */
 export default function CategoriesPage() {
   const navigate = useNavigate();
-  const [genreQuery, setGenreQuery] = useState("");
   const [expanded, setExpanded] = useState<Expanded>(null);
-  const [types, setTypes] = useState<CategoryItem[]>([]);
-  const [genres, setGenres] = useState<CategoryItem[]>([]);
-  const [studios, setStudios] = useState<CategoryItem[]>([]);
-  const [geoRows, setGeoRows] = useState<GeoRow[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [types,    setTypes]    = useState<CategoryItem[]>([]);
+  const [genres,   setGenres]   = useState<CategoryItem[]>([]);
+  const [studios,  setStudios]  = useState<CategoryItem[]>([]);
+  const [geoRows,  setGeoRows]  = useState<GeoRow[]>([]);
+  const [loading,  setLoading]  = useState(true);
+  const [genreQuery, setGenreQuery] = useState("");
 
   useEffect(() => {
     api.titles
@@ -204,16 +377,16 @@ export default function CategoriesPage() {
       .then(({ genres: g, types: t }: { genres: { genre: string; count: number }[]; types: { type: string; count: number }[] }) => {
         setTypes(
           t.map(({ type, count }) => ({
-            slug: TYPE_SLUG[type] || slugify(type),
+            slug:  TYPE_SLUG[type]  || slugify(type),
             label: TYPE_LABEL[type] || type,
-            tag: `${count} title${count === 1 ? "" : "s"}`,
+            tag:   `${count} title${count === 1 ? "" : "s"}`,
           })),
         );
         setGenres(
           g.map(({ genre, count }) => ({
-            slug: slugify(genre),
+            slug:  slugify(genre),
             label: genre,
-            tag: `${count} title${count === 1 ? "" : "s"}`,
+            tag:   `${count} title${count === 1 ? "" : "s"}`,
           })),
         );
       })
@@ -234,8 +407,8 @@ export default function CategoriesPage() {
           return {
             slug,
             label: p.name,
-            tag: `${p._count?.titles ?? 0} title${(p._count?.titles ?? 0) === 1 ? "" : "s"}`,
-            image: liveMatch?.logoUrl || PLATFORM_IMAGES[slug],
+            tag:   `${p._count?.titles ?? 0} title${(p._count?.titles ?? 0) === 1 ? "" : "s"}`,
+            image: liveMatch?.logoUrl,
             imageFit: "contain" as const,
           };
         }),
@@ -248,14 +421,14 @@ export default function CategoriesPage() {
       .then((data: { rows: { id: string; label: string; items: any[] }[] }) => {
         setGeoRows(
           (data.rows || []).map((row) => ({
-            id: row.id,
+            id:    row.id,
             label: row.label,
             items: (row.items || []).slice(0, 20).map((it: any) => ({
-              key: `${row.id}-${it.mediaType}-${it.tmdbId}`,
-              name: it.name,
+              key:       `${row.id}-${it.mediaType}-${it.tmdbId}`,
+              name:      it.name,
               posterUrl: it.posterUrl,
-              year: it.year,
-              tmdbId: it.tmdbId,
+              year:      it.year,
+              tmdbId:    it.tmdbId,
               mediaType: it.mediaType,
             })),
           })),
@@ -266,8 +439,7 @@ export default function CategoriesPage() {
 
   const filteredGenres = useMemo(() => {
     const q = genreQuery.trim().toLowerCase();
-    if (!q) return genres;
-    return genres.filter((g) => g.label.toLowerCase().includes(q));
+    return q ? genres.filter((g) => g.label.toLowerCase().includes(q)) : genres;
   }, [genreQuery, genres]);
 
   function openItem(item: CategoryItem) {
@@ -281,56 +453,229 @@ export default function CategoriesPage() {
   }
 
   return (
-    <div className="min-h-screen bg-void pb-24">
-      <div className="pt-8">
-        <div className="px-5 mb-2 flex items-center gap-2">
-          <span className="inline-block h-[2px] w-4 bg-maroon-bright" />
-          <span className="text-xs font-mono uppercase tracking-[0.2em] text-ink-dim">The Catalog</span>
-        </div>
-        <div className="px-5 mb-8">
-          <h1 className="font-serif text-4xl sm:text-[42px] font-semibold leading-tight text-ink">
-            Browse Everything
-          </h1>
-        </div>
+    <div style={{ minHeight: "100vh", background: BG, paddingBottom: 120 }}>
 
-        {loading ? (
-          <div className="mb-10">
-            <div className="px-5 mb-3 h-6 w-40 rounded bg-surface animate-pulse" />
-            <div className="flex gap-3 overflow-x-auto px-5 pb-1">
-              {Array.from({ length: 6 }).map((_, i) => (
-                <GlassCardSkeleton key={i} />
-              ))}
+      {/* ── Page header ── */}
+      <div style={{ padding: "30px 16px 26px" }}>
+        <p style={{
+          fontFamily: "'Inter',sans-serif",
+          fontWeight: 500, fontSize: 10,
+          letterSpacing: "0.12em", textTransform: "uppercase",
+          color: MAROON, margin: "0 0 5px",
+        }}>The Catalog</p>
+        <h1 style={{
+          fontFamily: "'Cormorant Garamond',Georgia,serif",
+          fontWeight: 600, fontSize: 29,
+          color: WHITE, margin: 0, lineHeight: 1,
+          letterSpacing: "-0.01em",
+        }}>Browse Everything</h1>
+      </div>
+
+      {/* ── Expanded views ── */}
+      {expanded === "type" && (
+        <ExpandedGrid title="Browse by Type" items={types} onBack={() => setExpanded(null)} onOpen={openItem} />
+      )}
+      {expanded === "genre" && (
+        <>
+          {/* Genre search in expanded view */}
+          <div style={{ padding: "0 16px 12px" }}>
+            <div style={{
+              display: "flex", alignItems: "center", gap: 8,
+              background: CARD_BG, border: `1px solid ${BORDER}`,
+              borderRadius: 10, padding: "8px 12px",
+            }}>
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke={DIM} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                <circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/>
+              </svg>
+              <input
+                value={genreQuery}
+                onChange={(e) => setGenreQuery(e.target.value)}
+                placeholder="Search genres…"
+                style={{
+                  flex: 1, background: "none", border: "none", outline: "none",
+                  fontFamily: "'Inter',sans-serif", fontSize: 13, color: WHITE,
+                }}
+              />
+              {genreQuery && (
+                <button onClick={() => setGenreQuery("")} style={{ background: "none", border: "none", cursor: "pointer", color: DIM, padding: 0 }}>
+                  <X size={13} />
+                </button>
+              )}
             </div>
           </div>
-        ) : expanded === "type" ? (
-          <ExpandedGrid title="Browse by Type" items={types} onBack={() => setExpanded(null)} onOpen={openItem} />
-        ) : expanded === "genre" ? (
           <ExpandedGrid title="Browse by Genre" items={filteredGenres} onBack={() => setExpanded(null)} onOpen={openItem} />
-        ) : expanded === "studio" ? (
-          <ExpandedGrid title="Where to Watch" items={studios} onBack={() => setExpanded(null)} onOpen={openItem} />
-        ) : (
-          <>
-            <Row title="Browse by Type" items={types} onOpen={openItem} onViewAll={() => setExpanded("type")} showSearch={false} />
-            <Row
-              title="Browse by Genre"
-              items={filteredGenres}
-              onOpen={openItem}
-              onViewAll={() => setExpanded("genre")}
-              showSearch
-              query={genreQuery}
-              onQuery={setGenreQuery}
-            />
-            <Row title="Where to Watch" items={studios} onOpen={openItem} onViewAll={() => setExpanded("studio")} showSearch={false} />
-            {geoRows.map((row) => (
-              <PosterRow key={row.id} title={row.label} items={row.items} />
-            ))}
-          </>
-        )}
-      </div>
+        </>
+      )}
+      {expanded === "studio" && (
+        <ExpandedGrid title="Browse by Platform" items={studios} onBack={() => setExpanded(null)} onOpen={openItem} />
+      )}
+
+      {/* ── Main scroll view ── */}
+      {!expanded && (
+        <>
+          {/* ── Row 1: Browse by Type ── */}
+          <div style={{ marginBottom: 30 }}>
+            <SectionHeader title="Browse by Type" onViewAll={() => setExpanded("type")} />
+            {loading ? (
+              <Row>{[0,1,2].map(i => <CardSkeleton key={i} />)}</Row>
+            ) : (
+              <Row>
+                {types.map((t) => {
+                  const v = TYPE_VISUAL[t.slug] ?? { img: undefined, tint: "rgba(100,100,100,0.60)" };
+                  return (
+                    <ImgCard
+                      key={t.slug}
+                      label={t.label}
+                      sub={t.tag}
+                      img={v.img}
+                      tint={v.tint}
+                      onClick={() => openItem(t)}
+                    />
+                  );
+                })}
+              </Row>
+            )}
+          </div>
+
+          {/* ── Row 2: Browse by Genre ── */}
+          <div style={{ marginBottom: 30 }}>
+            <SectionHeader title="Browse by Genre" onViewAll={() => setExpanded("genre")} />
+            {loading ? (
+              <Row>{[0,1,2,3].map(i => <CardSkeleton key={i} />)}</Row>
+            ) : (
+              <Row>
+                {genres.map((g) => {
+                  const v = GENRE_VISUAL[g.label] ?? { tint: "rgba(100,100,100,0.60)" };
+                  return (
+                    <ImgCard
+                      key={g.slug}
+                      label={g.label}
+                      sub={g.tag}
+                      img={v.img}
+                      tint={v.tint}
+                      onClick={() => openItem(g)}
+                    />
+                  );
+                })}
+              </Row>
+            )}
+          </div>
+
+          {/* ── Row 3: Browse by Platform ── */}
+          <div style={{ marginBottom: 30 }}>
+            <SectionHeader title="Browse by Platform" onViewAll={() => setExpanded("studio")} />
+            {loading ? (
+              <Row>{[0,1,2,3].map(i => <CardSkeleton key={i} />)}</Row>
+            ) : (
+              <Row>
+                {studios.map((s) => {
+                  const known = PLATFORM_LOGO[s.slug];
+                  if (known) {
+                    return (
+                      <LogoCard
+                        key={s.slug}
+                        label={s.label}
+                        logo={known.logo}
+                        color={known.color}
+                        onClick={() => openItem(s)}
+                      />
+                    );
+                  }
+                  // Fallback: generic dark card with platform name
+                  return (
+                    <ImgCard
+                      key={s.slug}
+                      label={s.label}
+                      sub={s.tag}
+                      tint="rgba(100,100,100,0.60)"
+                      onClick={() => openItem(s)}
+                    />
+                  );
+                })}
+              </Row>
+            )}
+          </div>
+
+          {/* ── Row 4: Browse by Era ── */}
+          <div style={{ marginBottom: 30 }}>
+            <SectionHeader title="Browse by Era" />
+            <Row>
+              {ERAS.map((e) => (
+                <ImgCard
+                  key={e.label}
+                  label={e.label}
+                  sub={e.sub}
+                  img={e.img}
+                  tint={e.tint}
+                  onClick={() => navigate(`/search?q=${encodeURIComponent(e.sub ?? e.label)}`)}
+                />
+              ))}
+            </Row>
+          </div>
+
+          {/* ── Row 5: Browse by Mood ── */}
+          <div style={{ marginBottom: 30 }}>
+            <SectionHeader title="Browse by Mood" />
+            <Row>
+              {MOODS.map((m) => (
+                <MoodCard
+                  key={m.label}
+                  label={m.label}
+                  grad={m.grad}
+                  onClick={() => navigate(`/browse/genre/${m.slug}`)}
+                />
+              ))}
+            </Row>
+          </div>
+
+          {/* ── Geo / trending poster rows ── */}
+          {geoRows.map((row) => (
+            <PosterRow key={row.id} title={row.label} items={row.items} />
+          ))}
+
+          {/* ── Maroon rule ── */}
+          <div style={{
+            margin: "0 16px 26px", height: 1,
+            background: `linear-gradient(to right,${MAROON}55,transparent)`,
+          }} />
+
+          {/* ── Where to Watch footer ── */}
+          <div style={{ padding: "0 16px" }}>
+            <button
+              onClick={() => setExpanded("studio")}
+              style={{
+                width: "100%", display: "flex", alignItems: "center",
+                justifyContent: "space-between",
+                borderRadius: 14, border: `1px solid ${BORDER}`,
+                background: CARD_BG, padding: "15px 16px",
+                cursor: "pointer", textAlign: "left",
+              }}
+            >
+              <div>
+                <p style={{ fontFamily: "'Inter',sans-serif", fontWeight: 600, fontSize: 15, color: WHITE, margin: 0 }}>
+                  Where to Watch
+                </p>
+                <p style={{ fontFamily: "'Inter',sans-serif", fontSize: 11, color: DIM, margin: "3px 0 0" }}>
+                  Filter by streaming platform
+                </p>
+              </div>
+              <div style={{
+                width: 34, height: 34, borderRadius: "50%",
+                background: `linear-gradient(135deg,${DIM_RED},${MAROON})`,
+                display: "flex", alignItems: "center", justifyContent: "center",
+                flexShrink: 0,
+              }}>
+                <ChevronRight size={16} color={WHITE} strokeWidth={2.5} />
+              </div>
+            </button>
+          </div>
+        </>
+      )}
 
       <style>{`
         .scrollbar-none::-webkit-scrollbar { display: none; }
         .scrollbar-none { -ms-overflow-style: none; scrollbar-width: none; }
+        @keyframes pulse { 0%,100% { opacity:1 } 50% { opacity:0.5 } }
       `}</style>
     </div>
   );
