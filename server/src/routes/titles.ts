@@ -227,9 +227,15 @@ router.post('/resolve-anilist', resolveAnilistLimiter, async (req, res) => {
     // we gracefully fall back to the AniList-supplied assets.
     let tmdbMatch: { tmdbId: number; posterUrl?: string | null; backdropUrl?: string | null; trailerYoutubeId?: string | null; runtimeMinutes?: number | null } | null = null;
     try {
-      const searchName = romaji && romaji !== name ? name : name;
-      const results = await searchTmdb(searchName);
-      const tvHit = results.find(r => r.mediaType === 'tv') || results[0];
+      // Try the English title first, then fall back to Romaji — either can
+      // be the better TMDB match depending on how the title is catalogued.
+      const candidates = [name, romaji].filter((n, i, arr): n is string => !!n && arr.indexOf(n) === i);
+      let tvHit: { tmdbId: number; mediaType: 'movie' | 'tv' } | undefined;
+      for (const candidate of candidates) {
+        const results = await searchTmdb(candidate);
+        tvHit = results.find(r => r.mediaType === 'tv') || results[0];
+        if (tvHit) break;
+      }
       if (tvHit) {
         const alreadyTaken = await prisma.title.findUnique({ where: { tmdbId: tvHit.tmdbId } });
         if (!alreadyTaken) {
@@ -267,9 +273,11 @@ router.post('/resolve-anilist', resolveAnilistLimiter, async (req, res) => {
       });
       res.json({ id: created.id });
     } catch (createErr: any) {
-      // Concurrent requests for the same anilistId can race past findUnique.
+      // Concurrent requests can race past the earlier findUnique checks —
+      // recover on either the anilistId or the matched tmdbId collision.
       if (createErr?.code === 'P2002') {
-        const race = await prisma.title.findUnique({ where: { anilistId } });
+        const race = await prisma.title.findUnique({ where: { anilistId } })
+          ?? (tmdbMatch ? await prisma.title.findUnique({ where: { tmdbId: tmdbMatch.tmdbId } }) : null);
         if (race) return res.json({ id: race.id });
       }
       throw createErr;

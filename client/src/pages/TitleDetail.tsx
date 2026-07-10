@@ -51,12 +51,23 @@ function RelatedTmdbCard({ item }: { item: any }) {
  * on click and routes to the SAME unified /title/:id detail page. */
 function RelatedAnimeCard({ node }: { node: any }) {
   const nav = useNavigate();
+  const handleClick = async () => {
+    // Relation edges only carry id/title/format/coverImage — fetch the full
+    // AniList record first so the created title gets real year/genres/synopsis
+    // instead of placeholder defaults.
+    try {
+      const full = await getAnimeDetail({ id: node.id });
+      await navigateToAnime(full ?? { id: node.id, title: node.title, coverImage: node.coverImage }, nav);
+    } catch {
+      await navigateToAnime({ id: node.id, title: node.title, coverImage: node.coverImage }, nav);
+    }
+  };
   return (
     <GlassCard
       title={node.title.english || node.title.romaji}
       typeLabel="Anime"
       posterUrl={node.coverImage?.extraLarge || node.coverImage?.large}
-      onClick={() => navigateToAnime({ id: node.id, title: node.title, coverImage: node.coverImage }, nav)}
+      onClick={handleClick}
     />
   );
 }
