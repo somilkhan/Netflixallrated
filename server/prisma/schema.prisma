@@ -59,6 +59,7 @@ model Title {
   trailerYoutubeId String?
   officialWatchLinks Json?   @db.Json
   tmdbId           Int?      @unique
+  anilistId        Int?      @unique
   posterUrl        String?
   backdropUrl      String?
   createdAt        DateTime  @default(now())

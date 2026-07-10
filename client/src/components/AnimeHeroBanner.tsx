@@ -7,6 +7,7 @@
 import { useState, useEffect, useRef, useCallback, memo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Play, Info, Volume2, Film } from 'lucide-react';
+import { navigateToAnime } from '../lib/animeResolve';
 
 const AUTO_ADVANCE_MS = 8000;
 
@@ -127,7 +128,7 @@ const AnimeHeroBanner = memo(function AnimeHeroBanner({ titles }: AnimeHeroBanne
 
           <div className="flex gap-2.5 flex-wrap animate-fadeUp" style={{ animationDelay: '0.2s' }}>
             <button
-              onClick={() => nav(`/anime/view/${anime.id}`)}
+              onClick={() => navigateToAnime(anime, nav)}
               className="flex items-center gap-2 bg-ink text-void font-sans font-semibold text-[13px]
                 px-5 py-2.5 rounded-full active:scale-[0.97] transition-transform duration-150
                 shadow-[0_4px_16px_-4px_rgba(245,240,236,0.3)] hover:bg-ink/90"
@@ -135,7 +136,7 @@ const AnimeHeroBanner = memo(function AnimeHeroBanner({ titles }: AnimeHeroBanne
               <Play size={12} fill="currentColor" /> Play
             </button>
             <button
-              onClick={() => nav(`/anime/view/${anime.id}`)}
+              onClick={() => navigateToAnime(anime, nav)}
               className="flex items-center gap-2 bg-white/[0.08] backdrop-blur-sm text-ink font-sans font-medium text-[13px]
                 px-5 py-2.5 rounded-full border border-white/[0.12] hover:bg-white/[0.12] transition-colors duration-150"
             >

@@ -185,6 +185,100 @@ router.post('/resolve-tmdb', resolveTmdbLimiter, async (req, res) => {
   }
 });
 
+/**
+ * POST /api/titles/resolve-anilist
+ * Public, idempotent "get-or-create" for a raw AniList anime item (e.g. a
+ * card in the Anime section that has no local DB row yet). Returns the local
+ * title id so the client can navigate to /title/:id — the same unified
+ * detail/player flow used by Movies and TV — instead of a separate page.
+ *
+ * TMDB remains the primary source for artwork whenever a confident match is
+ * found; otherwise we fall back to the AniList assets supplied by the caller.
+ */
+const resolveAnilistSchema = z.object({
+  anilistId: z.number().int().positive().max(1_000_000_000),
+  name: z.string().min(1).max(500),
+  romaji: z.string().max(500).optional(),
+  year: z.number().int().positive().max(3000).optional(),
+  genres: z.array(z.string().max(100)).max(20).optional(),
+  synopsis: z.string().max(5000).optional(),
+  posterUrl: z.string().url().max(2000).optional(),
+  backdropUrl: z.string().url().max(2000).optional(),
+});
+
+const resolveAnilistLimiter = rateLimit({
+  windowMs: 60 * 1000,
+  max: 30,
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+
+router.post('/resolve-anilist', resolveAnilistLimiter, async (req, res) => {
+  const parsed = resolveAnilistSchema.safeParse(req.body);
+  if (!parsed.success) return res.status(400).json({ error: parsed.error.flatten() });
+  const { anilistId, name, romaji, year, genres, synopsis, posterUrl, backdropUrl } = parsed.data;
+
+  try {
+    const existing = await prisma.title.findUnique({ where: { anilistId } });
+    if (existing) return res.json({ id: existing.id });
+
+    // Best-effort TMDB match — anime is often catalogued as a TV show on TMDB.
+    // If found, TMDB stays the artwork/video/discovery source of truth; if not,
+    // we gracefully fall back to the AniList-supplied assets.
+    let tmdbMatch: { tmdbId: number; posterUrl?: string | null; backdropUrl?: string | null; trailerYoutubeId?: string | null; runtimeMinutes?: number | null } | null = null;
+    try {
+      const searchName = romaji && romaji !== name ? name : name;
+      const results = await searchTmdb(searchName);
+      const tvHit = results.find(r => r.mediaType === 'tv') || results[0];
+      if (tvHit) {
+        const alreadyTaken = await prisma.title.findUnique({ where: { tmdbId: tvHit.tmdbId } });
+        if (!alreadyTaken) {
+          const details = await getTmdbDetails(tvHit.tmdbId, tvHit.mediaType === 'movie' ? 'movie' : 'tv');
+          tmdbMatch = {
+            tmdbId: details.tmdbId,
+            posterUrl: details.posterUrl,
+            backdropUrl: details.backdropUrl,
+            trailerYoutubeId: details.trailerYoutubeId,
+            runtimeMinutes: details.runtimeMinutes,
+          };
+        }
+      }
+    } catch { /* TMDB lookup is best-effort — fall back to AniList assets */ }
+
+    const palette = randomPalette();
+    try {
+      const created = await prisma.title.create({
+        data: {
+          name,
+          type: 'ANIME',
+          year: year ?? new Date().getFullYear(),
+          genres: genres ?? [],
+          synopsis: synopsis || 'No synopsis available.',
+          posterColorFrom: palette.from,
+          posterColorTo: palette.to,
+          anilistId,
+          tmdbId: tmdbMatch?.tmdbId ?? undefined,
+          trailerYoutubeId: tmdbMatch?.trailerYoutubeId ?? undefined,
+          runtimeMinutes: tmdbMatch?.runtimeMinutes ?? undefined,
+          posterUrl: tmdbMatch?.posterUrl || posterUrl || undefined,
+          backdropUrl: tmdbMatch?.backdropUrl || backdropUrl || undefined,
+          officialWatchLinks: [],
+        },
+      });
+      res.json({ id: created.id });
+    } catch (createErr: any) {
+      // Concurrent requests for the same anilistId can race past findUnique.
+      if (createErr?.code === 'P2002') {
+        const race = await prisma.title.findUnique({ where: { anilistId } });
+        if (race) return res.json({ id: race.id });
+      }
+      throw createErr;
+    }
+  } catch (err) {
+    res.status(502).json({ error: 'Could not resolve anime', detail: sanitizeErrorDetail((err as Error).message) });
+  }
+});
+
 // Region's real streaming-service logos (Netflix, Prime Video, etc.) for the
 // Categories page's "Where to Watch" row. Must be declared before the
 // `/:id/watch-providers` route below, or Express would match "watch-providers-list"
@@ -201,7 +295,7 @@ router.get('/watch-providers-list', async (req, res) => {
 // --- Live TMDB extras (per-title, addressed by our local title id) -------
 router.get('/:id/watch-providers', async (req, res) => {
   const title = await prisma.title.findUnique({ where: { id: req.params.id }, select: { tmdbId: true, type: true } });
-  if (!title?.tmdbId || title.type === 'ANIME') return res.json({ link: null, flatrate: [], rent: [], buy: [] });
+  if (!title?.tmdbId) return res.json({ link: null, flatrate: [], rent: [], buy: [] });
   const region = (req.query.region as string) || 'US';
   try {
     res.json(await getWatchProviders(title.tmdbId, title.type === 'MOVIE' ? 'movie' : 'tv', region));
@@ -212,7 +306,7 @@ router.get('/:id/watch-providers', async (req, res) => {
 
 router.get('/:id/similar', async (req, res) => {
   const title = await prisma.title.findUnique({ where: { id: req.params.id }, select: { tmdbId: true, type: true } });
-  if (!title?.tmdbId || title.type === 'ANIME') return res.json([]);
+  if (!title?.tmdbId) return res.json([]);
   try {
     res.json(await getSimilarTmdb(title.tmdbId, title.type === 'MOVIE' ? 'movie' : 'tv'));
   } catch (err) {
@@ -222,7 +316,7 @@ router.get('/:id/similar', async (req, res) => {
 
 router.get('/:id/recommendations', async (req, res) => {
   const title = await prisma.title.findUnique({ where: { id: req.params.id }, select: { tmdbId: true, type: true } });
-  if (!title?.tmdbId || title.type === 'ANIME') return res.json([]);
+  if (!title?.tmdbId) return res.json([]);
   try {
     res.json(await getRecommendationsTmdb(title.tmdbId, title.type === 'MOVIE' ? 'movie' : 'tv'));
   } catch (err) {
@@ -232,7 +326,7 @@ router.get('/:id/recommendations', async (req, res) => {
 
 router.get('/:id/credits', async (req, res) => {
   const title = await prisma.title.findUnique({ where: { id: req.params.id }, select: { tmdbId: true, type: true } });
-  if (!title?.tmdbId || title.type === 'ANIME') return res.json({ cast: [], crew: [] });
+  if (!title?.tmdbId) return res.json({ cast: [], crew: [] });
   try {
     res.json(await getCreditsTmdb(title.tmdbId, title.type === 'MOVIE' ? 'movie' : 'tv'));
   } catch (err) {

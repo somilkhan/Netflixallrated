@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { api } from '../lib/api';
 import { useAuth } from '../lib/auth';
-import { searchAnime } from '../lib/anilist';
+import { getAnimeDetail } from '../lib/anilist';
 import {
   searchAnime as anicrushSearch,
   getEpisodeCount as fetchAnicrushEpCount,
@@ -10,6 +10,8 @@ import {
 } from '../lib/anicrush';
 import { SERVERS } from '../components/VideoPlayer';
 import { InlineLoader } from '../components/GlassLoader';
+import GlassCard from '../components/GlassCard';
+import { navigateToAnime } from '../lib/animeResolve';
 import '@/styles/MovieDetailPage.css';
 import type { Tier } from '../components/RatingWidget';
 
@@ -23,6 +25,41 @@ const TIERS = [
 const TIER_LABEL: Record<string, string> = {
   SKIP: 'Skip', TIMEPASS: 'Timepass', GO_FOR_IT: 'Go for it', PERFECTION: 'Perfection',
 };
+
+/** Similar/Recommended TMDB card — resolves the TMDB item into the local
+ * catalog on click and routes to the SAME unified /title/:id detail page. */
+function RelatedTmdbCard({ item }: { item: any }) {
+  const nav = useNavigate();
+  const handleClick = async () => {
+    try {
+      const { id } = await api.titles.resolveTmdb(item.tmdbId, item.mediaType === 'movie' ? 'movie' : 'tv');
+      nav(`/title/${id}`);
+    } catch { /* best-effort — stay put on failure */ }
+  };
+  return (
+    <GlassCard
+      title={item.name}
+      typeLabel={item.mediaType === 'movie' ? 'Movie' : 'Series'}
+      year={item.year}
+      posterUrl={item.posterUrl}
+      onClick={handleClick}
+    />
+  );
+}
+
+/** AniList relation card — resolves the related anime into the local catalog
+ * on click and routes to the SAME unified /title/:id detail page. */
+function RelatedAnimeCard({ node }: { node: any }) {
+  const nav = useNavigate();
+  return (
+    <GlassCard
+      title={node.title.english || node.title.romaji}
+      typeLabel="Anime"
+      posterUrl={node.coverImage?.extraLarge || node.coverImage?.large}
+      onClick={() => navigateToAnime({ id: node.id, title: node.title, coverImage: node.coverImage }, nav)}
+    />
+  );
+}
 
 export default function TitleDetail() {
   const { id } = useParams();
@@ -205,14 +242,29 @@ export default function TitleDetail() {
   }, [serverId, title, selectedSeason, selectedEp]);
 
   useEffect(() => {
-    if (!title || title.type === 'ANIME' || !title.tmdbId) { setWatchProviders(null); return; }
+    if (!title || !title.tmdbId) { setWatchProviders(null); return; }
     api.titles.watchProviders(id!).then(setWatchProviders).catch(() => setWatchProviders(null));
+  }, [title, id]);
+
+  // Recommendations / Similar titles — TMDB-backed; available whenever a
+  // tmdbId is present, including anime titles that were matched to TMDB.
+  const [similarTitles, setSimilarTitles] = useState<any[]>([]);
+  const [recommendedTitles, setRecommendedTitles] = useState<any[]>([]);
+  useEffect(() => {
+    if (!title || !title.tmdbId || !id) { setSimilarTitles([]); setRecommendedTitles([]); return; }
+    api.titles.similar(id).then(setSimilarTitles).catch(() => setSimilarTitles([]));
+    api.titles.recommendations(id).then(setRecommendedTitles).catch(() => setRecommendedTitles([]));
   }, [title, id]);
 
   useEffect(() => {
     if (!title || title.type !== 'ANIME') return;
     setAnilistData(null);
-    searchAnime(title.name).then((data) => { if (data) setAnilistData(data); }).catch(() => {});
+    // AniList is used ONLY for anime-specific metadata (episodes, studios,
+    // season, status, relations, characters, genres, score) — TMDB (via
+    // title.tmdbId/posterUrl/backdropUrl) remains the primary artwork source.
+    getAnimeDetail(title.anilistId ? { id: title.anilistId } : { name: title.name })
+      .then((data) => { if (data) setAnilistData(data); })
+      .catch(() => {});
   }, [title]);
 
   useEffect(() => {
@@ -555,10 +607,23 @@ export default function TitleDetail() {
           {title.type === 'ANIME' && anilistData?.averageScore && (
             <><span className="dot">·</span><span>★ {(anilistData.averageScore / 10).toFixed(1)}</span></>
           )}
+          {title.type === 'ANIME' && anilistData?.status && (
+            <><span className="dot">·</span><span className="capitalize">{anilistData.status.toLowerCase().replace(/_/g, ' ')}</span></>
+          )}
+          {title.type === 'ANIME' && anilistData?.season && anilistData?.seasonYear && (
+            <><span className="dot">·</span><span className="capitalize">{anilistData.season.toLowerCase()} {anilistData.seasonYear}</span></>
+          )}
           {genres.slice(0, 3).map(g => (
             <span key={g} className="dp-pill">{g}</span>
           ))}
         </div>
+
+        {/* Anime-only: studios */}
+        {title.type === 'ANIME' && anilistData?.studios?.nodes?.length > 0 && (
+          <p className="font-mono text-[10px] text-ink-faint uppercase tracking-wider" style={{ marginTop: -4, marginBottom: 10 }}>
+            {anilistData.studios.nodes.map((s: any) => s.name).join(' · ')}
+          </p>
+        )}
 
         {/* Synopsis */}
         {synopsis && <p className="synopsis">{synopsis}</p>}
@@ -1082,6 +1147,82 @@ export default function TitleDetail() {
                   className="platform-chip">
                   {link.platform}
                 </a>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* ── Anime-only: characters ────────────────────────────── */}
+        {title.type === 'ANIME' && anilistData?.characters?.edges?.length > 0 && (
+          <div className="dp-section">
+            <div className="dp-section-head">
+              <span className="dp-section-title">Characters</span>
+            </div>
+            <div style={{ display: 'flex', gap: 12, overflowX: 'auto', paddingBottom: 4 }}>
+              {anilistData.characters.edges.map((e: any) => (
+                <div key={e.node.id} style={{ flex: '0 0 auto', width: 72, textAlign: 'center' }}>
+                  <div
+                    style={{
+                      width: 64, height: 64, borderRadius: '50%', margin: '0 auto 6px',
+                      backgroundImage: e.node.image?.large ? `url(${e.node.image.large})` : undefined,
+                      backgroundSize: 'cover', backgroundPosition: 'center',
+                      backgroundColor: 'rgba(255,255,255,0.06)',
+                      border: '1px solid rgba(255,255,255,0.08)',
+                    }}
+                  />
+                  <p className="font-mono text-[9px] text-ink-faint" style={{ lineHeight: 1.3 }}>{e.node.name.full}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* ── Anime-only: relations ─────────────────────────────── */}
+        {title.type === 'ANIME' && anilistData?.relations?.edges?.length > 0 && (
+          <div className="dp-section">
+            <div className="dp-section-head">
+              <span className="dp-section-title">Related</span>
+            </div>
+            <div style={{ display: 'flex', gap: 12, overflowX: 'auto', paddingBottom: 4 }}>
+              {anilistData.relations.edges
+                .filter((e: any) => e.node.format !== 'MANGA' && e.node.format !== 'NOVEL')
+                .slice(0, 10)
+                .map((e: any) => (
+                  <div key={e.node.id} style={{ flex: '0 0 auto', width: 130 }}>
+                    <RelatedAnimeCard node={e.node} />
+                  </div>
+                ))}
+            </div>
+          </div>
+        )}
+
+        {/* ── Recommendations — TMDB-backed ─────────────────────── */}
+        {recommendedTitles.length > 0 && (
+          <div className="dp-section">
+            <div className="dp-section-head">
+              <span className="dp-section-title">Recommendations</span>
+            </div>
+            <div style={{ display: 'flex', gap: 12, overflowX: 'auto', paddingBottom: 4 }}>
+              {recommendedTitles.slice(0, 12).map((t: any) => (
+                <div key={t.tmdbId} style={{ flex: '0 0 auto', width: 130 }}>
+                  <RelatedTmdbCard item={t} />
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* ── Similar titles — TMDB-backed ──────────────────────── */}
+        {similarTitles.length > 0 && (
+          <div className="dp-section">
+            <div className="dp-section-head">
+              <span className="dp-section-title">Similar Titles</span>
+            </div>
+            <div style={{ display: 'flex', gap: 12, overflowX: 'auto', paddingBottom: 4 }}>
+              {similarTitles.slice(0, 12).map((t: any) => (
+                <div key={t.tmdbId} style={{ flex: '0 0 auto', width: 130 }}>
+                  <RelatedTmdbCard item={t} />
+                </div>
               ))}
             </div>
           </div>

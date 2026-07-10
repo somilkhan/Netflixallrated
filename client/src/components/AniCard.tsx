@@ -1,11 +1,13 @@
 /**
  * AniCard — glassmorphism card for AniList anime results.
- * Navigates to /anime/view/:anilistId for a dedicated detail page.
- * If the anime is in the local catalog, AnimeDetailPage will redirect to /title/:id.
+ * Resolves the anime into the local catalog (creating a row on first view)
+ * and navigates to /title/:id — the same unified detail page used for
+ * Movies and TV, never a separate anime-only page.
  */
-import { memo } from 'react';
+import { memo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import GlassCard from './GlassCard';
+import { navigateToAnime } from '../lib/animeResolve';
 
 export interface AniListMediaLike {
   id: number;
@@ -25,6 +27,7 @@ interface AniCardProps {
 
 const AniCard = memo(function AniCard({ anime, onClick }: AniCardProps) {
   const nav = useNavigate();
+  const [resolving, setResolving] = useState(false);
 
   const titleStr  = anime.title.english || anime.title.romaji;
   const score     = anime.averageScore ? (anime.averageScore / 10).toFixed(1) : null;
@@ -34,7 +37,9 @@ const AniCard = memo(function AniCard({ anime, onClick }: AniCardProps) {
     : null;
 
   const handleClick = onClick ?? (() => {
-    nav(`/anime/view/${anime.id}`);
+    if (resolving) return;
+    setResolving(true);
+    navigateToAnime(anime, nav).finally(() => setResolving(false));
   });
 
   return (

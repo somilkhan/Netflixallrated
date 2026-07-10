@@ -16,6 +16,15 @@ export interface AniListMedia {
   studios: { nodes: { name: string }[] };
 }
 
+/** Extended detail fields — used only by getAnimeById on the unified title page. */
+export interface AniListMediaDetail extends AniListMedia {
+  season: string | null;
+  seasonYear: number | null;
+  format: string | null;
+  relations: { edges: { relationType: string; node: { id: number; title: { romaji: string; english: string | null }; format: string | null; coverImage: { large: string; extraLarge: string } } }[] };
+  characters: { edges: { role: string; node: { id: number; name: { full: string }; image: { large: string | null } } }[] };
+}
+
 export interface AniListTag {
   name: string;
   category: string;
@@ -235,6 +244,44 @@ export async function getAnimeById(id: number): Promise<AniListMedia | null> {
     return json.data?.Media ?? null;
   } catch (error) {
     console.error('Failed to fetch anime by id:', error);
+    return null;
+  }
+}
+
+// ── Detail fields — season/status/studios/relations/characters for /title/:id ──
+const DETAIL_QUERY = `
+  query ($id: Int, $search: String) {
+    Media(id: $id, search: $search, type: ANIME) {
+      ${PAGE_MEDIA_FIELDS}
+      season
+      seasonYear
+      format
+      relations {
+        edges {
+          relationType
+          node { id title { romaji english } format coverImage { large extraLarge } }
+        }
+      }
+      characters(sort: ROLE, perPage: 12) {
+        edges {
+          role
+          node { id name { full } image { large } }
+        }
+      }
+    }
+  }
+`;
+
+/** Anime-specific metadata for the unified title page — by AniList id if known, else by name. */
+export async function getAnimeDetail(opts: { id?: number; name?: string }): Promise<AniListMediaDetail | null> {
+  try {
+    const data = await runQuery<{ Media: AniListMediaDetail | null }>(DETAIL_QUERY, {
+      id: opts.id,
+      search: opts.id ? undefined : opts.name,
+    });
+    return data.Media ?? null;
+  } catch (error) {
+    console.error('Failed to fetch anime detail:', error);
     return null;
   }
 }

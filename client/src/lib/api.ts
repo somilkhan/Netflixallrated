@@ -50,6 +50,10 @@ export const api = {
     episodes: (id: string, season: number) => fetcher(`/titles/${id}/episodes?season=${season}`),
     resolveTmdb: (tmdbId: number, mediaType: 'movie' | 'tv') =>
       fetcher('/titles/resolve-tmdb', { method: 'POST', body: JSON.stringify({ tmdbId, mediaType }) }),
+    resolveAnilist: (data: {
+      anilistId: number; name: string; romaji?: string; year?: number;
+      genres?: string[]; synopsis?: string; posterUrl?: string; backdropUrl?: string;
+    }) => fetcher('/titles/resolve-anilist', { method: 'POST', body: JSON.stringify(data) }),
     watchProviders: (id: string, region = 'US') => fetcher(`/titles/${id}/watch-providers?region=${region}`),
     watchProvidersList: (region = 'US') => fetcher(`/titles/watch-providers-list?region=${region}`),
     similar: (id: string) => fetcher(`/titles/${id}/similar`),

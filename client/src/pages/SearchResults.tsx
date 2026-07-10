@@ -3,6 +3,7 @@ import { useSearchParams, useNavigate } from 'react-router-dom';
 import { Search, Film, Tv, Sword, X } from 'lucide-react';
 import { api } from '../lib/api';
 import { searchAnime } from '../lib/anilist';
+import { navigateToAnime } from '../lib/animeResolve';
 import SearchResultsGrid from '../components/SearchResultsGrid';
 
 export default function SearchResults() {
@@ -152,7 +153,10 @@ export default function SearchResults() {
       {filters.type === 'ANIME' && q && anilistResult && (
         <div className="mb-8">
           <p className="font-mono text-[11px] text-ink-faint uppercase tracking-wider mb-3">Best match · AniList</p>
-          <div className="flex gap-4 p-4 rounded-xl border border-line bg-surface max-w-xl">
+          <div
+            className="flex gap-4 p-4 rounded-xl border border-line bg-surface max-w-xl cursor-pointer hover:border-maroon/50 transition-colors"
+            onClick={() => navigateToAnime(anilistResult, nav)}
+          >
             {(anilistResult.coverImage?.large || anilistResult.coverImage?.extraLarge) && (
               <img
                 src={anilistResult.coverImage.extraLarge || anilistResult.coverImage.large}
