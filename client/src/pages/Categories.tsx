@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { ChevronRight, X } from "lucide-react";
 import { api } from "../lib/api";
 import { slugify } from "../lib/slug";
-import GlassCard, { GlassCardSkeleton } from "../components/GlassCard";
+import GlassCard from "../components/GlassCard";
 
 /* ─── Types ──────────────────────────────────────────────── */
 type CategoryItem = {
@@ -177,7 +177,7 @@ function ImgCard({
 
 /* ─── Platform / logo card ───────────────────────────────── */
 function LogoCard({
-  label, color, logo, onClick,
+  color, logo, onClick,
 }: {
   label: string; color: string; logo: string; onClick?: () => void;
 }) {

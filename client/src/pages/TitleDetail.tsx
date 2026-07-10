@@ -285,6 +285,7 @@ export default function TitleDetail() {
     setAnimeError(null);
     setAnimeEmbedUrl(null);
     setAnimeLoading(true);
+    setAnimeProvider('anicrush');
 
     const controller = new AbortController();
     const { signal } = controller;
@@ -316,6 +317,17 @@ export default function TitleDetail() {
     run();
     return () => controller.abort();
   }, [title]);
+
+  // Auto-switch to GogoAnime/Hianime once Anicrush resolution finishes without a match.
+  // Anicrush is currently unreachable both server-side (Cloudflare 521) and
+  // client-side (CORS), so leaving the provider on 'anicrush' left Play/Watch
+  // silently doing nothing even though a working Hianime source existed.
+  useEffect(() => {
+    if (!title || title.type !== 'ANIME') return;
+    if (!animeLoading && !anicrushMovieId && gogoAnimeId && animeProvider === 'anicrush') {
+      setAnimeProvider('gogoanime');
+    }
+  }, [title, animeLoading, anicrushMovieId, gogoAnimeId, animeProvider]);
 
   // GogoAnime/Hianime search — runs in background when an anime title loads; resets stale state first
   useEffect(() => {
