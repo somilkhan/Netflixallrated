@@ -119,6 +119,13 @@ export default function TitleDetail() {
   const [hubLoading, setHubLoading] = useState(false);
   const [hubError, setHubError] = useState<string | null>(null);
 
+  // Monotonic request counters — guard against out-of-order async responses
+  // when a user rapidly switches season/episode/server while a resolve is in flight.
+  const flixhqReqRef = useRef(0);
+  const febboxReqRef = useRef(0);
+  const hdhubReqRef = useRef(0);
+  const hubReqRef = useRef(0);
+
   // HDHub4u (ScreenScape) — download/watch source
   const [hdhubUrl, setHdhubUrl] = useState<string | null>(null);
   const [hdhubLoading, setHdhubLoading] = useState(false);
@@ -183,21 +190,29 @@ export default function TitleDetail() {
   // FlixHQ auto-resolve — fires when FlixHQ server is selected for movies/TV
   useEffect(() => {
     if (!title || title.type === 'ANIME' || serverId !== 'flixhq') return;
+    const reqId = ++flixhqReqRef.current;
     setFlixhqUrl(null);
     setFlixhqError(null);
     setFlixhqLoading(true);
     api.consumet.moviesAuto(title.name, title.type, selectedSeason, selectedEp)
       .then((data: any) => {
+        if (reqId !== flixhqReqRef.current) return;
         if (data?.playerUrl) setFlixhqUrl(data.playerUrl);
         else setFlixhqError('No stream found via FlixHQ');
       })
-      .catch((err: any) => setFlixhqError(err?.message || 'FlixHQ failed to load — try another server'))
-      .finally(() => setFlixhqLoading(false));
+      .catch((err: any) => {
+        if (reqId !== flixhqReqRef.current) return;
+        setFlixhqError(err?.message || 'FlixHQ failed to load — try another server');
+      })
+      .finally(() => {
+        if (reqId === flixhqReqRef.current) setFlixhqLoading(false);
+      });
   }, [serverId, title, selectedSeason, selectedEp]);
 
   // FebBox auto-resolve — fires when FebBox server is selected for movies/TV
   useEffect(() => {
     if (!title || title.type === 'ANIME' || serverId !== 'febbox' || !title.tmdbId) return;
+    const reqId = ++febboxReqRef.current;
     setFebboxUrl(null);
     setFebboxError(null);
     setFebboxLoading(true);
@@ -209,32 +224,46 @@ export default function TitleDetail() {
       title.name,
     )
       .then((data: any) => {
+        if (reqId !== febboxReqRef.current) return;
         if (data?.embedUrl) setFebboxUrl(data.embedUrl);
         else setFebboxError('FebBox stream not available for this title');
       })
-      .catch((err: any) => setFebboxError(err?.message || 'FebBox lookup failed — try another server'))
-      .finally(() => setFebboxLoading(false));
+      .catch((err: any) => {
+        if (reqId !== febboxReqRef.current) return;
+        setFebboxError(err?.message || 'FebBox lookup failed — try another server');
+      })
+      .finally(() => {
+        if (reqId === febboxReqRef.current) setFebboxLoading(false);
+      });
   }, [serverId, title, selectedSeason, selectedEp]);
 
   // HDHub4u auto-resolve — fires when HDHub4u server is selected for movies/TV
   useEffect(() => {
     if (!title || title.type === 'ANIME' || serverId !== 'hdhub4u') return;
+    const reqId = ++hdhubReqRef.current;
     setHdhubUrl(null);
     setHdhubError(null);
     setHdhubLoading(true);
     api.screenscape.hdhub4uResolve(title.name)
       .then((data: any) => {
+        if (reqId !== hdhubReqRef.current) return;
         const url = data?.streamUrl ?? data?.embedUrl ?? null;
         if (url) setHdhubUrl(url);
         else setHdhubError('HDHub4u content not available for this title');
       })
-      .catch((err: any) => setHdhubError(err?.message || 'HDHub4u lookup failed — try another server'))
-      .finally(() => setHdhubLoading(false));
+      .catch((err: any) => {
+        if (reqId !== hdhubReqRef.current) return;
+        setHdhubError(err?.message || 'HDHub4u lookup failed — try another server');
+      })
+      .finally(() => {
+        if (reqId === hdhubReqRef.current) setHdhubLoading(false);
+      });
   }, [serverId, title]);
 
   // 4kHDHub auto-resolve — fires when 4kHDHub server is selected for movies/TV
   useEffect(() => {
     if (!title || title.type === 'ANIME' || serverId !== '4khdhub') return;
+    const reqId = ++hubReqRef.current;
     setHubUrl(null);
     setHubError(null);
     setHubLoading(true);
@@ -245,12 +274,18 @@ export default function TitleDetail() {
       selectedEp,
     )
       .then((data: any) => {
+        if (reqId !== hubReqRef.current) return;
         const url = data?.embedUrl ?? data?.streamUrl ?? null;
         if (url) setHubUrl(url);
         else setHubError('4kHDHub stream not available for this title');
       })
-      .catch((err: any) => setHubError(err?.message || '4kHDHub lookup failed — try another server'))
-      .finally(() => setHubLoading(false));
+      .catch((err: any) => {
+        if (reqId !== hubReqRef.current) return;
+        setHubError(err?.message || '4kHDHub lookup failed — try another server');
+      })
+      .finally(() => {
+        if (reqId === hubReqRef.current) setHubLoading(false);
+      });
   }, [serverId, title, selectedSeason, selectedEp]);
 
   useEffect(() => {
