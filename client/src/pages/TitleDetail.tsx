@@ -135,6 +135,7 @@ export default function TitleDetail() {
   const [animeEmbedUrl, setAnimeEmbedUrl] = useState<string | null>(null);
   const [animeEmbedLoading, setAnimeEmbedLoading] = useState(false);
   const embedReqRef = useRef(0);
+  const gogoSearchReqRef = useRef(0);
 
   // TMDB Watch Providers (Netflix, Prime Video, Disney+, etc. — movie/TV only)
   const [watchProviders, setWatchProviders] = useState<{ flatrate: any[]; rent: any[]; buy: any[]; link: string | null } | null>(null);
@@ -338,13 +339,16 @@ export default function TitleDetail() {
     setGogoEpisodes([]);
     setGogoEmbedUrl(null);
     setGogoError(null);
+    const reqId = ++gogoSearchReqRef.current;
     api.consumet.animeSearch(title.name)
       .then((data: any) => {
+        if (gogoSearchReqRef.current !== reqId) return; // stale — a newer title navigated in
         const result = data?.results?.[0];
         if (!result) return;
         setGogoAnimeId(result.id);
         api.consumet.animeInfo(result.id)
           .then((info: any) => {
+            if (gogoSearchReqRef.current !== reqId) return;
             setGogoEpCount(info.totalEpisodes ?? info.episodes?.length ?? 0);
             setGogoEpisodes(info.episodes ?? []);
           })
