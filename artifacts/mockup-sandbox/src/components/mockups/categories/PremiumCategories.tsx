@@ -36,21 +36,21 @@ interface GradItem { label: string; sub?: string; grad: string }
 
 /* Row 1 — Browse by Type */
 const TYPES: ImgItem[] = [
-  { label:"Movies",   sub:"12,345 titles", img:`${T}/xOMo8BRK7PfcJv9JCnx7s5hj0PX.jpg`, tint:"rgba(100,70,200,0.32)" },
-  { label:"TV Shows", sub:"34 titles",     img:`${T}/uKvVjHNqB5VmOrdxqAt2F7J78ED.jpg`, tint:"rgba(40,140,100,0.30)" },
-  { label:"Anime",    sub:"20 titles",     img:`${T}/suopoADq0k8YZr4dQXcU6pToj6s.jpg`, tint:"rgba(190,50,60,0.30)"  },
+  { label:"Movies",   sub:"12,345 titles", img:`${T}/xOMo8BRK7PfcJv9JCnx7s5hj0PX.jpg`, tint:"rgba(100,70,200,0.60)" },
+  { label:"TV Shows", sub:"34 titles",     img:`${T}/uKvVjHNqB5VmOrdxqAt2F7J78ED.jpg`, tint:"rgba(40,140,100,0.60)" },
+  { label:"Anime",    sub:"20 titles",     img:`${T}/suopoADq0k8YZr4dQXcU6pToj6s.jpg`, tint:"rgba(190,50,60,0.60)"  },
 ];
 
 /* Row 2 — Browse by Genre */
 const GENRES: ImgItem[] = [
-  { label:"Action",    img:`${T}/or06FN3Dka5tukK1e9sl16pB3iy.jpg`, tint:"rgba(200,50,40,0.34)"  },
-  { label:"Drama",     img:`${T}/fm6KqXpk3M2HVveHwCrBSSBaO0V.jpg`, tint:"rgba(180,110,30,0.32)" },
-  { label:"Horror",    img:`${L}/images/genre-horror_2.jpg`,         tint:"rgba(80,10,10,0.42)"   },
-  { label:"Sci-Fi",    img:`${T}/rAiYTfKGqDCRIIqo664sY9XZIvQ.jpg`, tint:"rgba(30,80,200,0.34)"  },
-  { label:"Romance",   img:`${L}/images/genre-romance_2.jpg`,        tint:"rgba(190,80,80,0.32)"  },
-  { label:"Thriller",  img:`${L}/images/genre-thriller_2.jpg`,       tint:"rgba(20,80,50,0.34)"   },
-  { label:"Comedy",    img:`${L}/images/genre-comedy_2.jpg`,         tint:"rgba(180,150,0,0.30)"  },
-  { label:"Animation", img:`${T}/39wmItIWsg5sZMyRUHLkWBcuVCM.jpg`, tint:"rgba(110,40,200,0.34)" },
+  { label:"Action",    img:`${T}/or06FN3Dka5tukK1e9sl16pB3iy.jpg`, tint:"rgba(200,50,40,0.60)"  },
+  { label:"Drama",     img:`${T}/fm6KqXpk3M2HVveHwCrBSSBaO0V.jpg`, tint:"rgba(180,110,30,0.60)" },
+  { label:"Horror",    img:`${L}/images/genre-horror_2.jpg`,         tint:"rgba(80,10,10,0.60)"   },
+  { label:"Sci-Fi",    img:`${T}/rAiYTfKGqDCRIIqo664sY9XZIvQ.jpg`, tint:"rgba(30,80,200,0.60)"  },
+  { label:"Romance",   img:`${L}/images/genre-romance_2.jpg`,        tint:"rgba(190,80,80,0.60)"  },
+  { label:"Thriller",  img:`${L}/images/genre-thriller_2.jpg`,       tint:"rgba(20,80,50,0.60)"   },
+  { label:"Comedy",    img:`${L}/images/genre-comedy_2.jpg`,         tint:"rgba(180,150,0,0.60)"  },
+  { label:"Animation", img:`${T}/39wmItIWsg5sZMyRUHLkWBcuVCM.jpg`, tint:"rgba(110,40,200,0.60)" },
 ];
 
 /* Row 3 — Browse by Platform  (logo cards, no image) */
@@ -65,11 +65,11 @@ const PLATFORMS: LogoItem[] = [
 
 /* Row 4 — Browse by Era  (image cards with era tint) */
 const ERAS: ImgItem[] = [
-  { label:"Classics",  sub:"Pre-2000",  img:`${T}/fm6KqXpk3M2HVveHwCrBSSBaO0V.jpg`, tint:"rgba(120,80,20,0.45)"  },
-  { label:"2000s",     sub:"2000–2009", img:`${T}/xOMo8BRK7PfcJv9JCnx7s5hj0PX.jpg`, tint:"rgba(40,100,160,0.40)" },
-  { label:"2010s",     sub:"2010–2019", img:`${T}/or06FN3Dka5tukK1e9sl16pB3iy.jpg`, tint:"rgba(30,120,80,0.38)"  },
-  { label:"2020s",     sub:"2020–Now",  img:`${T}/uKvVjHNqB5VmOrdxqAt2F7J78ED.jpg`, tint:"rgba(70,40,180,0.40)"  },
-  { label:"90s",       sub:"1990–1999", img:`${L}/images/era-90s.jpg`,               tint:"rgba(160,90,20,0.38)"  },
+  { label:"Classics",  sub:"Pre-2000",  img:`${T}/fm6KqXpk3M2HVveHwCrBSSBaO0V.jpg`, tint:"rgba(120,80,20,0.60)"  },
+  { label:"2000s",     sub:"2000–2009", img:`${T}/xOMo8BRK7PfcJv9JCnx7s5hj0PX.jpg`, tint:"rgba(40,100,160,0.60)" },
+  { label:"2010s",     sub:"2010–2019", img:`${T}/or06FN3Dka5tukK1e9sl16pB3iy.jpg`, tint:"rgba(30,120,80,0.60)"  },
+  { label:"2020s",     sub:"2020–Now",  img:`${T}/uKvVjHNqB5VmOrdxqAt2F7J78ED.jpg`, tint:"rgba(70,40,180,0.60)"  },
+  { label:"90s",       sub:"1990–1999", img:`${L}/images/era-90s.jpg`,               tint:"rgba(160,90,20,0.60)"  },
 ];
 
 /* Row 5 — Browse by Mood  (pure gradient cards — editorial, like bingr's "Sparks") */
