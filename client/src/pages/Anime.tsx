@@ -11,6 +11,8 @@ import { useNavigate } from 'react-router-dom';
 import { Search, X, ArrowRight } from 'lucide-react';
 import { getAnimePage, getCurrentSeason, formatSeason } from '../lib/anilist';
 import AnimeRow from '../components/AnimeRow';
+import AnimeRankRow from '../components/AnimeRankRow';
+import AnimeHeroBanner from '../components/AnimeHeroBanner';
 import AniCard from '../components/AniCard';
 import { GlassCardSkeleton } from '../components/GlassCard';
 
@@ -18,20 +20,18 @@ const SEASON      = getCurrentSeason() as string;
 const SEASON_YEAR = new Date().getFullYear();
 const SEASON_LABEL = `${formatSeason(SEASON)} ${SEASON_YEAR}`;
 
+// Order & set match the reference layout's genre rail exactly.
 const GENRE_ROWS: { title: string; genre?: string; tag?: string }[] = [
   { title: 'Romance',       genre: 'Romance' },
   { title: 'Action',        genre: 'Action' },
-  { title: 'Comedy',        genre: 'Comedy' },
   { title: 'Fantasy',       genre: 'Fantasy' },
-  { title: 'Drama',         genre: 'Drama' },
-  { title: 'Sci-Fi',        genre: 'Sci-Fi' },
+  { title: 'Comedy',        genre: 'Comedy' },
   { title: 'Horror',        genre: 'Horror' },
   { title: 'Mystery',       genre: 'Mystery' },
-  { title: 'Psychological', genre: 'Psychological' },
+  { title: 'Sci-Fi',        genre: 'Sci-Fi' },
   { title: 'Slice of Life', genre: 'Slice of Life' },
   { title: 'Sports',        genre: 'Sports' },
-  { title: 'Supernatural',  genre: 'Supernatural' },
-  { title: 'Isekai',        tag: 'Isekai' },
+  { title: 'Psychological', genre: 'Psychological' },
 ];
 
 export default function Anime() {
@@ -44,6 +44,14 @@ export default function Anime() {
   const seenIds = useRef<number[]>([]);
   const [trendingIds, setTrendingIds] = useState<number[]>([]);
   const [popularIds,  setPopularIds]  = useState<number[]>([]);
+
+  // Hero pool — auto-changing featured anime, sourced from live trending data.
+  const [heroTitles, setHeroTitles] = useState<any[]>([]);
+  useEffect(() => {
+    getAnimePage({ sort: 'TRENDING_DESC', perPage: 6 })
+      .then(setHeroTitles)
+      .catch(() => setHeroTitles([]));
+  }, []);
 
   const onTrendingLoaded = useCallback((ids: number[]) => {
     seenIds.current = [...seenIds.current, ...ids];
@@ -83,78 +91,56 @@ export default function Anime() {
   return (
     <div className="min-h-screen bg-void">
 
-      {/* Hero */}
-      <div className="relative overflow-hidden">
-        <div className="pointer-events-none absolute inset-0">
-          <div className="absolute -top-20 -left-20 w-[600px] h-[600px] rounded-full
-            bg-[radial-gradient(circle,rgba(122,37,48,0.28)_0%,transparent_65%)]" />
-          <div className="absolute top-10 right-0 w-[400px] h-[400px] rounded-full
-            bg-[radial-gradient(circle,rgba(194,67,79,0.10)_0%,transparent_65%)]" />
-        </div>
-        <div
-          className="pointer-events-none absolute inset-0 opacity-[0.03]"
-          style={{
-            backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E")`,
-            backgroundSize: '200px 200px',
-          }}
-        />
+      {/* Cinematic auto-changing hero */}
+      <AnimeHeroBanner titles={heroTitles} />
 
-        <div className="relative px-5 pt-14 pb-10">
-          <div className="flex items-center justify-between mb-3">
-            <span className="font-mono text-[10px] uppercase tracking-[0.22em] text-maroon-bright/70 flex items-center gap-1.5">
-              <span className="inline-block w-1.5 h-1.5 rounded-full bg-maroon-bright animate-pulse" />
-              Live from AniList
-            </span>
-            <button
-              onClick={() => nav('/anime/genres')}
-              className="font-mono text-[11px] text-ink-dim hover:text-ink transition-colors flex items-center gap-1"
-            >
-              Browse all genres &amp; tags
-              <ArrowRight size={11} strokeWidth={2.2} />
-            </button>
+      {/* Search bar strip — kept below the hero so the banner reads uninterrupted */}
+      <div className="relative px-5 pt-6 pb-2">
+        <div className="flex items-center justify-between mb-4">
+          <span className="font-mono text-[10px] uppercase tracking-[0.22em] text-maroon-bright/70 flex items-center gap-1.5">
+            <span className="inline-block w-1.5 h-1.5 rounded-full bg-maroon-bright animate-pulse" />
+            Live from AniList
+          </span>
+          <button
+            onClick={() => nav('/anime/genres')}
+            className="font-mono text-[11px] text-ink-dim hover:text-ink transition-colors flex items-center gap-1"
+          >
+            Browse all genres &amp; tags
+            <ArrowRight size={11} strokeWidth={2.2} />
+          </button>
+        </div>
+
+        <form onSubmit={handleSearch} className="flex gap-2 max-w-md">
+          <div className="flex-1 relative">
+            <Search size={14} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-ink-faint pointer-events-none" />
+            <input
+              type="text"
+              value={query}
+              onChange={e => setQuery(e.target.value)}
+              placeholder="Search any anime…"
+              className="w-full bg-surface/80 border border-line rounded-full pl-10 pr-4 py-2.5
+                text-sm text-ink placeholder:text-ink-faint outline-none
+                focus:border-maroon-bright/60 focus:bg-surface transition-colors backdrop-blur-sm"
+            />
           </div>
-
-          <h1 className="font-serif text-[52px] md:text-[68px] font-semibold tracking-tight leading-none text-ink mb-2">
-            Anime
-          </h1>
-          <p className="font-mono text-sm text-ink-faint mb-8 max-w-sm">
-            Trending, seasonal &amp; genre picks — updated in real time
-          </p>
-
-          <form onSubmit={handleSearch} className="flex gap-2 max-w-md">
-            <div className="flex-1 relative">
-              <Search size={14} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-ink-faint pointer-events-none" />
-              <input
-                type="text"
-                value={query}
-                onChange={e => setQuery(e.target.value)}
-                placeholder="Search any anime…"
-                className="w-full bg-surface/80 border border-line rounded-full pl-10 pr-4 py-2.5
-                  text-sm text-ink placeholder:text-ink-faint outline-none
-                  focus:border-maroon-bright/60 focus:bg-surface transition-colors backdrop-blur-sm"
-              />
-            </div>
+          <button
+            type="submit"
+            disabled={!query.trim() || searchState === 'loading'}
+            className="bg-maroon hover:bg-maroon-bright disabled:opacity-40 text-white font-mono
+              text-xs px-5 py-2.5 rounded-full transition-colors shrink-0"
+          >
+            {searchState === 'loading' ? '…' : 'Search'}
+          </button>
+          {searchState !== 'idle' && (
             <button
-              type="submit"
-              disabled={!query.trim() || searchState === 'loading'}
-              className="bg-maroon hover:bg-maroon-bright disabled:opacity-40 text-white font-mono
-                text-xs px-5 py-2.5 rounded-full transition-colors shrink-0"
+              type="button"
+              onClick={clearSearch}
+              className="text-ink-faint hover:text-ink transition-colors px-1"
             >
-              {searchState === 'loading' ? '…' : 'Search'}
+              <X size={14} />
             </button>
-            {searchState !== 'idle' && (
-              <button
-                type="button"
-                onClick={clearSearch}
-                className="text-ink-faint hover:text-ink transition-colors px-1"
-              >
-                <X size={14} />
-              </button>
-            )}
-          </form>
-        </div>
-
-        <div className="absolute inset-x-0 bottom-0 h-8 bg-gradient-to-t from-void to-transparent pointer-events-none" />
+          )}
+        </form>
       </div>
 
       {/* Search results */}
@@ -196,11 +182,12 @@ export default function Anime() {
         </div>
       )}
 
-      <AnimeRow title="Trending Now" badge="LIVE" sort="TRENDING_DESC" perPage={20} onLoaded={onTrendingLoaded} />
-      <AnimeRow title="Popular on AniList" badge="LIVE" sort="POPULARITY_DESC" perPage={20} notIds={trendingIds} onLoaded={onPopularLoaded} />
-      <AnimeRow title="Top Rated" sort="SCORE_DESC" perPage={20} notIds={[...trendingIds, ...popularIds]} />
+      <AnimeRankRow title="Trending Anime" badge="LIVE" perPage={10} onLoaded={onTrendingLoaded} />
+      <AnimeRow title="Popular Anime" badge="LIVE" sort="POPULARITY_DESC" perPage={20} notIds={trendingIds} onLoaded={onPopularLoaded} />
+      <AnimeRow title="Top Rated Anime" sort="SCORE_DESC" perPage={20} notIds={[...trendingIds, ...popularIds]} />
+      <AnimeRow title="Top Rated Anime Movies" sort="SCORE_DESC" format="MOVIE" perPage={20} />
       <AnimeRow title="Airing Now" badge="NOW" sort="TRENDING_DESC" status="RELEASING" perPage={20} />
-      <AnimeRow title={`Seasonal Picks — ${SEASON_LABEL}`} sort="POPULARITY_DESC" season={SEASON} seasonYear={SEASON_YEAR} perPage={20} />
+      <AnimeRow title={`Seasonal Anime — ${SEASON_LABEL}`} sort="POPULARITY_DESC" season={SEASON} seasonYear={SEASON_YEAR} perPage={20} />
 
       {GENRE_ROWS.map(row => (
         <AnimeRow key={row.title} title={row.title} genre={row.genre} tag={row.tag} sort="POPULARITY_DESC" perPage={16} />

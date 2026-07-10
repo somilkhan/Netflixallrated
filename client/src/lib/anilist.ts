@@ -31,6 +31,7 @@ export interface AnimePage {
   season?: string;
   seasonYear?: number;
   status?: string;
+  format?: string;
   idNotIn?: number[];
 }
 
@@ -96,9 +97,10 @@ const PAGE_QUERY = `
     $page: Int, $perPage: Int, $sort: [MediaSort],
     $genre: String, $tag: String, $search: String,
     $season: MediaSeason, $seasonYear: Int,
-    $status: MediaStatus, $id_not_in: [Int]
+    $status: MediaStatus, $format: MediaFormat, $id_not_in: [Int]
   ) {
     Page(page: $page, perPage: $perPage) {
+      pageInfo { hasNextPage total }
       media(
         type: ANIME,
         sort: $sort,
@@ -108,6 +110,7 @@ const PAGE_QUERY = `
         season: $season,
         seasonYear: $seasonYear,
         status: $status,
+        format: $format,
         id_not_in: $id_not_in
       ) {
         ${PAGE_MEDIA_FIELDS}
@@ -130,6 +133,7 @@ export async function getAnimePage({
   season,
   seasonYear,
   status,
+  format,
   idNotIn,
 }: AnimePage = {}): Promise<AniListMedia[]> {
   const variables: Record<string, unknown> = {
@@ -142,11 +146,50 @@ export async function getAnimePage({
     ...(season     ? { season }                  : {}),
     ...(seasonYear ? { seasonYear }              : {}),
     ...(status     ? { status }                  : {}),
+    ...(format     ? { format }                  : {}),
     ...(idNotIn?.length ? { id_not_in: idNotIn } : {}),
   };
   // runQuery throws on network/API error — let it propagate so callers show error UI
   const data = await runQuery<{ Page: { media: AniListMedia[] } }>(PAGE_QUERY, variables);
   return data.Page?.media ?? [];
+}
+
+/**
+ * Same as getAnimePage but also returns pageInfo, used by infinite-scroll
+ * "View all" section pages.
+ */
+export async function getAnimePageWithInfo({
+  sort = 'POPULARITY_DESC',
+  page = 1,
+  perPage = 24,
+  genre,
+  tag,
+  search,
+  season,
+  seasonYear,
+  status,
+  format,
+  idNotIn,
+}: AnimePage = {}): Promise<{ media: AniListMedia[]; hasNextPage: boolean; total: number }> {
+  const variables: Record<string, unknown> = {
+    page,
+    perPage,
+    sort: [sort],
+    ...(genre      ? { genre }                   : {}),
+    ...(tag        ? { tag }                     : {}),
+    ...(search     ? { search }                  : {}),
+    ...(season     ? { season }                  : {}),
+    ...(seasonYear ? { seasonYear }              : {}),
+    ...(status     ? { status }                  : {}),
+    ...(format     ? { format }                  : {}),
+    ...(idNotIn?.length ? { id_not_in: idNotIn } : {}),
+  };
+  const data = await runQuery<{ Page: { media: AniListMedia[]; pageInfo: { hasNextPage: boolean; total: number } } }>(PAGE_QUERY, variables);
+  return {
+    media: data.Page?.media ?? [],
+    hasNextPage: !!data.Page?.pageInfo?.hasNextPage,
+    total: data.Page?.pageInfo?.total ?? 0,
+  };
 }
 
 // ── Full live genre + tag list ────────────────────────────────────────────────

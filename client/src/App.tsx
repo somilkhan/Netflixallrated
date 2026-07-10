@@ -19,6 +19,7 @@ const TV = lazy(() => import('./pages/TV'));
 const Anime = lazy(() => import('./pages/Anime'));
 const AnimeGenres = lazy(() => import('./pages/AnimeGenres'));
 const AnimeDetailPage = lazy(() => import('./pages/AnimeDetailPage'));
+const AnimeSectionPage = lazy(() => import('./pages/AnimeSectionPage'));
 const Categories = lazy(() => import('./pages/Categories'));
 const StudioDetail = lazy(() => import('./pages/DiscoveryPages').then(m => ({ default: m.StudioDetail })));
 const LanguageDetail = lazy(() => import('./pages/DiscoveryPages').then(m => ({ default: m.LanguageDetail })));
@@ -48,6 +49,7 @@ export default function App() {
             <Route path="/anime" element={<Wrap><Anime /></Wrap>} />
             <Route path="/anime/view/:anilistId" element={<Wrap><AnimeDetailPage /></Wrap>} />
             <Route path="/anime/genres" element={<Wrap><AnimeGenres /></Wrap>} />
+            <Route path="/anime/section" element={<Wrap><AnimeSectionPage /></Wrap>} />
             <Route path="/categories" element={<Wrap><Categories /></Wrap>} />
             <Route path="/studio/:slug" element={<Wrap><StudioDetail /></Wrap>} />
             <Route path="/language/:slug" element={<Wrap><LanguageDetail /></Wrap>} />
