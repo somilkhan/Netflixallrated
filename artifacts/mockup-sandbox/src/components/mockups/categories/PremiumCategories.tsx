@@ -1,131 +1,142 @@
 /**
- * PremiumCategories — Aperture Star brand.
- * Design: "Dissolved Marquee" — images fade cleanly into the void background,
- * minimal overlays, tight type, all genre/type rows are horizontal sliders.
+ * PremiumCategories — 1:1 bingr.one layout with Aperture Star maroon theme.
+ *
+ * Layout rules (measured from bingr reference):
+ *  - Section title: Inter 20px bold white, plain case
+ *  - "View All >": Inter 13px, right-aligned, maroon
+ *  - Cards: 165 × 106px landscape, 12px radius, 2 visible + peek of 3rd
+ *  - Image overlay: only a bottom-to-transparent gradient, images clearly visible
+ *  - Label: Inter 15px semibold white, bottom-left
+ *  - Sub-label: Inter 11px, dimmed, below label
+ *  - Platform cards: same dimensions, dark bg, logo centred, no image
+ *  - Section gap: 32px
  */
 import { ChevronRight } from "lucide-react";
 
-/* ─── Tokens ────────────────────────────────────────────── */
-const C = {
-  void:      "#0B0407",
-  voidMid:   "#110B0E",
-  maroon:    "#8B1A24",
-  maroonBrt: "#C2434F",
-  ink:       "#EDE6E8",
-  inkDim:    "#8A7880",
-  inkFaint:  "#3D2F34",
+/* ─── Brand tokens ───────────────────────────────────────── */
+const B = {
+  bg:        "#0A0407",       // almost-black, slightly warmer than bingr
+  card:      "#141010",       // card dark bg (platforms)
+  maroon:    "#C2434F",       // primary accent
+  maroonDim: "#8B1A24",
+  white:     "#F0E8EA",
+  dim:       "#7A6870",
+  faint:     "#2E2228",
 };
 
-/* ─── Data ──────────────────────────────────────────────── */
+/* ─── Data ───────────────────────────────────────────────── */
 const TMDB = "https://image.tmdb.org/t/p/w780";
-const BASE  = import.meta.env.BASE_URL.replace(/\/$/, "");
+const BASE = import.meta.env.BASE_URL.replace(/\/$/, "");
 
-const TYPES = [
-  { label: "Movies",   sub: "12,345 titles", img: `${TMDB}/xOMo8BRK7PfcJv9JCnx7s5hj0PX.jpg`, accent: "#7B6BCC" },
-  { label: "TV Shows", sub: "34 titles",     img: `${TMDB}/uKvVjHNqB5VmOrdxqAt2F7J78ED.jpg`, accent: "#4DA87C" },
-  { label: "Anime",    sub: "20 titles",     img: `${TMDB}/suopoADq0k8YZr4dQXcU6pToj6s.jpg`, accent: "#C2434F" },
+const TYPES: CardItem[] = [
+  { label: "Movies",   sub: "12,345 titles", img: `${TMDB}/xOMo8BRK7PfcJv9JCnx7s5hj0PX.jpg` },
+  { label: "TV Shows", sub: "34 titles",     img: `${TMDB}/uKvVjHNqB5VmOrdxqAt2F7J78ED.jpg` },
+  { label: "Anime",    sub: "20 titles",     img: `${TMDB}/suopoADq0k8YZr4dQXcU6pToj6s.jpg` },
 ];
 
-const PLATFORMS = [
-  { label: "Netflix",     color: "#E50914", bg: "#141414", logo: "NETFLIX"     },
-  { label: "Prime Video", color: "#00A8E1", bg: "#0F1111", logo: "prime video" },
-  { label: "Hotstar",     color: "#1A6CF2", bg: "#0C1324", logo: "hotstar"     },
-  { label: "Crunchyroll", color: "#F47521", bg: "#0D0D0D", logo: "crunchyroll" },
-  { label: "Apple TV+",   color: "#F0F0F2", bg: "#1D1D1F", logo: "Apple TV+"  },
-  { label: "MUBI",        color: "#D4A84B", bg: "#12100E", logo: "MUBI"        },
+const GENRES: CardItem[] = [
+  { label: "Action",    img: `${TMDB}/or06FN3Dka5tukK1e9sl16pB3iy.jpg` },
+  { label: "Drama",     img: `${TMDB}/fm6KqXpk3M2HVveHwCrBSSBaO0V.jpg` },
+  { label: "Horror",    img: `${BASE}/images/genre-horror_2.jpg`        },
+  { label: "Sci-Fi",   img: `${TMDB}/rAiYTfKGqDCRIIqo664sY9XZIvQ.jpg` },
+  { label: "Romance",   img: `${BASE}/images/genre-romance_2.jpg`       },
+  { label: "Thriller",  img: `${BASE}/images/genre-thriller_2.jpg`      },
+  { label: "Comedy",    img: `${BASE}/images/genre-comedy_2.jpg`        },
+  { label: "Animation", img: `${TMDB}/39wmItIWsg5sZMyRUHLkWBcuVCM.jpg` },
 ];
 
-const GENRES = [
-  { label: "Action",    img: `${TMDB}/or06FN3Dka5tukK1e9sl16pB3iy.jpg`  },
-  { label: "Drama",     img: `${TMDB}/fm6KqXpk3M2HVveHwCrBSSBaO0V.jpg`  },
-  { label: "Horror",    img: `${BASE}/images/genre-horror_2.jpg`         },
-  { label: "Sci-Fi",    img: `${TMDB}/rAiYTfKGqDCRIIqo664sY9XZIvQ.jpg`  },
-  { label: "Romance",   img: `${BASE}/images/genre-romance_2.jpg`        },
-  { label: "Thriller",  img: `${BASE}/images/genre-thriller_2.jpg`       },
-  { label: "Comedy",    img: `${BASE}/images/genre-comedy_2.jpg`         },
-  { label: "Animation", img: `${TMDB}/39wmItIWsg5sZMyRUHLkWBcuVCM.jpg`  },
+interface LogoItem { label: string; color: string; logo: string }
+const PLATFORMS: LogoItem[] = [
+  { label: "Netflix",     color: "#E50914", logo: "NETFLIX"     },
+  { label: "Prime Video", color: "#00A8E1", logo: "prime video" },
+  { label: "Hotstar",     color: "#1A6CF2", logo: "hotstar"     },
+  { label: "Crunchyroll", color: "#F47521", logo: "crunchyroll" },
+  { label: "Apple TV+",   color: "#F0F0F2", logo: "Apple TV+"  },
+  { label: "MUBI",        color: "#D4A84B", logo: "MUBI"        },
 ];
 
-/* ─── Shared fade overlay ────────────────────────────────
-   Bingr-style: smooth, long dissolve from opaque-void at bottom
-   to fully transparent at top. No tint, no left vignette.        */
-const FADE_GRADIENT =
-  "linear-gradient(to top, rgba(11,4,7,1) 0%, rgba(11,4,7,0.72) 30%, rgba(11,4,7,0.28) 65%, transparent 100%)";
+/* ─── Shared types ───────────────────────────────────────── */
+interface CardItem { label: string; sub?: string; img: string }
 
-/* ─── Helpers ───────────────────────────────────────────── */
+/* ─── Card dimensions (same across all image rows) ────────
+   390px viewport, 16px left pad, 10px gap:
+   2 × 165 + 10 + 16 = 356 → 34px peek of 3rd card          */
+const CARD_W = 165;
+const CARD_H = 106;
+const RADIUS = 12;
 
-/** Shared scroll row */
-function Row({ children, gap = 10, pl = 20 }: { children: React.ReactNode; gap?: number; pl?: number }) {
+/* ─── Sub-components ─────────────────────────────────────── */
+
+/** Section header row — big bold title + "View All >" */
+function Section({ title, children }: { title: string; children: React.ReactNode }) {
+  return (
+    <div style={{ marginBottom: 32 }}>
+      {/* Header */}
+      <div style={{
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "space-between",
+        padding: "0 16px",
+        marginBottom: 12,
+      }}>
+        <span style={{
+          fontFamily: "'Inter', sans-serif",
+          fontWeight: 700,
+          fontSize: 20,
+          color: B.white,
+          letterSpacing: "-0.01em",
+        }}>{title}</span>
+        <button style={{
+          display: "flex",
+          alignItems: "center",
+          gap: 2,
+          fontFamily: "'Inter', sans-serif",
+          fontWeight: 500,
+          fontSize: 13,
+          color: B.maroon,
+          background: "none",
+          border: "none",
+          cursor: "pointer",
+          padding: 0,
+        }}>
+          View All <ChevronRight size={13} strokeWidth={2.5} />
+        </button>
+      </div>
+      {children}
+    </div>
+  );
+}
+
+/** Horizontal scroll row — left-padded, no scrollbar */
+function Row({ children }: { children: React.ReactNode }) {
   return (
     <div style={{
       display: "flex",
       overflowX: "auto",
-      gap,
-      paddingLeft: pl,
-      paddingRight: 20,
+      gap: 10,
+      paddingLeft: 16,
+      paddingRight: 16,
       scrollbarWidth: "none",
-      WebkitOverflowScrolling: "touch",
     }}>
       {children}
     </div>
   );
 }
 
-/** Section label + "See all" link */
-function Label({ title }: { title: string }) {
-  return (
-    <div style={{
-      display: "flex",
-      alignItems: "center",
-      justifyContent: "space-between",
-      padding: "0 20px",
-      marginBottom: 10,
-    }}>
-      <span style={{
-        fontFamily: "'Inter', sans-serif",
-        fontWeight: 500,
-        fontSize: 12,
-        letterSpacing: "0.06em",
-        textTransform: "uppercase",
-        color: C.inkDim,
-      }}>
-        {title}
-      </span>
-      <button style={{
-        display: "flex",
-        alignItems: "center",
-        gap: 2,
-        fontSize: 11,
-        fontFamily: "'Inter', sans-serif",
-        fontWeight: 400,
-        color: C.maroonBrt,
-        background: "none",
-        border: "none",
-        cursor: "pointer",
-        padding: 0,
-        letterSpacing: "0.01em",
-      }}>
-        See all <ChevronRight size={11} strokeWidth={2} />
-      </button>
-    </div>
-  );
-}
-
-/* ─── Card components ───────────────────────────────────── */
-
-/** Type card — wide, used in "Browse by Type" */
-function TypeCard({ img, label, sub }: { img: string; label: string; sub: string }) {
+/** Image card — matches bingr genre/type card exactly */
+function ImgCard({ label, sub, img }: CardItem) {
   return (
     <div style={{
       flexShrink: 0,
       position: "relative",
-      width: 188,
-      height: 108,
-      borderRadius: 12,
+      width: CARD_W,
+      height: CARD_H,
+      borderRadius: RADIUS,
       overflow: "hidden",
       cursor: "pointer",
-      border: "1px solid rgba(255,255,255,0.05)",
+      backgroundColor: B.card,
     }}>
+      {/* Image — brightness kept high so it's clearly visible like bingr */}
       <img
         src={img}
         alt={label}
@@ -134,234 +145,201 @@ function TypeCard({ img, label, sub }: { img: string; label: string; sub: string
           width: "100%", height: "100%",
           objectFit: "cover",
           objectPosition: "center",
-          /* slightly desaturate so images feel cooler/darker */
-          filter: "saturate(0.75) brightness(0.72)",
+          filter: "brightness(0.85)",
         }}
       />
-      {/* Clean bottom fade */}
-      <div style={{ position: "absolute", inset: 0, background: FADE_GRADIENT }} />
 
-      {/* Label block */}
-      <div style={{ position: "absolute", bottom: 0, left: 0, right: 0, padding: "8px 10px" }}>
-        <p style={{
-          fontFamily: "'Cormorant Garamond', Georgia, serif",
-          fontWeight: 600,
-          fontSize: 16,
-          color: C.ink,
-          margin: 0,
-          lineHeight: 1.1,
-          letterSpacing: "0.01em",
-        }}>{label}</p>
-        <p style={{
-          fontFamily: "'Inter', sans-serif",
-          fontSize: 9,
-          color: C.inkDim,
-          margin: "2px 0 0",
-          letterSpacing: "0.04em",
-        }}>{sub}</p>
-      </div>
-    </div>
-  );
-}
-
-/** Genre card — slider item */
-function GenreCard({ img, label }: { img: string; label: string }) {
-  return (
-    <div style={{
-      flexShrink: 0,
-      position: "relative",
-      width: 148,
-      height: 180,
-      borderRadius: 12,
-      overflow: "hidden",
-      cursor: "pointer",
-      border: "1px solid rgba(255,255,255,0.05)",
-    }}>
-      <img
-        src={img}
-        alt={label}
-        style={{
-          position: "absolute", inset: 0,
-          width: "100%", height: "100%",
-          objectFit: "cover",
-          objectPosition: "center top",
-          filter: "saturate(0.65) brightness(0.62)",
-        }}
-      />
-      {/* Dissolve fade — stronger for genre cards so they feel very dark/minimal */}
+      {/* Bottom fade only — same subtle dissolve as bingr */}
       <div style={{
         position: "absolute", inset: 0,
-        background: "linear-gradient(to top, rgba(11,4,7,1) 0%, rgba(11,4,7,0.78) 38%, rgba(11,4,7,0.32) 68%, transparent 100%)",
+        background:
+          "linear-gradient(to top, rgba(10,4,7,0.90) 0%, rgba(10,4,7,0.40) 45%, transparent 75%)",
       }} />
 
-      {/* Bottom label */}
-      <div style={{ position: "absolute", bottom: 0, left: 0, right: 0, padding: "8px 10px 10px" }}>
+      {/* Text */}
+      <div style={{
+        position: "absolute",
+        bottom: 0, left: 0, right: 0,
+        padding: "0 10px 9px",
+      }}>
         <p style={{
-          fontFamily: "'Cormorant Garamond', Georgia, serif",
+          fontFamily: "'Inter', sans-serif",
           fontWeight: 600,
           fontSize: 15,
-          color: C.ink,
+          color: B.white,
           margin: 0,
-          letterSpacing: "0.01em",
-          lineHeight: 1,
+          lineHeight: 1.2,
+          textShadow: "0 1px 3px rgba(0,0,0,0.7)",
         }}>{label}</p>
+        {sub && (
+          <p style={{
+            fontFamily: "'Inter', sans-serif",
+            fontWeight: 400,
+            fontSize: 10,
+            color: B.dim,
+            margin: "1px 0 0",
+            letterSpacing: "0.01em",
+          }}>{sub}</p>
+        )}
       </div>
     </div>
   );
 }
 
-/** Platform logo card */
-function PlatformCard({ label, color, bg, logo }: { label: string; color: string; bg: string; logo: string }) {
+/** Platform / logo card — dark bg, centred logo text, no image */
+function LogoCard({ label, color, logo }: LogoItem) {
+  const isNetflix     = logo === "NETFLIX";
+  const isMubi        = logo === "MUBI";
+  const isPrime       = logo === "prime video";
+  const isApple       = logo === "Apple TV+";
+
   return (
     <div style={{
       flexShrink: 0,
       position: "relative",
-      width: 128,
-      height: 62,
-      borderRadius: 10,
+      width: CARD_W,
+      height: CARD_H,
+      borderRadius: RADIUS,
       overflow: "hidden",
-      background: bg,
-      border: "1px solid rgba(255,255,255,0.04)",
       cursor: "pointer",
+      background: B.card,
+      border: `1px solid ${B.faint}`,
       display: "flex",
       alignItems: "center",
       justifyContent: "center",
     }}>
-      {/* Very faint inner radial */}
+      {/* Very faint brand glow behind logo */}
       <div style={{
         position: "absolute", inset: 0,
-        background: `radial-gradient(ellipse at center, ${color}12 0%, transparent 70%)`,
+        background: `radial-gradient(ellipse at center, ${color}14 0%, transparent 65%)`,
       }} />
       <span style={{
         position: "relative",
         fontFamily:
-          logo === "NETFLIX" || logo === "MUBI" ? "'Montserrat', sans-serif"
-          : logo === "Apple TV+" ? "-apple-system, 'SF Pro Display', sans-serif"
-          : "'Plus Jakarta Sans', sans-serif",
-        fontWeight: logo === "prime video" ? 400 : 700,
-        fontStyle: logo === "prime video" ? "italic" : "normal",
+          isNetflix || isMubi   ? "'Montserrat', sans-serif"
+          : isApple             ? "-apple-system, 'SF Pro Display', sans-serif"
+          : isPrime             ? "'Plus Jakarta Sans', sans-serif"
+          :                       "'Plus Jakarta Sans', sans-serif",
+        fontWeight: isPrime ? 400 : 700,
+        fontStyle:  isPrime ? "italic" : "normal",
         fontSize:
-          logo === "NETFLIX" ? 15
-          : logo === "prime video" ? 12
-          : logo === "hotstar" ? 14
-          : logo === "crunchyroll" ? 12
-          : logo === "Apple TV+" ? 13
-          : 17,
+          isNetflix  ? 18
+          : isMubi   ? 22
+          : isPrime  ? 13
+          : isApple  ? 15
+          :             16,
         letterSpacing:
-          logo === "NETFLIX" ? "0.14em"
-          : logo === "MUBI" ? "0.2em"
-          : "0.02em",
+          isNetflix  ? "0.15em"
+          : isMubi   ? "0.22em"
+          :             "0.02em",
         color,
-        textTransform: logo === "NETFLIX" || logo === "MUBI" ? "uppercase" : "none",
+        textTransform: isNetflix || isMubi ? "uppercase" : "none",
+        textShadow: `0 0 24px ${color}44`,
       }}>{logo}</span>
     </div>
   );
 }
 
-/* ─── Main ──────────────────────────────────────────────── */
+/* ─── Page ───────────────────────────────────────────────── */
 
 export function PremiumCategories() {
   return (
     <div style={{
       width: 390,
       minHeight: "100vh",
-      background: C.void,
+      background: B.bg,
       fontFamily: "'Inter', sans-serif",
       overflowX: "hidden",
-      paddingBottom: 100,
+      paddingBottom: 120,
     }}>
 
-      {/* ── Page header ─── */}
-      <div style={{ padding: "32px 20px 24px" }}>
+      {/* ── Page header ── */}
+      <div style={{ padding: "32px 16px 28px" }}>
         <p style={{
           fontFamily: "'Inter', sans-serif",
-          fontSize: 9,
           fontWeight: 500,
-          letterSpacing: "0.12em",
+          fontSize: 10,
+          letterSpacing: "0.11em",
           textTransform: "uppercase",
-          color: C.maroonBrt,
-          margin: "0 0 6px",
+          color: B.maroon,
+          margin: "0 0 5px",
         }}>The Catalog</p>
         <h1 style={{
           fontFamily: "'Cormorant Garamond', Georgia, serif",
           fontWeight: 600,
-          fontSize: 28,
-          color: C.ink,
+          fontSize: 30,
+          color: B.white,
           margin: 0,
           lineHeight: 1,
           letterSpacing: "-0.01em",
         }}>Browse Everything</h1>
       </div>
 
-      {/* ── Browse by Type ─── */}
-      <div style={{ marginBottom: 28 }}>
-        <Label title="Browse by Type" />
+      {/* ── Browse by Type ── */}
+      <Section title="Browse by Type">
         <Row>
-          {TYPES.map(t => <TypeCard key={t.label} {...t} />)}
+          {TYPES.map(t => <ImgCard key={t.label} {...t} />)}
         </Row>
-      </div>
+      </Section>
 
-      {/* ── Browse by Genre — horizontal slider ─── */}
-      <div style={{ marginBottom: 28 }}>
-        <Label title="Browse by Genre" />
-        <Row gap={8}>
-          {GENRES.map(g => <GenreCard key={g.label} {...g} />)}
+      {/* ── Browse by Genre ── */}
+      <Section title="Browse by Genre">
+        <Row>
+          {GENRES.map(g => <ImgCard key={g.label} {...g} />)}
         </Row>
-      </div>
+      </Section>
 
-      {/* ── Browse by Platform ─── */}
-      <div style={{ marginBottom: 28 }}>
-        <Label title="Browse by Platform" />
-        <Row gap={8}>
-          {PLATFORMS.map(p => <PlatformCard key={p.label} {...p} />)}
+      {/* ── Browse by Platform ── */}
+      <Section title="Browse by Platform">
+        <Row>
+          {PLATFORMS.map(p => <LogoCard key={p.label} {...p} />)}
         </Row>
-      </div>
+      </Section>
 
-      {/* ── Thin divider ─── */}
+      {/* ── Thin maroon rule ── */}
       <div style={{
-        margin: "0 20px 24px",
+        margin: "0 16px 28px",
         height: 1,
-        background: `linear-gradient(to right, ${C.maroon}55, transparent)`,
+        background: `linear-gradient(to right, ${B.maroon}60, transparent)`,
       }} />
 
-      {/* ── Where to Watch panel ─── */}
-      <div style={{ padding: "0 20px" }}>
+      {/* ── Where to Watch ── */}
+      <div style={{ padding: "0 16px" }}>
         <div style={{
-          borderRadius: 14,
-          border: "1px solid rgba(255,255,255,0.05)",
-          background: C.voidMid,
-          padding: "16px 18px",
           display: "flex",
           alignItems: "center",
           justifyContent: "space-between",
+          borderRadius: 14,
+          border: `1px solid ${B.faint}`,
+          background: B.card,
+          padding: "16px 18px",
         }}>
           <div>
             <p style={{
-              fontFamily: "'Cormorant Garamond', Georgia, serif",
+              fontFamily: "'Inter', sans-serif",
               fontWeight: 600,
-              fontSize: 16,
-              color: C.ink,
+              fontSize: 15,
+              color: B.white,
               margin: 0,
-              letterSpacing: "0.01em",
             }}>Where to Watch</p>
             <p style={{
               fontFamily: "'Inter', sans-serif",
-              fontSize: 10,
-              color: C.inkDim,
+              fontSize: 11,
+              color: B.dim,
               margin: "3px 0 0",
-              letterSpacing: "0.01em",
             }}>Filter by streaming platform</p>
           </div>
           <div style={{
-            width: 32,
-            height: 32,
+            width: 34,
+            height: 34,
             borderRadius: "50%",
-            background: `linear-gradient(135deg, ${C.maroon}, ${C.maroonBrt})`,
+            background: `linear-gradient(135deg, ${B.maroonDim}, ${B.maroon})`,
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
+            flexShrink: 0,
           }}>
-            <ChevronRight size={15} color={C.ink} strokeWidth={2} />
+            <ChevronRight size={16} color={B.white} strokeWidth={2.5} />
           </div>
         </div>
       </div>
