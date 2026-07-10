@@ -1,21 +1,39 @@
 const API_URL = (import.meta as any).env?.VITE_API_URL || '/api';
 
+const inflight = new Map<string, Promise<any>>();
+
 async function fetcher(path: string, options?: RequestInit) {
   const token = localStorage.getItem('token');
-  const res = await fetch(`${API_URL}${path}`, {
-    ...options,
-    headers: {
-      'Content-Type': 'application/json',
-      ...(token ? { Authorization: `Bearer ${token}` } : {}),
-      ...options?.headers,
-    },
-  });
-  if (!res.ok) {
-    const err = await res.json().catch(() => ({ error: 'Unknown error' }));
-    throw new Error(err.error || `HTTP ${res.status}`);
+  const method = (options?.method || 'GET').toUpperCase();
+  const dedupeKey = method === 'GET' ? `${path}` : null;
+
+  if (dedupeKey && inflight.has(dedupeKey)) {
+    return inflight.get(dedupeKey);
   }
-  if (res.status === 204) return null;
-  return res.json();
+
+  const request = (async () => {
+    const res = await fetch(`${API_URL}${path}`, {
+      ...options,
+      headers: {
+        'Content-Type': 'application/json',
+        ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        ...options?.headers,
+      },
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({ error: 'Unknown error' }));
+      throw new Error(err.error || `HTTP ${res.status}`);
+    }
+    if (res.status === 204) return null;
+    return res.json();
+  })();
+
+  if (dedupeKey) {
+    inflight.set(dedupeKey, request);
+    request.finally(() => inflight.delete(dedupeKey));
+  }
+
+  return request;
 }
 
 export const api = {

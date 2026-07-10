@@ -21,7 +21,6 @@
     "autoprefixer": "^10.4.19",
     "embla-carousel-autoplay": "^8.6.0",
     "embla-carousel-react": "^8.6.0",
-    "hls.js": "^1.6.16",
     "lucide-react": "^0.390.0",
     "postcss": "^8.4.38",
     "react": "^18.3.0",

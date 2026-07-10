@@ -161,6 +161,7 @@ export default function SearchResults() {
               <img
                 src={anilistResult.coverImage.extraLarge || anilistResult.coverImage.large}
                 alt={anilistResult.title.romaji}
+                loading="lazy" decoding="async"
                 className="w-[72px] h-[102px] rounded-lg object-cover border border-line shrink-0"
               />
             )}

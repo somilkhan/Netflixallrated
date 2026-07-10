@@ -214,6 +214,7 @@ const GlassCard = memo(function GlassCard({
                 p.logoUrl ? (
                   <img
                     key={i} src={p.logoUrl} alt={p.name} title={p.name}
+                    loading="lazy" decoding="async"
                     className="h-[13px] w-[13px] rounded-[3px] object-cover border border-white/[0.07]"
                   />
                 ) : (

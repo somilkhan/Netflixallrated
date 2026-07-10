@@ -18,4 +18,17 @@ export default defineConfig({
     port: Number(process.env.PORT) || 4173,
     allowedHosts: true as const,
   },
+  build: {
+    sourcemap: false,
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          three: ['three'],
+          vendor: ['react', 'react-dom', 'react-router-dom'],
+          carousel: ['embla-carousel-react', 'embla-carousel-autoplay'],
+        },
+      },
+    },
+    chunkSizeWarningLimit: 900,
+  },
 });
