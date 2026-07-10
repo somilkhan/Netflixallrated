@@ -14,6 +14,8 @@ export default function Card({ title, rank }: { title: any; index?: number; rank
     .filter(Boolean)
     .map((p: any) => ({ name: p.name, logoUrl: p.iconUrl || null }));
 
+  if (!title.id) return null;
+
   return (
     <GlassCard
       title={title.name}
