@@ -79,10 +79,10 @@ export const SERVERS: Server[] = [
     label: 'Screenscape',
     getUrl: (id, type, s, e) =>
       type === 'MOVIE'
-        ? `https://screenscape.me/embed/movie/${id}`
+        ? `https://screenscape.me/embed?tmdb=${id}&type=movie`
         : type === 'ANIME'
-        ? `https://screenscape.me/embed/tv/${id}/1/${e}`
-        : `https://screenscape.me/embed/tv/${id}/${s}/${e}`,
+        ? `https://screenscape.me/embed?tmdb=${id}&type=tv&season=1&episode=${e}`
+        : `https://screenscape.me/embed?tmdb=${id}&type=tv&season=${s}&episode=${e}`,
   },
   {
     id: 'flixhq',
