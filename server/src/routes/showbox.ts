@@ -1,21 +1,20 @@
 /**
  * Showbox + FebBox streaming integration.
  *
+ * Based on: https://github.com/badwinton/show_feb_box_api
+ *
  * Flow:
- *   1. Resolve the TMDB title name (from query ?title= or by fetching TMDB)
- *   2. Search Showbox for the title → get the Showbox internal ID
+ *   1. Resolve the TMDB title name
+ *   2. Search Showbox for the title → get internal Showbox ID
  *   3. Fetch the FebBox share key from showbox.media
  *   4. Traverse the FebBox file tree to locate the right file
- *      (season/episode navigation for TV shows)
  *   5. Return { embedUrl, streams[] }
- *      - embedUrl: FebBox player iframe URL (always present, no auth required)
- *      - streams:  sorted direct HLS/MP4 URLs (only when FEBBOX_UI_COOKIE is set)
- *
- * No dependency on an external SHOWBOX_FEB_BOX_API_URL relay server.
- * Reference implementation: https://github.com/badwinton/show_feb_box_api
+ *      - embedUrl: FebBox player iframe URL (no auth required)
+ *      - streams:  direct HLS/MP4 URLs (only when FEBBOX_UI_COOKIE is set)
  */
 import { Router, Request, Response } from 'express';
 import CryptoJS from 'crypto-js';
+import { JSDOM } from 'jsdom';
 import { getTmdbDetails } from '../lib/tmdb.js';
 import { authenticate } from '../middleware/auth.js';
 
@@ -23,13 +22,13 @@ const router = Router();
 
 // ── ShowboxAPI ───────────────────────────────────────────────────────────────
 
-const SB = {
+const CONFIG = {
   BASE_URL: 'https://mbpapi.shegu.net/api/api_client/index/',
   APP_KEY: 'moviebox',
   IV: 'wEiphTn!',
   KEY: '123d6cedf626dy54233aa1w6',
   DEFAULTS: {
-    child_mode: '0',
+    child_mode: process.env.CHILD_MODE || '0',
     app_version: '11.5',
     lang: 'en',
     platform: 'android',
@@ -40,8 +39,8 @@ const SB = {
   },
 } as const;
 
-/** Random 32-char hex string used as per-request token suffix */
-function hexToken(): string {
+/** Random 32-char hex string (nanoid equivalent) */
+function nanoid32(): string {
   return Array.from({ length: 32 }, () =>
     Math.floor(Math.random() * 16).toString(16),
   ).join('');
@@ -50,14 +49,14 @@ function hexToken(): string {
 function sbEncrypt(data: string): string {
   return CryptoJS.TripleDES.encrypt(
     data,
-    CryptoJS.enc.Utf8.parse(SB.KEY),
-    { iv: CryptoJS.enc.Utf8.parse(SB.IV) },
+    CryptoJS.enc.Utf8.parse(CONFIG.KEY),
+    { iv: CryptoJS.enc.Utf8.parse(CONFIG.IV) },
   ).toString();
 }
 
 function sbVerify(encrypted: string): string {
   return CryptoJS.MD5(
-    CryptoJS.MD5(SB.APP_KEY).toString() + SB.KEY + encrypted,
+    CryptoJS.MD5(CONFIG.APP_KEY).toString() + CONFIG.KEY + encrypted,
   ).toString();
 }
 
@@ -65,37 +64,41 @@ async function showboxRequest(
   module: string,
   params: Record<string, unknown> = {},
 ): Promise<any> {
-  const payload = {
-    ...SB.DEFAULTS,
-    expired_date: Math.floor(Date.now() / 1000 + 43_200),
+  const requestData = {
+    ...CONFIG.DEFAULTS,
+    expired_date: Math.floor(Date.now() / 1000 + 60 * 60 * 12),
     module,
     ...params,
   };
-  const encrypted = sbEncrypt(JSON.stringify(payload));
-  const envelope = JSON.stringify({
-    app_key: CryptoJS.MD5(SB.APP_KEY).toString(),
-    verify: sbVerify(encrypted),
-    encrypt_data: encrypted,
-  });
-  const form = new URLSearchParams({
-    data: Buffer.from(envelope).toString('base64'),
-    appid: SB.DEFAULTS.appid,
-    platform: SB.DEFAULTS.platform,
-    version: SB.DEFAULTS.version,
-    medium: SB.DEFAULTS.medium,
+
+  const encryptedData = sbEncrypt(JSON.stringify(requestData));
+  const body = JSON.stringify({
+    app_key: CryptoJS.MD5(CONFIG.APP_KEY).toString(),
+    verify: sbVerify(encryptedData),
+    encrypt_data: encryptedData,
   });
 
-  const res = await fetch(SB.BASE_URL, {
+  const formData = new URLSearchParams({
+    data: Buffer.from(body).toString('base64'),
+    appid: CONFIG.DEFAULTS.appid,
+    platform: CONFIG.DEFAULTS.platform,
+    version: CONFIG.DEFAULTS.version,
+    medium: CONFIG.DEFAULTS.medium,
+  });
+
+  const res = await fetch(CONFIG.BASE_URL, {
     method: 'POST',
     headers: {
-      Platform: SB.DEFAULTS.platform,
+      Platform: CONFIG.DEFAULTS.platform,
       'Content-Type': 'application/x-www-form-urlencoded',
       'User-Agent': 'okhttp/3.2.0',
     },
-    body: `${form.toString()}&token${hexToken()}`,
+    body: `${formData.toString()}&token${nanoid32()}`,
     signal: AbortSignal.timeout(12_000),
   });
+
   const json: any = await res.json();
+  // Search5 returns data as a direct array; other calls wrap in { list: [] }
   return json.data;
 }
 
@@ -109,18 +112,13 @@ async function searchShowbox(
     keyword,
     pagelimit: 20,
   });
-  // Showbox's Search5 module returns `data` as a plain array of results
-  // (not `{ list: [...] }`), but also tolerate a wrapped shape defensively.
   return Array.isArray(data) ? data : (data?.list ?? []);
 }
 
 /** Returns FebBox share key, e.g. "fNBTg8at" */
-async function getFebBoxKey(
-  showboxId: number,
-  boxType: number,
-): Promise<string | null> {
+async function getFebBoxKey(id: number, type: number): Promise<string | null> {
   const res = await fetch(
-    `https://www.showbox.media/index/share_link?id=${showboxId}&type=${boxType}`,
+    `https://www.showbox.media/index/share_link?id=${id}&type=${type}`,
     { signal: AbortSignal.timeout(8_000) },
   );
   if (!res.ok) throw new Error(`FebBox share link HTTP ${res.status}`);
@@ -136,10 +134,7 @@ const FEBBOX_UA =
   'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 ' +
   '(KHTML, like Gecko) Chrome/135.0.0.0 Safari/537.36';
 
-function febHeaders(
-  shareKey: string,
-  cookie?: string,
-): Record<string, string> {
+function febHeaders(shareKey: string, cookie?: string): Record<string, string> {
   return {
     'x-requested-with': 'XMLHttpRequest',
     'user-agent': FEBBOX_UA,
@@ -153,6 +148,14 @@ interface FebFile {
   file_name: string;
   is_dir: number;
   [k: string]: unknown;
+}
+
+interface FebStream {
+  url: string;
+  quality: string;
+  name: string;
+  speed?: string;
+  size?: string;
 }
 
 async function febFileList(
@@ -172,58 +175,28 @@ async function febFileList(
   return json?.data?.file_list ?? [];
 }
 
-interface FebStream {
-  url: string;
-  quality: string;
-  name: string;
-  size?: string;
+/** Parse FebBox quality HTML using JSDOM — exact same approach as reference repo */
+function parseQualityHtml(html: string): FebStream[] {
+  if (!html) return [];
+  const dom = new JSDOM(html);
+  const doc = dom.window.document;
+
+  return Array.from(doc.querySelectorAll('.file_quality')).map((el) => {
+    const url = el.getAttribute('data-url') ?? '';
+    const quality = el.getAttribute('data-quality') ?? '';
+    const name = (el.querySelector('.name') as HTMLElement)?.textContent?.trim() ?? '';
+    const speed = (el.querySelector('.speed span') as HTMLElement)?.textContent?.trim();
+    const size = (el.querySelector('.size') as HTMLElement)?.textContent?.trim();
+    return { url, quality, name, speed, size };
+  }).filter((s) => !!s.url);
 }
 
 const QUALITY_ORDER = ['4k', '2160p', '1080p', '720p', '480p', '360p', '240p'];
 
-/**
- * Parse FebBox video quality HTML using regex — avoids a jsdom/canvas native
- * build dependency that crashes on Vercel's build environment.
- *
- * Each quality block looks like:
- *   <div class="file_quality" data-url="https://..." data-quality="1080p" ...>
- *     <div class="name">1080p</div>
- *     <div class="size">2.3 GB</div>
- *   </div>
- */
-function parseFebStreamHtml(html: string): FebStream[] {
-  const streams: FebStream[] = [];
-  // Match each .file_quality div (opening tag + everything up to the next sibling/closing)
-  const blockRe =
-    /<div[^>]*class="[^"]*file_quality[^"]*"([^>]*)>([\s\S]*?)<\/div>\s*(?=<div|$)/gi;
-
-  for (const block of html.matchAll(blockRe)) {
-    const attrs = block[1] ?? '';
-    const inner = block[2] ?? '';
-
-    const url = (attrs.match(/data-url="([^"]*)"/) ?? [])[1] ?? '';
-    const quality = (attrs.match(/data-quality="([^"]*)"/) ?? [])[1] ?? '';
-    const name =
-      (inner.match(/<div[^>]*class="[^"]*name[^"]*"[^>]*>([\s\S]*?)<\/div>/) ??
-        [])[1]
-        ?.replace(/<[^>]+>/g, '')
-        .trim() ?? '';
-    const size =
-      (inner.match(/<div[^>]*class="[^"]*size[^"]*"[^>]*>([\s\S]*?)<\/div>/) ??
-        [])[1]
-        ?.replace(/<[^>]+>/g, '')
-        .trim();
-
-    if (url) streams.push({ url, quality, name, size });
-  }
-
+function sortStreams(streams: FebStream[]): FebStream[] {
   return streams.sort((a, b) => {
-    const ai = QUALITY_ORDER.findIndex((q) =>
-      a.quality.toLowerCase().includes(q),
-    );
-    const bi = QUALITY_ORDER.findIndex((q) =>
-      b.quality.toLowerCase().includes(q),
-    );
+    const ai = QUALITY_ORDER.findIndex((q) => a.quality.toLowerCase().includes(q));
+    const bi = QUALITY_ORDER.findIndex((q) => b.quality.toLowerCase().includes(q));
     return (ai === -1 ? 99 : ai) - (bi === -1 ? 99 : bi);
   });
 }
@@ -240,7 +213,7 @@ async function febStreamLinks(
   });
   if (!res.ok) throw new Error(`FebBox quality list HTTP ${res.status}`);
   const json: any = await res.json();
-  return parseFebStreamHtml(json?.html ?? '');
+  return sortStreams(parseQualityHtml(json?.html ?? ''));
 }
 
 // ── File-tree navigation ─────────────────────────────────────────────────────
@@ -250,6 +223,7 @@ async function findMovieFid(
   cookie?: string,
 ): Promise<number | null> {
   const files = await febFileList(shareKey, 0, cookie);
+  console.log(`[febbox] movie root files (${files.length}):`, files.map((f) => f.file_name));
   return files.find((f) => f.is_dir === 0)?.fid ?? null;
 }
 
@@ -260,8 +234,9 @@ async function findEpisodeFid(
   cookie?: string,
 ): Promise<number | null> {
   const rootFiles = await febFileList(shareKey, 0, cookie);
+  console.log(`[febbox] TV root files (${rootFiles.length}):`, rootFiles.map((f) => f.file_name));
 
-  // Season folder heuristics
+  // Find season folder
   const seasonFolder =
     rootFiles.find(
       (f) =>
@@ -269,13 +244,18 @@ async function findEpisodeFid(
         f.file_name.toLowerCase().includes(`season ${seasonNum}`),
     ) ??
     rootFiles.find(
-      (f) => f.is_dir === 1 && f.file_name.toLowerCase().includes(`s${String(seasonNum).padStart(2, '0')}`),
+      (f) =>
+        f.is_dir === 1 &&
+        f.file_name.toLowerCase().includes(`s${String(seasonNum).padStart(2, '0')}`),
     ) ??
-    (rootFiles.filter((f) => f.is_dir === 1)[seasonNum - 1] ?? rootFiles.find((f) => f.is_dir === 1));
+    rootFiles.filter((f) => f.is_dir === 1)[seasonNum - 1] ??
+    rootFiles.find((f) => f.is_dir === 1);
 
   const epFiles = seasonFolder
     ? await febFileList(shareKey, seasonFolder.fid, cookie)
     : rootFiles;
+
+  console.log(`[febbox] season folder:`, seasonFolder?.file_name, `ep files (${epFiles.length}):`, epFiles.map((f) => f.file_name));
 
   const epPad = String(episodeNum).padStart(2, '0');
   const found =
@@ -300,14 +280,11 @@ async function findEpisodeFid(
  * GET /api/showbox/link
  *   ?type=movie|tv   required
  *   &id=<tmdbId>     required  (TMDB numeric ID)
- *   [&title=...]     optional  (avoids a TMDB round-trip when caller knows the name)
+ *   [&title=...]     optional  (skips TMDB round-trip when caller knows the name)
  *   [&season=N]      optional, default 1
  *   [&episode=N]     optional, default 1
  *
  * Response 200: { success: true, embedUrl, shareKey, fid, streams[] }
- *   embedUrl  FebBox embed player URL — use as <iframe> src (no auth required by FebBox)
- *   streams   sorted direct HLS/MP4 links (empty unless FEBBOX_UI_COOKIE is set)
- *
  * Response 4xx/5xx: { success: false, error: string }
  */
 router.get('/link', authenticate, async (req: Request, res: Response) => {
@@ -320,25 +297,25 @@ router.get('/link', authenticate, async (req: Request, res: Response) => {
   } = req.query;
 
   if (!type || !id) {
-    return res
-      .status(400)
-      .json({ success: false, error: 'type and id are required' });
+    return res.status(400).json({ success: false, error: 'type and id are required' });
   }
 
   const isMovie = String(type) === 'movie';
   const tmdbId = parseInt(String(id), 10);
   if (isNaN(tmdbId)) {
-    return res
-      .status(400)
-      .json({ success: false, error: 'id must be a numeric TMDB ID' });
+    return res.status(400).json({ success: false, error: 'id must be a numeric TMDB ID' });
   }
 
   const seasonNum = Math.max(1, parseInt(String(season), 10) || 1);
   const episodeNum = Math.max(1, parseInt(String(episode), 10) || 1);
-  const febCookie = process.env.FEBBOX_UI_COOKIE;
+
+  // Cookie from env var (set in Railway as FEBBOX_UI_COOKIE)
+  const febCookie = process.env.FEBBOX_UI_COOKIE || undefined;
+
+  console.log(`[showbox] request — type=${type} id=${tmdbId} season=${seasonNum} ep=${episodeNum} cookie=${febCookie ? 'set' : 'NOT SET'}`);
 
   try {
-    // 1. Resolve the title name (use caller's hint if provided to save a round-trip)
+    // 1. Resolve title name
     let titleName: string;
     if (titleParam) {
       titleName = String(titleParam);
@@ -346,60 +323,60 @@ router.get('/link', authenticate, async (req: Request, res: Response) => {
       const tmdb = await getTmdbDetails(tmdbId, isMovie ? 'movie' : 'tv');
       titleName = tmdb.name;
     }
+    console.log(`[showbox] searching for: "${titleName}"`);
 
     // 2. Search Showbox
     const results = await searchShowbox(titleName, isMovie ? 'movie' : 'tv');
+    console.log(`[showbox] search returned ${results.length} results`, results.slice(0, 2).map((r: any) => r.title ?? r.name ?? r.id));
     if (!results.length) {
-      return res
-        .status(404)
-        .json({ success: false, error: 'Title not found on Showbox' });
+      return res.status(404).json({ success: false, error: 'Title not found on Showbox' });
     }
+
     const match = results[0];
-    const boxType = isMovie ? 1 : 2; // Showbox: 1=movie, 2=tv
+    const boxType = isMovie ? 1 : 2;
 
     // 3. Get FebBox share key
     const shareKey = await getFebBoxKey(match.id, boxType);
+    console.log(`[showbox] shareKey=${shareKey}`);
     if (!shareKey) {
-      return res
-        .status(404)
-        .json({ success: false, error: 'FebBox share link unavailable' });
+      return res.status(404).json({ success: false, error: 'FebBox share link unavailable' });
     }
 
-    // 4. Locate the target file in the FebBox tree
+    // 4. Locate target file in FebBox tree
     const fid = isMovie
       ? await findMovieFid(shareKey, febCookie)
       : await findEpisodeFid(shareKey, seasonNum, episodeNum, febCookie);
 
-    // 5. Build the embed URL
+    console.log(`[showbox] fid=${fid}`);
+
+    // 5. Build embed URL
     const embedUrl = fid
       ? `${FEBBOX_BASE}/file/player?fid=${fid}&share_key=${shareKey}`
       : `${FEBBOX_BASE}/share/${shareKey}`;
 
-    // 6. Fetch direct stream links (optional, needs FEBBOX_UI_COOKIE)
+    // 6. Fetch direct stream links (requires FEBBOX_UI_COOKIE)
     let streams: FebStream[] = [];
     if (febCookie && fid) {
       try {
         streams = await febStreamLinks(shareKey, fid, febCookie);
-      } catch (_) {
-        // streams are optional — don't fail the whole request
+        console.log(`[showbox] streams found: ${streams.length}`);
+      } catch (e: any) {
+        console.warn('[showbox] stream link fetch failed (non-fatal):', e.message);
       }
     }
 
     return res.json({ success: true, embedUrl, shareKey, fid, streams });
   } catch (err: any) {
     console.error('[showbox] link error:', err.message);
-    // FebBox occasionally has full-site outages that return an HTML "系统发生错误"
-    // (system error) page instead of JSON — surface that distinctly so the
-    // client can tell the user this is a temporary upstream issue, not
-    // something wrong with their request.
     const upstreamDown =
       /HTTP 50\d/.test(err.message) ||
-      /Unexpected token '?<|not valid JSON/i.test(err.message);
+      /Unexpected token|not valid JSON/i.test(err.message) ||
+      /fetch failed|ECONNREFUSED|ETIMEDOUT/i.test(err.message);
     return res.status(upstreamDown ? 503 : 500).json({
       success: false,
       error: upstreamDown
         ? 'FebBox is temporarily unavailable — try another server'
-        : 'Stream lookup failed — try another server',
+        : `Stream lookup failed: ${err.message}`,
     });
   }
 });
