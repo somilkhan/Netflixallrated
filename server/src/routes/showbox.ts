@@ -23,7 +23,8 @@ const router = Router();
 // ── ShowboxAPI ───────────────────────────────────────────────────────────────
 
 const CONFIG = {
-  BASE_URL: 'https://mbpapi.shegu.net/api/api_client/index/',
+  // SHOWBOX_API_BASE overrides the default endpoint (set on Railway if it moves)
+  BASE_URL: process.env.SHOWBOX_API_BASE || 'https://mbpapi.shegu.net/api/api_client/index/',
   APP_KEY: 'moviebox',
   IV: 'wEiphTn!',
   KEY: '123d6cedf626dy54233aa1w6',
@@ -129,7 +130,8 @@ async function getFebBoxKey(id: number, type: number): Promise<string | null> {
 
 // ── FebboxAPI ────────────────────────────────────────────────────────────────
 
-const FEBBOX_BASE = 'https://www.febbox.com';
+// FEBBOX_API_BASE overrides the default endpoint (set on Railway if the domain changes)
+const FEBBOX_BASE = (process.env.FEBBOX_API_BASE || 'https://www.febbox.com').replace(/\/$/, '');
 const FEBBOX_UA =
   'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 ' +
   '(KHTML, like Gecko) Chrome/135.0.0.0 Safari/537.36';
@@ -218,11 +220,9 @@ async function febStreamLinks(
 
 // ── File-tree navigation ─────────────────────────────────────────────────────
 
-async function findMovieFid(
-  shareKey: string,
-  cookie?: string,
-): Promise<number | null> {
-  const files = await febFileList(shareKey, 0, cookie);
+async function findMovieFid(shareKey: string): Promise<number | null> {
+  // File listing is public for shared links — no cookie needed (sending one causes HTTP 500)
+  const files = await febFileList(shareKey, 0);
   console.log(`[febbox] movie root files (${files.length}):`, files.map((f) => f.file_name));
   return files.find((f) => f.is_dir === 0)?.fid ?? null;
 }
@@ -231,9 +231,9 @@ async function findEpisodeFid(
   shareKey: string,
   seasonNum: number,
   episodeNum: number,
-  cookie?: string,
 ): Promise<number | null> {
-  const rootFiles = await febFileList(shareKey, 0, cookie);
+  // File listing is public for shared links — no cookie needed (sending one causes HTTP 500)
+  const rootFiles = await febFileList(shareKey, 0);
   console.log(`[febbox] TV root files (${rootFiles.length}):`, rootFiles.map((f) => f.file_name));
 
   // Find season folder
@@ -252,7 +252,7 @@ async function findEpisodeFid(
     rootFiles.find((f) => f.is_dir === 1);
 
   const epFiles = seasonFolder
-    ? await febFileList(shareKey, seasonFolder.fid, cookie)
+    ? await febFileList(shareKey, seasonFolder.fid)
     : rootFiles;
 
   console.log(`[febbox] season folder:`, seasonFolder?.file_name, `ep files (${epFiles.length}):`, epFiles.map((f) => f.file_name));
@@ -342,10 +342,10 @@ router.get('/link', authenticate, async (req: Request, res: Response) => {
       return res.status(404).json({ success: false, error: 'FebBox share link unavailable' });
     }
 
-    // 4. Locate target file in FebBox tree
+    // 4. Locate target file in FebBox tree (unauthenticated — listing is public)
     const fid = isMovie
-      ? await findMovieFid(shareKey, febCookie)
-      : await findEpisodeFid(shareKey, seasonNum, episodeNum, febCookie);
+      ? await findMovieFid(shareKey)
+      : await findEpisodeFid(shareKey, seasonNum, episodeNum);
 
     console.log(`[showbox] fid=${fid}`);
 
