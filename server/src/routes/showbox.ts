@@ -317,28 +317,34 @@ router.get('/link', authenticate, async (req: Request, res: Response) => {
   console.log(`[showbox] request — type=${type} id=${tmdbId} season=${seasonNum} ep=${episodeNum} cookie=${febCookie ? 'set' : 'NOT SET'}`);
 
   try {
-    // 1. Resolve title name
-    let titleName: string;
-    if (titleParam) {
-      titleName = String(titleParam);
-    } else {
-      const tmdb = await getTmdbDetails(tmdbId, isMovie ? 'movie' : 'tv');
-      titleName = tmdb.name;
-    }
-    console.log(`[showbox] searching for: "${titleName}"`);
-
-    // 2. Search Showbox
-    const results = await searchShowbox(titleName, isMovie ? 'movie' : 'tv');
-    console.log(`[showbox] search returned ${results.length} results`, results.slice(0, 2).map((r: any) => r.title ?? r.name ?? r.id));
-    if (!results.length) {
-      return res.status(404).json({ success: false, error: 'Title not found on Showbox' });
-    }
-
-    const match = results[0];
     const boxType = isMovie ? 1 : 2;
 
-    // 3. Get FebBox share key
-    const shareKey = await getFebBoxKey(match.id, boxType);
+    // 1. Try TMDB ID directly with showbox.media share_link — works for most movies
+    //    without needing the mbpapi.shegu.net search API (which is blocked on some hosts).
+    console.log(`[showbox] trying TMDB ID ${tmdbId} directly on showbox.media`);
+    let shareKey = await getFebBoxKey(tmdbId, boxType);
+
+    // 2. If no share key, fall back to keyword search (short timeout so it fails fast)
+    if (!shareKey) {
+      let titleName: string;
+      if (titleParam) {
+        titleName = String(titleParam);
+      } else {
+        const tmdb = await getTmdbDetails(tmdbId, isMovie ? 'movie' : 'tv');
+        titleName = tmdb.name;
+      }
+      console.log(`[showbox] direct lookup empty — searching for: "${titleName}"`);
+      try {
+        const results = await searchShowbox(titleName, isMovie ? 'movie' : 'tv');
+        console.log(`[showbox] search returned ${results.length} results`);
+        if (results.length) {
+          shareKey = await getFebBoxKey(results[0].id, boxType);
+        }
+      } catch (searchErr: any) {
+        console.warn(`[showbox] search fallback failed (non-fatal): ${searchErr.message}`);
+      }
+    }
+
     console.log(`[showbox] shareKey=${shareKey}`);
     if (!shareKey) {
       return res.status(404).json({ success: false, error: 'FebBox share link unavailable' });
