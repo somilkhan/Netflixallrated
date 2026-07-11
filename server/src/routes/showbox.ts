@@ -183,6 +183,17 @@ async function febFileList(
   parentId = 0,
   cookie?: string,
 ): Promise<FebFile[]> {
+  // Route through proxy when configured — FebBox blocks cloud-provider IPs for file listing
+  if (SHOWBOX_PROXY_URL) {
+    const url = `${SHOWBOX_PROXY_URL}/api/febbox/files?shareKey=${shareKey}&parent_id=${parentId}`;
+    const headers: Record<string, string> = {};
+    if (cookie) headers['x-auth-cookie'] = cookie.includes('=') ? cookie.split('ui=')[1]?.split(';')[0] ?? cookie : cookie;
+    const res = await fetch(url, { headers, signal: AbortSignal.timeout(12_000) });
+    if (!res.ok) throw new Error(`Proxy file list HTTP ${res.status}`);
+    const data: any = await res.json();
+    return Array.isArray(data) ? data : [];
+  }
+
   const url =
     `${FEBBOX_BASE}/file/file_share_list` +
     `?share_key=${shareKey}&pwd=&parent_id=${parentId}&is_html=0`;
@@ -226,6 +237,25 @@ async function febStreamLinks(
   fid: number,
   cookie?: string,
 ): Promise<FebStream[]> {
+  // Extract bare token for proxy x-auth-cookie header (proxy expects bare JWT, not "ui=JWT")
+  const bareToken = cookie
+    ? cookie.includes('ui=')
+      ? cookie.split('ui=')[1]?.split(';')[0]?.trim() ?? cookie
+      : cookie
+    : undefined;
+
+  // Route through proxy when configured
+  if (SHOWBOX_PROXY_URL) {
+    const url = `${SHOWBOX_PROXY_URL}/api/febbox/links?shareKey=${shareKey}&fid=${fid}`;
+    const headers: Record<string, string> = {};
+    if (bareToken) headers['x-auth-cookie'] = bareToken;
+    const res = await fetch(url, { headers, signal: AbortSignal.timeout(12_000) });
+    if (!res.ok) throw new Error(`Proxy stream links HTTP ${res.status}`);
+    const data: any = await res.json();
+    // Proxy returns array of {url, quality, name, speed, size}
+    return sortStreams(Array.isArray(data) ? data : []);
+  }
+
   const url = `${FEBBOX_BASE}/console/video_quality_list?fid=${fid}`;
   const res = await fetch(url, {
     headers: febHeaders(shareKey, cookie),
