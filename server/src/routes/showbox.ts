@@ -103,10 +103,26 @@ async function showboxRequest(
   return json.data;
 }
 
+// SHOWBOX_PROXY_URL: optional URL of a deployed show_feb_box_api instance
+// (e.g. https://your-fork.vercel.app or a separate Railway service).
+// When set, searches route through the proxy instead of hitting mbpapi.shegu.net
+// directly — useful because Railway IPs are blocked by that upstream.
+const SHOWBOX_PROXY_URL = (process.env.SHOWBOX_PROXY_URL || '').replace(/\/$/, '');
+
 async function searchShowbox(
   keyword: string,
   type: 'movie' | 'tv',
 ): Promise<any[]> {
+  // If a proxy is configured, use its /api/search endpoint (show_feb_box_api format)
+  if (SHOWBOX_PROXY_URL) {
+    const url = `${SHOWBOX_PROXY_URL}/api/search?type=${type}&title=${encodeURIComponent(keyword)}&pagelimit=20`;
+    const res = await fetch(url, { signal: AbortSignal.timeout(12_000) });
+    if (!res.ok) throw new Error(`Proxy search HTTP ${res.status}`);
+    const data: any = await res.json();
+    return Array.isArray(data) ? data : [];
+  }
+
+  // Direct path: call mbpapi.shegu.net (may be blocked on some hosts)
   const data = await showboxRequest('Search5', {
     page: 1,
     type,
