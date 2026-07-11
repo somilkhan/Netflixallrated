@@ -1,4 +1,4 @@
-import { useEffect, useState, useRef } from 'react';
+import { useEffect, useState, useRef, useCallback } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import { Search, Film, Tv, Sword, X } from 'lucide-react';
 import { api } from '../lib/api';
@@ -18,10 +18,11 @@ export default function SearchResults() {
   const [loading, setLoading] = useState(false);
   const [tmdbKey, setTmdbKey] = useState(0);
   // Live genre list (never hardcoded) — keeps this dropdown in sync with the
-  // real catalog instead of a static array that could drift (e.g. "Sci-Fi"
-  // vs the real "Science Fiction" genre name, which silently returned ~0 results).
+  // real catalog instead of a static array that could drift.
   const [genres, setGenres] = useState<string[]>([]);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  // AbortController ref so in-flight search requests get cancelled on new input
+  const abortRef = useRef<AbortController | null>(null);
 
   useEffect(() => {
     api.titles.genres()
@@ -34,54 +35,72 @@ export default function SearchResults() {
   useEffect(() => { setQuery(q); }, [q]);
 
   useEffect(() => {
+    // Cancel any in-flight request from a previous search
+    if (abortRef.current) {
+      abortRef.current.abort();
+    }
+    const controller = new AbortController();
+    abortRef.current = controller;
+
     if (!q) {
       setTmdbResults([]);
-      // No query — browse by genre/type if either filter is active
       if (!filters.genre && !filters.type) {
         setLocalResults([]);
         setLoading(false);
         return;
       }
       setLoading(true);
-      const params: Record<string, string> = { limit: '50' };
-      if (filters.genre) params.genre = filters.genre;
-      if (filters.type) params.type = filters.type;
-      api.titles.list(params)
-        .then((d: any) => { setLocalResults(d.titles || []); setLoading(false); })
-        .catch(() => setLoading(false));
+      const p: Record<string, string> = { limit: '50' };
+      if (filters.genre) p.genre = filters.genre;
+      if (filters.type) p.type = filters.type;
+      api.titles.list(p)
+        .then((d: any) => {
+          if (controller.signal.aborted) return;
+          setLocalResults(d.titles || []);
+          setLoading(false);
+        })
+        .catch(() => { if (!controller.signal.aborted) setLoading(false); });
       return;
     }
     setLoading(true);
 
-    Promise.all([
-      api.titles.liveSearch(q).catch(() => ({ local: [], tmdb: [] })),
-    ]).then(([live]) => {
-      let local = live.local || [];
-      if (filters.type) local = local.filter((t: any) => t.type === filters.type);
-      if (filters.genre) local = local.filter((t: any) => t.genres?.includes(filters.genre));
-      setLocalResults(local);
+    api.titles.liveSearch(q, controller.signal)
+      .then((live: any) => {
+        if (controller.signal.aborted) return;
+        let local = live.local || [];
+        if (filters.type) local = local.filter((t: any) => t.type === filters.type);
+        if (filters.genre) local = local.filter((t: any) => t.genres?.includes(filters.genre));
+        setLocalResults(local);
 
-      let tmdb: any[] = live.tmdb || [];
-      if (filters.type === 'ANIME') tmdb = [];
-      else if (filters.type === 'MOVIE') tmdb = tmdb.filter((r: any) => r.mediaType === 'movie');
-      else if (filters.type === 'SERIES') tmdb = tmdb.filter((r: any) => r.mediaType === 'tv');
-      setTmdbResults(tmdb);
-      setLoading(false);
-    });
+        let tmdb: any[] = live.tmdb || [];
+        if (filters.type === 'ANIME') tmdb = [];
+        else if (filters.type === 'MOVIE') tmdb = tmdb.filter((r: any) => r.mediaType === 'movie');
+        else if (filters.type === 'SERIES') tmdb = tmdb.filter((r: any) => r.mediaType === 'tv');
+        setTmdbResults(tmdb);
+        setLoading(false);
+      })
+      .catch((err: any) => {
+        if (err?.name === 'AbortError' || controller.signal.aborted) return;
+        setLoading(false);
+      });
+
+    return () => { controller.abort(); };
   }, [q, filters, tmdbKey]);
 
   useEffect(() => {
     if (!q || filters.type !== 'ANIME') { setAnilistResult(null); return; }
-    searchAnime(q).then((data) => { setAnilistResult(data); }).catch(() => {});
+    let cancelled = false;
+    searchAnime(q).then((data) => { if (!cancelled) setAnilistResult(data); }).catch(() => {});
+    return () => { cancelled = true; };
   }, [q, filters.type]);
 
-  const buildSearchUrl = (q: string, type: string, genre: string) => {
+  const buildSearchUrl = useCallback((q: string, type: string, genre: string) => {
     const p = new URLSearchParams();
     if (q) p.set('q', q);
     if (type) p.set('type', type);
     if (genre) p.set('genre', genre);
     return `/search?${p.toString()}`;
-  };
+  }, []);
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
@@ -97,6 +116,14 @@ export default function SearchResults() {
       }, 400);
     }
   };
+
+  const handleTypeFilter = useCallback((value: string) => {
+    setFilters(f => ({ ...f, type: value }));
+  }, []);
+
+  const handleGenreFilter = useCallback((e: React.ChangeEvent<HTMLSelectElement>) => {
+    setFilters(f => ({ ...f, genre: e.target.value }));
+  }, []);
 
   return (
     <div className="px-5 py-7 max-w-[1200px] mx-auto">
@@ -129,7 +156,7 @@ export default function SearchResults() {
         ].map(({ label, icon: Icon, value }) => (
           <button
             key={value}
-            onClick={() => setFilters(f => ({ ...f, type: value }))}
+            onClick={() => handleTypeFilter(value)}
             className={`flex items-center gap-1.5 text-xs font-mono px-3.5 py-2 rounded-full border transition-all ${
               filters.type === value
                 ? 'bg-maroon/20 border-maroon text-ink'
@@ -141,7 +168,7 @@ export default function SearchResults() {
         ))}
         <select
           value={filters.genre}
-          onChange={e => setFilters(f => ({ ...f, genre: e.target.value }))}
+          onChange={handleGenreFilter}
           className="bg-surface border border-line rounded-full px-3.5 py-2 text-xs font-mono text-ink-faint focus:border-maroon focus:text-ink outline-none transition-all cursor-pointer"
         >
           <option value="">All Genres</option>

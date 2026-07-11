@@ -2,6 +2,26 @@ const API_URL = (import.meta as any).env?.VITE_API_URL || '/api';
 
 const inflight = new Map<string, Promise<any>>();
 
+// Simple TTL cache for hot read-only endpoints (genres, top10, trending, recent, geo)
+const cache = new Map<string, { value: any; expires: number }>();
+const TTL_MS = 60_000; // 1 minute
+
+function cachedFetcher(cacheKey: string, ttl: number, fetcher: () => Promise<any>): Promise<any> {
+  const now = Date.now();
+  const hit = cache.get(cacheKey);
+  if (hit && hit.expires > now) return Promise.resolve(hit.value);
+
+  if (inflight.has(cacheKey)) return inflight.get(cacheKey)!;
+
+  const req = fetcher().then((value: any) => {
+    cache.set(cacheKey, { value, expires: Date.now() + ttl });
+    return value;
+  }).finally(() => inflight.delete(cacheKey));
+
+  inflight.set(cacheKey, req);
+  return req;
+}
+
 async function fetcher(path: string, options?: RequestInit) {
   const token = localStorage.getItem('token');
   const method = (options?.method || 'GET').toUpperCase();
@@ -50,20 +70,22 @@ export const api = {
       return fetcher(`/titles${qs}`);
     },
     get: (id: string) => fetcher(`/titles/${id}`),
-    top10: () => fetcher('/titles/top10'),
-    trending: () => fetcher('/titles/trending'),
-    recent: () => fetcher('/titles/recent'),
+    // Hot endpoints — TTL-cached so Ticker + Home don't each fire separate requests
+    top10: () => cachedFetcher('top10', TTL_MS, () => fetcher('/titles/top10')),
+    trending: () => cachedFetcher('trending', TTL_MS, () => fetcher('/titles/trending')),
+    recent: () => cachedFetcher('recent', TTL_MS, () => fetcher('/titles/recent')),
+    genres: () => cachedFetcher('genres', TTL_MS * 5, () => fetcher('/titles/genres')),
     rate: (id: string, data: { tier: string; reviewText?: string }) =>
       fetcher(`/titles/${id}/ratings`, { method: 'POST', body: JSON.stringify(data) }),
     ratings: (id: string) => fetcher(`/titles/${id}/ratings`),
-    liveSearch: (q: string) => fetcher(`/titles/live-search?q=${encodeURIComponent(q)}`),
+    liveSearch: (q: string, signal?: AbortSignal) =>
+      fetcher(`/titles/live-search?q=${encodeURIComponent(q)}`, signal ? { signal } : undefined),
     tmdbSearch: (q: string) => fetcher(`/titles/tmdb-search?q=${encodeURIComponent(q)}`),
     importTmdb: (data: { tmdbId: number; mediaType: 'movie' | 'tv'; type: string }) =>
       fetcher('/titles/import-tmdb', { method: 'POST', body: JSON.stringify(data) }),
     syncTmdb: () => fetcher('/titles/sync-tmdb', { method: 'POST' }),
     syncStatus: () => fetcher('/titles/sync-status'),
     backfillImages: () => fetcher('/titles/backfill-images', { method: 'POST' }),
-    genres: () => fetcher('/titles/genres'),
     seasons: (id: string) => fetcher(`/titles/${id}/seasons`),
     episodes: (id: string, season: number) => fetcher(`/titles/${id}/episodes?season=${season}`),
     resolveTmdb: (tmdbId: number, mediaType: 'movie' | 'tv') =>
@@ -91,7 +113,9 @@ export const api = {
   platforms: { list: () => fetcher('/platforms') },
   geo: {
     detect: () => fetcher('/geo/detect'),
-    content: (region: string) => fetcher(`/geo/content?region=${encodeURIComponent(region)}`),
+    content: (region: string) =>
+      cachedFetcher(`geo:${region}`, TTL_MS * 2, () =>
+        fetcher(`/geo/content?region=${encodeURIComponent(region)}`)),
   },
   showbox: {
     /**
@@ -133,6 +157,27 @@ export const api = {
     hdhub4uResolve: (titleName: string) =>
       fetcher(`/screenscape/hdhub4u/resolve?title=${encodeURIComponent(titleName)}`),
     hdhub4uList: (page = 1) => fetcher(`/screenscape/hdhub4u?page=${page}`),
+  },
+  history: {
+    /** Full watch history, most-recent first. Requires auth. */
+    mine: () => fetcher('/history/me'),
+    /** Progress record for a single title. Requires auth. */
+    get: (titleId: string) => fetcher(`/history/me/${encodeURIComponent(titleId)}`),
+    /** Upsert progress (call on play-start, periodically, and on stop). */
+    save: (data: {
+      titleId: string;
+      positionSeconds: number;
+      durationSeconds?: number;
+      seasonNumber?: number | null;
+      episodeNumber?: number | null;
+      episodeTitle?: string | null;
+      completed?: boolean;
+    }) => fetcher('/history', { method: 'POST', body: JSON.stringify(data) }),
+    /** Remove one title from history. */
+    remove: (titleId: string) =>
+      fetcher(`/history/${encodeURIComponent(titleId)}`, { method: 'DELETE' }),
+    /** Wipe the user's entire history. */
+    clear: () => fetcher('/history', { method: 'DELETE' }),
   },
   consumet: {
     animeSearch: (q: string) => fetcher(`/consumet/anime/search?q=${encodeURIComponent(q)}`),

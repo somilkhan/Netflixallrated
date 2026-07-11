@@ -2,7 +2,7 @@
  * GlassCard — unified premium poster card for every content surface.
  * Design: near-black void, deep mehroon glassmorphism, frosted backdrop-blur.
  */
-import { useState, memo } from 'react';
+import { useState, memo, useCallback } from 'react';
 import { Play, Film } from 'lucide-react';
 
 export interface GlassCardProvider {
@@ -28,6 +28,8 @@ export interface GlassCardProps {
   className?: string;
   overlay?: React.ReactNode;
   fluid?: boolean;
+  /** When true this card is above the fold — use eager loading + high fetchpriority */
+  priority?: boolean;
 }
 
 const TIER_STYLE: Record<string, string> = {
@@ -46,7 +48,7 @@ const TIER_LABEL: Record<string, string> = {
 const GlassCard = memo(function GlassCard({
   posterUrl, posterColorFrom, posterColorTo, title, typeLabel, year, runtimeMinutes,
   genres = [], overview, ratingLabel, providers = [], rank, onClick, onPlay,
-  className = '', overlay, fluid = false,
+  className = '', overlay, fluid = false, priority = false,
 }: GlassCardProps) {
   const [loaded, setLoaded] = useState(false);
   const [errored, setErrored] = useState(false);
@@ -59,6 +61,16 @@ const GlassCard = memo(function GlassCard({
   const tierLabel = ratingLabel ? TIER_LABEL[ratingLabel] : null;
   const hasTier   = !!tierStyle && !!tierLabel;
   const metaParts = [year, runtime].filter(Boolean).join(' · ');
+
+  // Stable handler — avoids new function ref on every render
+  const handleKeyDown = useCallback((e: React.KeyboardEvent) => {
+    if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onClick?.(); }
+  }, [onClick]);
+
+  const handlePlayClick = useCallback((e: React.MouseEvent) => {
+    e.stopPropagation();
+    onPlay ? onPlay() : onClick?.();
+  }, [onPlay, onClick]);
 
   return (
     <div
@@ -73,9 +85,7 @@ const GlassCard = memo(function GlassCard({
         ${className}
       `}
       onClick={onClick}
-      onKeyDown={onClick
-        ? (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onClick(); } }
-        : undefined}
+      onKeyDown={onClick ? handleKeyDown : undefined}
     >
       {/* Inner card */}
       <div className="
@@ -99,8 +109,9 @@ const GlassCard = memo(function GlassCard({
             <img
               src={posterUrl!}
               alt={title}
-              loading="lazy"
+              loading={priority ? 'eager' : 'lazy'}
               decoding="async"
+              {...{ fetchpriority: priority ? 'high' : 'low' }}
               onLoad={() => setLoaded(true)}
               onError={() => setErrored(true)}
               className={`
@@ -171,10 +182,7 @@ const GlassCard = memo(function GlassCard({
         <button
           type="button"
           aria-label={`Play ${title}`}
-          onClick={(e) => {
-            e.stopPropagation();
-            onPlay ? onPlay() : onClick?.();
-          }}
+          onClick={handlePlayClick}
           className="
             absolute z-20 top-1/2 left-1/2 -translate-x-1/2 -translate-y-[55%]
             h-[40px] w-[40px] flex items-center justify-center rounded-full

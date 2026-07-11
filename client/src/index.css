@@ -103,3 +103,14 @@
 .page-enter {
   animation: pageFadeIn 0.35s cubic-bezier(.16,1,.3,1) forwards;
 }
+
+/* ── Hero carousel progress bar — CSS-driven (no JS setInterval) ────────── */
+@keyframes heroProgress {
+  from { width: 0%; }
+  to   { width: 100%; }
+}
+
+/* ── Continue Watching card — remove button visible on hover ─────────────── */
+.group:hover .cw-remove-btn {
+  opacity: 1 !important;
+}

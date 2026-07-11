@@ -36,26 +36,26 @@ const BannerLayer = memo(function BannerLayer({ anime, active }: { anime: any; a
 const AnimeHeroBanner = memo(function AnimeHeroBanner({ titles }: AnimeHeroBannerProps) {
   const nav = useNavigate();
   const [idx, setIdx] = useState(0);
-  const [progress, setProgress] = useState(0);
-  const progressRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  // CSS-driven progress key — reset triggers CSS animation restart (no JS interval for progress)
+  const [progressKey, setProgressKey] = useState(0);
+  const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const advance = useCallback(() => {
+    setIdx(i => (i + 1) % titles.length);
+    setProgressKey(k => k + 1);
+  }, [titles.length]);
 
   useEffect(() => {
     if (titles.length < 2) return;
-    if (progressRef.current) clearInterval(progressRef.current);
-    const step = 100 / (AUTO_ADVANCE_MS / 50);
-    progressRef.current = setInterval(() => {
-      setProgress(p => {
-        if (p + step >= 100) {
-          setIdx(i => (i + 1) % titles.length);
-          return 0;
-        }
-        return p + step;
-      });
-    }, 50);
-    return () => { if (progressRef.current) clearInterval(progressRef.current); };
-  }, [idx, titles.length]);
+    timerRef.current = setTimeout(advance, AUTO_ADVANCE_MS);
+    return () => { if (timerRef.current) clearTimeout(timerRef.current); };
+  }, [idx, titles.length, advance]);
 
-  const goTo = useCallback((i: number) => { setIdx(i); setProgress(0); }, []);
+  const goTo = useCallback((i: number) => {
+    if (timerRef.current) clearTimeout(timerRef.current);
+    setIdx(i);
+    setProgressKey(k => k + 1);
+  }, []);
 
   if (!titles.length) return null;
   const anime = titles[idx];
@@ -84,7 +84,7 @@ const AnimeHeroBanner = memo(function AnimeHeroBanner({ titles }: AnimeHeroBanne
         style={{ backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E")`, backgroundSize: '200px 200px' }}
       />
 
-      {/* Mute/volume affordance, top-right — decorative, matches reference's small icon */}
+      {/* Mute/volume affordance, top-right */}
       <button
         aria-label="Toggle preview audio"
         className="absolute z-[3] top-5 right-5 h-8 w-8 rounded-full bg-white/[0.08] border border-white/[0.12]
@@ -164,8 +164,9 @@ const AnimeHeroBanner = memo(function AnimeHeroBanner({ titles }: AnimeHeroBanne
                 >
                   {i === idx && (
                     <span
+                      key={progressKey}
                       className="absolute inset-y-0 left-0 bg-maroon-bright/90 rounded-full"
-                      style={{ width: `${progress}%`, transition: 'width 50ms linear' }}
+                      style={{ animation: `heroProgress ${AUTO_ADVANCE_MS}ms linear forwards` }}
                     />
                   )}
                 </button>

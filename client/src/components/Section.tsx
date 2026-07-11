@@ -61,7 +61,7 @@ const Section = memo(function Section({ title, count, children, viewAllPath }: S
         scrollbar-hide
         overscroll-x-contain
       "
-        style={{ scrollSnapType: 'x mandatory' }}
+        style={{ scrollSnapType: 'x mandatory', willChange: 'scroll-position' }}
       >
         {children}
       </div>

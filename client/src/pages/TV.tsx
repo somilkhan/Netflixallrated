@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Tv, Inbox } from 'lucide-react';
 import { api } from '../lib/api';
@@ -6,13 +6,85 @@ import Card from '../components/Card';
 import Section from '../components/Section';
 import { GlassCardSkeleton } from '../components/GlassCard';
 
+const PAGE_LIMIT = 24;
+
+function useInfiniteTitles(type: string, genre: string) {
+  const [items,     setItems]     = useState<any[]>([]);
+  const [loadState, setLoadState] = useState<'idle' | 'loading' | 'more' | 'done'>('idle');
+  const [hasNext,   setHasNext]   = useState(false);
+  const pageRef     = useRef(1);
+  const inFlight    = useRef(false);
+  const versionRef  = useRef(0);
+  const sentinelRef = useRef<HTMLDivElement>(null);
+
+  // Reset on filter change
+  const filterKey = `${type}|${genre}`;
+  useEffect(() => {
+    versionRef.current += 1;
+    inFlight.current = false;
+    pageRef.current = 1;
+    setItems([]);
+    setHasNext(false);
+    setLoadState('idle');
+  }, [filterKey]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  const loadPage = useCallback((pageNum: number, replace: boolean, version: number) => {
+    if (inFlight.current) return;
+    inFlight.current = true;
+    setLoadState(pageNum === 1 ? 'loading' : 'more');
+    const p: Record<string, string> = { type, limit: String(PAGE_LIMIT), page: String(pageNum) };
+    if (genre) p.genre = genre;
+    api.titles.list(p)
+      .then((d: any) => {
+        if (version !== versionRef.current) return;
+        const titles = d.titles || [];
+        setItems(prev => replace ? titles : [...prev, ...titles]);
+        setHasNext(d.page < d.pages);
+        setLoadState('done');
+      })
+      .catch(() => {
+        if (version !== versionRef.current) return;
+        setLoadState('done');
+      })
+      .finally(() => {
+        if (version === versionRef.current) inFlight.current = false;
+      });
+  }, [type, genre]);
+
+  // Kick off first page when idle
+  useEffect(() => {
+    if (loadState === 'idle') {
+      loadPage(1, true, versionRef.current);
+    }
+  }, [loadState, loadPage]);
+
+  // Infinite-scroll sentinel
+  useEffect(() => {
+    const el = sentinelRef.current;
+    if (!el) return;
+    const io = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting && hasNext && loadState === 'done' && !inFlight.current) {
+          const next = pageRef.current + 1;
+          pageRef.current = next;
+          loadPage(next, false, versionRef.current);
+        }
+      },
+      { rootMargin: '400px 0px' },
+    );
+    io.observe(el);
+    return () => io.disconnect();
+  }, [hasNext, loadState, loadPage]);
+
+  return { items, loadState, hasNext, sentinelRef };
+}
+
 export default function TV() {
   const nav = useNavigate();
   const [selectedGenre, setSelectedGenre] = useState('');
-  const [all, setAll] = useState<any[]>([]);
-  const [genreSections, setGenreSections] = useState<Record<string, any[]>>({});
-  const [loading, setLoading] = useState(true);
   const [genreList, setGenreList] = useState<string[]>([]);
+  // Genre-section preview rows (home-style, limited to 20 per genre — correct)
+  const [genreSections, setGenreSections] = useState<Record<string, any[]>>({});
 
   useEffect(() => {
     api.titles.genres()
@@ -22,14 +94,7 @@ export default function TV() {
       .catch(() => {});
   }, []);
 
-  useEffect(() => {
-    setLoading(true);
-    api.titles.list({ type: 'SERIES', limit: '50', ...(selectedGenre ? { genre: selectedGenre } : {}) })
-      .then(d => { setAll(d.titles || []); })
-      .catch(() => { setAll([]); })
-      .finally(() => { setLoading(false); });
-  }, [selectedGenre]);
-
+  // Load preview rows for genres (intentionally limited — these are horizontal scrollers)
   useEffect(() => {
     if (selectedGenre || genreList.length === 0) return;
     Promise.all(
@@ -42,6 +107,10 @@ export default function TV() {
       setGenreSections(Object.fromEntries(results.filter(([, t]) => t.length > 0)));
     });
   }, [selectedGenre, genreList]);
+
+  // All shows with infinite scroll (either filtered by genre, or unfiltered)
+  const { items: all, loadState, hasNext, sentinelRef } = useInfiniteTitles('SERIES', selectedGenre);
+  const loading = loadState === 'loading';
 
   return (
     <div className="min-h-screen">
@@ -79,21 +148,32 @@ export default function TV() {
         ))}
       </div>
 
-      {/* Filtered view */}
+      {/* Filtered view (genre selected) */}
       {selectedGenre ? (
         <div className="px-5 pt-8">
           <div className="flex items-baseline gap-2 mb-5">
             <span className="font-serif text-[22px] font-semibold">{selectedGenre}</span>
-            {!loading && <span className="font-mono text-[11px] text-ink-faint">{all.length} shows</span>}
+            {!loading && <span className="font-mono text-[11px] text-ink-faint">{all.length} shows{hasNext ? '+' : ''}</span>}
           </div>
           {loading ? (
             <div className="flex flex-wrap gap-3.5">
               {Array.from({ length: 10 }).map((_, i) => <GlassCardSkeleton key={i} />)}
             </div>
           ) : all.length > 0 ? (
-            <div className="flex flex-wrap gap-3.5">
-              {all.map(t => <Card key={t.id} title={t} />)}
-            </div>
+            <>
+              <div className="flex flex-wrap gap-3.5">
+                {all.map(t => <Card key={t.id} title={t} />)}
+                {loadState === 'more' &&
+                  Array.from({ length: 4 }).map((_, i) => <GlassCardSkeleton key={`sk-${i}`} />)
+                }
+              </div>
+              <div ref={sentinelRef} className="h-8" />
+              {loadState === 'done' && !hasNext && all.length > 0 && (
+                <p className="font-mono text-[11px] text-ink-faint/50 text-center py-6 pb-24">
+                  You've reached the end · {all.length} show{all.length !== 1 ? 's' : ''}
+                </p>
+              )}
+            </>
           ) : (
             <div className="py-20 text-center">
               <Inbox size={36} className="mx-auto text-ink-faint/30 mb-4" />
@@ -109,9 +189,13 @@ export default function TV() {
       ) : (
         <>
           {all.length > 0 && (
-            <Section title="All TV Shows" count={`${all.length}`} viewAllPath="/search?q=&type=SERIES">
-              {all.map(t => <Card key={t.id} title={t} />)}
-            </Section>
+            <>
+              <Section title="All TV Shows" count={`${all.length}${hasNext ? '+' : ''}`} viewAllPath="/search?q=&type=SERIES">
+                {all.slice(0, 20).map(t => <Card key={t.id} title={t} />)}
+              </Section>
+              {/* Infinite-scroll sentinel placed after the first section row */}
+              <div ref={sentinelRef} className="h-1" />
+            </>
           )}
           {genreList.map(g => {
             const titles = genreSections[g];

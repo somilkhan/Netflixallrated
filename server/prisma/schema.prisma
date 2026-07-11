@@ -42,8 +42,9 @@ model User {
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
-  ratings   Rating[]
-  watchlist WatchlistItem[]
+  ratings         Rating[]
+  watchlist       WatchlistItem[]
+  watchProgress   WatchProgress[]
 }
 
 model Title {
@@ -68,6 +69,30 @@ model Title {
   ratings        Rating[]
   watchlistItems WatchlistItem[]
   platforms      TitlePlatform[]
+  watchProgress  WatchProgress[]
+}
+
+/// Continue Watching / Watch History — one row per user+title, updated on
+/// every playback tick. Stores last-watched episode (for series/anime) and
+/// the resume timestamp, synced across devices since it's server-backed.
+model WatchProgress {
+  id              String   @id @default(uuid())
+  userId          String
+  titleId         String
+  seasonNumber    Int?
+  episodeNumber   Int?
+  episodeTitle    String?
+  positionSeconds Int      @default(0)
+  durationSeconds Int?
+  completed       Boolean  @default(false)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  user  User  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  title Title @relation(fields: [titleId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, titleId])
+  @@index([userId, updatedAt])
 }
 
 model Rating {

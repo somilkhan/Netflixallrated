@@ -2,7 +2,7 @@
  * HeroCarousel — Embla-powered full-bleed hero carousel.
  * Premium cinematic design with Cormorant Garamond headings.
  */
-import { useState, useEffect, useCallback, useRef, useMemo, memo } from 'react';
+import { useState, useEffect, useCallback, useMemo, memo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Play, Info, ChevronLeft, ChevronRight } from 'lucide-react';
 import useEmblaCarousel from 'embla-carousel-react';
@@ -47,13 +47,15 @@ export default function HeroCarousel({ titles }: { titles: any[] }) {
   const autoplay = useMemo(() => Autoplay({ delay: AUTO_ADVANCE_MS, stopOnInteraction: false }), []);
   const [emblaRef, emblaApi] = useEmblaCarousel({ loop: true, duration: 22 }, [autoplay]);
   const [selectedIdx, setSelectedIdx] = useState(0);
-  const [progress, setProgress] = useState(0);
-  const progressRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  // Use a CSS animation for progress instead of a JS setInterval updating state 20×/sec.
+  // We track a "key" that resets the CSS animation on each slide change.
+  const [progressKey, setProgressKey] = useState(0);
 
   const onSelect = useCallback(() => {
     if (!emblaApi) return;
     setSelectedIdx(emblaApi.selectedScrollSnap());
-    setProgress(0);
+    setProgressKey(k => k + 1);
   }, [emblaApi]);
 
   useEffect(() => {
@@ -61,14 +63,6 @@ export default function HeroCarousel({ titles }: { titles: any[] }) {
     emblaApi.on('select', onSelect);
     return () => { emblaApi.off('select', onSelect); };
   }, [emblaApi, onSelect]);
-
-  useEffect(() => {
-    if (!titles.length) return;
-    if (progressRef.current) clearInterval(progressRef.current);
-    const step = 100 / (AUTO_ADVANCE_MS / 50);
-    progressRef.current = setInterval(() => setProgress(p => Math.min(p + step, 100)), 50);
-    return () => { if (progressRef.current) clearInterval(progressRef.current); };
-  }, [selectedIdx, titles.length]);
 
   const scrollPrev = useCallback(() => emblaApi?.scrollPrev(), [emblaApi]);
   const scrollNext = useCallback(() => emblaApi?.scrollNext(), [emblaApi]);
@@ -84,12 +78,16 @@ export default function HeroCarousel({ titles }: { titles: any[] }) {
       {/* Slides */}
       <div className="absolute inset-0" ref={emblaRef}>
         <div className="flex h-full">
-          {titles.map((t) => (
+          {titles.map((t, i) => (
             <div key={t.id} className="relative flex-[0_0_100%] h-full overflow-hidden">
               {t.trailerYoutubeId
                 ? <TrailerBg youtubeId={t.trailerYoutubeId} />
                 : <ImageBg backdropUrl={t.backdropUrl} colorFrom={t.posterColorFrom} colorTo={t.posterColorTo} />
               }
+              {/* Prefetch next slide's image */}
+              {i === (selectedIdx + 1) % titles.length && t.backdropUrl && (
+                <link rel="prefetch" href={t.backdropUrl} as="image" />
+              )}
             </div>
           ))}
         </div>
@@ -163,7 +161,7 @@ export default function HeroCarousel({ titles }: { titles: any[] }) {
             style={{ animationDelay: '0.24s' }}
           >
             <button
-              onClick={() => nav(`/title/${title.id}`)}
+              onClick={() => nav(`/title/${title.id}?play=1`)}
               className="
                 flex items-center gap-2
                 bg-ink text-void font-sans font-semibold text-[13px]
@@ -210,8 +208,11 @@ export default function HeroCarousel({ titles }: { titles: any[] }) {
                   >
                     {i === selectedIdx && (
                       <span
+                        key={progressKey}
                         className="absolute inset-y-0 left-0 bg-ink/80 rounded-full"
-                        style={{ width: `${progress}%`, transition: 'width 50ms linear' }}
+                        style={{
+                          animation: `heroProgress ${AUTO_ADVANCE_MS}ms linear forwards`,
+                        }}
                       />
                     )}
                   </button>

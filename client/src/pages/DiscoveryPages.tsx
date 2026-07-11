@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { ChevronLeft } from "lucide-react";
 import { api } from "../lib/api";
@@ -11,6 +11,9 @@ import GlassCard, { GlassCardSkeleton } from "../components/GlassCard";
   backed by the real GET /api/titles endpoint (proxied to the Railway
   backend). No mock data: an empty result means the catalog has nothing
   matching that filter yet, and is shown as such.
+
+  Infinite scroll: each page fetches 24 items; the sentinel div at the bottom
+  triggers the next page automatically.
 */
 
 type MediaType = "MOVIE" | "SERIES" | "ANIME";
@@ -34,8 +37,10 @@ type TitlesResponse = {
 
 // ── data layer ────────────────────────────────────────────────────────────────
 
+const PAGE_LIMIT = 24;
+
 async function fetchTitles({
-  type, genre, platform, page = 1, limit = 20,
+  type, genre, platform, page = 1, limit = PAGE_LIMIT,
 }: {
   type?: string;
   genre?: string;
@@ -54,30 +59,91 @@ async function fetchTitles({
   return res.json();
 }
 
-function useTitles({ type, genre, platform }: { type?: string; genre?: string; platform?: string }) {
-  const [items,   setItems]   = useState<Title[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error,   setError]   = useState<string | null>(null);
+/**
+ * Hook: infinite-scroll paginated titles list.
+ * Returns accumulated items, loading/more state, error, and a sentinel ref
+ * that must be attached to a bottom div to trigger the next page.
+ */
+function usePaginatedTitles({
+  type, genre, platform,
+}: {
+  type?: string;
+  genre?: string;
+  platform?: string;
+}) {
+  const [items,    setItems]    = useState<Title[]>([]);
+  const [loadState, setLoadState] = useState<"idle" | "loading" | "more" | "done" | "error">("idle");
+  const [hasNext,  setHasNext]  = useState(true);
+  const [error,    setError]    = useState<string | null>(null);
 
+  const pageRef     = useRef(1);
+  const inFlight    = useRef(false);
+  const versionRef  = useRef(0);
+  const sentinelRef = useRef<HTMLDivElement>(null);
+
+  // Reset when any filter changes
+  const filterKey = `${type}|${genre}|${platform}`;
   useEffect(() => {
-    let cancelled = false;
-    setLoading(true);
+    versionRef.current += 1;
+    inFlight.current = false;
+    pageRef.current = 1;
+    setItems([]);
+    setHasNext(true);
     setError(null);
-    fetchTitles({ type, genre, platform, page: 1, limit: 24 })
+    setLoadState("idle");
+  }, [filterKey]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  const loadPage = useCallback((pageNum: number, replace: boolean, version: number) => {
+    if (inFlight.current) return;
+    inFlight.current = true;
+    setLoadState(pageNum === 1 ? "loading" : "more");
+
+    fetchTitles({ type, genre, platform, page: pageNum })
       .then((data) => {
-        if (cancelled) return;
-        setItems(data.titles || []);
-        setLoading(false);
+        if (version !== versionRef.current) return;
+        const newItems = data.titles || [];
+        setItems(prev => replace ? newItems : [...prev, ...newItems]);
+        setHasNext(data.page < data.pages);
+        setLoadState("done");
+        setError(null);
       })
       .catch((err) => {
-        if (cancelled) return;
+        if (version !== versionRef.current) return;
         setError(err.message);
-        setLoading(false);
+        setLoadState("error");
+      })
+      .finally(() => {
+        if (version === versionRef.current) inFlight.current = false;
       });
-    return () => { cancelled = true; };
   }, [type, genre, platform]);
 
-  return { items, loading, error };
+  // Trigger initial load when filter changes (after reset)
+  useEffect(() => {
+    if (loadState === "idle") {
+      const v = versionRef.current;
+      loadPage(1, true, v);
+    }
+  }, [loadState, loadPage]);
+
+  // Infinite-scroll sentinel
+  useEffect(() => {
+    const el = sentinelRef.current;
+    if (!el) return;
+    const io = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting && hasNext && loadState === "done" && !inFlight.current) {
+          const next = pageRef.current + 1;
+          pageRef.current = next;
+          loadPage(next, false, versionRef.current);
+        }
+      },
+      { rootMargin: "400px 0px" },
+    );
+    io.observe(el);
+    return () => io.disconnect();
+  }, [hasNext, loadState, loadPage]);
+
+  return { items, loadState, error, hasNext, sentinelRef };
 }
 
 // ── shared UI ────────────────────────────────────────────────────────────────
@@ -145,29 +211,31 @@ function PosterCard({ item }: { item: Title }) {
 }
 
 function PosterGrid({
-  items, loading, error,
+  items, loadState, error, hasNext, sentinelRef,
 }: {
   items: Title[];
-  loading: boolean;
+  loadState: "idle" | "loading" | "more" | "done" | "error";
   error: string | null;
+  hasNext: boolean;
+  sentinelRef: React.RefObject<HTMLDivElement>;
 }) {
-  if (loading) {
+  if (loadState === "loading") {
     return (
       <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
-        {Array.from({ length: 6 }).map((_, i) => (
+        {Array.from({ length: 12 }).map((_, i) => (
           <GlassCardSkeleton key={i} fluid />
         ))}
       </div>
     );
   }
-  if (error) {
+  if (loadState === "error" && items.length === 0) {
     return (
       <p className="font-mono text-sm text-ink-faint">
         Couldn't load titles: {error}
       </p>
     );
   }
-  if (items.length === 0) {
+  if (loadState === "done" && items.length === 0) {
     return (
       <p className="font-mono text-sm text-ink-faint">
         No titles found for this filter yet.
@@ -175,11 +243,27 @@ function PosterGrid({
     );
   }
   return (
-    <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 pb-24">
-      {items.map((item) => (
-        <PosterCard key={item.id} item={item} />
-      ))}
-    </div>
+    <>
+      <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 pb-6">
+        {items.map((item) => (
+          <PosterCard key={item.id} item={item} />
+        ))}
+        {loadState === "more" &&
+          Array.from({ length: 6 }).map((_, i) => (
+            <GlassCardSkeleton key={`sk-${i}`} fluid />
+          ))
+        }
+      </div>
+
+      {/* Infinite-scroll sentinel */}
+      <div ref={sentinelRef} className="h-8" />
+
+      {loadState === "done" && !hasNext && items.length > 0 && (
+        <p className="font-mono text-[11px] text-ink-faint/50 text-center py-6 pb-24">
+          You've reached the end · {items.length} title{items.length !== 1 ? "s" : ""}
+        </p>
+      )}
+    </>
   );
 }
 
@@ -229,7 +313,7 @@ export function StudioDetail() {
     return () => { cancelled = true; };
   }, [slug]);
 
-  const { items, loading, error } = useTitles({
+  const { items, loadState, error, hasNext, sentinelRef } = usePaginatedTitles({
     type: tab,
     platform: platform?.abbr,
   });
@@ -248,7 +332,7 @@ export function StudioDetail() {
           This streaming platform doesn't exist in the catalog.
         </p>
       ) : (
-        <PosterGrid items={items} loading={loading} error={error} />
+        <PosterGrid items={items} loadState={loadState} error={error} hasNext={hasNext} sentinelRef={sentinelRef} />
       )}
     </DetailShell>
   );
@@ -287,7 +371,10 @@ export function GenreDetail() {
     return () => { cancelled = true; };
   }, [slug]);
 
-  const { items, loading, error } = useTitles({ type: tab, genre: genreName || undefined });
+  const { items, loadState, error, hasNext, sentinelRef } = usePaginatedTitles({
+    type: tab,
+    genre: genreName || undefined,
+  });
 
   return (
     <DetailShell title={genreName || slug.replace(/-/g, " ")} subtitle="Genre">
@@ -303,7 +390,7 @@ export function GenreDetail() {
           This genre doesn't exist in the catalog.
         </p>
       ) : (
-        <PosterGrid items={items} loading={loading} error={error} />
+        <PosterGrid items={items} loadState={loadState} error={error} hasNext={hasNext} sentinelRef={sentinelRef} />
       )}
     </DetailShell>
   );
@@ -319,11 +406,11 @@ const TYPE_TO_ENUM: Record<string, MediaType> = {
 export function TypeDetail() {
   const { slug = "" } = useParams();
   const type = TYPE_TO_ENUM[slug] || "MOVIE";
-  const { items, loading, error } = useTitles({ type });
+  const { items, loadState, error, hasNext, sentinelRef } = usePaginatedTitles({ type });
 
   return (
     <DetailShell title={slug.replace(/-/g, " ")}>
-      <PosterGrid items={items} loading={loading} error={error} />
+      <PosterGrid items={items} loadState={loadState} error={error} hasNext={hasNext} sentinelRef={sentinelRef} />
     </DetailShell>
   );
 }

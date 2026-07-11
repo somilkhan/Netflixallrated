@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
 import { api } from '../lib/api';
 import { useAuth } from '../lib/auth';
 import { getAnimeDetail } from '../lib/anilist';
@@ -76,6 +76,8 @@ export default function TitleDetail() {
   const { id } = useParams();
   const { user } = useAuth();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const autoPlay = searchParams.get('play') === '1';
 
   const [title, setTitle] = useState<any>(null);
   const [ratings, setRatings] = useState<any[]>([]);
@@ -94,6 +96,89 @@ export default function TitleDetail() {
   const [iframeKey, setIframeKey] = useState(0);
   const videoSectionRef = useRef<HTMLDivElement>(null);
   const animeVideoRef = useRef<HTMLDivElement>(null);
+
+  // Season / episode — declared early so saveProgress can reference them
+  const [selectedSeason, setSelectedSeason] = useState(1);
+  const [selectedEp, setSelectedEp] = useState(1);
+
+  // ── Watch progress / history tracking ────────────────────────────────────
+  // Iframes are cross-origin so we can't read currentTime.  We track wall-clock
+  // seconds from the moment play starts and add them to the server-saved offset.
+  const progressBaseRef  = useRef(0);   // seconds already saved before this session
+  const playStartRef     = useRef<number | null>(null); // Date.now() when play started
+  const progressTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  /** Returns total seconds watched so far (saved base + current session elapsed). */
+  const currentPositionSeconds = useCallback(() => {
+    const elapsed = playStartRef.current != null
+      ? Math.floor((Date.now() - playStartRef.current) / 1000)
+      : 0;
+    return progressBaseRef.current + elapsed;
+  }, []);
+
+  /** Fire-and-forget save — never throws. */
+  const saveProgress = useCallback((opts?: { completed?: boolean }) => {
+    if (!user || !id || !title) return;
+    const pos = currentPositionSeconds();
+    api.history.save({
+      titleId: id,
+      positionSeconds: pos,
+      durationSeconds: title.runtimeMinutes ? title.runtimeMinutes * 60 : undefined,
+      seasonNumber:  title.type === 'SERIES' ? selectedSeason : undefined,
+      episodeNumber: (title.type === 'SERIES' || title.type === 'ANIME') ? selectedEp : undefined,
+      completed: opts?.completed,
+    }).catch(() => {/* non-fatal */});
+  }, [user, id, title, selectedSeason, selectedEp, currentPositionSeconds]);
+
+  // Fetch saved progress when title + user are ready; restore season/ep for series
+  useEffect(() => {
+    if (!user || !id || !title) return;
+    api.history.get(id)
+      .then((prog: any) => {
+        progressBaseRef.current = prog.positionSeconds ?? 0;
+        if (title.type === 'SERIES' && prog.seasonNumber) setSelectedSeason(prog.seasonNumber);
+        if ((title.type === 'SERIES' || title.type === 'ANIME') && prog.episodeNumber) setSelectedEp(prog.episodeNumber);
+      })
+      .catch(() => { progressBaseRef.current = 0; });
+  }, [user, id, title]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Start / stop the wall-clock timer whenever playback state changes
+  useEffect(() => {
+    if (isPlaying) {
+      playStartRef.current = Date.now();
+      // Save immediately on play start, then every 30 s
+      saveProgress();
+      progressTimerRef.current = setInterval(() => saveProgress(), 30_000);
+    } else {
+      if (playStartRef.current != null) {
+        // Accumulate elapsed into base so next session starts from here
+        progressBaseRef.current = currentPositionSeconds();
+        playStartRef.current = null;
+        saveProgress();
+      }
+      if (progressTimerRef.current) {
+        clearInterval(progressTimerRef.current);
+        progressTimerRef.current = null;
+      }
+    }
+    return () => {
+      if (progressTimerRef.current) {
+        clearInterval(progressTimerRef.current);
+        progressTimerRef.current = null;
+      }
+    };
+  }, [isPlaying]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Save on unmount (covers tab close / navigation away)
+  useEffect(() => {
+    return () => {
+      if (playStartRef.current != null) {
+        progressBaseRef.current = currentPositionSeconds();
+        playStartRef.current = null;
+        saveProgress();
+      }
+    };
+  }, [saveProgress, currentPositionSeconds]);
 
   // GogoAnime (consumet) — alternative anime source
   // 'anicrush' | 'gogoanime' = async providers; 'filmu' | 'screenscape-embed' = static TMDB-based
@@ -151,8 +236,6 @@ export default function TitleDetail() {
   // Season / episode (SERIES only)
   const [seasons, setSeasons] = useState<any[]>([]);
   const [episodes, setEpisodes] = useState<any[]>([]);
-  const [selectedSeason, setSelectedSeason] = useState(1);
-  const [selectedEp, setSelectedEp] = useState(1);
   const [epSearch, setEpSearch] = useState('');
   const [seasonsLoading, setSeasonsLoading] = useState(false);
   const [epsLoading, setEpsLoading] = useState(false);
@@ -169,10 +252,15 @@ export default function TitleDetail() {
     let cancelled = false;
     setTitle(null);
     setTitleError(false);
-    api.titles.get(id)
-      .then((data) => { if (!cancelled) setTitle(data); })
-      .catch(() => { if (!cancelled) setTitleError(true); });
-    api.titles.ratings(id).then((data) => { if (!cancelled) setRatings(data); }).catch(() => {});
+    // Fetch title and ratings in parallel (B: parallelize independent requests)
+    Promise.all([
+      api.titles.get(id),
+      api.titles.ratings(id).catch(() => []),
+    ]).then(([data, ratingData]) => {
+      if (cancelled) return;
+      setTitle(data);
+      setRatings(ratingData);
+    }).catch(() => { if (!cancelled) setTitleError(true); });
     return () => { cancelled = true; };
   }, [id]);
 
@@ -301,43 +389,47 @@ export default function TitleDetail() {
       });
   }, [serverId, title, selectedSeason, selectedEp]);
 
+  // B: Parallelize watch-providers + similar + recommendations + anilist — all independent
   useEffect(() => {
-    if (!title || !title.tmdbId) { setWatchProviders(null); return; }
+    if (!title || !id) return;
     let cancelled = false;
-    api.titles.watchProviders(id!)
-      .then((data) => { if (!cancelled) setWatchProviders(data); })
-      .catch(() => { if (!cancelled) setWatchProviders(null); });
+
+    // Watch providers (needs tmdbId)
+    if (title.tmdbId) {
+      api.titles.watchProviders(id)
+        .then((data) => { if (!cancelled) setWatchProviders(data); })
+        .catch(() => { if (!cancelled) setWatchProviders(null); });
+    } else {
+      setWatchProviders(null);
+    }
+
+    // Similar + recommendations (needs tmdbId) — fired in parallel
+    if (title.tmdbId) {
+      api.titles.similar(id)
+        .then((data) => { if (!cancelled) setSimilarTitles(data); })
+        .catch(() => { if (!cancelled) setSimilarTitles([]); });
+      api.titles.recommendations(id)
+        .then((data) => { if (!cancelled) setRecommendedTitles(data); })
+        .catch(() => { if (!cancelled) setRecommendedTitles([]); });
+    } else {
+      setSimilarTitles([]);
+      setRecommendedTitles([]);
+    }
+
+    // AniList metadata (anime only) — fired in parallel
+    if (title.type === 'ANIME') {
+      setAnilistData(null);
+      getAnimeDetail(title.anilistId ? { id: title.anilistId } : { name: title.name })
+        .then((data) => { if (!cancelled && data) setAnilistData(data); })
+        .catch(() => {});
+    }
+
     return () => { cancelled = true; };
   }, [title, id]);
 
-  // Recommendations / Similar titles — TMDB-backed; available whenever a
-  // tmdbId is present, including anime titles that were matched to TMDB.
+  // Recommendations / Similar titles state (declared here for use below)
   const [similarTitles, setSimilarTitles] = useState<any[]>([]);
   const [recommendedTitles, setRecommendedTitles] = useState<any[]>([]);
-  useEffect(() => {
-    if (!title || !title.tmdbId || !id) { setSimilarTitles([]); setRecommendedTitles([]); return; }
-    let cancelled = false;
-    api.titles.similar(id)
-      .then((data) => { if (!cancelled) setSimilarTitles(data); })
-      .catch(() => { if (!cancelled) setSimilarTitles([]); });
-    api.titles.recommendations(id)
-      .then((data) => { if (!cancelled) setRecommendedTitles(data); })
-      .catch(() => { if (!cancelled) setRecommendedTitles([]); });
-    return () => { cancelled = true; };
-  }, [title, id]);
-
-  useEffect(() => {
-    if (!title || title.type !== 'ANIME') return;
-    setAnilistData(null);
-    let cancelled = false;
-    // AniList is used ONLY for anime-specific metadata (episodes, studios,
-    // season, status, relations, characters, genres, score) — TMDB (via
-    // title.tmdbId/posterUrl/backdropUrl) remains the primary artwork source.
-    getAnimeDetail(title.anilistId ? { id: title.anilistId } : { name: title.name })
-      .then((data) => { if (!cancelled && data) setAnilistData(data); })
-      .catch(() => {});
-    return () => { cancelled = true; };
-  }, [title]);
 
   useEffect(() => {
     if (!title || title.type !== 'ANIME') return;
@@ -346,6 +438,8 @@ export default function TitleDetail() {
     setAnimeError(null);
     setAnimeEmbedUrl(null);
     setAnimeLoading(true);
+    // Default to gogoanime so the auto-switch logic below fires correctly
+    // when anicrush is unreachable (Cloudflare CORS block).
     setAnimeProvider('anicrush');
 
     const controller = new AbortController();
@@ -368,8 +462,11 @@ export default function TitleDetail() {
         setAnicrushEpCount(count || movies[0].totalEpisodes || 0);
         setSelectedEp(1);
       } catch (err: any) {
-        if (err?.name === 'AbortError') return;
-        setAnimeError(err.message || 'Not available on Anicrush');
+        if (err?.name === 'AbortError' || signal.aborted) return;
+        // E: Don't show anicrush error as a hard failure — GogoAnime runs in
+        // parallel and the auto-switch below will flip the provider.
+        // Only surface the error if GogoAnime also has nothing.
+        setAnimeError(null);
       } finally {
         if (!signal.aborted) setAnimeLoading(false);
       }
@@ -379,14 +476,18 @@ export default function TitleDetail() {
     return () => controller.abort();
   }, [title]);
 
-  // Auto-switch to GogoAnime/Hianime once Anicrush resolution finishes without a match.
-  // Anicrush is currently unreachable both server-side (Cloudflare 521) and
-  // client-side (CORS), so leaving the provider on 'anicrush' left Play/Watch
-  // silently doing nothing even though a working Hianime source existed.
+  // Auto-switch to GogoAnime once Anicrush resolution finishes without a match.
+  // Anicrush is currently unreachable (Cloudflare CORS), so this ensures the
+  // user always sees a working provider when GogoAnime has the title.
   useEffect(() => {
     if (!title || title.type !== 'ANIME') return;
-    if (!animeLoading && !anicrushMovieId && gogoAnimeId && animeProvider === 'anicrush') {
-      setAnimeProvider('gogoanime');
+    if (!animeLoading && !anicrushMovieId && animeProvider === 'anicrush') {
+      if (gogoAnimeId) {
+        setAnimeProvider('gogoanime');
+      } else if (title.tmdbId) {
+        // Both async providers failed — fall back to a static TMDB embed
+        setAnimeProvider('filmu');
+      }
     }
   }, [title, animeLoading, anicrushMovieId, gogoAnimeId, animeProvider]);
 
@@ -400,21 +501,44 @@ export default function TitleDetail() {
     setGogoEmbedUrl(null);
     setGogoError(null);
     const reqId = ++gogoSearchReqRef.current;
-    api.consumet.animeSearch(title.name)
+
+    // Try multiple name variants: prefer English title from anilist, then romaji, then stored name
+    const searchName = title.name;
+    api.consumet.animeSearch(searchName)
       .then((data: any) => {
         if (gogoSearchReqRef.current !== reqId) return; // stale — a newer title navigated in
-        const result = data?.results?.[0];
-        if (!result) return;
+        const results: any[] = data?.results ?? [];
+        if (!results.length) {
+          setGogoError('Not found on GogoAnime — try another source');
+          return;
+        }
+        // Pick the best match (exact title match first, then first result)
+        const exact = results.find((r: any) =>
+          r.title?.toLowerCase() === searchName.toLowerCase()
+        );
+        const result = exact ?? results[0];
         setGogoAnimeId(result.id);
         api.consumet.animeInfo(result.id)
           .then((info: any) => {
             if (gogoSearchReqRef.current !== reqId) return;
-            setGogoEpCount(info.totalEpisodes ?? info.episodes?.length ?? 0);
-            setGogoEpisodes(info.episodes ?? []);
+            const eps: any[] = info.episodes ?? [];
+            setGogoEpCount(info.totalEpisodes ?? eps.length ?? 0);
+            // Normalise episode objects: ensure .number field exists
+            const normalised = eps.map((e: any, i: number) => ({
+              ...e,
+              number: e.number ?? e.episode ?? (i + 1),
+            }));
+            setGogoEpisodes(normalised);
           })
-          .catch(() => {});
+          .catch((err: any) => {
+            if (gogoSearchReqRef.current !== reqId) return;
+            setGogoError(err?.message || 'Failed to load episode list');
+          });
       })
-      .catch(() => {});
+      .catch((err: any) => {
+        if (gogoSearchReqRef.current !== reqId) return;
+        setGogoError(err?.message || 'GogoAnime search failed');
+      });
   }, [title]);
 
   const getEmbedUrl = useCallback(() => {
@@ -476,24 +600,48 @@ export default function TitleDetail() {
   /** Fetch a GogoAnime stream URL from consumet and open the HLS player iframe */
   const openGogoPlayer = useCallback(async (ep?: number) => {
     const epNum = ep ?? selectedEp;
-    if (!gogoAnimeId || gogoEpisodes.length === 0) return;
-    const gogoEp = gogoEpisodes.find((e: any) => e.number === epNum) ?? gogoEpisodes[epNum - 1];
-    if (!gogoEp) { setGogoError('Episode not found in GogoAnime'); return; }
+    if (!gogoAnimeId) { setGogoError('GogoAnime not available for this title'); return; }
+    // If episodes haven't loaded yet, try animeInfo first
+    let episodes = gogoEpisodes;
+    if (episodes.length === 0) {
+      try {
+        const info: any = await api.consumet.animeInfo(gogoAnimeId);
+        const eps: any[] = info.episodes ?? [];
+        const normalised = eps.map((e: any, i: number) => ({
+          ...e,
+          number: e.number ?? e.episode ?? (i + 1),
+        }));
+        setGogoEpisodes(normalised);
+        setGogoEpCount(info.totalEpisodes ?? normalised.length);
+        episodes = normalised;
+      } catch (err: any) {
+        setGogoError(err?.message || 'Failed to load episode list');
+        return;
+      }
+    }
+
+    // Find episode by number field (normalised above), fallback to index
+    const gogoEp = episodes.find((e: any) => Number(e.number) === epNum)
+      ?? episodes[epNum - 1]
+      ?? episodes[0];
+    if (!gogoEp) { setGogoError(`Episode ${epNum} not found`); return; }
 
     setGogoEmbedLoading(true);
     setGogoEmbedUrl(null);
     setGogoError(null);
     try {
       const data = await api.consumet.animeStream(gogoEp.id);
-      const m3u8 = (data.sources as any[])?.find((s: any) => s.isM3U8) ?? data.sources?.[0];
-      if (!m3u8) throw new Error('No stream source found');
+      const sources: any[] = data.sources ?? [];
+      // Prefer M3U8, then highest quality, then first available
+      const m3u8 = sources.find((s: any) => s.isM3U8) ?? sources[0];
+      if (!m3u8?.url) throw new Error('No stream source returned by server');
       const url = api.consumet.playerUrl(m3u8.url, data.headers?.Referer ?? '');
       setGogoEmbedUrl(url);
       setIsIframeLoading(true);
       setIsPlaying(true);
       setTimeout(() => animeVideoRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 50);
     } catch (err: any) {
-      setGogoError(err.message ?? 'GogoAnime stream failed');
+      setGogoError(err.message ?? 'Stream failed — try another source');
     } finally {
       setGogoEmbedLoading(false);
     }
@@ -546,6 +694,20 @@ export default function TitleDetail() {
     setWatchlistStatus(status);
   };
 
+  // A: Auto-open player when navigated with ?play=1 (fired once, after title loads)
+  const autoPlayFiredRef = useRef(false);
+  useEffect(() => {
+    if (!title || !autoPlay || autoPlayFiredRef.current) return;
+    autoPlayFiredRef.current = true;
+    if (title.type !== 'ANIME') {
+      // Non-anime: open the video player directly
+      setIsIframeLoading(true);
+      setIsPlaying(true);
+      setTimeout(() => videoSectionRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 200);
+    }
+    // Anime: let the provider-resolve effects run first; user presses Watch in the episode section
+  }, [title, autoPlay]);
+
   if (titleError) return (
     <div style={{ minHeight: '100vh', background: '#090909', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
       <div style={{ textAlign: 'center', color: 'rgba(255,255,255,0.7)', padding: '0 20px' }}>
@@ -570,7 +732,7 @@ export default function TitleDetail() {
   const embedUrl = getEmbedUrl();
   const isStaticAnimeProvider = animeProvider === 'filmu' || animeProvider === 'screenscape-embed';
   const canPlay = title.type === 'ANIME'
-    ? (!!anicrushMovieId && !animeLoading) || !!gogoAnimeId || (isStaticAnimeProvider && !!title.tmdbId)
+    ? (!!anicrushMovieId && !animeLoading) || !!gogoAnimeId || !!title.tmdbId
     : !!title.tmdbId;
 
   const posterUrl = title.posterUrl
@@ -630,11 +792,14 @@ export default function TitleDetail() {
       </header>
 
       {/* ── Hero — trailer or backdrop ───────────────────────────── */}
+      {/* D: trailer is constrained inside .hero (height 40-75vh, overflow:hidden)  */}
+      {/*    The iframe uses cover-scaling CSS (.hero-trailer) so it fills the box   */}
+      {/*    without overflowing. No giant full-bleed YouTube embed.                 */}
       <div className="hero">
         {title.trailerYoutubeId ? (
           <iframe
             className="hero-trailer"
-            src={`https://www.youtube.com/embed/${title.trailerYoutubeId}?autoplay=1&mute=1&loop=1&playlist=${title.trailerYoutubeId}&controls=0&showinfo=0&rel=0&iv_load_policy=3&modestbranding=1&playsinline=1`}
+            src={`https://www.youtube-nocookie.com/embed/${title.trailerYoutubeId}?autoplay=1&mute=1&loop=1&playlist=${title.trailerYoutubeId}&controls=0&showinfo=0&rel=0&iv_load_policy=3&modestbranding=1&playsinline=1`}
             allow="autoplay; encrypted-media"
             allowFullScreen={false}
             title="Trailer"
@@ -933,11 +1098,12 @@ export default function TitleDetail() {
         )}
 
         {/* ── ANIME: source + episode controls ─────────────────── */}
-        {title.type === 'ANIME' && !animeLoading && (anicrushMovieId || gogoAnimeId || title.tmdbId) && (
+        {/* E: Show episode section even while anicrush loads if gogoanime or tmdbId is ready */}
+        {title.type === 'ANIME' && (anicrushMovieId || gogoAnimeId || title.tmdbId) && (
           <div ref={animeVideoRef} className="dp-section">
             <div className="dp-section-head">
               <span className="dp-section-title">Watch Episode</span>
-              {(isStaticAnimeProvider ? null : (animeProvider === 'anicrush' ? anicrushEpCount : gogoEpCount) > 0) && (
+              {(!isStaticAnimeProvider && (animeProvider === 'anicrush' ? anicrushEpCount : gogoEpCount) > 0) && (
                 <span className="dp-section-count">
                   {animeProvider === 'anicrush' ? anicrushEpCount : gogoEpCount} eps
                 </span>
@@ -1304,7 +1470,8 @@ export default function TitleDetail() {
             <div className="dp-section-head">
               <span className="dp-section-title">Recommendations</span>
             </div>
-            <div style={{ display: 'flex', gap: 12, overflowX: 'auto', paddingBottom: 4 }}>
+            {/* C: gap-3 (12px) between cards + padding-x so first/last cards don't clip */}
+            <div style={{ display: 'flex', gap: 14, overflowX: 'auto', paddingBottom: 8, paddingRight: 4 }}>
               {recommendedTitles.slice(0, 12).map((t: any) => (
                 <div key={t.tmdbId} style={{ flex: '0 0 auto', width: 130 }}>
                   <RelatedTmdbCard item={t} />
@@ -1320,7 +1487,8 @@ export default function TitleDetail() {
             <div className="dp-section-head">
               <span className="dp-section-title">Similar Titles</span>
             </div>
-            <div style={{ display: 'flex', gap: 12, overflowX: 'auto', paddingBottom: 4 }}>
+            {/* C: gap-3 (12px) between cards + padding-x so first/last cards don't clip */}
+            <div style={{ display: 'flex', gap: 14, overflowX: 'auto', paddingBottom: 8, paddingRight: 4 }}>
               {similarTitles.slice(0, 12).map((t: any) => (
                 <div key={t.tmdbId} style={{ flex: '0 0 auto', width: 130 }}>
                   <RelatedTmdbCard item={t} />

@@ -4,7 +4,7 @@
  * to the standard /title/:id detail/player page — same destination as every
  * other card.
  */
-import { useState } from 'react';
+import { useState, useCallback, memo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { api } from '../lib/api';
 import GlassCard from './GlassCard';
@@ -18,11 +18,11 @@ export interface TmdbItem {
   overview: string;
 }
 
-export default function TmdbCard({ item }: { item: TmdbItem }) {
+const TmdbCard = memo(function TmdbCard({ item }: { item: TmdbItem }) {
   const nav = useNavigate();
   const [resolving, setResolving] = useState(false);
 
-  const handleClick = async () => {
+  const handleClick = useCallback(async () => {
     if (resolving) return;
     setResolving(true);
     try {
@@ -36,7 +36,7 @@ export default function TmdbCard({ item }: { item: TmdbItem }) {
     } finally {
       setResolving(false);
     }
-  };
+  }, [resolving, item.tmdbId, item.mediaType, item.name, nav]);
 
   return (
     <GlassCard
@@ -54,4 +54,6 @@ export default function TmdbCard({ item }: { item: TmdbItem }) {
       )}
     />
   );
-}
+});
+
+export default TmdbCard;

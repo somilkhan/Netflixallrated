@@ -3,16 +3,19 @@
  * Renders via the shared GlassCard (frosted glass, poster background, hover
  * reveal) with this title's real data — no invented fields.
  */
+import { memo, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import GlassCard from './GlassCard';
 
-export default function Card({ title, rank }: { title: any; index?: number; rank?: number }) {
+const Card = memo(function Card({ title, rank }: { title: any; index?: number; rank?: number }) {
   const nav = useNavigate();
   const typeLabel = title.type === 'MOVIE' ? 'Movie' : title.type === 'SERIES' ? 'Series' : 'Anime';
   const providers = (title.platforms || [])
     .map((tp: any) => tp.platform)
     .filter(Boolean)
     .map((p: any) => ({ name: p.name, logoUrl: p.iconUrl || null }));
+
+  const handleClick = useCallback(() => nav(`/title/${title.id}`), [nav, title.id]);
 
   if (!title.id) return null;
 
@@ -30,7 +33,9 @@ export default function Card({ title, rank }: { title: any; index?: number; rank
       posterColorFrom={title.posterColorFrom}
       posterColorTo={title.posterColorTo}
       rank={rank}
-      onClick={() => nav(`/title/${title.id}`)}
+      onClick={handleClick}
     />
   );
-}
+});
+
+export default Card;
