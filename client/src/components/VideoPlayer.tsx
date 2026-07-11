@@ -17,6 +17,17 @@ export interface Server {
 
 export const SERVERS: Server[] = [
   {
+    // Screenscape is the default player — correct params are s= and e= (not season= / episode=)
+    id: 'screenscape-embed',
+    label: 'Screenscape',
+    getUrl: (id, type, s, e) =>
+      type === 'MOVIE'
+        ? `https://screenscape.me/embed?tmdb=${id}&type=movie&lan=eng`
+        : type === 'ANIME'
+        ? `https://screenscape.me/embed?tmdb=${id}&type=tv&s=1&e=${e}&lan=eng`
+        : `https://screenscape.me/embed?tmdb=${id}&type=tv&s=${s}&e=${e}&lan=eng`,
+  },
+  {
     id: 'vidrock',
     label: 'VidRock',
     getUrl: (id, type, s, e) =>
@@ -73,16 +84,6 @@ export const SERVERS: Server[] = [
         : type === 'ANIME'
         ? `https://embed.filmu.in/tv/${id}/1/${e}`
         : `https://embed.filmu.in/tv/${id}/${s}/${e}`,
-  },
-  {
-    id: 'screenscape-embed',
-    label: 'Screenscape',
-    getUrl: (id, type, s, e) =>
-      type === 'MOVIE'
-        ? `https://screenscape.me/embed?tmdb=${id}&type=movie`
-        : type === 'ANIME'
-        ? `https://screenscape.me/embed?tmdb=${id}&type=tv&season=1&episode=${e}`
-        : `https://screenscape.me/embed?tmdb=${id}&type=tv&season=${s}&episode=${e}`,
   },
   {
     id: 'flixhq',
@@ -253,8 +254,7 @@ export default function VideoPlayer({
             src={embedUrl}
             className="absolute inset-0 w-full h-full border-0"
             allowFullScreen
-            allow="autoplay; encrypted-media; fullscreen; picture-in-picture"
-            referrerPolicy="no-referrer"
+            allow="autoplay; fullscreen; picture-in-picture; encrypted-media"
             title={title.name}
           />
         </div>
