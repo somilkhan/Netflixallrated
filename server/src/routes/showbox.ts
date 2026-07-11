@@ -141,7 +141,9 @@ function febHeaders(shareKey: string, cookie?: string): Record<string, string> {
     'x-requested-with': 'XMLHttpRequest',
     'user-agent': FEBBOX_UA,
     referer: `${FEBBOX_BASE}/share/${shareKey}`,
-    ...(cookie ? { cookie: `ui=${cookie}` } : {}),
+    // If cookie already contains '=' it's a full cookie string (e.g. "ui=JWT;PHPSESSID=xyz")
+    // otherwise treat it as the bare ui token value and prepend "ui="
+    ...(cookie ? { cookie: cookie.includes('=') ? cookie : `ui=${cookie}` } : {}),
   };
 }
 
