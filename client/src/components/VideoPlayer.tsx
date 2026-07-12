@@ -2,11 +2,17 @@
  * VideoPlayer — fullscreen overlay player for TitleDetail.
  *
  * Fix #1 applied:
- * - Source-selector pills live in the top bar (normal flow, above the iframe).
+ * - Source-selector pills live in the top bar (normal block flow, above the iframe).
  * - Prev / Refresh / Next buttons also in the top bar — never overlap the video.
  * - The iframe is wrapped in a `min-h-0` flex child + `player-ratio` container so
  *   it stays in a 16:9 box and cannot overflow its parent.
+ *
+ * Fix #2 applied:
+ * - FebBox streams are played natively via hls.js (direct HLS URLs from shegu.net)
+ *   instead of the FebBox embed iframe which requires browser login.
  */
+import { useEffect, useRef, useState } from 'react';
+import Hls from 'hls.js';
 import { RefreshCw, ExternalLink } from 'lucide-react';
 
 export interface Server {
@@ -111,6 +117,122 @@ export const SERVERS: Server[] = [
   },
 ];
 
+export interface FebboxStream {
+  url: string;
+  quality: string;
+  name: string;
+}
+
+// ---------------------------------------------------------------------------
+// FebBoxPlayer — native HLS player for direct shegu.net stream URLs
+// ---------------------------------------------------------------------------
+export function FebBoxPlayer({
+  streams,
+  iframeKey,
+}: {
+  streams: FebboxStream[];
+  iframeKey: number;
+}) {
+  const videoRef = useRef<HTMLVideoElement>(null);
+  const hlsRef = useRef<Hls | null>(null);
+  const [qualityIdx, setQualityIdx] = useState(0);
+  const [error, setError] = useState<string | null>(null);
+
+  // When streams or selected quality changes, attach hls.js
+  useEffect(() => {
+    if (!streams.length) return;
+    const video = videoRef.current;
+    if (!video) return;
+
+    // Destroy previous instance
+    if (hlsRef.current) {
+      hlsRef.current.destroy();
+      hlsRef.current = null;
+    }
+    setError(null);
+
+    const src = streams[qualityIdx]?.url ?? streams[0].url;
+
+    if (src.includes('.m3u8') || src.includes('hls')) {
+      if (Hls.isSupported()) {
+        const hls = new Hls({ enableWorker: true });
+        hlsRef.current = hls;
+        hls.loadSource(src);
+        hls.attachMedia(video);
+        hls.on(Hls.Events.MANIFEST_PARSED, () => {
+          video.play().catch(() => {});
+        });
+        hls.on(Hls.Events.ERROR, (_evt, data) => {
+          if (data.fatal) setError(`Stream error: ${data.details}`);
+        });
+      } else if (video.canPlayType('application/vnd.apple.mpegurl')) {
+        // Safari native HLS
+        video.src = src;
+        video.play().catch(() => {});
+      } else {
+        setError('HLS not supported in this browser');
+      }
+    } else {
+      // Direct MP4 / MKV
+      video.src = src;
+      video.play().catch(() => {});
+    }
+
+    return () => {
+      if (hlsRef.current) {
+        hlsRef.current.destroy();
+        hlsRef.current = null;
+      }
+    };
+  }, [streams, qualityIdx, iframeKey]);
+
+  if (!streams.length) {
+    return (
+      <div className="absolute inset-0 flex items-center justify-center text-ink-dim text-sm">
+        No streams available
+      </div>
+    );
+  }
+
+  return (
+    <div className="absolute inset-0 flex flex-col bg-black">
+      {/* Quality selector */}
+      <div className="absolute top-2 right-2 z-10 flex gap-1.5 flex-wrap justify-end">
+        {streams.map((s, i) => (
+          <button
+            key={i}
+            onClick={() => setQualityIdx(i)}
+            className={`text-[10px] font-mono px-2 py-0.5 rounded border transition-colors ${
+              qualityIdx === i
+                ? 'border-maroon-bright bg-maroon/30 text-ink'
+                : 'border-line/60 text-ink-dim bg-black/60 hover:text-ink hover:border-line-bright'
+            }`}
+          >
+            {s.quality || s.name || `Q${i + 1}`}
+          </button>
+        ))}
+      </div>
+
+      {error ? (
+        <div className="flex-1 flex items-center justify-center text-red-400 text-sm px-4 text-center">
+          {error}
+        </div>
+      ) : (
+        <video
+          ref={videoRef}
+          className="w-full h-full object-contain"
+          controls
+          autoPlay
+          playsInline
+        />
+      )}
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// VideoPlayerProps
+// ---------------------------------------------------------------------------
 interface VideoPlayerProps {
   title: any;
   playerOpen: boolean;
@@ -123,6 +245,8 @@ interface VideoPlayerProps {
   selectedEp: number;
   setSelectedEp: React.Dispatch<React.SetStateAction<number>>;
   embedUrl: string | null;
+  /** Direct HLS/MP4 streams from FebBox — when present, renders native player */
+  febboxStreams?: FebboxStream[];
   /** Called when the user clicks ← Prev inside the anime player */
   onAnimePrev?: () => void;
   /** Called when the user clicks Next → inside the anime player */
@@ -141,10 +265,14 @@ export default function VideoPlayer({
   selectedEp,
   setSelectedEp,
   embedUrl,
+  febboxStreams = [],
   onAnimePrev,
   onAnimeNext,
 }: VideoPlayerProps) {
-  if (!playerOpen || !embedUrl) return null;
+  // FebBox with streams → show native player (no embedUrl needed)
+  const showFebboxNative = serverId === 'febbox' && febboxStreams.length > 0;
+
+  if (!playerOpen || (!embedUrl && !showFebboxNative)) return null;
 
   return (
     <div className="fixed inset-0 z-50 bg-void flex flex-col">
@@ -227,15 +355,18 @@ export default function VideoPlayer({
             </>
           )}
 
-          <a
-            href={embedUrl}
-            target="_blank"
-            rel="noreferrer"
-            title="Open in new tab"
-            className="text-xs text-ink-dim border border-line rounded-lg px-2.5 py-1.5 hover:text-ink transition-colors inline-flex items-center"
-          >
-            <ExternalLink size={12} />
-          </a>
+          {/* External link — only for iframe servers, not native HLS */}
+          {!showFebboxNative && (
+            <a
+              href={embedUrl ?? '#'}
+              target="_blank"
+              rel="noreferrer"
+              title="Open in new tab"
+              className="text-xs text-ink-dim border border-line rounded-lg px-2.5 py-1.5 hover:text-ink transition-colors inline-flex items-center"
+            >
+              <ExternalLink size={12} />
+            </a>
+          )}
           <button
             onClick={() => setPlayerOpen(false)}
             className="text-xs text-ink-dim border border-line rounded-lg px-3 py-1.5 hover:text-ink transition-colors"
@@ -249,14 +380,21 @@ export default function VideoPlayer({
        */}
       <div className="flex-1 min-h-0 overflow-hidden bg-black flex items-center justify-center">
         <div className="relative player-ratio w-full overflow-hidden">
-          <iframe
-            key={`${serverId}-${selectedSeason}-${selectedEp}-${iframeKey}`}
-            src={embedUrl}
-            className="absolute inset-0 w-full h-full border-0"
-            allowFullScreen
-            allow="autoplay; fullscreen; picture-in-picture; encrypted-media"
-            title={title.name}
-          />
+          {showFebboxNative ? (
+            <FebBoxPlayer
+              streams={febboxStreams}
+              iframeKey={iframeKey}
+            />
+          ) : (
+            <iframe
+              key={`${serverId}-${selectedSeason}-${selectedEp}-${iframeKey}`}
+              src={embedUrl ?? ''}
+              className="absolute inset-0 w-full h-full border-0"
+              allowFullScreen
+              allow="autoplay; fullscreen; picture-in-picture; encrypted-media"
+              title={title.name}
+            />
+          )}
         </div>
       </div>
     </div>

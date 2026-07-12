@@ -8,7 +8,8 @@ import {
   getEpisodeCount as fetchAnicrushEpCount,
   getEmbedUrl as anicrushEmbed,
 } from '../lib/anicrush';
-import { SERVERS } from '../components/VideoPlayer';
+import { SERVERS, FebBoxPlayer } from '../components/VideoPlayer';
+import type { FebboxStream } from '../components/VideoPlayer';
 import { InlineLoader } from '../components/GlassLoader';
 import GlassCard from '../components/GlassCard';
 import { navigateToAnime } from '../lib/animeResolve';
@@ -197,6 +198,7 @@ export default function TitleDetail() {
 
   // FebBox (showbox) — alternative movie/TV source
   const [febboxUrl, setFebboxUrl] = useState<string | null>(null);
+  const [febboxStreams, setFebboxStreams] = useState<FebboxStream[]>([]);
   const [febboxLoading, setFebboxLoading] = useState(false);
   const [febboxError, setFebboxError] = useState<string | null>(null);
 
@@ -315,6 +317,7 @@ export default function TitleDetail() {
     if (!title || title.type === 'ANIME' || serverId !== 'febbox' || !title.tmdbId) return;
     const reqId = ++febboxReqRef.current;
     setFebboxUrl(null);
+    setFebboxStreams([]);
     setFebboxError(null);
     setFebboxLoading(true);
     api.showbox.link(
@@ -326,8 +329,16 @@ export default function TitleDetail() {
     )
       .then((data: any) => {
         if (reqId !== febboxReqRef.current) return;
-        if (data?.embedUrl) setFebboxUrl(data.embedUrl);
-        else setFebboxError('FebBox stream not available for this title');
+        const streams: FebboxStream[] = data?.streams ?? [];
+        if (streams.length > 0) {
+          // Prefer native HLS playback — no FebBox login required
+          setFebboxStreams(streams);
+          setFebboxUrl('__native__'); // sentinel so embedUrl is truthy
+        } else if (data?.embedUrl) {
+          setFebboxUrl(data.embedUrl);
+        } else {
+          setFebboxError('FebBox stream not available for this title');
+        }
       })
       .catch((err: any) => {
         if (reqId !== febboxReqRef.current) return;
@@ -1042,8 +1053,17 @@ export default function TitleDetail() {
                 </div>
               )}
 
-              {/* The actual iframe */}
-              {isPlaying && !iframeError && (
+              {/* FebBox: native HLS player — no login required */}
+              {isPlaying && serverId === 'febbox' && febboxStreams.length > 0 && (
+                <FebBoxPlayer
+                  key={`febbox-native-${selectedSeason}-${selectedEp}-${iframeKey}`}
+                  streams={febboxStreams}
+                  iframeKey={iframeKey}
+                />
+              )}
+
+              {/* The actual iframe — all servers except FebBox native */}
+              {isPlaying && !iframeError && !(serverId === 'febbox' && febboxStreams.length > 0) && (
                 <iframe
                   key={`${serverId}-${selectedSeason}-${selectedEp}-${iframeKey}`}
                   src={embedUrl || ''}

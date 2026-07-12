@@ -1,5 +1,6 @@
 import { useEffect, useRef } from 'react';
-import { SERVERS } from './VideoPlayer';
+import { SERVERS, FebBoxPlayer } from './VideoPlayer';
+import type { FebboxStream } from './VideoPlayer';
 import { InlineLoader } from './GlassLoader';
 import '@/styles/PlayerModal.css';
 
@@ -18,6 +19,8 @@ interface PlayerModalProps {
   setSelectedEp: React.Dispatch<React.SetStateAction<number>>;
   episodes: any[];
   embedUrl: string | null;
+  /** Direct HLS streams from FebBox — renders native player when present */
+  febboxStreams?: FebboxStream[];
   onAnimePrev?: () => void;
   onAnimeNext?: () => void;
   anicrushEpCount?: number;
@@ -38,10 +41,12 @@ export default function PlayerModal({
   setSelectedEp,
   episodes,
   embedUrl,
+  febboxStreams = [],
   onAnimePrev,
   onAnimeNext,
   anicrushEpCount = 0,
 }: PlayerModalProps) {
+  const showFebboxNative = serverId === 'febbox' && febboxStreams.length > 0;
   const iframeRef = useRef<HTMLIFrameElement>(null);
 
   useEffect(() => {
@@ -142,16 +147,17 @@ export default function PlayerModal({
           </div>
         )}
 
-        {/* Video iframe */}
+        {/* Video player */}
         <div className="video-wrapper">
-          {embedUrl ? (
+          {showFebboxNative ? (
+            <FebBoxPlayer streams={febboxStreams} iframeKey={iframeKey} />
+          ) : embedUrl && embedUrl !== '__native__' ? (
             <iframe
               ref={iframeRef}
               key={`${serverId}-${selectedSeason}-${selectedEp}-${iframeKey}`}
               src={embedUrl}
               allowFullScreen
               allow="autoplay; encrypted-media; fullscreen; picture-in-picture"
-              referrerPolicy="no-referrer"
               title={title.name}
             />
           ) : (
