@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect, useCallback, useRef, useMemo, memo } from 'react';
 import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
 import { api } from '../lib/api';
 import { useAuth } from '../lib/auth';
@@ -10,9 +10,12 @@ import {
 } from '../lib/anicrush';
 import { SERVERS, FebBoxPlayer } from '../components/VideoPlayer';
 import type { FebboxStream } from '../components/VideoPlayer';
-import { InlineLoader } from '../components/GlassLoader';
 import GlassCard from '../components/GlassCard';
 import { navigateToAnime } from '../lib/animeResolve';
+import EpisodeBrowser from '../components/title-detail/EpisodeBrowser';
+import RelatedRow from '../components/title-detail/RelatedRow';
+import TrailerModal from '../components/title-detail/TrailerModal';
+import { PageSkeleton, RowSkeleton, CharacterRowSkeleton } from '../components/title-detail/Skeletons';
 import '@/styles/MovieDetailPage.css';
 import type { Tier } from '../components/RatingWidget';
 
@@ -29,7 +32,7 @@ const TIER_LABEL: Record<string, string> = {
 
 /** Similar/Recommended TMDB card — resolves the TMDB item into the local
  * catalog on click and routes to the SAME unified /title/:id detail page. */
-function RelatedTmdbCard({ item }: { item: any }) {
+const RelatedTmdbCard = memo(function RelatedTmdbCard({ item }: { item: any }) {
   const nav = useNavigate();
   const handleClick = async () => {
     try {
@@ -46,11 +49,11 @@ function RelatedTmdbCard({ item }: { item: any }) {
       onClick={handleClick}
     />
   );
-}
+});
 
 /** AniList relation card — resolves the related anime into the local catalog
  * on click and routes to the SAME unified /title/:id detail page. */
-function RelatedAnimeCard({ node }: { node: any }) {
+const RelatedAnimeCard = memo(function RelatedAnimeCard({ node }: { node: any }) {
   const nav = useNavigate();
   const handleClick = async () => {
     // Relation edges only carry id/title/format/coverImage — fetch the full
@@ -71,7 +74,19 @@ function RelatedAnimeCard({ node }: { node: any }) {
       onClick={handleClick}
     />
   );
-}
+});
+
+/** Memoized character avatar — the AniList characters row can have 20+ entries. */
+const CharacterAvatar = memo(function CharacterAvatar({ name, imageUrl }: { name: string; imageUrl?: string }) {
+  return (
+    <div className="character-avatar-wrap">
+      <div className="character-avatar">
+        {imageUrl && <img src={imageUrl} alt="" loading="lazy" decoding="async" />}
+      </div>
+      <p className="character-name">{name}</p>
+    </div>
+  );
+});
 
 export default function TitleDetail() {
   const { id } = useParams();
@@ -101,6 +116,19 @@ export default function TitleDetail() {
   // Season / episode — declared early so saveProgress can reference them
   const [selectedSeason, setSelectedSeason] = useState(1);
   const [selectedEp, setSelectedEp] = useState(1);
+
+  // Trailer — always a user-initiated modal, never an autoplaying hero embed.
+  const [trailerAvailable, setTrailerAvailable] = useState<boolean | null>(null);
+  const [trailerModalOpen, setTrailerModalOpen] = useState(false);
+
+  // "Continue watching" indicator surfaced in the episode browser.
+  const [watchProgress, setWatchProgress] = useState<{ seasonNumber: number | null; episodeNumber: number | null; positionSeconds: number; durationSeconds: number | null } | null>(null);
+
+  // Loading flags for sections that populate after the initial title fetch,
+  // so their skeletons can match the final layout instead of popping in empty.
+  const [similarLoading, setSimilarLoading] = useState(true);
+  const [recommendedLoading, setRecommendedLoading] = useState(true);
+  const [anilistLoading, setAnilistLoading] = useState(false);
 
   // ── Watch progress / history tracking ────────────────────────────────────
   // Iframes are cross-origin so we can't read currentTime.  We track wall-clock
@@ -151,6 +179,12 @@ export default function TitleDetail() {
         progressBaseRef.current = prog.positionSeconds ?? 0;
         if (title.type === 'SERIES' && prog.seasonNumber) setSelectedSeason(prog.seasonNumber);
         if ((title.type === 'SERIES' || title.type === 'ANIME') && prog.episodeNumber) setSelectedEp(prog.episodeNumber);
+        setWatchProgress({
+          seasonNumber: prog.seasonNumber ?? null,
+          episodeNumber: prog.episodeNumber ?? null,
+          positionSeconds: prog.positionSeconds ?? 0,
+          durationSeconds: prog.durationSeconds ?? null,
+        });
       })
       .catch(() => { progressBaseRef.current = 0; });
   }, [user, id, title]); // eslint-disable-line react-hooks/exhaustive-deps
@@ -250,7 +284,6 @@ export default function TitleDetail() {
   // Season / episode (SERIES only)
   const [seasons, setSeasons] = useState<any[]>([]);
   const [episodes, setEpisodes] = useState<any[]>([]);
-  const [epSearch, setEpSearch] = useState('');
   const [seasonsLoading, setSeasonsLoading] = useState(false);
   const [epsLoading, setEpsLoading] = useState(false);
 
@@ -432,23 +465,43 @@ export default function TitleDetail() {
 
     // Similar + recommendations (needs tmdbId) — fired in parallel
     if (title.tmdbId) {
+      setSimilarLoading(true);
+      setRecommendedLoading(true);
       api.titles.similar(id)
         .then((data) => { if (!cancelled) setSimilarTitles(data); })
-        .catch(() => { if (!cancelled) setSimilarTitles([]); });
+        .catch(() => { if (!cancelled) setSimilarTitles([]); })
+        .finally(() => { if (!cancelled) setSimilarLoading(false); });
       api.titles.recommendations(id)
         .then((data) => { if (!cancelled) setRecommendedTitles(data); })
-        .catch(() => { if (!cancelled) setRecommendedTitles([]); });
+        .catch(() => { if (!cancelled) setRecommendedTitles([]); })
+        .finally(() => { if (!cancelled) setRecommendedLoading(false); });
     } else {
       setSimilarTitles([]);
       setRecommendedTitles([]);
+      setSimilarLoading(false);
+      setRecommendedLoading(false);
     }
 
     // AniList metadata (anime only) — fired in parallel
     if (title.type === 'ANIME') {
       setAnilistData(null);
+      setAnilistLoading(true);
       getAnimeDetail(title.anilistId ? { id: title.anilistId } : { name: title.name })
         .then((data) => { if (!cancelled && data) setAnilistData(data); })
-        .catch(() => {});
+        .catch(() => {})
+        .finally(() => { if (!cancelled) setAnilistLoading(false); });
+    }
+
+    // Trailer availability — a quick, CORS-friendly oEmbed probe. If the video
+    // has been removed/made private, this fails fast and we hide the CTA
+    // instead of showing a "Watch Trailer" button that leads to a broken player.
+    if (title.trailerYoutubeId) {
+      setTrailerAvailable(null);
+      fetch(`https://www.youtube.com/oembed?url=${encodeURIComponent(`https://www.youtube.com/watch?v=${title.trailerYoutubeId}`)}&format=json`)
+        .then((res) => { if (!cancelled) setTrailerAvailable(res.ok); })
+        .catch(() => { if (!cancelled) setTrailerAvailable(false); });
+    } else {
+      setTrailerAvailable(false);
     }
 
     return () => { cancelled = true; };
@@ -697,14 +750,36 @@ export default function TitleDetail() {
     }
   };
 
-  const animePrev = useCallback(() => {
-    openAnimePlayer(Math.max(1, selectedEp - 1));
-  }, [selectedEp, openAnimePlayer]);
+  /** Jump straight to a given episode number, routed through whichever
+   *  provider is currently active — used by the episode browser list. */
+  const selectAnimeEpisode = useCallback((epNum: number) => {
+    if (animeProvider === 'filmu' || animeProvider === 'screenscape-embed') {
+      setSelectedEp(epNum);
+      setIframeKey(k => k + 1);
+    } else if (animeProvider === 'gogoanime') {
+      openGogoPlayer(epNum);
+    } else {
+      openAnimePlayer(epNum);
+    }
+  }, [animeProvider, openGogoPlayer, openAnimePlayer]);
 
-  const animeNext = useCallback(() => {
-    if (anicrushEpCount > 0 && selectedEp >= anicrushEpCount) return;
-    openAnimePlayer(selectedEp + 1);
-  }, [selectedEp, anicrushEpCount, openAnimePlayer]);
+  // Normalised episode list for the anime episode browser — prefers real
+  // per-episode metadata from GogoAnime when available, otherwise falls back
+  // to a plain numbered list (Anicrush/Filmu/Screenscape only expose a count).
+  const animeEpisodeList = useMemo(() => {
+    if (animeProvider === 'gogoanime' && gogoEpisodes.length > 0) {
+      return gogoEpisodes.map((e: any) => ({
+        episodeNumber: Number(e.number),
+        name: e.title || `Episode ${e.number}`,
+        stillUrl: e.image || null,
+      }));
+    }
+    const count = anicrushEpCount || gogoEpCount || 0;
+    return Array.from({ length: count }, (_, i) => ({
+      episodeNumber: i + 1,
+      name: `Episode ${i + 1}`,
+    }));
+  }, [animeProvider, gogoEpisodes, anicrushEpCount, gogoEpCount]);
 
   const submitRating = async () => {
     if (!myTier || !id) return;
@@ -750,11 +825,7 @@ export default function TitleDetail() {
     </div>
   );
 
-  if (!title) return (
-    <div style={{ minHeight: '100vh', background: '#090909' }}>
-      <InlineLoader label="Loading title…" minHeight={window.innerHeight ? window.innerHeight - 80 : 600} />
-    </div>
-  );
+  if (!title) return <PageSkeleton />;
 
   const embedUrl = getEmbedUrl();
   const isStaticAnimeProvider = animeProvider === 'filmu' || animeProvider === 'screenscape-embed';
@@ -788,12 +859,6 @@ export default function TitleDetail() {
       }, TIERS[0]).label
     : null;
 
-  const filteredEps = episodes.filter(e =>
-    !epSearch ||
-    String(e.episodeNumber).includes(epSearch) ||
-    e.name.toLowerCase().includes(epSearch.toLowerCase())
-  );
-
   const heroBgStyle = backdropUrl
     ? {
         backgroundImage: `radial-gradient(ellipse 120% 90% at 30% 10%, rgba(196,72,90,0.12), transparent 55%), url(${backdropUrl})`,
@@ -818,24 +883,21 @@ export default function TitleDetail() {
         <div style={{ width: 36 }} />
       </header>
 
-      {/* ── Hero — trailer or backdrop ───────────────────────────── */}
-      {/* D: trailer is constrained inside .hero (height 40-75vh, overflow:hidden)  */}
-      {/*    The iframe uses cover-scaling CSS (.hero-trailer) so it fills the box   */}
-      {/*    without overflowing. No giant full-bleed YouTube embed.                 */}
+      {/* ── Hero ─────────────────────────────────────────────────── */}
+      {/* Always the static backdrop — no autoplaying embed, so there's never a
+          black box or a broken iframe fighting the browser's autoplay policy.
+          A trailer, when one exists and actually resolves, is opened on demand
+          in a modal (see TrailerModal below). */}
       <div className="hero">
-        {title.trailerYoutubeId ? (
-          <iframe
-            className="hero-trailer"
-            src={`https://www.youtube-nocookie.com/embed/${title.trailerYoutubeId}?autoplay=1&mute=1&loop=1&playlist=${title.trailerYoutubeId}&controls=0&showinfo=0&rel=0&iv_load_policy=3&modestbranding=1&playsinline=1`}
-            allow="autoplay; encrypted-media"
-            allowFullScreen={false}
-            title="Trailer"
-          />
-        ) : (
-          <div className="hero-bg" style={heroBgStyle} />
-        )}
+        <div className="hero-bg" style={heroBgStyle} />
         <div className="hero-gradient" />
         <div className="hero-noise" />
+        {trailerAvailable && (
+          <button className="hero-trailer-btn" onClick={() => setTrailerModalOpen(true)}>
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor"><polygon points="8,5 8,19 19,12" /></svg>
+            Watch Trailer
+          </button>
+        )}
         {/* Play button on hero only for ANIME (async embed fetch) */}
         {title.type === 'ANIME' && canPlay && !(animeProvider === 'gogoanime' ? gogoEmbedLoading : (isStaticAnimeProvider ? false : animeEmbedLoading)) && (
           <button
@@ -1193,60 +1255,33 @@ export default function TitleDetail() {
               )}
             </div>
 
-            {/* Episode row */}
-            <div className="anime-ep-row">
+            {/* Episode browser — search, scrollable/virtualized list, thumbnails,
+                metadata, and a "continue watching" indicator */}
+            <EpisodeBrowser
+              episodes={animeEpisodeList}
+              selectedEp={selectedEp}
+              onSelectEpisode={selectAnimeEpisode}
+              continueEpisode={watchProgress?.episodeNumber ?? null}
+              continuePct={
+                watchProgress?.durationSeconds
+                  ? Math.min(100, Math.round((watchProgress.positionSeconds / watchProgress.durationSeconds) * 100))
+                  : 0
+              }
+              emptyLabel="Episode list unavailable for this source."
+            />
+            {!isStaticAnimeProvider && (
               <button
-                className="ep-nav-btn"
+                className="dp-btn dp-btn-play"
+                style={{ marginTop: 12, width: '100%' }}
                 onClick={() => {
-                  const prev = Math.max(1, selectedEp - 1);
-                  setSelectedEp(prev);
-                  if (isStaticAnimeProvider) {
-                    setIframeKey(k => k + 1);
-                  } else if (animeProvider === 'gogoanime') {
-                    openGogoPlayer(prev);
-                  } else {
-                    animePrev();
-                  }
+                  if (animeProvider === 'gogoanime') openGogoPlayer();
+                  else openAnimePlayer();
                 }}
-                disabled={selectedEp <= 1}
-              >‹</button>
-              <span className="ep-label">Ep {selectedEp}</span>
-              <button
-                className="ep-nav-btn"
-                onClick={() => {
-                  const epCount = animeProvider === 'anicrush' ? anicrushEpCount : gogoEpCount;
-                  if (!isStaticAnimeProvider && epCount > 0 && selectedEp >= epCount) return;
-                  const next = selectedEp + 1;
-                  setSelectedEp(next);
-                  if (isStaticAnimeProvider) {
-                    setIframeKey(k => k + 1);
-                  } else if (animeProvider === 'gogoanime') {
-                    openGogoPlayer(next);
-                  } else {
-                    animeNext();
-                  }
-                }}
-                disabled={
-                  isStaticAnimeProvider ? false
-                  : animeProvider === 'anicrush'
-                    ? anicrushEpCount > 0 && selectedEp >= anicrushEpCount
-                    : gogoEpCount > 0 && selectedEp >= gogoEpCount
-                }
-              >›</button>
-              {!isStaticAnimeProvider && (
-                <button
-                  className="dp-btn dp-btn-play"
-                  style={{ flex: '0 0 auto' }}
-                  onClick={() => {
-                    if (animeProvider === 'gogoanime') openGogoPlayer();
-                    else openAnimePlayer();
-                  }}
-                  disabled={animeProvider === 'gogoanime' ? gogoEmbedLoading : animeEmbedLoading}
-                >
-                  {(animeProvider === 'gogoanime' ? gogoEmbedLoading : animeEmbedLoading) ? 'Loading…' : '▶ Watch'}
-                </button>
-              )}
-            </div>
+                disabled={animeProvider === 'gogoanime' ? gogoEmbedLoading : animeEmbedLoading}
+              >
+                {(animeProvider === 'gogoanime' ? gogoEmbedLoading : animeEmbedLoading) ? 'Loading…' : `▶ Watch Episode ${selectedEp}`}
+              </button>
+            )}
 
             {/* GogoAnime error */}
             {animeProvider === 'gogoanime' && gogoError && (
@@ -1341,68 +1376,22 @@ export default function TitleDetail() {
               <span className="dp-section-title">Episodes</span>
             </div>
 
-            {seasonsLoading ? (
-              <div className="anime-status pulse">Loading seasons…</div>
-            ) : seasons.length > 0 && (
-              <div className="season-tabs">
-                {seasons.map(s => (
-                  <button
-                    key={s.seasonNumber}
-                    className={`season-tab${selectedSeason === s.seasonNumber ? ' active' : ''}`}
-                    onClick={() => setSelectedSeason(s.seasonNumber)}
-                  >
-                    {s.name || `S${s.seasonNumber}`}
-                    <span style={{ marginLeft: 4, opacity: 0.45 }}>({s.episodeCount})</span>
-                  </button>
-                ))}
-              </div>
-            )}
-
-            {episodes.length > 5 && (
-              <div className="ep-search">
-                <svg className="ep-search-icon" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                  <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
-                </svg>
-                <input
-                  className="ep-search-input"
-                  type="text"
-                  value={epSearch}
-                  onChange={e => setEpSearch(e.target.value)}
-                  placeholder="Search episodes…"
-                />
-              </div>
-            )}
-
-            {epsLoading ? (
-              <div className="anime-status pulse">Loading episodes…</div>
-            ) : (
-              <div className="ep-list">
-                {filteredEps.map(ep => (
-                  <div
-                    key={ep.episodeNumber}
-                    className={`ep-row${selectedEp === ep.episodeNumber ? ' active' : ''}`}
-                    onClick={() => { setSelectedEp(ep.episodeNumber); openPlayer(ep.episodeNumber); }}
-                  >
-                    <div className="ep-thumb">
-                      {ep.stillUrl
-                        ? <img src={ep.stillUrl} alt="" loading="lazy" />
-                        : <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><polygon points="8,5 8,19 19,12"/></svg>
-                      }
-                    </div>
-                    <div className="ep-info">
-                      <div>
-                        <span className="ep-num">{ep.episodeNumber}.</span>
-                        <span className="ep-name">{ep.name}</span>
-                      </div>
-                      {ep.overview && <p className="ep-overview">{ep.overview}</p>}
-                    </div>
-                  </div>
-                ))}
-                {filteredEps.length === 0 && !epsLoading && (
-                  <div className="empty-note">No episodes found.</div>
-                )}
-              </div>
-            )}
+            <EpisodeBrowser
+              episodes={episodes}
+              loading={epsLoading}
+              selectedEp={selectedEp}
+              onSelectEpisode={(ep) => { setSelectedEp(ep); openPlayer(ep); }}
+              seasons={seasons}
+              selectedSeason={selectedSeason}
+              onSelectSeason={setSelectedSeason}
+              seasonsLoading={seasonsLoading}
+              continueEpisode={watchProgress?.seasonNumber === selectedSeason ? watchProgress?.episodeNumber ?? null : null}
+              continuePct={
+                watchProgress?.durationSeconds
+                  ? Math.min(100, Math.round((watchProgress.positionSeconds / watchProgress.durationSeconds) * 100))
+                  : 0
+              }
+            />
           </div>
         )}
 
@@ -1455,81 +1444,59 @@ export default function TitleDetail() {
         )}
 
         {/* ── Anime-only: characters ────────────────────────────── */}
-        {title.type === 'ANIME' && anilistData?.characters?.edges?.length > 0 && (
-          <div className="dp-section">
-            <div className="dp-section-head">
-              <span className="dp-section-title">Characters</span>
-            </div>
-            <div style={{ display: 'flex', gap: 12, overflowX: 'auto', paddingBottom: 4 }}>
-              {anilistData.characters.edges.map((e: any) => (
-                <div key={e.node.id} style={{ flex: '0 0 auto', width: 72, textAlign: 'center' }}>
-                  <div
-                    style={{
-                      width: 64, height: 64, borderRadius: '50%', margin: '0 auto 6px',
-                      backgroundImage: e.node.image?.large ? `url(${e.node.image.large})` : undefined,
-                      backgroundSize: 'cover', backgroundPosition: 'center',
-                      backgroundColor: 'rgba(255,255,255,0.06)',
-                      border: '1px solid rgba(255,255,255,0.08)',
-                    }}
-                  />
-                  <p className="font-mono text-[9px] text-ink-faint" style={{ lineHeight: 1.3 }}>{e.node.name.full}</p>
-                </div>
-              ))}
-            </div>
-          </div>
+        {title.type === 'ANIME' && anilistLoading && (
+          <RelatedRow title="Characters"><CharacterRowSkeleton /></RelatedRow>
+        )}
+        {title.type === 'ANIME' && !anilistLoading && anilistData?.characters?.edges?.length > 0 && (
+          <RelatedRow title="Characters">
+            {anilistData.characters.edges.map((e: any) => (
+              <div key={e.node.id} style={{ flex: '0 0 auto', width: 72 }}>
+                <CharacterAvatar name={e.node.name.full} imageUrl={e.node.image?.large} />
+              </div>
+            ))}
+          </RelatedRow>
         )}
 
         {/* ── Anime-only: relations ─────────────────────────────── */}
-        {title.type === 'ANIME' && anilistData?.relations?.edges?.length > 0 && (
-          <div className="dp-section">
-            <div className="dp-section-head">
-              <span className="dp-section-title">Related</span>
-            </div>
-            <div style={{ display: 'flex', gap: 12, overflowX: 'auto', paddingBottom: 4 }}>
-              {anilistData.relations.edges
-                .filter((e: any) => e.node.format !== 'MANGA' && e.node.format !== 'NOVEL')
-                .slice(0, 10)
-                .map((e: any) => (
-                  <div key={e.node.id} style={{ flex: '0 0 auto', width: 130 }}>
-                    <RelatedAnimeCard node={e.node} />
-                  </div>
-                ))}
-            </div>
-          </div>
+        {title.type === 'ANIME' && !anilistLoading && anilistData?.relations?.edges?.length > 0 && (
+          <RelatedRow title="Related">
+            {anilistData.relations.edges
+              .filter((e: any) => e.node.format !== 'MANGA' && e.node.format !== 'NOVEL')
+              .slice(0, 10)
+              .map((e: any) => (
+                <div key={e.node.id} style={{ flex: '0 0 auto', width: 130 }}>
+                  <RelatedAnimeCard node={e.node} />
+                </div>
+              ))}
+          </RelatedRow>
         )}
 
         {/* ── Recommendations — TMDB-backed ─────────────────────── */}
-        {recommendedTitles.length > 0 && (
-          <div className="dp-section">
-            <div className="dp-section-head">
-              <span className="dp-section-title">Recommendations</span>
-            </div>
-            {/* C: gap-3 (12px) between cards + padding-x so first/last cards don't clip */}
-            <div style={{ display: 'flex', gap: 14, overflowX: 'auto', paddingBottom: 8, paddingRight: 4 }}>
-              {recommendedTitles.slice(0, 12).map((t: any) => (
-                <div key={t.tmdbId} style={{ flex: '0 0 auto', width: 130 }}>
-                  <RelatedTmdbCard item={t} />
-                </div>
-              ))}
-            </div>
-          </div>
+        {recommendedLoading && title.tmdbId && (
+          <RelatedRow title="Recommendations"><RowSkeleton /></RelatedRow>
+        )}
+        {!recommendedLoading && recommendedTitles.length > 0 && (
+          <RelatedRow title="Recommendations">
+            {recommendedTitles.slice(0, 12).map((t: any) => (
+              <div key={t.tmdbId} style={{ flex: '0 0 auto', width: 130 }}>
+                <RelatedTmdbCard item={t} />
+              </div>
+            ))}
+          </RelatedRow>
         )}
 
         {/* ── Similar titles — TMDB-backed ──────────────────────── */}
-        {similarTitles.length > 0 && (
-          <div className="dp-section">
-            <div className="dp-section-head">
-              <span className="dp-section-title">Similar Titles</span>
-            </div>
-            {/* C: gap-3 (12px) between cards + padding-x so first/last cards don't clip */}
-            <div style={{ display: 'flex', gap: 14, overflowX: 'auto', paddingBottom: 8, paddingRight: 4 }}>
-              {similarTitles.slice(0, 12).map((t: any) => (
-                <div key={t.tmdbId} style={{ flex: '0 0 auto', width: 130 }}>
-                  <RelatedTmdbCard item={t} />
-                </div>
-              ))}
-            </div>
-          </div>
+        {similarLoading && title.tmdbId && (
+          <RelatedRow title="Similar Titles"><RowSkeleton /></RelatedRow>
+        )}
+        {!similarLoading && similarTitles.length > 0 && (
+          <RelatedRow title="Similar Titles">
+            {similarTitles.slice(0, 12).map((t: any) => (
+              <div key={t.tmdbId} style={{ flex: '0 0 auto', width: 130 }}>
+                <RelatedTmdbCard item={t} />
+              </div>
+            ))}
+          </RelatedRow>
         )}
 
         {/* ── Rating card ───────────────────────────────────────── */}
@@ -1638,6 +1605,14 @@ export default function TitleDetail() {
         </div>
 
       </div>
+
+      {trailerModalOpen && title.trailerYoutubeId && (
+        <TrailerModal
+          youtubeId={title.trailerYoutubeId}
+          title={displayName}
+          onClose={() => setTrailerModalOpen(false)}
+        />
+      )}
     </div>
   );
 }

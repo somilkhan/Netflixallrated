@@ -8,3 +8,5 @@
 - [Aperture Star brand identity](brand-identity-aperture-star.md) — logo system lives in client/src/brand/, review at /brand, WebGL fallback caveat for headless screenshots
 - [UI typography decision](typography-decision.md) — Cormorant Garamond replaces Fraunces as the serif font; font-serif in tailwind + index.html + MovieDetailPage.css all updated
 - [Watch History feature](watch-history.md) — WatchProgress model in Prisma; history route at /api/history; wall-clock tracking in TitleDetail; Continue Watching row on Home; push to GitHub for Railway to deploy backend
+- [Client package installs](client-package-installs.md) — repo-root package.json is a separate unused project; client npm packages must be installed inside client/, not via default package tooling
+- [react-window v2 API](react-window-v2.md) — v2 API (List + rowComponent/rowHeight/rowCount/rowProps) differs completely from v1; don't install @types/react-window, it ships its own types

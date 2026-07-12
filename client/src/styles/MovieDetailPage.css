@@ -69,33 +69,19 @@
 .hero {
   position: relative;
   width: 100%;
-  height: 75vh;
-  min-height: 320px;
-  max-height: 700px;
+  height: 52vh;
+  min-height: 360px;
+  max-height: 560px;
   overflow: hidden;
   background: #000;
 }
-/* Mobile: roughly half the desktop height so it doesn't fill the whole screen */
+/* Compact hero on mobile — never so tall it pushes content below the fold */
 @media (max-width: 640px) {
   .hero {
-    height: 40vh;
-    min-height: 180px;
-    max-height: 300px;
+    height: 46vh;
+    min-height: 260px;
+    max-height: 420px;
   }
-}
-
-.hero-trailer {
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  /* Scale to cover — iframe is always 16:9 so we over-size it */
-  width: 100vw;
-  height: 56.25vw; /* 16:9 */
-  min-height: 100%;
-  min-width: 177.78vh; /* 16:9 */
-  transform: translate(-50%, -50%);
-  pointer-events: none;
-  border: none;
 }
 
 .hero-bg {
@@ -154,6 +140,90 @@
   transform: translate(-50%,-50%) scale(1.1);
 }
 
+/* Trailer CTA — only rendered once an oEmbed probe confirms the video
+   actually resolves, so it never leads to a broken player. */
+.hero-trailer-btn {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  z-index: 6;
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  padding: 9px 15px;
+  border-radius: 999px;
+  background: rgba(6,5,5,0.55);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border: 1px solid rgba(255,255,255,0.22);
+  color: var(--dp-ink);
+  font-family: 'Inter', sans-serif;
+  font-size: 12.5px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s, transform 0.15s;
+}
+.hero-trailer-btn:hover {
+  background: rgba(6,5,5,0.75);
+  border-color: rgba(255,255,255,0.4);
+  transform: translateY(-1px);
+}
+.hero-trailer-btn:active { transform: translateY(0) scale(0.97); }
+
+/* ===== TRAILER MODAL ===== */
+.trailer-modal-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 200;
+  background: rgba(4,3,3,0.9);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  animation: fadeIn 0.18s ease-out;
+}
+@keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+.trailer-modal-content {
+  position: relative;
+  width: 100%;
+  max-width: 920px;
+  animation: scaleIn 0.2s cubic-bezier(.2,.8,.3,1);
+}
+@keyframes scaleIn { from { opacity: 0; transform: scale(0.97); } to { opacity: 1; transform: scale(1); } }
+.trailer-modal-frame {
+  position: relative;
+  width: 100%;
+  padding-bottom: 56.25%;
+  background: #000;
+  border-radius: 14px;
+  overflow: hidden;
+  border: 1px solid var(--dp-hairline-bright);
+  box-shadow: 0 30px 80px -20px rgba(0,0,0,0.8);
+}
+.trailer-modal-frame iframe {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  border: none;
+}
+.trailer-modal-close {
+  position: absolute;
+  top: -44px;
+  right: 0;
+  width: 34px; height: 34px;
+  border-radius: 50%;
+  background: rgba(255,255,255,0.08);
+  border: 1px solid rgba(255,255,255,0.2);
+  color: var(--dp-ink);
+  display: flex; align-items: center; justify-content: center;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+.trailer-modal-close:hover { background: rgba(255,255,255,0.18); }
+
 /* ===== WATCH SECTION (Movie / Series) ===== */
 .watch-section {
   margin-top: 28px;
@@ -167,7 +237,7 @@
 /* Provider tabs row */
 .provider-tabs {
   display: flex;
-  gap: 4px;
+  gap: 8px;
   padding: 10px 12px;
   border-bottom: 1px solid var(--dp-hairline);
   background: var(--dp-glass);
@@ -178,7 +248,8 @@
 
 .provider-tab {
   flex-shrink: 0;
-  padding: 7px 14px;
+  padding: 9px 14px;
+  min-height: 38px;
   border-radius: 10px;
   border: 1px solid transparent;
   background: transparent;
@@ -631,6 +702,56 @@
 .server-option:hover { background: rgba(255,255,255,0.05); color: var(--dp-ink); }
 .server-option.active { color: var(--dp-maroon-bright); font-weight: 600; }
 
+/* ===== HORIZONTAL "RELATED" ROWS (characters, relations, recs, similar) ===== */
+/* Bleed pattern: the row spans the full viewport width so a scroll gesture
+   reaches the true screen edge, while inner padding matches the shell gutter
+   so resting cards never sit flush against the glass. */
+.related-row {
+  display: flex;
+  gap: 14px;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+  scroll-snap-type: x proximity;
+  margin: 0 -20px;
+  padding: 4px 20px 10px;
+}
+.related-row::-webkit-scrollbar { display: none; }
+.related-row > * { scroll-snap-align: start; }
+
+.character-avatar-wrap { text-align: center; }
+.character-avatar {
+  width: 64px; height: 64px;
+  border-radius: 50%;
+  margin: 0 auto 6px;
+  overflow: hidden;
+  background: rgba(255,255,255,0.06);
+  border: 1px solid rgba(255,255,255,0.08);
+}
+.character-avatar img { width: 100%; height: 100%; object-fit: cover; }
+.character-name {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 9px;
+  line-height: 1.3;
+  color: var(--dp-ink-faintest);
+}
+
+/* ===== SKELETON LOADING STATES ===== */
+/* Transform/opacity-only pulse — cheap to composite, matches the existing
+   .anime-status.pulse / skeleton-spinner motion language on this page. */
+@keyframes skelPulse { 0%, 100% { opacity: 0.5; } 50% { opacity: 1; } }
+.skel-bar, .skel-block {
+  background: rgba(245,240,236,0.07);
+  animation: skelPulse 1.6s ease-in-out infinite;
+}
+@media (prefers-reduced-motion: reduce) {
+  .skel-bar, .skel-block { animation: none; opacity: 0.7; }
+}
+.skel-hero {
+  background: linear-gradient(160deg, rgba(156,51,62,0.14), rgba(255,255,255,0.03));
+}
+.skel-ep-row { cursor: default; pointer-events: none; }
+
 /* ===== SECTION WRAPPER ===== */
 .dp-section { margin-top: 36px; }
 .dp-section-head {
@@ -696,7 +817,8 @@
 .season-tab {
   font-family: 'IBM Plex Mono', monospace;
   font-size: 11.5px;
-  padding: 5px 13px;
+  padding: 8px 14px;
+  min-height: 36px;
   border-radius: 999px;
   border: 1px solid var(--dp-hairline);
   background: var(--dp-glass);
@@ -748,6 +870,7 @@
 }
 
 /* ===== EPISODE LIST ===== */
+/* Non-virtualized fallback list (skeleton) */
 .ep-list {
   display: flex;
   flex-direction: column;
@@ -757,6 +880,15 @@
   scrollbar-width: none;
 }
 .ep-list::-webkit-scrollbar { display: none; }
+
+/* Virtualized list (react-window) — rows are absolutely positioned by the
+   library at fixed intervals, so the visual gap between rows comes from
+   each row filling slightly less than its allotted cell height. */
+.ep-list-virtual {
+  scrollbar-width: none;
+}
+.ep-list-virtual::-webkit-scrollbar { display: none; }
+.ep-list-virtual .ep-row { height: calc(100% - 8px); }
 
 .ep-row {
   display: flex;
@@ -773,6 +905,7 @@
 .ep-row.active { border-color: var(--dp-maroon-bright); background: rgba(156,51,62,0.12); }
 
 .ep-thumb {
+  position: relative;
   width: 76px; height: 46px;
   border-radius: 8px;
   overflow: hidden;
@@ -783,18 +916,46 @@
   color: var(--dp-ink-faintest);
 }
 .ep-thumb img { width: 100%; height: 100%; object-fit: cover; }
+.ep-thumb-progress {
+  position: absolute;
+  left: 0; right: 0; bottom: 0;
+  height: 3px;
+  background: rgba(0,0,0,0.5);
+}
+.ep-thumb-progress-fill {
+  height: 100%;
+  background: var(--dp-maroon-bright);
+}
 
 .ep-info { flex: 1; min-width: 0; }
+.ep-info-top { display: flex; align-items: baseline; gap: 2px; }
 .ep-num {
   font-family: 'IBM Plex Mono', monospace;
   font-size: 10px;
   color: var(--dp-ink-faintest);
   margin-right: 4px;
+  flex-shrink: 0;
 }
 .ep-name {
   font-size: 13px;
   font-weight: 500;
   color: var(--dp-ink);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.ep-info-meta {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 2px;
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 10px;
+  color: var(--dp-ink-faintest);
+}
+.ep-continue-badge {
+  color: var(--dp-maroon-bright);
+  font-weight: 600;
 }
 .ep-overview {
   font-size: 11.5px;
