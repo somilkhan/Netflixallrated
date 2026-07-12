@@ -39,8 +39,8 @@ router.get('/me/:titleId', authenticate, async (req: AuthRequest, res) => {
     const item = await prisma.watchProgress.findUnique({
       where: { userId_titleId: { userId: req.user!.id, titleId: req.params.titleId } },
     });
-    if (!item) return res.status(404).json({ error: 'Not found' });
-    res.json(item);
+    // Return null (not 404) when no record exists — the client treats null as "no progress yet"
+    res.json(item ?? null);
   } catch (err) {
     res.status(500).json({ error: (err as Error).message });
   }

@@ -1,5 +1,5 @@
 import { useNavigate, useLocation } from 'react-router-dom';
-import { Home, Tv, Compass, Sword, BookMarked, User, Shield } from 'lucide-react';
+import { Home, Tv, Compass, Sword, BookMarked, Clock, User, Shield } from 'lucide-react';
 import { useAuth } from '../lib/auth';
 
 const BASE_ITEMS = [
@@ -8,6 +8,7 @@ const BASE_ITEMS = [
   { icon: Compass,     path: '/categories', label: 'Browse' },
   { icon: Sword,       path: '/anime',      label: 'Anime' },
   { icon: BookMarked,  path: '/watchlist',  label: 'Watchlist' },
+  { icon: Clock,       path: '/history',    label: 'History' },
 ];
 
 export default function BottomNav() {
@@ -47,7 +48,7 @@ export default function BottomNav() {
             aria-current={active ? 'page' : undefined}
             className={`
               relative flex flex-col items-center justify-center
-              w-[52px] h-[46px] rounded-[18px]
+              w-[46px] h-[46px] rounded-[18px]
               gap-[3px]
               transition-all duration-200 ease-spring
               focus:outline-none focus-visible:ring-2 focus-visible:ring-maroon-bright/60

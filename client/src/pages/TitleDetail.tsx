@@ -108,6 +108,9 @@ export default function TitleDetail() {
   const progressBaseRef  = useRef(0);   // seconds already saved before this session
   const playStartRef     = useRef<number | null>(null); // Date.now() when play started
   const progressTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  // Mirror of the episodes state in a ref so saveProgress can read it without
+  // needing episodes in its dep array (which would cause unnecessary re-creation).
+  const episodesRef = useRef<any[]>([]);
 
   /** Returns total seconds watched so far (saved base + current session elapsed). */
   const currentPositionSeconds = useCallback(() => {
@@ -121,21 +124,30 @@ export default function TitleDetail() {
   const saveProgress = useCallback((opts?: { completed?: boolean }) => {
     if (!user || !id || !title) return;
     const pos = currentPositionSeconds();
+    // Resolve the episode title from the current episodes list
+    const isSeries = title.type === 'SERIES';
+    const isAnimeType = title.type === 'ANIME';
+    const epTitle = (isSeries || isAnimeType)
+      ? (episodesRef.current.find((e: any) => e.episodeNumber === selectedEp)?.name ?? null)
+      : null;
     api.history.save({
       titleId: id,
       positionSeconds: pos,
       durationSeconds: title.runtimeMinutes ? title.runtimeMinutes * 60 : undefined,
-      seasonNumber:  title.type === 'SERIES' ? selectedSeason : undefined,
-      episodeNumber: (title.type === 'SERIES' || title.type === 'ANIME') ? selectedEp : undefined,
+      seasonNumber:    isSeries ? selectedSeason : null,
+      episodeNumber:   (isSeries || isAnimeType) ? selectedEp : null,
+      episodeTitle:    epTitle,
       completed: opts?.completed,
     }).catch(() => {/* non-fatal */});
   }, [user, id, title, selectedSeason, selectedEp, currentPositionSeconds]);
 
-  // Fetch saved progress when title + user are ready; restore season/ep for series
+  // Fetch saved progress when title + user are ready; restore season/ep for series.
+  // Backend now returns null (not 404) when no record exists — handle both safely.
   useEffect(() => {
     if (!user || !id || !title) return;
     api.history.get(id)
       .then((prog: any) => {
+        if (!prog) return; // no history yet for this title
         progressBaseRef.current = prog.positionSeconds ?? 0;
         if (title.type === 'SERIES' && prog.seasonNumber) setSelectedSeason(prog.seasonNumber);
         if ((title.type === 'SERIES' || title.type === 'ANIME') && prog.episodeNumber) setSelectedEp(prog.episodeNumber);
@@ -289,6 +301,10 @@ export default function TitleDetail() {
       .finally(() => { if (!cancelled) setEpsLoading(false); });
     return () => { cancelled = true; };
   }, [selectedSeason, title, id]);
+
+  // Keep episodesRef in sync so saveProgress can read the current episode name
+  // without episodes appearing in saveProgress's dependency array.
+  useEffect(() => { episodesRef.current = episodes; }, [episodes]);
 
   // FlixHQ auto-resolve — fires when FlixHQ server is selected for movies/TV
   useEffect(() => {
