@@ -1,9 +1,11 @@
 import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { Film } from 'lucide-react';
-import { useLocation } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { api } from '../lib/api';
 import { useAuth } from '../lib/auth';
 import { getRegionCookie, setRegionCookie, normalizeRegion } from '../lib/regionConfig';
+import { slugify } from '../lib/slug';
+import { GENRE_VISUAL, DEFAULT_TINT, PLATFORM_LOGO } from '../lib/categoryVisuals';
 import Ticker from '../components/Ticker';
 import Hero from '../components/Hero';
 import Tabs from '../components/Tabs';
@@ -14,6 +16,7 @@ import type { TmdbItem } from '../components/TmdbCard';
 import RegionPicker from '../components/RegionPicker';
 import { GlassCardSkeleton } from '../components/GlassCard';
 import ContinueWatchingCard from '../components/ContinueWatchingCard';
+import { ImgTile, LogoTile, TileRowSkeleton } from '../components/CategoryTile';
 
 interface GeoRow {
   id: string;
@@ -60,6 +63,10 @@ export default function Home() {
   const [region, setRegion] = useState<string>(() => _cache?.region ?? normalizeRegion(getRegionCookie()));
   const [geoRows, setGeoRows] = useState<GeoRow[]>(_cache?.geoRows ?? []);
   const [geoLoading, setGeoLoading] = useState(false);
+
+  // Studios row — bingr-style platform tile rail
+  const [studios, setStudios] = useState<{ slug: string; label: string; logoUrl?: string }[]>([]);
+  const navigate = useNavigate();
 
   const loadGeoContent = useCallback(async (r: string) => {
     setGeoLoading(true);
@@ -121,6 +128,25 @@ export default function Home() {
     setRegionCookie(newRegion);
     loadGeoContent(newRegion);
   }, [loadGeoContent]);
+
+  useEffect(() => {
+    if (studios.length) return;
+    Promise.all([
+      api.platforms.list().catch(() => []),
+      api.titles.watchProvidersList('US').catch(() => []),
+    ]).then(([platforms, providers]: [any[], any[]]) => {
+      setStudios(
+        platforms.slice(0, 12).map((p: any) => {
+          const slug = slugify(p.name);
+          const liveMatch = providers.find((prov: any) => {
+            const provSlug = slugify(prov.name || '');
+            return provSlug === slug || provSlug.includes(slug) || slug.includes(provSlug);
+          });
+          return { slug, label: p.name, logoUrl: liveMatch?.logoUrl };
+        }),
+      );
+    }).catch(() => {});
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
     // Skip initial fetch when restoring from cache
@@ -242,8 +268,20 @@ export default function Home() {
       )}
 
       {filteredTop10.length > 0 && (
-        <Section title="Top 10 Today" count={`${filteredTop10.length}`} viewAllPath={`/search?q=&type=${TAB_TYPE[activeTab] ?? ''}`}>
+        <Section title="Trending Right Now" count={`${filteredTop10.length}`} viewAllPath={`/search?q=&type=${TAB_TYPE[activeTab] ?? ''}`}>
           {filteredTop10.map((t, i) => <Card key={t.id} title={t} rank={i + 1} />)}
+        </Section>
+      )}
+
+      {showGenre && movies.length > 0 && (
+        <Section title="New Movies" count={`${movies.length}`} viewAllPath="/search?q=&type=MOVIE">
+          {movies.map(t => <Card key={t.id} title={t} />)}
+        </Section>
+      )}
+
+      {showGenre && series.length > 0 && (
+        <Section title="Popular TV Shows" count={`${series.length}`} viewAllPath="/search?q=&type=SERIES">
+          {series.map(t => <Card key={t.id} title={t} />)}
         </Section>
       )}
 
@@ -297,6 +335,52 @@ export default function Home() {
           </Section>
         );
       })}
+
+      {/* Studios — bingr-style platform browse rail */}
+      {showGenre && (
+        <div className="mb-8">
+          <div className="flex items-center justify-between px-5 mb-3">
+            <h2 className="font-serif text-xl font-semibold text-ink">Studios</h2>
+          </div>
+          {studios.length === 0 ? (
+            <TileRowSkeleton />
+          ) : (
+            <div className="flex gap-2.5 overflow-x-auto px-5 pb-1 scrollbar-hide">
+              {studios.map(s => {
+                const known = PLATFORM_LOGO[s.slug];
+                return known ? (
+                  <LogoTile key={s.slug} logo={known.logo} color={known.color} onClick={() => navigate(`/studio/${s.slug}`)} />
+                ) : (
+                  <ImgTile key={s.slug} label={s.label} img={s.logoUrl} tint={DEFAULT_TINT} onClick={() => navigate(`/studio/${s.slug}`)} />
+                );
+              })}
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Popular Genres — bingr-style genre browse rail */}
+      {showGenre && genreList.length > 0 && (
+        <div className="mb-8">
+          <div className="flex items-center justify-between px-5 mb-3">
+            <h2 className="font-serif text-xl font-semibold text-ink">Popular Genres</h2>
+          </div>
+          <div className="flex gap-2.5 overflow-x-auto px-5 pb-1 scrollbar-hide">
+            {genreList.map(genre => {
+              const v = GENRE_VISUAL[genre] ?? { tint: DEFAULT_TINT };
+              return (
+                <ImgTile
+                  key={genre}
+                  label={genre}
+                  img={v.img}
+                  tint={v.tint}
+                  onClick={() => navigate(`/browse/genre/${slugify(genre)}`)}
+                />
+              );
+            })}
+          </div>
+        </div>
+      )}
 
       {top10.length === 0 && trending.length === 0 && recent.length === 0 && !initialLoading && (
         <div className="px-5 py-20 text-center">
