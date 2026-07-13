@@ -3,12 +3,13 @@
 @tailwind utilities;
 
 @layer base {
-  ::selection { background: #7A2530; color: #fff; }
-  :focus-visible { outline: 2px solid #C2434F; outline-offset: 2px; border-radius: 4px; }
+  /* bingr.one: white selection, white focus ring */
+  ::selection { background: rgba(255,255,255,0.2); color: #fff; }
+  :focus-visible { outline: 2px solid rgba(255,255,255,0.5); outline-offset: 2px; border-radius: 4px; }
 
   html {
     scroll-behavior: smooth;
-    background: #000000;
+    background: #0f1014;   /* bingr's exact bg — dark charcoal */
     overflow-x: hidden;
     max-width: 100%;
     -webkit-font-smoothing: antialiased;
@@ -16,10 +17,12 @@
     text-rendering: optimizeLegibility;
   }
   body {
-    background: #000000;
+    background: #0f1014;
     overflow-x: hidden;
     max-width: 100%;
     min-height: 100vh;
+    color: #ffffff;
+    font-family: 'Inter', system-ui, sans-serif;
   }
   #root {
     overflow-x: hidden;
@@ -36,11 +39,11 @@
 .embla__container { display: flex; touch-action: pan-y pinch-zoom; }
 .embla__slide { flex: 0 0 100%; min-width: 0; }
 
-/* ── GlassLoader ────────────────────────────────────────────────────────── */
+/* ── GlassLoader — bingr uses white glow, not maroon ───────────────────── */
 .glass-loader-mark { position: relative; display: flex; align-items: center; justify-content: center; }
 .glass-loader-glow {
   position: absolute; inset: -30%;
-  background: radial-gradient(circle, rgba(194,67,79,0.35) 0%, rgba(194,67,79,0.08) 55%, transparent 75%);
+  background: radial-gradient(circle, rgba(255,255,255,0.15) 0%, rgba(255,255,255,0.04) 55%, transparent 75%);
   filter: blur(6px);
   animation: glGlowPulse 2.2s ease-in-out infinite;
   pointer-events: none;
@@ -48,12 +51,12 @@
 .glass-loader-disc {
   position: absolute; inset: 14%;
   border-radius: 999px;
-  background: rgba(24,16,17,0.55);
-  border: 1px solid rgba(245,240,236,0.1);
+  background: rgba(15,16,20,0.7);
+  border: 1px solid rgba(255,255,255,0.12);
   backdrop-filter: blur(8px);
   -webkit-backdrop-filter: blur(8px);
   display: flex; align-items: center; justify-content: center;
-  box-shadow: inset 0 0 12px rgba(0,0,0,0.4), 0 0 18px -4px rgba(194,67,79,0.35);
+  box-shadow: inset 0 0 12px rgba(0,0,0,0.4);
 }
 .glass-loader-disc svg { margin-left: 2px; }
 .glass-loader-ring { animation: glSpin 1.15s cubic-bezier(.5,.15,.5,.85) infinite; transform-origin: 50% 50%; }
@@ -122,6 +125,13 @@
 }
 
 /* ── Desktop/tablet content offset for the fixed left SideRail ──────────── */
+/* bingr sidebar is 64px (w-16) on desktop */
 @media (min-width: 768px) {
-  .rail-offset { padding-left: 76px; }
+  .rail-offset { padding-left: 64px; }
+}
+
+/* ── bingr display font utility ──────────────────────────────────────────── */
+.font-display {
+  font-family: 'Bebas Neue', Anton, Impact, system-ui, sans-serif;
+  letter-spacing: 0.04em;
 }

@@ -12,3 +12,4 @@
 - [react-window v2 API](react-window-v2.md) — v2 API (List + rowComponent/rowHeight/rowCount/rowProps) differs completely from v1; don't install @types/react-window, it ships its own types
 - [framer-motion / client install gotcha](framer-motion-client-install.md) — package installers can target the wrong root package.json in this monorepo; verify with npm ls inside client/
 - [Bot-protected SPA scraping](bot-protected-spa-scraping.md) — headless Playwright got blocked (blank body) on a Cloudflare/bot-checked site that the Screenshot tool rendered fine; fall back to visual screenshots, not raw HTML/CSS extraction
+- [bingr.one Design System](bingr-design-system.md) — exact tokens: Bebas Neue titles, Inter body, #0f1014 bg, 64px solid sidebar; extracted from their live CSS bundle

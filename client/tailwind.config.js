@@ -4,22 +4,28 @@ export default {
   theme: {
     extend: {
       colors: {
-        void: '#000000',
-        surface: '#0f0f0f',
-        'surface-2': '#1a1a1a',
-        line: '#1f1f1f',
-        'line-bright': '#2e2e2e',
-        maroon: '#7A2530',
+        // bingr.one exact design tokens
+        void:          '#0f1014',   // bingr's main bg — dark charcoal, not pure black
+        surface:       '#1a1c20',   // bingr's card/surface bg
+        'surface-2':   '#1a1c24',
+        line:          '#ffffff1a', // white/10 — bingr uses this for borders
+        'line-bright': '#ffffff26', // white/15
+        maroon:        '#7A2530',   // kept for legacy references
         'maroon-bright': '#C2434F',
-        amber: '#C99A4A',
-        ink: '#ffffff',
-        'ink-dim': '#a0a0a0',
-        'ink-faint': '#555555',
+        amber:         '#C99A4A',
+        ink:           '#ffffff',
+        'ink-dim':     '#a0a0a0',
+        'ink-faint':   '#555555',
       },
       fontFamily: {
-        serif: ['"Cormorant Garamond"', 'Georgia', 'serif'],
-        sans:  ['Inter', 'system-ui', 'sans-serif'],
-        mono:  ['"IBM Plex Mono"', 'Menlo', 'monospace'],
+        // bingr's exact font stack
+        display: ['"Bebas Neue"', 'Anton', 'Impact', 'system-ui', 'sans-serif'],
+        sans:    ['Inter', 'system-ui', 'sans-serif'],
+        serif:   ['"Cormorant Garamond"', 'Georgia', 'serif'],  // keep for legacy
+        mono:    ['"IBM Plex Mono"', 'Menlo', 'monospace'],
+      },
+      letterSpacing: {
+        display: '0.04em',   // bingr's Bebas Neue letter-spacing
       },
       animation: {
         marquee: 'marquee 42s linear infinite',

@@ -22,7 +22,7 @@ const BannerLayer = memo(function BannerLayer({ anime, active }: { anime: any; a
       <div
         className="absolute inset-0 bg-cover bg-center"
         style={{
-          backgroundImage: backdrop ? `url(${backdrop})` : 'linear-gradient(160deg, #111, #000 75%)',
+          backgroundImage: backdrop ? `url(${backdrop})` : 'linear-gradient(160deg, #1a1c20, #0f1014 75%)',
         }}
       />
     </div>

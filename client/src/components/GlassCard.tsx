@@ -90,7 +90,7 @@ const GlassCard = memo(function GlassCard({
       {/* Inner card */}
       <div className="
         relative w-full poster-ratio rounded-[14px] overflow-hidden
-        bg-[#111] border border-white/[0.07]
+        bg-[#1a1c20] border border-white/[0.07]
         transition-all duration-300 ease-spring will-change-transform
         group-hover:-translate-y-[5px] group-hover:scale-[1.022]
         group-hover:border-white/[0.14]
@@ -100,8 +100,8 @@ const GlassCard = memo(function GlassCard({
         {hasImage ? (
           <>
             {!loaded && (
-              <div className="absolute inset-0 bg-surface-2" style={{
-                background: 'linear-gradient(120deg, #161011 25%, #1D1516 50%, #161011 75%)',
+              <div className="absolute inset-0" style={{
+                background: 'linear-gradient(120deg, #1a1c20 25%, #1f2126 50%, #1a1c20 75%)',
                 backgroundSize: '200% 100%',
                 animation: 'glShimmer 1.8s ease-in-out infinite',
               }} />
@@ -178,7 +178,7 @@ const GlassCard = memo(function GlassCard({
           </span>
         )}
 
-        {/* Centre play button */}
+        {/* Centre play button — bingr: white solid circle */}
         <button
           type="button"
           aria-label={`Play ${title}`}
@@ -186,12 +186,11 @@ const GlassCard = memo(function GlassCard({
           className="
             absolute z-20 top-1/2 left-1/2 -translate-x-1/2 -translate-y-[55%]
             h-[40px] w-[40px] flex items-center justify-center rounded-full
-            bg-white/[0.10] border border-white/[0.16] backdrop-blur-md text-ink
+            bg-white text-black
             opacity-0 scale-75 pointer-events-none
             transition-all duration-250 ease-spring
             group-hover:opacity-100 group-hover:scale-100 group-hover:pointer-events-auto
-            hover:bg-maroon/80 hover:border-maroon-bright/50
-            hover:shadow-[0_0_20px_-2px_rgba(194,67,79,0.6)]
+            hover:bg-white/90
           "
         >
           <Play size={13} className="fill-current ml-[2px]" />
@@ -306,7 +305,7 @@ export function GlassCardSkeleton({
         <div
           className="absolute inset-0"
           style={{
-            background: 'linear-gradient(120deg, #161011 25%, #1D1516 50%, #161011 75%)',
+            background: 'linear-gradient(120deg, #1a1c20 25%, #1f2126 50%, #1a1c20 75%)',
             backgroundSize: '200% 100%',
             animation: 'glShimmer 1.8s ease-in-out infinite',
           }}
