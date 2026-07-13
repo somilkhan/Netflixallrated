@@ -26,28 +26,22 @@ const app = express();
 app.set('trust proxy', 1);
 const PORT = process.env.PORT || 3000;
 
-// CLIENT_URL may be a single origin or a comma-separated list (e.g. Railway
-// preview domain + a custom domain), so both work in production.
-const allowedOrigins = (process.env.CLIENT_URL || 'http://localhost:5000')
-  .split(',')
-  .map((o) => o.trim())
-  .filter(Boolean);
-const isDev = process.env.NODE_ENV !== 'production';
-app.use(cors({
-  origin(origin, callback) {
-    // In development (Replit), allow all origins — Vite proxies API calls so
-    // direct browser→Express requests come from *.replit.dev which won't match
-    // localhost. In production, restrict to explicitly listed origins.
-    if (!origin || isDev || allowedOrigins.includes(origin)) return callback(null, true);
-    callback(new Error('Not allowed by CORS'));
-  },
-  credentials: true,
-}));
-if (isDev) {
-  console.log('[cors] dev mode — all origins allowed');
-} else {
-  console.log('[cors] prod mode — allowed origins:', allowedOrigins.join(', '));
-}
+// This API is public and stateless (Bearer-token auth, no session cookies),
+// so there is no cross-site credential to protect — reflecting the caller's
+// origin is safe and avoids CLIENT_URL/allowlist drift breaking legitimate
+// clients (Replit's dev proxy, ephemeral *.replit.dev preview domains, the
+// deployed frontend, etc.) whenever the allowlist falls out of sync.
+//
+// Previously this only allowed origins in CLIENT_URL when NODE_ENV was
+// 'production' — which Railway always sets — so ANY browser POST request
+// (resolve-anilist, resolve-tmdb, watchlist, ratings, history, …) was
+// rejected with a 500 "Not allowed by CORS" unless the request had no
+// Origin header at all (e.g. server-to-server curl). That silently broke
+// every card whose navigation depends on a POST "resolve" call — anime
+// cards, related/recommendation cards, and similar-titles cards — while
+// plain client-side navigation (Home/TV cards with an id already in hand)
+// kept working, making it look like an isolated regression.
+app.use(cors({ origin: true, credentials: true }));
 app.use(express.json());
 
 const limiter = rateLimit({ windowMs: 15 * 60 * 1000, max: 200, standardHeaders: true, legacyHeaders: false });
