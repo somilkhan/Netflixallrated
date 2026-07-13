@@ -45,7 +45,7 @@ async function attachTopTier<T extends { id: string }>(titles: T[]): Promise<(T 
 }
 
 router.get('/', async (req, res) => {
-  const { type, genre, platform, search, page = '1', limit = '20' } = req.query;
+  const { type, genre, platform, search, page = '1', limit = '20', sort } = req.query;
   const skip = (parseInt(page as string) - 1) * parseInt(limit as string);
   const take = Math.min(parseInt(limit as string) || 20, 50);
   const currentYear = new Date().getFullYear();
@@ -57,11 +57,13 @@ router.get('/', async (req, res) => {
     const links = await prisma.titlePlatform.findMany({ where: { platform: { abbr: platform as string } }, select: { titleId: true } });
     where.id = { in: links.map(l => l.titleId) };
   }
+  // "popular" = most community ratings (real signal, not fake) — used for "Top Rated" rows.
+  const orderBy = sort === 'popular' ? [{ ratings: { _count: 'desc' } }, { year: 'desc' }] : { createdAt: 'desc' };
   const [titles, count] = await Promise.all([
-    prisma.title.findMany({ where, skip, take, orderBy: { createdAt: 'desc' }, include: { platforms: { include: { platform: true } }, _count: { select: { ratings: true } } } }),
+    prisma.title.findMany({ where, skip, take, orderBy, include: { platforms: { include: { platform: true } }, _count: { select: { ratings: true } } } }),
     prisma.title.count({ where }),
   ]);
-  res.json({ titles, total: count, page: parseInt(page as string), pages: Math.ceil(count / take) });
+  res.json({ titles: sort === 'popular' ? await attachTopTier(titles) : titles, total: count, page: parseInt(page as string), pages: Math.ceil(count / take) });
 });
 
 router.get('/top10', async (_req, res) => {

@@ -5,7 +5,10 @@ import { api } from '../lib/api';
 import { useAuth } from '../lib/auth';
 import { getRegionCookie, setRegionCookie, normalizeRegion } from '../lib/regionConfig';
 import { slugify } from '../lib/slug';
-import { GENRE_VISUAL, DEFAULT_TINT, PLATFORM_LOGO } from '../lib/categoryVisuals';
+import {
+  GENRE_VISUAL, DEFAULT_TINT, PLATFORM_LOGO,
+  GENRE_TILE_IMG, CURATED_GENRE_TITLE, LANGUAGE_TILE_IMG, POPULAR_LANGUAGES,
+} from '../lib/categoryVisuals';
 import Ticker from '../components/Ticker';
 import Hero from '../components/Hero';
 import Tabs from '../components/Tabs';
@@ -36,6 +39,7 @@ interface HomeCache {
   anime: any[];
   genreList: string[];
   genreSections: Record<string, any[]>;
+  topRatedTV: any[];
   geoRows: GeoRow[];
   region: string;
   scrollY: number;
@@ -67,6 +71,9 @@ export default function Home() {
   // Studios row — bingr-style platform tile rail
   const [studios, setStudios] = useState<{ slug: string; label: string; logoUrl?: string }[]>([]);
   const navigate = useNavigate();
+
+  // "Top Rated TV" — real community-rating signal (most-rated series), not invented.
+  const [topRatedTV, setTopRatedTV] = useState<any[]>(_cache?.topRatedTV ?? []);
 
   const loadGeoContent = useCallback(async (r: string) => {
     setGeoLoading(true);
@@ -162,6 +169,7 @@ export default function Home() {
     api.titles.list({ type: 'MOVIE', limit: '20' }).then(d => setMovies(d.titles || [])).catch(() => {});
     api.titles.list({ type: 'SERIES', limit: '20' }).then(d => setSeries(d.titles || [])).catch(() => {});
     api.titles.list({ type: 'ANIME', limit: '20' }).then(d => setAnime(d.titles || [])).catch(() => {});
+    api.titles.list({ type: 'SERIES', limit: '20', sort: 'popular' }).then(d => setTopRatedTV(d.titles || [])).catch(() => {});
 
     api.titles.genres().then(({ genres }: { genres: { genre: string; count: number }[] }) => {
       const top = genres.slice(0, 10).map(g => g.genre);
@@ -185,11 +193,11 @@ export default function Home() {
     if (top10.length || trending.length || recent.length) {
       _cache = {
         top10, trending, recent, movies, series, anime,
-        genreList, genreSections, geoRows, region,
+        genreList, genreSections, topRatedTV, geoRows, region,
         scrollY: _cache?.scrollY ?? 0,
       };
     }
-  }, [top10, trending, recent, movies, series, anime, genreList, genreSections, geoRows, region]);
+  }, [top10, trending, recent, movies, series, anime, genreList, genreSections, topRatedTV, geoRows, region]);
 
   const TAB_TYPE: Record<string, string> = useMemo(() => (
     { Movies: 'MOVIE', Series: 'SERIES', Anime: 'ANIME' }
@@ -285,6 +293,18 @@ export default function Home() {
         </Section>
       )}
 
+      {showGenre && anime.length > 0 && (
+        <Section title="Anime Series" count={`${anime.length}`} viewAllPath="/search?q=&type=ANIME">
+          {anime.map(t => <Card key={t.id} title={t} />)}
+        </Section>
+      )}
+
+      {showGenre && topRatedTV.length > 0 && (
+        <Section title="Top Rated TV" count={`${topRatedTV.length}`} viewAllPath="/search?q=&type=SERIES">
+          {topRatedTV.map(t => <Card key={t.id} title={t} />)}
+        </Section>
+      )}
+
       {activeTab !== 'All' && typeSpecificItems.length > 0 && (
         <Section
           title={activeTab === 'Movies' ? 'All Movies' : activeTab === 'Series' ? 'TV Shows' : 'Anime'}
@@ -325,12 +345,17 @@ export default function Home() {
         </>
       )}
 
-      {/* Genre sections — plain genre names, no emoji */}
+      {/* Genre sections — curated marketing-style titles, bingr's flavor */}
       {showGenre && genreList.map(genre => {
         const titles = genreSections[genre];
         if (!titles || titles.length === 0) return null;
         return (
-          <Section key={genre} title={genre} count={`${titles.length}`} viewAllPath={`/search?q=${genre}&genre=${genre}`}>
+          <Section
+            key={genre}
+            title={CURATED_GENRE_TITLE[genre] ?? genre}
+            count={`${titles.length}`}
+            viewAllPath={`/search?q=${genre}&genre=${genre}`}
+          >
             {titles.map(t => <Card key={t.id} title={t} />)}
           </Section>
         );
@@ -367,17 +392,37 @@ export default function Home() {
           </div>
           <div className="flex gap-2.5 overflow-x-auto px-5 pb-1 scrollbar-hide">
             {genreList.map(genre => {
-              const v = GENRE_VISUAL[genre] ?? { tint: DEFAULT_TINT };
+              const tint = GENRE_VISUAL[genre]?.tint ?? DEFAULT_TINT;
               return (
                 <ImgTile
                   key={genre}
                   label={genre}
-                  img={v.img}
-                  tint={v.tint}
+                  img={GENRE_TILE_IMG[genre]}
+                  tint={tint}
                   onClick={() => navigate(`/browse/genre/${slugify(genre)}`)}
                 />
               );
             })}
+          </div>
+        </div>
+      )}
+
+      {/* Popular Languages — bingr-style language browse rail */}
+      {showGenre && (
+        <div className="mb-8">
+          <div className="flex items-center justify-between px-5 mb-3">
+            <h2 className="font-serif text-xl font-semibold text-ink">Popular Languages</h2>
+          </div>
+          <div className="flex gap-2.5 overflow-x-auto px-5 pb-1 scrollbar-hide">
+            {POPULAR_LANGUAGES.map(lang => (
+              <ImgTile
+                key={lang}
+                label={lang}
+                img={LANGUAGE_TILE_IMG[lang]}
+                tint={DEFAULT_TINT}
+                onClick={() => navigate(`/language/${slugify(lang)}`)}
+              />
+            ))}
           </div>
         </div>
       )}
