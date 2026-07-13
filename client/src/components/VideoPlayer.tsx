@@ -204,8 +204,8 @@ export function FebBoxPlayer({
             onClick={() => setQualityIdx(i)}
             className={`text-[10px] font-mono px-2 py-0.5 rounded border transition-colors ${
               qualityIdx === i
-                ? 'border-maroon-bright bg-maroon/30 text-ink'
-                : 'border-line/60 text-ink-dim bg-black/60 hover:text-ink hover:border-line-bright'
+                ? 'border-white bg-white/20 text-white'
+                : 'border-white/20 text-[#999] bg-black/60 hover:text-white hover:border-white/40'
             }`}
           >
             {s.quality || s.name || `Q${i + 1}`}

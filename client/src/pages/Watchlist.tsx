@@ -27,15 +27,15 @@ export default function Watchlist() {
     return () => { cancelled = true; };
   }, [user, retryTick]);
 
-  if (!user) return <div className="px-5 py-20 text-center"><p className="text-ink-dim mb-4">Sign in to view your watchlist</p><button onClick={() => nav('/login')} className="px-5 py-2 bg-maroon-bright text-white rounded-lg font-semibold">Sign In</button></div>;
+  if (!user) return <div className="px-5 py-20 text-center"><p className="text-[#888] mb-4">Sign in to view your watchlist</p><button onClick={() => nav('/login')} className="px-5 py-2 bg-white text-black rounded-xl font-semibold hover:bg-white/90 transition-colors">Sign In</button></div>;
 
   const filtered = items.filter(i => i.status === active);
 
   return (
     <div className="px-5 py-8">
-      <h1 className="font-serif text-2xl font-semibold mb-6">My Watchlist</h1>
-      <div className="flex gap-2 mb-6 border-b border-line">
-        {statuses.map(s => <button key={s} onClick={() => setActive(s)} className={`pb-2 font-mono text-xs transition-colors ${active === s ? 'text-ink border-b-2 border-maroon-bright' : 'text-ink-faint hover:text-ink-dim'}`}>{statusLabels[s]} ({items.filter(i => i.status === s).length})</button>)}
+      <h1 className="font-sans text-2xl font-bold mb-6 text-white">My Watchlist</h1>
+      <div className="flex gap-2 mb-6 border-b border-[#1a1a1a]">
+        {statuses.map(s => <button key={s} onClick={() => setActive(s)} className={`pb-2 font-sans text-xs transition-colors ${active === s ? 'text-white border-b-2 border-white' : 'text-[#555] hover:text-[#aaa]'}`}>{statusLabels[s]} ({items.filter(i => i.status === s).length})</button>)}
       </div>
       {loading && (
         <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4">

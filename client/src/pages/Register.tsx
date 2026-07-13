@@ -30,14 +30,14 @@ export default function Register() {
     return (
       <div className="min-h-[70vh] flex items-center justify-center px-5">
         <div className="w-full max-w-sm text-center space-y-4">
-          <h1 className="font-serif text-3xl font-semibold">Check your email</h1>
-          <p className="text-ink-dim text-sm">
-            We sent a confirmation link to <strong className="text-ink">{email}</strong>.
+          <h1 className="font-sans text-3xl font-bold text-white">Check your email</h1>
+          <p className="text-[#888] text-sm">
+            We sent a confirmation link to <strong className="text-white">{email}</strong>.
             Click it to activate your account, then come back and sign in.
           </p>
           <button
             onClick={() => nav('/login')}
-            className="text-maroon-bright hover:underline text-sm"
+            className="text-white hover:underline text-sm"
           >
             Back to sign in
           </button>
@@ -49,9 +49,9 @@ export default function Register() {
   return (
     <div className="min-h-[70vh] flex items-center justify-center px-5">
       <form onSubmit={submit} className="w-full max-w-sm space-y-4">
-        <h1 className="font-serif text-3xl font-semibold mb-6">Create account</h1>
+        <h1 className="font-sans text-3xl font-bold mb-6 text-white">Create account</h1>
         {error && (
-          <div className="p-3 bg-maroon/20 border border-maroon rounded-lg text-sm text-maroon-bright">
+          <div className="p-3 bg-red-900/20 border border-red-800/50 rounded-xl text-sm text-red-400">
             {error}
           </div>
         )}
@@ -61,7 +61,7 @@ export default function Register() {
           onChange={e => setDisplayName(e.target.value)}
           placeholder="Display name"
           autoComplete="name"
-          className="w-full bg-surface border border-line rounded-lg px-4 py-3 text-sm focus:border-maroon outline-none"
+          className="w-full bg-[#111] border border-[#2a2a2a] rounded-xl px-4 py-3 text-sm text-white focus:border-white/40 outline-none placeholder:text-[#555]"
         />
         <input
           type="email"
@@ -70,7 +70,7 @@ export default function Register() {
           placeholder="Email"
           autoComplete="email"
           required
-          className="w-full bg-surface border border-line rounded-lg px-4 py-3 text-sm focus:border-maroon outline-none"
+          className="w-full bg-[#111] border border-[#2a2a2a] rounded-xl px-4 py-3 text-sm text-white focus:border-white/40 outline-none placeholder:text-[#555]"
         />
         <input
           type="password"
@@ -80,18 +80,18 @@ export default function Register() {
           autoComplete="new-password"
           required
           minLength={6}
-          className="w-full bg-surface border border-line rounded-lg px-4 py-3 text-sm focus:border-maroon outline-none"
+          className="w-full bg-[#111] border border-[#2a2a2a] rounded-xl px-4 py-3 text-sm text-white focus:border-white/40 outline-none placeholder:text-[#555]"
         />
         <button
           type="submit"
           disabled={loading}
-          className="w-full bg-ink text-void font-semibold py-3 rounded-lg hover:bg-ink-dim transition-colors disabled:opacity-50"
+          className="w-full bg-white text-black font-semibold py-3 rounded-xl hover:bg-white/90 transition-colors disabled:opacity-50"
         >
           {loading ? 'Creating account…' : 'Create Account'}
         </button>
-        <p className="text-center text-sm text-ink-dim">
+        <p className="text-center text-sm text-[#888]">
           Already have one?{' '}
-          <button type="button" onClick={() => nav('/login')} className="text-maroon-bright hover:underline">
+          <button type="button" onClick={() => nav('/login')} className="text-white hover:underline">
             Sign in
           </button>
         </p>

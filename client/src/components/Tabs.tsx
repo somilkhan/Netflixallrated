@@ -16,7 +16,7 @@ const Tabs = memo(function Tabs({ active, onChange }: { active: string; onChange
   }, [active]);
 
   return (
-    <div ref={containerRef} className="relative flex items-center px-5 pt-5 pb-0 border-b border-line/50 gap-1">
+    <div ref={containerRef} className="relative flex items-center px-5 pt-5 pb-0 border-b border-[#1a1a1a] gap-1">
       {TABS.map((t, i) => (
         <button
           key={t}
@@ -30,9 +30,9 @@ const Tabs = memo(function Tabs({ active, onChange }: { active: string; onChange
           {t}
         </button>
       ))}
-      {/* Sliding indicator */}
+      {/* Sliding indicator — bingr: white */}
       <div
-        className="absolute bottom-[-1px] h-[2px] bg-maroon-bright rounded-full transition-all duration-300 ease-spring"
+        className="absolute bottom-[-1px] h-[2px] bg-white rounded-full transition-all duration-300 ease-spring"
         style={{ left: indicator.left + 12, width: Math.max(0, indicator.width - 24) }}
       />
     </div>

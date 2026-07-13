@@ -1,10 +1,18 @@
 /**
- * HeroCarousel — Embla-powered full-bleed hero carousel.
- * Premium cinematic design with Cormorant Garamond headings.
+ * HeroCarousel — bingr.one style full-bleed hero.
+ *
+ * Layout matches bingr exactly:
+ * - Full-screen backdrop (movie image covers entire area)
+ * - Bottom-left: bold UPPERCASE title text
+ * - Meta row: ★ rating · year · Genre · Genre
+ * - Description text
+ * - Play button (white filled circle + dark triangle) + "See More" text button
+ * - Thumbnail strip centered at the bottom
+ * - Right-side arrow button
  */
 import { useState, useEffect, useCallback, useMemo, memo } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Play, Info, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Play, Info, ChevronRight } from 'lucide-react';
 import useEmblaCarousel from 'embla-carousel-react';
 import Autoplay from 'embla-carousel-autoplay';
 
@@ -19,24 +27,38 @@ const TrailerBg = memo(function TrailerBg({ youtubeId }: { youtubeId: string }) 
         allow="autoplay; encrypted-media"
         title="trailer"
       />
-      <div className="absolute inset-0 bg-gradient-to-r from-void/80 via-void/50 to-transparent" />
-      <div className="absolute inset-0 bg-gradient-to-t from-void via-void/35 to-transparent" />
+      {/* Dark gradient overlays — bingr style */}
+      <div className="absolute inset-0 bg-gradient-to-r from-black/75 via-black/30 to-transparent" />
+      <div className="absolute inset-0 bg-gradient-to-t from-black via-black/20 to-transparent" />
     </div>
   );
 });
 
-const ImageBg = memo(function ImageBg({ backdropUrl, colorFrom, colorTo }: { backdropUrl?: string; colorFrom?: string; colorTo?: string }) {
-  const fallback = colorFrom && colorTo
-    ? `radial-gradient(90% 70% at 12% 0%, ${colorFrom}cc 0%, ${colorTo}88 55%), linear-gradient(160deg, #1a1215, #0B0908 75%)`
-    : 'radial-gradient(90% 70% at 12% 0%, #341318 0%, transparent 55%), linear-gradient(160deg, #1a1110, #0B0908 75%)';
+const ImageBg = memo(function ImageBg({
+  backdropUrl,
+  posterUrl,
+  colorFrom,
+  colorTo,
+}: {
+  backdropUrl?: string;
+  posterUrl?: string;
+  colorFrom?: string;
+  colorTo?: string;
+}) {
+  const imgUrl = backdropUrl || posterUrl;
+  const fallback =
+    colorFrom && colorTo
+      ? `radial-gradient(90% 70% at 12% 0%, ${colorFrom}cc 0%, ${colorTo}88 55%), linear-gradient(160deg, #0a0a0a, #000 75%)`
+      : 'radial-gradient(90% 70% at 12% 0%, #1a1a1a 0%, transparent 55%), linear-gradient(160deg, #111, #000 75%)';
 
   return (
     <div
-      className="absolute inset-[-4%] z-0 animate-drift will-change-transform bg-cover bg-center"
+      className="absolute inset-0 z-0 bg-cover bg-center will-change-transform"
       style={{
-        backgroundImage: backdropUrl
-          ? `linear-gradient(160deg, rgba(11,9,8,0.45), rgba(11,9,8,0.82) 70%), url(${backdropUrl})`
+        backgroundImage: imgUrl
+          ? `url(${imgUrl})`
           : fallback,
+        backgroundPosition: backdropUrl ? 'center center' : 'top center',
       }}
     />
   );
@@ -44,12 +66,12 @@ const ImageBg = memo(function ImageBg({ backdropUrl, colorFrom, colorTo }: { bac
 
 export default function HeroCarousel({ titles }: { titles: any[] }) {
   const nav = useNavigate();
-  const autoplay = useMemo(() => Autoplay({ delay: AUTO_ADVANCE_MS, stopOnInteraction: false }), []);
+  const autoplay = useMemo(
+    () => Autoplay({ delay: AUTO_ADVANCE_MS, stopOnInteraction: false }),
+    []
+  );
   const [emblaRef, emblaApi] = useEmblaCarousel({ loop: true, duration: 22 }, [autoplay]);
   const [selectedIdx, setSelectedIdx] = useState(0);
-
-  // Use a CSS animation for progress instead of a JS setInterval updating state 20×/sec.
-  // We track a "key" that resets the CSS animation on each slide change.
   const [progressKey, setProgressKey] = useState(0);
 
   const onSelect = useCallback(() => {
@@ -64,7 +86,6 @@ export default function HeroCarousel({ titles }: { titles: any[] }) {
     return () => { emblaApi.off('select', onSelect); };
   }, [emblaApi, onSelect]);
 
-  const scrollPrev = useCallback(() => emblaApi?.scrollPrev(), [emblaApi]);
   const scrollNext = useCallback(() => emblaApi?.scrollNext(), [emblaApi]);
   const scrollTo   = useCallback((i: number) => emblaApi?.scrollTo(i), [emblaApi]);
 
@@ -72,137 +93,138 @@ export default function HeroCarousel({ titles }: { titles: any[] }) {
 
   const title = titles[selectedIdx];
 
-  return (
-    <section className="relative h-[68vh] min-h-[480px] max-h-[780px] overflow-hidden">
+  // Build bingr-style meta: year · Genre · Genre
+  const metaParts: string[] = [];
+  if (title.year) metaParts.push(String(title.year));
+  if (title.genres?.length) {
+    title.genres.slice(0, 3).forEach((g: string) => metaParts.push(g));
+  }
 
-      {/* Slides */}
+  return (
+    <section className="relative h-[100vh] min-h-[500px] max-h-[900px] overflow-hidden">
+
+      {/* ── Slide backgrounds ───────────────────────────────────── */}
       <div className="absolute inset-0" ref={emblaRef}>
         <div className="flex h-full">
-          {titles.map((t, i) => (
+          {titles.map((t) => (
             <div key={t.id} className="relative flex-[0_0_100%] h-full overflow-hidden">
-              {t.trailerYoutubeId
-                ? <TrailerBg youtubeId={t.trailerYoutubeId} />
-                : <ImageBg backdropUrl={t.backdropUrl} colorFrom={t.posterColorFrom} colorTo={t.posterColorTo} />
-              }
-              {/* Prefetch next slide's image */}
-              {i === (selectedIdx + 1) % titles.length && t.backdropUrl && (
-                <link rel="prefetch" href={t.backdropUrl} as="image" />
+              {t.trailerYoutubeId ? (
+                <TrailerBg youtubeId={t.trailerYoutubeId} />
+              ) : (
+                <ImageBg
+                  backdropUrl={t.backdropUrl}
+                  posterUrl={t.posterUrl}
+                  colorFrom={t.posterColorFrom}
+                  colorTo={t.posterColorTo}
+                />
               )}
             </div>
           ))}
         </div>
       </div>
 
-      {/* Scrim layers */}
-      <div className="absolute inset-0 z-[1] bg-gradient-to-b from-transparent via-void/25 to-void pointer-events-none" />
-      <div className="absolute inset-0 z-[1] bg-gradient-to-r from-void/65 via-void/20 to-transparent pointer-events-none" />
+      {/* ── Gradient overlays — bingr style ─────────────────────── */}
+      {/* Left-side gradient so content reads on bright backdrops */}
+      <div className="absolute inset-0 z-[1] bg-gradient-to-r from-black/70 via-black/25 to-transparent pointer-events-none" />
+      {/* Bottom gradient so thumbnail strip and content area reads */}
+      <div className="absolute inset-0 z-[1] bg-gradient-to-t from-black via-black/30 to-transparent pointer-events-none" />
+      {/* Subtle top vignette */}
+      <div className="absolute inset-0 z-[1] bg-gradient-to-b from-black/30 to-transparent pointer-events-none" />
 
-      {/* Noise grain */}
-      <div
-        className="absolute inset-0 z-[1] opacity-[0.025] pointer-events-none"
-        style={{ backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E")`, backgroundSize: '200px 200px' }}
-      />
+      {/* ── Content overlay — bottom-left ───────────────────────── */}
+      <div className="absolute inset-0 z-[2] flex items-end">
+        <div className="w-full max-w-[560px] px-5 md:px-8 pb-[100px] md:pb-[110px] space-y-3">
 
-      {/* Content overlay */}
-      <div className="absolute inset-0 z-[2] flex items-end px-5 md:px-10">
-        <div className="w-full max-w-[580px] space-y-4 pb-14">
-
-          {/* Eyebrow */}
-          <div className="font-mono text-[10px] tracking-[0.22em] text-ink-dim uppercase flex items-center gap-2">
-            <span className="w-5 h-px bg-maroon-bright/80" />
-            {selectedIdx === 0 ? 'Featured' : `No. ${selectedIdx + 1}`}
-          </div>
-
-          {/* Title */}
+          {/* Title — bingr uses large bold uppercase text */}
           <h1
             key={title.id}
-            className="font-serif font-semibold text-[clamp(36px,7.5vw,68px)] leading-[0.96] tracking-tight text-ink animate-fadeUp drop-shadow-[0_2px_20px_rgba(0,0,0,0.5)]"
+            className="font-sans font-black text-white leading-[1.0] tracking-wide uppercase animate-fadeUp"
+            style={{
+              fontSize: 'clamp(30px, 5.5vw, 62px)',
+              textShadow: '0 2px 20px rgba(0,0,0,0.6)',
+            }}
           >
             {title.name}
           </h1>
 
-          {/* Synopsis */}
-          <p
-            className="text-ink-dim text-[13.5px] leading-relaxed max-w-[420px] line-clamp-2 animate-fadeUp"
-            style={{ animationDelay: '0.08s' }}
-          >
-            {title.synopsis}
-          </p>
-
-          {/* Meta strip */}
+          {/* Meta — bingr style: ★ · year · Genre · Genre */}
           <div
-            className="flex items-center gap-3 flex-wrap animate-fadeUp"
-            style={{ animationDelay: '0.16s' }}
+            className="flex items-center gap-2 flex-wrap animate-fadeUp"
+            style={{ animationDelay: '0.07s' }}
           >
-            <div className="font-mono text-[10.5px] text-ink-dim flex gap-2 items-center">
-              {title.year && <span>{title.year}</span>}
-              {title.runtimeMinutes ? (
-                <>
-                  <span className="text-ink-faint/50">·</span>
-                  <span>{Math.floor(title.runtimeMinutes / 60)}h {title.runtimeMinutes % 60}m</span>
-                </>
-              ) : null}
-              <span className="text-ink-faint/50">·</span>
-              <span className="capitalize text-ink-faint">{title.type?.toLowerCase()}</span>
-            </div>
-            {title.genres?.slice(0, 3).map((g: string) => (
-              <span
-                key={g}
-                className="font-mono text-[9.5px] text-ink-faint border border-line/50 rounded-full px-2 py-0.5 bg-white/[0.03]"
-              >
-                {g}
+            {/* Star rating dot — use gold star as visual anchor */}
+            <span className="text-[#f5c518] text-[13px] font-bold flex items-center gap-1">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor">
+                <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
+              </svg>
+            </span>
+            {metaParts.map((part, i) => (
+              <span key={i} className="flex items-center gap-2">
+                {i > 0 && <span className="text-[#555] text-[12px]">·</span>}
+                <span
+                  className="font-sans text-[13px] text-[#ccc]"
+                  style={{ fontWeight: i === 0 ? 500 : 400 }}
+                >
+                  {part}
+                </span>
               </span>
             ))}
           </div>
 
-          {/* CTAs */}
-          <div
-            className="flex gap-2.5 animate-fadeUp"
-            style={{ animationDelay: '0.24s' }}
+          {/* Synopsis */}
+          <p
+            className="font-sans text-[13.5px] text-[#bbb] leading-relaxed max-w-[420px] line-clamp-3 animate-fadeUp"
+            style={{ animationDelay: '0.14s' }}
           >
+            {title.synopsis}
+          </p>
+
+          {/* CTAs — bingr style */}
+          <div
+            className="flex items-center gap-3 animate-fadeUp"
+            style={{ animationDelay: '0.21s' }}
+          >
+            {/* Play — white filled circle */}
             <button
               onClick={() => nav(`/title/${title.id}?play=1`)}
+              aria-label={`Play ${title.name}`}
               className="
-                flex items-center gap-2
-                bg-ink text-void font-sans font-semibold text-[13px]
-                px-5 py-2.5 rounded-full
-                active:scale-[0.97] transition-transform duration-150
-                shadow-[0_4px_16px_-4px_rgba(245,240,236,0.3)]
-                hover:bg-ink/90
+                flex items-center justify-center
+                w-[46px] h-[46px] rounded-full
+                bg-white
+                hover:bg-white/90 active:scale-95
+                transition-all duration-150
+                shadow-[0_4px_20px_rgba(255,255,255,0.2)]
               "
             >
-              <Play size={12} fill="currentColor" /> Play
+              <Play size={17} className="text-black fill-black ml-[2px]" />
             </button>
+
+            {/* See More — bingr text button */}
             <button
               onClick={() => nav(`/title/${title.id}`)}
               className="
                 flex items-center gap-2
-                bg-white/[0.08] backdrop-blur-sm text-ink font-sans font-medium text-[13px]
-                px-5 py-2.5 rounded-full
-                border border-white/[0.12]
-                hover:bg-white/[0.12] transition-colors duration-150
+                font-sans text-[14px] text-white font-medium
+                hover:text-white/80 active:scale-95
+                transition-all duration-150
               "
             >
-              <Info size={13} /> More info
+              <span className="flex items-center justify-center w-[26px] h-[26px] rounded-full border border-white/50">
+                <Info size={13} className="text-white/80" />
+              </span>
+              See More
             </button>
           </div>
-
         </div>
       </div>
 
-      {/* Thumbnail rail — up-next preview strip with active-item highlight */}
+      {/* ── Thumbnail strip — bingr: centered at bottom ─────────── */}
       {titles.length > 1 && (
-        <div className="absolute z-[2] right-5 md:right-10 bottom-6 md:bottom-8 flex items-center gap-2.5">
-          <button
-            onClick={scrollPrev}
-            aria-label="Previous slide"
-            className="hidden md:flex items-center justify-center w-7 h-7 rounded-full text-ink-faint/70 hover:text-ink hover:bg-white/[0.08] transition-colors"
-          >
-            <ChevronLeft size={15} />
-          </button>
-
-          <div className="flex items-end gap-2">
-            {titles.slice(0, 8).map((t, i) => {
+        <div className="absolute z-[2] bottom-5 md:bottom-6 left-1/2 -translate-x-1/2 flex items-center gap-2">
+          {/* Thumbnail list */}
+          <div className="flex items-center gap-1.5">
+            {titles.slice(0, 10).map((t, i) => {
               const active = i === selectedIdx;
               return (
                 <button
@@ -211,16 +233,16 @@ export default function HeroCarousel({ titles }: { titles: any[] }) {
                   aria-label={`Go to ${t.name}`}
                   aria-current={active}
                   className={`
-                    group relative shrink-0 overflow-hidden rounded-[8px]
+                    relative shrink-0 overflow-hidden rounded-[6px]
                     transition-all duration-300 ease-spring
                     ${active
-                      ? 'w-[64px] h-[38px] md:w-[76px] md:h-[44px] ring-2 ring-ink/90 shadow-[0_6px_18px_-4px_rgba(0,0,0,0.7)]'
-                      : 'w-[42px] h-[38px] md:w-[52px] md:h-[44px] ring-1 ring-white/[0.14] opacity-60 hover:opacity-90'}
+                      ? 'w-[72px] h-[42px] ring-2 ring-white shadow-[0_4px_16px_rgba(0,0,0,0.6)]'
+                      : 'w-[48px] h-[42px] ring-1 ring-white/20 opacity-50 hover:opacity-80'}
                   `}
                 >
-                  {t.posterUrl ? (
+                  {t.backdropUrl || t.posterUrl ? (
                     <img
-                      src={t.posterUrl}
+                      src={t.backdropUrl || t.posterUrl}
                       alt=""
                       loading="lazy"
                       decoding="async"
@@ -229,14 +251,16 @@ export default function HeroCarousel({ titles }: { titles: any[] }) {
                   ) : (
                     <div
                       className="absolute inset-0"
-                      style={{ background: `linear-gradient(160deg, ${t.posterColorFrom || '#341318'}, ${t.posterColorTo || '#0B0908'})` }}
+                      style={{
+                        background: `linear-gradient(135deg, ${t.posterColorFrom || '#1a1a1a'}, ${t.posterColorTo || '#000'})`,
+                      }}
                     />
                   )}
-                  <div className="absolute inset-0 bg-black/15" />
+                  <div className="absolute inset-0 bg-black/20" />
                   {active && (
                     <span
                       key={progressKey}
-                      className="absolute inset-x-0 bottom-0 h-[2.5px] bg-maroon-bright"
+                      className="absolute inset-x-0 bottom-0 h-[2px] bg-white"
                       style={{ animation: `heroProgress ${AUTO_ADVANCE_MS}ms linear forwards` }}
                     />
                   )}
@@ -245,10 +269,17 @@ export default function HeroCarousel({ titles }: { titles: any[] }) {
             })}
           </div>
 
+          {/* Right arrow — bingr's white circle arrow */}
           <button
             onClick={scrollNext}
-            aria-label="Next slide"
-            className="flex items-center justify-center w-8 h-8 md:w-9 md:h-9 rounded-full bg-white/[0.08] backdrop-blur-sm border border-white/[0.14] text-ink hover:bg-white/[0.14] transition-colors"
+            aria-label="Next"
+            className="
+              flex items-center justify-center
+              w-[34px] h-[34px] rounded-full
+              bg-white/10 border border-white/20 backdrop-blur-sm
+              text-white hover:bg-white/20
+              transition-colors duration-150
+            "
           >
             <ChevronRight size={16} />
           </button>

@@ -52,7 +52,7 @@ export default function SearchOverlay({ open, onClose }: { open: boolean; onClos
       style={{ animation: 'searchFadeIn 0.18s ease-out forwards' }}
     >
       <div
-        className="absolute inset-0 bg-void/80 backdrop-blur-md"
+        className="absolute inset-0 bg-black/80 backdrop-blur-md"
         onClick={onClose}
         aria-hidden
       />
@@ -63,9 +63,9 @@ export default function SearchOverlay({ open, onClose }: { open: boolean; onClos
       >
         <div className="
           flex items-center gap-3 border rounded-2xl px-4 py-3.5
-          bg-surface border-maroon/50 shadow-[0_24px_64px_-12px_rgba(0,0,0,0.8),0_0_0_3px_rgba(122,37,48,0.14)]
+          bg-[#111] border-white/20 shadow-[0_24px_64px_-12px_rgba(0,0,0,0.9)]
         ">
-          <Search size={16} className="shrink-0 text-maroon-bright" />
+          <Search size={16} className="shrink-0 text-white/60" />
           <div className="relative flex-1 min-w-0">
             <input
               ref={inputRef}

@@ -27,9 +27,9 @@ export default function Login() {
   return (
     <div className="min-h-[70vh] flex items-center justify-center px-5">
       <form onSubmit={submit} className="w-full max-w-sm space-y-4">
-        <h1 className="font-serif text-3xl font-semibold mb-6">Welcome back</h1>
+        <h1 className="font-sans text-3xl font-bold mb-6 text-white">Welcome back</h1>
         {error && (
-          <div className="p-3 bg-maroon/20 border border-maroon rounded-lg text-sm text-maroon-bright">
+          <div className="p-3 bg-red-900/20 border border-red-800/50 rounded-lg text-sm text-red-400">
             {error}
           </div>
         )}
@@ -40,7 +40,7 @@ export default function Login() {
           placeholder="Email"
           autoComplete="email"
           required
-          className="w-full bg-surface border border-line rounded-lg px-4 py-3 text-sm focus:border-maroon outline-none"
+          className="w-full bg-[#111] border border-[#2a2a2a] rounded-xl px-4 py-3 text-sm text-white focus:border-white/40 outline-none placeholder:text-[#555]"
         />
         <input
           type="password"
@@ -49,18 +49,18 @@ export default function Login() {
           placeholder="Password"
           autoComplete="current-password"
           required
-          className="w-full bg-surface border border-line rounded-lg px-4 py-3 text-sm focus:border-maroon outline-none"
+          className="w-full bg-[#111] border border-[#2a2a2a] rounded-xl px-4 py-3 text-sm text-white focus:border-white/40 outline-none placeholder:text-[#555]"
         />
         <button
           type="submit"
           disabled={loading}
-          className="w-full bg-ink text-void font-semibold py-3 rounded-lg hover:bg-ink-dim transition-colors disabled:opacity-50"
+          className="w-full bg-white text-black font-semibold py-3 rounded-xl hover:bg-white/90 transition-colors disabled:opacity-50"
         >
           {loading ? 'Signing in…' : 'Sign In'}
         </button>
-        <p className="text-center text-sm text-ink-dim">
+        <p className="text-center text-sm text-[#888]">
           No account?{' '}
-          <button type="button" onClick={() => nav('/register')} className="text-maroon-bright hover:underline">
+          <button type="button" onClick={() => nav('/register')} className="text-white hover:underline">
             Create one
           </button>
         </p>

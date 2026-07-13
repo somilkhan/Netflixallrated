@@ -1,7 +1,7 @@
 /* ===== DESIGN TOKENS ===== */
 .movie-detail-page {
-  --dp-bg: #060505;
-  --dp-raise: #0c0a0a;
+  --dp-bg: #000000;
+  --dp-raise: #0f0f0f;
   --dp-glass: rgba(255,255,255,0.035);
   --dp-glass-strong: rgba(255,255,255,0.06);
   --dp-hairline: rgba(245,240,236,0.10);
@@ -9,9 +9,9 @@
   --dp-ink: #F5F0EC;
   --dp-ink-faint: rgba(245,240,236,0.52);
   --dp-ink-faintest: rgba(245,240,236,0.30);
-  --dp-maroon: #9C333E;
-  --dp-maroon-bright: #C4485A;
-  --dp-maroon-glow: rgba(156,51,62,0.35);
+  --dp-maroon: #ffffff;
+  --dp-maroon-bright: #ffffff;
+  --dp-maroon-glow: rgba(255,255,255,0.15);
 
   background: var(--dp-bg);
   min-height: 100vh;

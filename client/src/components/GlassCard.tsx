@@ -33,10 +33,10 @@ export interface GlassCardProps {
 }
 
 const TIER_STYLE: Record<string, string> = {
-  PERFECTION: 'text-amber border-amber/40 bg-amber/15',
-  GOFORIT:    'text-maroon-bright border-maroon-bright/40 bg-maroon-bright/15',
-  TIMEPASS:   'text-ink-dim border-line-bright bg-surface-2/70',
-  SKIP:       'text-ink-faint border-line bg-surface-2/50',
+  PERFECTION: 'text-amber border-amber/40 bg-amber/10',
+  GOFORIT:    'text-[#C2434F] border-[#C2434F]/40 bg-[#C2434F]/10',
+  TIMEPASS:   'text-[#999] border-[#333] bg-[#1a1a1a]',
+  SKIP:       'text-[#555] border-[#222] bg-[#111]',
 };
 const TIER_LABEL: Record<string, string> = {
   PERFECTION: 'S',
@@ -79,9 +79,9 @@ const GlassCard = memo(function GlassCard({
       aria-label={onClick ? title : undefined}
       className={`
         relative cursor-pointer group
-        focus:outline-none focus-visible:ring-2 focus-visible:ring-maroon-bright/60
-        rounded-[18px]
-        ${fluid ? 'w-full' : 'shrink-0 w-[148px] md:w-[172px] scroll-snap-start'}
+        focus:outline-none focus-visible:ring-2 focus-visible:ring-white/30
+        rounded-[14px]
+        ${fluid ? 'w-full' : 'shrink-0 w-[148px] md:w-[168px] scroll-snap-start'}
         ${className}
       `}
       onClick={onClick}
@@ -89,12 +89,12 @@ const GlassCard = memo(function GlassCard({
     >
       {/* Inner card */}
       <div className="
-        relative w-full poster-ratio rounded-[18px] overflow-hidden
-        bg-surface border border-white/[0.06]
+        relative w-full poster-ratio rounded-[14px] overflow-hidden
+        bg-[#111] border border-white/[0.07]
         transition-all duration-300 ease-spring will-change-transform
-        group-hover:-translate-y-[6px] group-hover:scale-[1.025]
-        group-hover:border-maroon/25
-        group-hover:shadow-[0_24px_48px_-10px_rgba(0,0,0,0.9),0_0_0_1px_rgba(122,37,48,0.18),0_0_28px_-6px_rgba(194,67,79,0.22)]
+        group-hover:-translate-y-[5px] group-hover:scale-[1.022]
+        group-hover:border-white/[0.14]
+        group-hover:shadow-[0_20px_40px_-8px_rgba(0,0,0,0.9)]
       ">
         {/* Poster */}
         {hasImage ? (
@@ -201,7 +201,7 @@ const GlassCard = memo(function GlassCard({
         <div className="
           absolute inset-x-0 bottom-0 z-10
           px-2.5 pt-2 pb-2
-          bg-black/50 backdrop-blur-[16px]
+          bg-black/55 backdrop-blur-[14px]
           border-t border-white/[0.06]
           transition-all duration-300 ease-spring
           group-hover:pb-[10px]

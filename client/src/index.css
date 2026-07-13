@@ -8,7 +8,7 @@
 
   html {
     scroll-behavior: smooth;
-    background: #0B0908;
+    background: #000000;
     overflow-x: hidden;
     max-width: 100%;
     -webkit-font-smoothing: antialiased;
@@ -16,7 +16,7 @@
     text-rendering: optimizeLegibility;
   }
   body {
-    background: #0B0908;
+    background: #000000;
     overflow-x: hidden;
     max-width: 100%;
     min-height: 100vh;

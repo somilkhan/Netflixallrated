@@ -28,11 +28,11 @@ export default function BottomNav() {
         md:hidden
         fixed bottom-4 left-1/2 -translate-x-1/2 z-50
         flex items-center
-        bg-surface/85 backdrop-blur-2xl
+        bg-[#0f0f0f]/90 backdrop-blur-2xl
         border border-white/[0.08]
         rounded-[28px]
         px-2 py-1.5
-        shadow-[0_8px_32px_-8px_rgba(0,0,0,0.7),0_0_0_1px_rgba(255,255,255,0.04)]
+        shadow-[0_8px_32px_-8px_rgba(0,0,0,0.9)]
       "
       role="navigation"
       aria-label="Main navigation"
@@ -52,22 +52,14 @@ export default function BottomNav() {
               w-[46px] h-[46px] rounded-[18px]
               gap-[3px]
               transition-all duration-200 ease-spring
-              focus:outline-none focus-visible:ring-2 focus-visible:ring-maroon-bright/60
+              focus:outline-none
               ${active
-                ? 'text-ink bg-white/[0.07]'
-                : 'text-ink-faint hover:text-ink-dim'
+                ? 'text-white'
+                : 'text-[#555] hover:text-[#aaa]'
               }
             `}
           >
-            {/* Active glow */}
-            {active && (
-              <span
-                className="
-                  absolute inset-0 rounded-[18px] pointer-events-none
-                  bg-[radial-gradient(ellipse_80%_60%_at_50%_50%,rgba(194,67,79,0.18),transparent_70%)]
-                "
-              />
-            )}
+            {/* Active indicator */}
 
             <item.icon
               size={18}
@@ -85,13 +77,9 @@ export default function BottomNav() {
               {item.label}
             </span>
 
-            {/* Active dot indicator */}
+            {/* Active dot */}
             {active && (
-              <span className="
-                absolute -bottom-[3px] left-1/2 -translate-x-1/2
-                w-[3px] h-[3px] rounded-full bg-maroon-bright
-                shadow-[0_0_6px_rgba(194,67,79,0.8)]
-              " />
+              <span className="absolute -bottom-[3px] left-1/2 -translate-x-1/2 w-[3px] h-[3px] rounded-full bg-white" />
             )}
           </button>
         );

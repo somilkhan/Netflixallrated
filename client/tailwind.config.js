@@ -4,17 +4,17 @@ export default {
   theme: {
     extend: {
       colors: {
-        void: '#0B0908',
-        surface: '#161011',
-        'surface-2': '#1D1516',
-        line: '#2A1F1F',
-        'line-bright': '#43302F',
+        void: '#000000',
+        surface: '#0f0f0f',
+        'surface-2': '#1a1a1a',
+        line: '#1f1f1f',
+        'line-bright': '#2e2e2e',
         maroon: '#7A2530',
         'maroon-bright': '#C2434F',
         amber: '#C99A4A',
-        ink: '#F5F0EC',
-        'ink-dim': '#A69B97',
-        'ink-faint': '#5F5551',
+        ink: '#ffffff',
+        'ink-dim': '#a0a0a0',
+        'ink-faint': '#555555',
       },
       fontFamily: {
         serif: ['"Cormorant Garamond"', 'Georgia', 'serif'],

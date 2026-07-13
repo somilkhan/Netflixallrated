@@ -114,35 +114,33 @@ export default function TV() {
 
   return (
     <div className="min-h-screen">
-      {/* Header */}
-      <div className="relative overflow-hidden border-b border-line">
-        <div className="pointer-events-none absolute inset-0
-          bg-[radial-gradient(ellipse_70%_120%_at_5%_0%,rgba(122,37,48,0.18),transparent_60%)]" />
+      {/* Header — bingr style */}
+      <div className="relative overflow-hidden border-b border-[#1a1a1a]">
         <div className="relative px-5 pt-10 pb-7">
           <div className="flex items-center gap-3 mb-1.5">
-            <Tv size={20} className="text-maroon-bright shrink-0" strokeWidth={1.8} />
-            <h1 className="font-serif text-[32px] font-semibold tracking-tight text-ink leading-none">TV Shows</h1>
+            <Tv size={20} className="text-white shrink-0" strokeWidth={1.8} />
+            <h1 className="font-sans text-[28px] font-bold tracking-tight text-white leading-none">TV Shows</h1>
           </div>
-          <p className="font-sans text-[13.5px] text-ink-faint ml-[31px]">
+          <p className="font-sans text-[13.5px] text-[#666] ml-[31px]">
             Series, dramas, documentaries &amp; more
           </p>
         </div>
       </div>
 
-      {/* Genre filter pills */}
-      <div className="px-5 py-3 flex gap-2 overflow-x-auto scrollbar-hide border-b border-line/50">
+      {/* Genre filter pills — bingr style */}
+      <div className="px-5 py-3 flex gap-2 overflow-x-auto scrollbar-hide border-b border-[#1a1a1a]">
         <button
           onClick={() => setSelectedGenre('')}
-          className={`shrink-0 font-mono text-[11px] px-3.5 py-1.5 rounded-full border transition-all ${
-            !selectedGenre ? 'bg-ink text-void border-ink' : 'bg-surface border-line text-ink-faint hover:text-ink hover:border-line-bright'
+          className={`shrink-0 font-sans text-[12px] px-4 py-1.5 rounded-full border transition-all ${
+            !selectedGenre ? 'bg-white text-black border-white' : 'bg-transparent border-[#333] text-[#888] hover:text-white hover:border-[#555]'
           }`}
         >All</button>
         {genreList.map(g => (
           <button
             key={g}
             onClick={() => setSelectedGenre(g === selectedGenre ? '' : g)}
-            className={`shrink-0 font-mono text-[11px] px-3.5 py-1.5 rounded-full border transition-all ${
-              selectedGenre === g ? 'bg-maroon/20 border-maroon text-ink' : 'bg-surface border-line text-ink-faint hover:text-ink hover:border-line-bright'
+            className={`shrink-0 font-sans text-[12px] px-4 py-1.5 rounded-full border transition-all ${
+              selectedGenre === g ? 'bg-white text-black border-white' : 'bg-transparent border-[#333] text-[#888] hover:text-white hover:border-[#555]'
             }`}
           >{g}</button>
         ))}

@@ -253,7 +253,6 @@ export default function Home() {
 
   return (
     <div>
-      <Ticker />
       <Hero titles={heroTitles} />
       <Tabs active={activeTab} onChange={setActiveTab} />
 
