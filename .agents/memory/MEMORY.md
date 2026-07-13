@@ -10,3 +10,5 @@
 - [Watch History feature](watch-history.md) — WatchProgress model in Prisma; history route at /api/history; wall-clock tracking in TitleDetail; Continue Watching row on Home; push to GitHub for Railway to deploy backend
 - [Client package installs](client-package-installs.md) — repo-root package.json is a separate unused project; client npm packages must be installed inside client/, not via default package tooling
 - [react-window v2 API](react-window-v2.md) — v2 API (List + rowComponent/rowHeight/rowCount/rowProps) differs completely from v1; don't install @types/react-window, it ships its own types
+- [framer-motion / client install gotcha](framer-motion-client-install.md) — package installers can target the wrong root package.json in this monorepo; verify with npm ls inside client/
+- [Bot-protected SPA scraping](bot-protected-spa-scraping.md) — headless Playwright got blocked (blank body) on a Cloudflare/bot-checked site that the Screenshot tool rendered fine; fall back to visual screenshots, not raw HTML/CSS extraction

@@ -187,44 +187,73 @@ export default function HeroCarousel({ titles }: { titles: any[] }) {
             </button>
           </div>
 
-          {/* Dot indicators */}
-          {titles.length > 1 && (
-            <div
-              className="flex items-center gap-2.5 animate-fadeUp"
-              style={{ animationDelay: '0.32s' }}
-            >
-              <button onClick={scrollPrev} aria-label="Previous slide" className="text-ink-faint/60 hover:text-ink transition-colors">
-                <ChevronLeft size={16} />
-              </button>
-              <div className="flex gap-1.5 items-center">
-                {titles.map((_, i) => (
-                  <button
-                    key={i}
-                    onClick={() => scrollTo(i)}
-                    aria-label={`Go to slide ${i + 1}`}
-                    aria-current={i === selectedIdx}
-                    className="relative h-[2.5px] rounded-full overflow-hidden transition-all duration-300"
-                    style={{ width: i === selectedIdx ? 24 : 8, background: 'rgba(255,255,255,0.18)' }}
-                  >
-                    {i === selectedIdx && (
-                      <span
-                        key={progressKey}
-                        className="absolute inset-y-0 left-0 bg-ink/80 rounded-full"
-                        style={{
-                          animation: `heroProgress ${AUTO_ADVANCE_MS}ms linear forwards`,
-                        }}
-                      />
-                    )}
-                  </button>
-                ))}
-              </div>
-              <button onClick={scrollNext} aria-label="Next slide" className="text-ink-faint/60 hover:text-ink transition-colors">
-                <ChevronRight size={16} />
-              </button>
-            </div>
-          )}
         </div>
       </div>
+
+      {/* Thumbnail rail — up-next preview strip with active-item highlight */}
+      {titles.length > 1 && (
+        <div className="absolute z-[2] right-5 md:right-10 bottom-6 md:bottom-8 flex items-center gap-2.5">
+          <button
+            onClick={scrollPrev}
+            aria-label="Previous slide"
+            className="hidden md:flex items-center justify-center w-7 h-7 rounded-full text-ink-faint/70 hover:text-ink hover:bg-white/[0.08] transition-colors"
+          >
+            <ChevronLeft size={15} />
+          </button>
+
+          <div className="flex items-end gap-2">
+            {titles.slice(0, 8).map((t, i) => {
+              const active = i === selectedIdx;
+              return (
+                <button
+                  key={t.id}
+                  onClick={() => scrollTo(i)}
+                  aria-label={`Go to ${t.name}`}
+                  aria-current={active}
+                  className={`
+                    group relative shrink-0 overflow-hidden rounded-[8px]
+                    transition-all duration-300 ease-spring
+                    ${active
+                      ? 'w-[64px] h-[38px] md:w-[76px] md:h-[44px] ring-2 ring-ink/90 shadow-[0_6px_18px_-4px_rgba(0,0,0,0.7)]'
+                      : 'w-[42px] h-[38px] md:w-[52px] md:h-[44px] ring-1 ring-white/[0.14] opacity-60 hover:opacity-90'}
+                  `}
+                >
+                  {t.posterUrl ? (
+                    <img
+                      src={t.posterUrl}
+                      alt=""
+                      loading="lazy"
+                      decoding="async"
+                      className="absolute inset-0 h-full w-full object-cover"
+                    />
+                  ) : (
+                    <div
+                      className="absolute inset-0"
+                      style={{ background: `linear-gradient(160deg, ${t.posterColorFrom || '#341318'}, ${t.posterColorTo || '#0B0908'})` }}
+                    />
+                  )}
+                  <div className="absolute inset-0 bg-black/15" />
+                  {active && (
+                    <span
+                      key={progressKey}
+                      className="absolute inset-x-0 bottom-0 h-[2.5px] bg-maroon-bright"
+                      style={{ animation: `heroProgress ${AUTO_ADVANCE_MS}ms linear forwards` }}
+                    />
+                  )}
+                </button>
+              );
+            })}
+          </div>
+
+          <button
+            onClick={scrollNext}
+            aria-label="Next slide"
+            className="flex items-center justify-center w-8 h-8 md:w-9 md:h-9 rounded-full bg-white/[0.08] backdrop-blur-sm border border-white/[0.14] text-ink hover:bg-white/[0.14] transition-colors"
+          >
+            <ChevronRight size={16} />
+          </button>
+        </div>
+      )}
     </section>
   );
 }

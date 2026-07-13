@@ -6,7 +6,7 @@ import { NavbarLogo } from '../brand';
 
 const placeholders = ['Movies, shows, anime…', 'Search the catalog…', 'Find something to watch…'];
 
-const Navbar = memo(function Navbar() {
+const Navbar = memo(function Navbar({ onOpenSearch }: { onOpenSearch?: () => void }) {
   const { user, signOut, isLoading } = useAuth();
   const [focused, setFocused] = useState(false);
   const [query, setQuery] = useState('');
@@ -15,6 +15,7 @@ const Navbar = memo(function Navbar() {
   const inputRef = useRef<HTMLInputElement>(null);
   const menuRef = useRef<HTMLDivElement>(null);
   const nav = useNavigate();
+  void onOpenSearch;
 
   useEffect(() => {
     const iv = setInterval(() => setPhIdx(i => (i + 1) % placeholders.length), 3000);
@@ -54,7 +55,7 @@ const Navbar = memo(function Navbar() {
   const initial = user?.displayName?.[0]?.toUpperCase() || user?.email?.[0]?.toUpperCase() || '?';
 
   return (
-    <nav className="sticky top-0 z-50 flex items-center gap-3 px-4 py-3 bg-void/88 backdrop-blur-xl border-b border-line/60">
+    <nav className="md:hidden sticky top-0 z-50 flex items-center gap-3 px-4 py-3 bg-void/88 backdrop-blur-xl border-b border-line/60">
       {/* Logo */}
       <button
         onClick={() => nav('/')}
