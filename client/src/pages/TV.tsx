@@ -150,7 +150,7 @@ export default function TV() {
       {selectedGenre ? (
         <div className="px-5 pt-8">
           <div className="flex items-baseline gap-2 mb-5">
-            <span className="font-serif text-[22px] font-semibold">{selectedGenre}</span>
+            <span className="font-sans text-[22px] font-semibold">{selectedGenre}</span>
             {!loading && <span className="font-mono text-[11px] text-ink-faint">{all.length} shows{hasNext ? '+' : ''}</span>}
           </div>
           {loading ? (
@@ -175,7 +175,7 @@ export default function TV() {
           ) : (
             <div className="py-20 text-center">
               <Inbox size={36} className="mx-auto text-ink-faint/30 mb-4" />
-              <p className="font-serif text-lg text-ink">No {selectedGenre} shows yet</p>
+              <p className="font-sans text-lg text-ink">No {selectedGenre} shows yet</p>
               <p className="text-ink-faint text-sm mt-1">Check back soon as the catalog grows</p>
             </div>
           )}
@@ -207,10 +207,10 @@ export default function TV() {
           {all.length === 0 && Object.keys(genreSections).length === 0 && (
             <div className="py-20 text-center">
               <Tv size={40} className="mx-auto text-ink-faint/30 mb-5" strokeWidth={1.5} />
-              <p className="font-serif text-xl font-semibold mb-2">No TV shows yet</p>
+              <p className="font-sans text-xl font-semibold mb-2">No TV shows yet</p>
               <p className="text-ink-faint text-sm">
                 The catalog is being populated.{' '}
-                <button onClick={() => nav('/admin')} className="text-maroon-bright hover:underline">Add shows</button>
+                <button onClick={() => nav('/admin')} className="text-white/70 hover:text-white underline">Add shows</button>
                 {' '}or wait for auto-sync.
               </p>
             </div>

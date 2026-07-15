@@ -36,7 +36,7 @@ export default function RatingWidget({
 }: RatingWidgetProps) {
   return (
     <div className="mt-8 space-y-4 pt-6 border-t border-line">
-      <h2 className="font-serif text-xl font-semibold">Your Rating</h2>
+      <h2 className="font-sans text-xl font-semibold">Your Rating</h2>
 
       {/* Tier pills — monochrome frosted-glass; selected = inverted (white bg / black text) */}
       <div className="flex flex-wrap gap-2">

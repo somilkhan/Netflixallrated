@@ -29,7 +29,7 @@ export default function Login() {
       <form onSubmit={submit} className="w-full max-w-sm space-y-4">
         <h1 className="font-sans text-3xl font-bold mb-6 text-white">Welcome back</h1>
         {error && (
-          <div className="p-3 bg-red-900/20 border border-red-800/50 rounded-lg text-sm text-red-400">
+          <div className="p-3 bg-white/5 border border-white/10 rounded-lg text-sm text-white/70">
             {error}
           </div>
         )}

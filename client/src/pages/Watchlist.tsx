@@ -61,7 +61,7 @@ export default function Watchlist() {
         <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4">
           {filtered.map((item: any) => (
             <div key={item.id} className="cursor-pointer group" onClick={() => nav(`/title/${item.title.id}`)}>
-              <div className="aspect-[2/3] rounded-xl border border-line overflow-hidden mb-2 transition-all group-hover:border-maroon bg-cover bg-center" style={{
+              <div className="aspect-[2/3] rounded-xl border border-line overflow-hidden mb-2 transition-all group-hover:border-white/40 bg-cover bg-center" style={{
                 backgroundImage: item.title.posterUrl
                   ? `linear-gradient(to bottom, transparent 60%, rgba(0,0,0,0.55)), url(${item.title.posterUrl})`
                   : `radial-gradient(120% 100% at 30% 0%, ${item.title.posterColorFrom}, ${item.title.posterColorTo} 70%)`,

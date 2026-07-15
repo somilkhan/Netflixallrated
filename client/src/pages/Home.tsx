@@ -364,7 +364,7 @@ export default function Home() {
       {showGenre && (
         <div className="mb-8">
           <div className="flex items-center justify-between px-5 mb-3">
-            <h2 className="font-serif text-xl font-semibold text-ink">Studios</h2>
+            <h2 className="font-sans text-[17px] font-semibold text-ink">Studios</h2>
           </div>
           {studios.length === 0 ? (
             <TileRowSkeleton />
@@ -387,7 +387,7 @@ export default function Home() {
       {showGenre && genreList.length > 0 && (
         <div className="mb-8">
           <div className="flex items-center justify-between px-5 mb-3">
-            <h2 className="font-serif text-xl font-semibold text-ink">Popular Genres</h2>
+            <h2 className="font-sans text-[17px] font-semibold text-ink">Popular Genres</h2>
           </div>
           <div className="flex gap-2.5 overflow-x-auto px-5 pb-1 scrollbar-hide">
             {genreList.map(genre => {
@@ -410,7 +410,7 @@ export default function Home() {
       {showGenre && (
         <div className="mb-8">
           <div className="flex items-center justify-between px-5 mb-3">
-            <h2 className="font-serif text-xl font-semibold text-ink">Popular Languages</h2>
+            <h2 className="font-sans text-[17px] font-semibold text-ink">Popular Languages</h2>
           </div>
           <div className="flex gap-2.5 overflow-x-auto px-5 pb-1 scrollbar-hide">
             {POPULAR_LANGUAGES.map(lang => (
