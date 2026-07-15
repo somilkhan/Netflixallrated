@@ -8,7 +8,8 @@ import {
   getEpisodeCount as fetchAnicrushEpCount,
   getEmbedUrl as anicrushEmbed,
 } from '../lib/anicrush';
-import { SERVERS, FebBoxPlayer } from '../components/VideoPlayer';
+import { SERVERS } from '../lib/servers';
+import { FebBoxPlayer } from '../components/VideoPlayer';
 import type { FebboxStream } from '../components/VideoPlayer';
 import GlassCard from '../components/GlassCard';
 import { navigateToAnime } from '../lib/animeResolve';
@@ -17,7 +18,7 @@ import RelatedRow from '../components/title-detail/RelatedRow';
 import TrailerModal from '../components/title-detail/TrailerModal';
 import { PageSkeleton, RowSkeleton, CharacterRowSkeleton } from '../components/title-detail/Skeletons';
 import '@/styles/MovieDetailPage.css';
-import type { Tier } from '../components/RatingWidget';
+import type { Tier } from '../lib/ratings';
 
 const TIERS = [
   { id: 'SKIP',       label: 'Skip',       key: 'skip' },
@@ -801,13 +802,15 @@ export default function TitleDetail() {
   useEffect(() => {
     if (!title || !autoPlay || autoPlayFiredRef.current) return;
     autoPlayFiredRef.current = true;
+    let timerId: ReturnType<typeof setTimeout> | undefined;
     if (title.type !== 'ANIME') {
       // Non-anime: open the video player directly
       setIsIframeLoading(true);
       setIsPlaying(true);
-      setTimeout(() => videoSectionRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 200);
+      timerId = setTimeout(() => videoSectionRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 200);
     }
     // Anime: let the provider-resolve effects run first; user presses Watch in the episode section
+    return () => clearTimeout(timerId);
   }, [title, autoPlay]);
 
   if (titleError) return (
@@ -874,7 +877,7 @@ export default function TitleDetail() {
 
       {/* ── Topbar ───────────────────────────────────────────────── */}
       <header className={`detail-topbar${scrolled ? ' scrolled' : ''}`}>
-        <button className="detail-back-btn" onClick={() => navigate(-1)}>
+        <button className="detail-back-btn" aria-label="Go back" onClick={() => navigate(-1)}>
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2">
             <polyline points="15 18 9 12 15 6" />
           </svg>
@@ -902,6 +905,7 @@ export default function TitleDetail() {
         {title.type === 'ANIME' && canPlay && !(animeProvider === 'gogoanime' ? gogoEmbedLoading : (isStaticAnimeProvider ? false : animeEmbedLoading)) && (
           <button
             className="play-overlay-btn"
+            aria-label="Play"
             onClick={() => {
               if (animeProvider === 'gogoanime') openGogoPlayer();
               else if (isStaticAnimeProvider) {
@@ -1521,7 +1525,12 @@ export default function TitleDetail() {
                   key={t.id}
                   className={`tier${myTier === t.id ? ' selected' : ''}`}
                   data-tier={t.key}
+                  role={user ? 'button' : undefined}
+                  tabIndex={user ? 0 : undefined}
+                  aria-pressed={user ? myTier === t.id : undefined}
+                  aria-label={user ? `Rate as ${t.label}` : undefined}
                   onClick={() => user && setMyTier(t.id as Tier)}
+                  onKeyDown={user ? e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setMyTier(t.id as Tier); } } : undefined}
                   style={{ cursor: user ? 'pointer' : 'default' }}
                 >
                   <div className="tier-top">

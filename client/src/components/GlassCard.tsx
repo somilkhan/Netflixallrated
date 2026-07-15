@@ -217,16 +217,16 @@ const GlassCard = memo(function GlassCard({
 
           {providers.length > 0 && (
             <div className="mt-[5px] flex items-center gap-[4px]">
-              {providers.slice(0, 4).map((p, i) =>
+              {providers.slice(0, 4).map((p) =>
                 p.logoUrl ? (
                   <img
-                    key={i} src={p.logoUrl} alt={p.name} title={p.name}
+                    key={p.name} src={p.logoUrl} alt={p.name} title={p.name}
                     loading="lazy" decoding="async"
                     className="h-[13px] w-[13px] rounded-[3px] object-cover border border-white/[0.07]"
                   />
                 ) : (
                   <span
-                    key={i}
+                    key={p.name}
                     className="h-[13px] px-[4px] rounded-[3px] border border-white/[0.07]
                       bg-white/[0.04] text-[6.5px] font-mono flex items-center text-ink-faint"
                   >

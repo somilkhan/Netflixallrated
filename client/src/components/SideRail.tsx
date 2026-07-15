@@ -5,7 +5,7 @@
  */
 import { useState, useRef, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { Home, Tv, Compass, Sword, Clock, LayoutGrid, Search, Shield, LogOut, LogIn, Bookmark, Zap } from 'lucide-react';
+import { Home, Tv, Sword, Clock, LayoutGrid, Search, Shield, LogOut, LogIn, Bookmark, Zap } from 'lucide-react';
 import { useAuth } from '../lib/auth';
 import { AnimatedLogoMark } from '../brand';
 

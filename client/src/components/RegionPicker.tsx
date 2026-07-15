@@ -11,6 +11,7 @@ export default function RegionPicker({ region, onChange }: RegionPickerProps) {
       <span className="font-mono text-[10px] text-ink-faint uppercase tracking-widest">Region</span>
       <div className="relative">
         <select
+          aria-label="Select region"
           value={region}
           onChange={e => onChange(e.target.value)}
           className="appearance-none bg-void border border-line rounded-md pl-2.5 pr-6 py-1 font-mono text-[11px] text-ink-dim hover:border-maroon focus:border-maroon focus:outline-none cursor-pointer transition-colors"

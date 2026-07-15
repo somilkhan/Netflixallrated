@@ -53,7 +53,12 @@ const MemoEpisodeRow = React.memo(function EpisodeRowInner({ index, style, items
     <div style={style}>
       <div
         className={`ep-row${isActive ? ' active' : ''}`}
+        role="button"
+        tabIndex={0}
+        aria-label={`Episode ${ep.episodeNumber}${ep.name ? `: ${ep.name}` : ''}`}
+        aria-pressed={isActive}
         onClick={() => onSelectEpisode(ep.episodeNumber)}
+        onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onSelectEpisode(ep.episodeNumber); } }}
       >
         <div className="ep-thumb">
           {ep.stillUrl

@@ -117,7 +117,8 @@ function ImgCard({
   label: string; sub?: string; img?: string; tint: string;
   onClick?: () => void;
 }) {
-  const [imgOk, setImgOk] = useState(!!img);
+  // Track load failure separately so we always reflect the current `img` prop.
+  const [imgError, setImgError] = useState(false);
   return (
     <button
       onClick={onClick}
@@ -131,11 +132,11 @@ function ImgCard({
       }}
     >
       {/* Image */}
-      {img && imgOk && (
+      {img && !imgError && (
         <img
           src={img} alt={label}
           loading="lazy" decoding="async"
-          onError={() => setImgOk(false)}
+          onError={() => setImgError(true)}
           style={{
             position: "absolute", inset: 0,
             width: "100%", height: "100%",
@@ -398,13 +399,14 @@ export default function CategoriesPage() {
       api.platforms.list().catch(() => []),
       api.titles.watchProvidersList("US").catch(() => []),
     ]).then(([platforms, providers]: [any[], any[]]) => {
+      const providerSlugs = new Map<string, any>(
+        providers.map((prov: any) => [slugify(prov.name || ""), prov])
+      );
       setStudios(
         platforms.map((p) => {
           const slug = slugify(p.name);
-          const liveMatch = providers.find((prov: any) => {
-            const provSlug = slugify(prov.name || "");
-            return provSlug === slug || provSlug.includes(slug) || slug.includes(provSlug);
-          });
+          const liveMatch = providerSlugs.get(slug)
+            ?? [...providerSlugs.entries()].find(([ps]) => ps.includes(slug) || slug.includes(ps))?.[1];
           return {
             slug,
             label: p.name,
@@ -493,12 +495,13 @@ export default function CategoriesPage() {
                 onChange={(e) => setGenreQuery(e.target.value)}
                 placeholder="Search genres…"
                 style={{
-                  flex: 1, background: "none", border: "none", outline: "none",
+                  flex: 1, background: "none", border: "none",
                   fontFamily: "'Inter',sans-serif", fontSize: 13, color: WHITE,
                 }}
+                className="outline-none focus-visible:ring-1 focus-visible:ring-white/40 rounded"
               />
               {genreQuery && (
-                <button onClick={() => setGenreQuery("")} style={{ background: "none", border: "none", cursor: "pointer", color: DIM, padding: 0 }}>
+                <button aria-label="Clear genre search" onClick={() => setGenreQuery("")} style={{ background: "none", border: "none", cursor: "pointer", color: DIM, padding: 0 }}>
                   <X size={13} />
                 </button>
               )}

@@ -152,7 +152,7 @@ export default function HeroCarousel({ titles }: { titles: any[] }) {
             </span>
             {/* Year + genres */}
             {metaParts.map((part, i) => (
-              <span key={i} className="flex items-center">
+              <span key={part} className="flex items-center">
                 <span className="font-sans text-[13px]" style={{ color: 'rgba(255,255,255,0.65)' }}>
                   {part}
                 </span>

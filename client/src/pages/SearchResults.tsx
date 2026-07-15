@@ -139,7 +139,7 @@ export default function SearchResults() {
           className="w-full bg-surface border border-line rounded-full pl-10 pr-10 py-3 text-sm text-ink placeholder:text-ink-faint outline-none focus:border-maroon focus:shadow-[0_0_0_3px_rgba(122,37,48,0.15)] transition-all"
         />
         {query && (
-          <button type="button" onClick={() => { setQuery(''); nav('/search'); }}
+          <button type="button" aria-label="Clear search" onClick={() => { setQuery(''); nav('/search'); }}
             className="absolute right-3 top-1/2 -translate-y-1/2 text-ink-faint hover:text-ink transition-colors">
             <X size={15} />
           </button>
@@ -169,6 +169,7 @@ export default function SearchResults() {
         <select
           value={filters.genre}
           onChange={handleGenreFilter}
+          aria-label="Filter by genre"
           className="bg-surface border border-line rounded-full px-3.5 py-2 text-xs font-mono text-ink-faint focus:border-maroon focus:text-ink outline-none transition-all cursor-pointer"
         >
           <option value="">All Genres</option>
@@ -182,7 +183,11 @@ export default function SearchResults() {
           <p className="font-mono text-[11px] text-ink-faint uppercase tracking-wider mb-3">Best match · AniList</p>
           <div
             className="flex gap-4 p-4 rounded-xl border border-line bg-surface max-w-xl cursor-pointer hover:border-maroon/50 transition-colors"
+            role="button"
+            tabIndex={0}
+            aria-label={`View ${anilistResult.title.english || anilistResult.title.romaji}`}
             onClick={() => navigateToAnime(anilistResult, nav)}
+            onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); navigateToAnime(anilistResult, nav); } }}
           >
             {(anilistResult.coverImage?.large || anilistResult.coverImage?.extraLarge) && (
               <img

@@ -22,7 +22,14 @@ export default function TrailerModal({ youtubeId, title, onClose }: TrailerModal
   }, [onClose]);
 
   return (
-    <div className="trailer-modal-overlay" onClick={onClose}>
+    <div
+      className="trailer-modal-overlay"
+      role="button"
+      tabIndex={0}
+      aria-label="Close trailer"
+      onClick={onClose}
+      onKeyDown={e => { if (e.key === 'Escape' || e.key === 'Enter') onClose(); }}
+    >
       <div className="trailer-modal-content" onClick={e => e.stopPropagation()}>
         <button className="trailer-modal-close" onClick={onClose} aria-label="Close trailer">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">

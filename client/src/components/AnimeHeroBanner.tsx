@@ -98,7 +98,7 @@ const AnimeHeroBanner = memo(function AnimeHeroBanner({ titles }: AnimeHeroBanne
               </svg>
             </span>
             {metaParts.map((part, i) => (
-              <span key={i} className="flex items-center gap-2">
+              <span key={part} className="flex items-center gap-2">
                 {i > 0 && <span className="text-[#555] text-[12px]">·</span>}
                 <span className="font-sans text-[13px] text-[#ccc]">{part}</span>
               </span>
@@ -115,6 +115,7 @@ const AnimeHeroBanner = memo(function AnimeHeroBanner({ titles }: AnimeHeroBanne
           {/* CTAs */}
           <div className="flex items-center gap-3 animate-fadeUp" style={{ animationDelay: '0.21s' }}>
             <button
+              aria-label="Play"
               onClick={() => navigateToAnime(anime, nav)}
               className="flex items-center justify-center w-[46px] h-[46px] rounded-full bg-white
                 hover:bg-white/90 active:scale-95 transition-all duration-150
@@ -137,9 +138,10 @@ const AnimeHeroBanner = memo(function AnimeHeroBanner({ titles }: AnimeHeroBanne
           {/* Dot progress strip */}
           {titles.length > 1 && (
             <div className="flex gap-1.5 items-center animate-fadeUp" style={{ animationDelay: '0.28s' }}>
-              {titles.map((_, i) => (
+              {titles.map((t, i) => (
                 <button
-                  key={i}
+                  key={(t as any).id ?? i}
+                  aria-label={`Go to slide ${i + 1}`}
                   onClick={() => goTo(i)}
                   className="relative h-[2px] rounded-full overflow-hidden transition-all duration-300"
                   style={{ width: i === idx ? 24 : 8, background: 'rgba(255,255,255,0.2)' }}

@@ -71,7 +71,11 @@ function HistoryRow({
       {/* Poster */}
       <div
         className="relative shrink-0 w-12 h-16 rounded-md overflow-hidden bg-white/5 cursor-pointer"
+        role="button"
+        tabIndex={0}
+        aria-label={`Play ${item.title.name}`}
         onClick={() => navigate(`/title/${item.title.id}?play=1`)}
+        onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); navigate(`/title/${item.title.id}?play=1`); } }}
       >
         {item.title.posterUrl ? (
           <img
@@ -102,7 +106,14 @@ function HistoryRow({
       </div>
 
       {/* Info */}
-      <div className="flex-1 min-w-0 cursor-pointer" onClick={() => navigate(`/title/${item.title.id}?play=1`)}>
+      <div
+        className="flex-1 min-w-0 cursor-pointer"
+        role="button"
+        tabIndex={0}
+        aria-label={`View ${item.title.name}`}
+        onClick={() => navigate(`/title/${item.title.id}?play=1`)}
+        onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); navigate(`/title/${item.title.id}?play=1`); } }}
+      >
         <p className="font-serif text-sm font-semibold text-ink leading-tight truncate">{item.title.name}</p>
         <p className="text-[10px] text-ink-dim font-mono mt-0.5">
           {typeLabel} · {item.title.year}

@@ -9,7 +9,6 @@ import {
   GENRE_VISUAL, DEFAULT_TINT, PLATFORM_LOGO,
   GENRE_TILE_IMG, CURATED_GENRE_TITLE, LANGUAGE_TILE_IMG, POPULAR_LANGUAGES,
 } from '../lib/categoryVisuals';
-import Ticker from '../components/Ticker';
 import Hero from '../components/Hero';
 import Tabs from '../components/Tabs';
 import Section from '../components/Section';
@@ -142,13 +141,14 @@ export default function Home() {
       api.platforms.list().catch(() => []),
       api.titles.watchProvidersList('US').catch(() => []),
     ]).then(([platforms, providers]: [any[], any[]]) => {
+      const providerSlugs = new Map<string, any>(
+        providers.map((prov: any) => [slugify(prov.name || ''), prov])
+      );
       setStudios(
         platforms.slice(0, 12).map((p: any) => {
           const slug = slugify(p.name);
-          const liveMatch = providers.find((prov: any) => {
-            const provSlug = slugify(prov.name || '');
-            return provSlug === slug || provSlug.includes(slug) || slug.includes(provSlug);
-          });
+          const liveMatch = providerSlugs.get(slug)
+            ?? [...providerSlugs.entries()].find(([ps]) => ps.includes(slug) || slug.includes(ps))?.[1];
           return { slug, label: p.name, logoUrl: liveMatch?.logoUrl };
         }),
       );

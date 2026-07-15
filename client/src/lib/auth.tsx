@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import { createContext, useContext, useState, useEffect, useMemo, ReactNode } from 'react';
 import { SupabaseClient } from '@supabase/supabase-js';
 import { createSupabaseClient } from './supabase';
 
@@ -48,7 +48,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         const { data: { subscription } } = sb.auth.onAuthStateChange(
           async (_event, session) => {
             if (session) {
-              localStorage.setItem('token', session.access_token);
+              // Do NOT persist the token to localStorage — XSS-readable.
+              // The Supabase client keeps its own session; we only hold it in React state.
               setToken(session.access_token);
 
               // Fetch the Neon user (includes role and displayName)
@@ -76,7 +77,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                 });
               }
             } else {
-              localStorage.removeItem('token');
               setToken(null);
               setUser(null);
             }
@@ -108,8 +108,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const signOut = async () => { await supabase?.auth.signOut(); };
 
+  const ctx = useMemo(
+    () => ({ user, token, supabase, signIn, signUp, signOut, isLoading }),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [user, token, supabase, isLoading],
+  );
+
   return (
-    <AuthContext.Provider value={{ user, token, supabase, signIn, signUp, signOut, isLoading }}>
+    <AuthContext.Provider value={ctx}>
       {children}
     </AuthContext.Provider>
   );

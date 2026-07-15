@@ -130,6 +130,7 @@ export default function AnimeGenres() {
           />
           {filter && (
             <button
+              aria-label="Clear filter"
               onClick={() => setFilter('')}
               className="absolute right-3.5 top-1/2 -translate-y-1/2 text-ink-faint hover:text-ink transition-colors"
             >
@@ -155,6 +156,7 @@ export default function AnimeGenres() {
               <span className="font-mono text-[9px] uppercase tracking-widest px-1.5 py-0.5
                 rounded-full border border-line text-ink-faint">tag</span>
               <button
+                aria-label="Close tag preview"
                 onClick={() => { setTagSel(null); setPreview([]); setPreviewState('idle'); }}
                 className="ml-auto text-ink-faint hover:text-ink transition-colors"
               >

@@ -23,7 +23,7 @@ export default function BottomNav() {
   const items = [...BASE_ITEMS, lastItem];
 
   return (
-    <div
+    <nav
       className="
         md:hidden
         fixed bottom-4 left-1/2 -translate-x-1/2 z-50
@@ -34,7 +34,6 @@ export default function BottomNav() {
         px-2 py-1.5
         shadow-[0_8px_32px_-8px_rgba(0,0,0,0.9)]
       "
-      role="navigation"
       aria-label="Main navigation"
     >
       {items.map(item => {
@@ -84,6 +83,6 @@ export default function BottomNav() {
           </button>
         );
       })}
-    </div>
+    </nav>
   );
 }

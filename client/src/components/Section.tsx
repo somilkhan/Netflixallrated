@@ -41,7 +41,7 @@ const Section = memo(function Section({ title, count, children, viewAllPath }: S
           <h2 className="font-sans text-[17px] font-semibold tracking-tight text-white leading-none">
             {title}
           </h2>
-          {count && (
+          {!!count && (
             <span className="font-sans text-[12px] text-[#555]">{count}</span>
           )}
         </div>

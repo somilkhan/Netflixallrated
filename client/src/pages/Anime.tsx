@@ -134,6 +134,7 @@ export default function Anime() {
           {searchState !== 'idle' && (
             <button
               type="button"
+              aria-label="Clear search"
               onClick={clearSearch}
               className="text-ink-faint hover:text-ink transition-colors px-1"
             >
