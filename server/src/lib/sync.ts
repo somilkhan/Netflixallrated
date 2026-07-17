@@ -184,10 +184,10 @@ export async function syncTmdbCatalog(opts: SyncOptions = {}): Promise<SyncResul
           genres,
           synopsis: item.overview || '',
           posterUrl: item.poster_path
-            ? `https://image.tmdb.org/t/p/w500${item.poster_path}`
+            ? `https://image.tmdb.org/t/p/original${item.poster_path}`
             : undefined,
           backdropUrl: item.backdrop_path
-            ? `https://image.tmdb.org/t/p/w780${item.backdrop_path}`
+            ? `https://image.tmdb.org/t/p/original${item.backdrop_path}`
             : undefined,
         };
 

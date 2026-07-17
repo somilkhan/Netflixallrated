@@ -49,7 +49,7 @@ async function tmdbFetch(
   throw new Error(`TMDB request failed after ${retries + 1} retries (persistent 429) (${path})`);
 }
 
-export function tmdbImageUrl(path: string | null, size: 'w92' | 'w342' | 'w500' | 'w780' | 'original' = 'w500') {
+export function tmdbImageUrl(path: string | null, size: 'w92' | 'w342' | 'w500' | 'w780' | 'original' = 'original') {
   return path ? `${TMDB_IMAGE_BASE}/${size}${path}` : null;
 }
 
@@ -431,8 +431,8 @@ export async function getTmdbDetails(tmdbId: number, mediaType: 'movie' | 'tv'):
     runtimeMinutes: detail.runtime || (Array.isArray(detail.episode_run_time) ? detail.episode_run_time[0] : null) || null,
     genres: (detail.genres || []).map((g: any) => g.name),
     synopsis: detail.overview || '',
-    posterUrl: tmdbImageUrl(detail.poster_path),
-    backdropUrl: tmdbImageUrl(detail.backdrop_path, 'w780'),
+    posterUrl: tmdbImageUrl(detail.poster_path, 'original'),
+    backdropUrl: tmdbImageUrl(detail.backdrop_path, 'original'),
     trailerYoutubeId: trailer?.key || null,
   };
 }
