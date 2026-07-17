@@ -252,7 +252,8 @@ export default function Home() {
   void location;
 
   return (
-    <div>
+    /* pb-28 = 112px — clears the floating BottomNav (≈58px) + 1rem offset + safe-area on mobile */
+    <div className="pb-28 md:pb-0">
       <Hero titles={heroTitles} />
       <Tabs active={activeTab} onChange={setActiveTab} />
 

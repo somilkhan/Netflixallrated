@@ -89,7 +89,8 @@ export default function Anime() {
   }, [query]); // eslint-disable-line react-hooks/exhaustive-deps
 
   return (
-    <div className="min-h-screen bg-void">
+    /* pb-28 = 112px — clears the floating BottomNav on mobile */
+    <div className="min-h-screen bg-void pb-28 md:pb-0">
 
       {/* Cinematic auto-changing hero */}
       <AnimeHeroBanner titles={heroTitles} />

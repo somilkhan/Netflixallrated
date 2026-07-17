@@ -120,11 +120,10 @@ export default function HeroCarousel({ titles }: { titles: any[] }) {
         <div className="flex h-full" style={{ willChange: 'transform' }}>
           {titles.map((t, i) => (
             <div key={t.id} className="relative flex-[0_0_100%] h-full overflow-hidden">
-              {t.trailerYoutubeId ? (
-                <TrailerBg youtubeId={t.trailerYoutubeId} />
-              ) : (
-                <ImageBg backdropUrl={t.backdropUrl} posterUrl={t.posterUrl} active={i === selectedIdx} />
-              )}
+              {/* Always use the backdrop image — the YouTube iframe triggers a
+                  bot-check wall on load (rate-limited by yt-nocookie on non-session
+                  requests). Trailers remain accessible from the detail page. */}
+              <ImageBg backdropUrl={t.backdropUrl} posterUrl={t.posterUrl} active={i === selectedIdx} />
             </div>
           ))}
         </div>

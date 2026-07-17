@@ -647,7 +647,7 @@
 }
 .anime-status.pulse { animation: pulseFade 1.5s ease-in-out infinite; }
 @keyframes pulseFade { 0%,100%{opacity:1;} 50%{opacity:0.45;} }
-.anime-status.error { border-color: rgba(156,51,62,0.4); color: var(--dp-maroon-bright); }
+.anime-status.error { border-color: rgba(255,255,255,0.20); color: var(--dp-maroon-bright); }
 
 /* ===== SERVER ACCORDION ===== */
 .server-wrap { margin-top: 16px; }
@@ -1067,10 +1067,11 @@
 @keyframes fillIn { to { transform: scaleX(1); } }
 @media (prefers-reduced-motion: reduce) { .tier-fill { animation: none; transform: scaleX(1); } }
 
-.tier[data-tier="skip"] .tier-fill       { background: linear-gradient(90deg, rgba(245,240,236,0.14), rgba(245,240,236,0.26)); }
-.tier[data-tier="timepass"] .tier-fill   { background: linear-gradient(90deg, rgba(156,51,62,0.32), rgba(156,51,62,0.52)); }
-.tier[data-tier="goforit"] .tier-fill    { background: linear-gradient(90deg, rgba(156,51,62,0.6), rgba(196,72,90,0.85)); }
-.tier[data-tier="perfection"] .tier-fill { background: linear-gradient(90deg, #9C333E, #C4485A); }
+/* Tier fills — white-only design system. Brightness increases with tier quality. */
+.tier[data-tier="skip"] .tier-fill       { background: linear-gradient(90deg, rgba(255,255,255,0.10), rgba(255,255,255,0.18)); }
+.tier[data-tier="timepass"] .tier-fill   { background: linear-gradient(90deg, rgba(255,255,255,0.22), rgba(255,255,255,0.36)); }
+.tier[data-tier="goforit"] .tier-fill    { background: linear-gradient(90deg, rgba(255,255,255,0.45), rgba(255,255,255,0.65)); }
+.tier[data-tier="perfection"] .tier-fill { background: linear-gradient(90deg, rgba(255,255,255,0.75), rgba(255,255,255,0.96)); }
 
 /* Submit row */
 .rating-submit-row {
