@@ -136,7 +136,7 @@ export default function SearchResults() {
           value={query}
           onChange={e => handleQueryChange(e.target.value)}
           placeholder="Search movies, shows, anime…"
-          className="w-full bg-white/[0.04] border border-white/[0.08] rounded-full pl-10 pr-10 py-3 text-sm text-ink placeholder:text-white/25 outline-none focus:border-white/[0.22] focus:bg-white/[0.06] focus:shadow-[0_0_0_3px_rgba(255,255,255,0.05)] transition-all duration-200"
+          className="w-full bg-white/[0.04] border border-white/[0.08] rounded-full pl-10 pr-10 py-3 text-sm text-ink placeholder:text-white/25 outline-none focus:border-white/[0.22] focus:bg-white/[0.06] focus:shadow-[0_0_0_3px_rgba(255,255,255,0.05)] transition-[border-color,background-color,box-shadow] duration-200"
         />
         {query && (
           <button type="button" aria-label="Clear search" onClick={() => { setQuery(''); nav('/search'); }}
@@ -157,7 +157,7 @@ export default function SearchResults() {
           <button
             key={value}
             onClick={() => handleTypeFilter(value)}
-            className={`flex items-center gap-1.5 text-xs font-mono px-3.5 py-2 rounded-full border transition-all ${
+            className={`flex items-center gap-1.5 text-xs font-mono px-3.5 py-2 rounded-full border transition-[border-color,color,background-color] ${
               filters.type === value
                 ? 'bg-white/[0.10] border-white/[0.22] text-white'
                 : 'bg-white/[0.03] border-white/[0.07] text-white/40 hover:text-white/75 hover:border-white/[0.14]'
@@ -182,7 +182,7 @@ export default function SearchResults() {
         <div className="mb-8">
           <p className="font-mono text-[11px] text-ink-faint uppercase tracking-wider mb-3">Best match · AniList</p>
           <div
-            className="flex gap-4 p-4 rounded-xl border border-line bg-surface max-w-xl cursor-pointer hover:border-maroon/50 transition-colors"
+            className="flex gap-4 p-4 rounded-xl border border-line bg-surface max-w-xl cursor-pointer hover:border-white/25 transition-colors"
             role="button"
             tabIndex={0}
             aria-label={`View ${anilistResult.title.english || anilistResult.title.romaji}`}
@@ -209,7 +209,7 @@ export default function SearchResults() {
                 {anilistResult.episodes && <><span>·</span><span>{anilistResult.episodes} eps</span></>}
                 {anilistResult.averageScore && (
                   <><span>·</span>
-                  <span className="bg-maroon/20 border border-maroon/50 text-ink rounded px-1.5 py-px">
+                  <span className="bg-white/[0.08] border border-white/20 text-ink rounded px-1.5 py-px">
                     ★ {(anilistResult.averageScore / 10).toFixed(1)}
                   </span></>
                 )}
@@ -251,7 +251,7 @@ export default function SearchResults() {
               <button
                 key={g}
                 onClick={() => nav(`/search?q=${g}`)}
-                className="font-mono text-xs px-3 py-1.5 rounded-full border border-line text-ink-faint hover:border-maroon hover:text-ink transition-all"
+                className="font-mono text-xs px-3 py-1.5 rounded-full border border-line text-ink-faint hover:border-white/30 hover:text-ink transition-[border-color,color]"
               >
                 {g}
               </button>

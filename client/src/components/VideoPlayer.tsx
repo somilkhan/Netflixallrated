@@ -189,7 +189,7 @@ export default function VideoPlayer({
        * Top bar — source-selector pills + controls all sit HERE (normal block flow).
        * They are shrink-0 so they never get squeezed by the player below.
        */}
-      <div className="flex items-center justify-between px-4 py-2.5 border-b border-line shrink-0 bg-surface/80 backdrop-blur-sm gap-3 flex-wrap">
+      <div className="flex items-center justify-between px-4 py-2.5 border-b border-line shrink-0 bg-surface/80 md:backdrop-blur-sm gap-3 flex-wrap">
         <div className="shrink-0">
           <p className="font-serif text-sm font-semibold leading-tight">{title.name}</p>
           <p className="text-[10px] text-ink-dim font-mono">

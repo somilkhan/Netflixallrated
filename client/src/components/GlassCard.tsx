@@ -83,7 +83,7 @@ const GlassCard = memo(function GlassCard({
     <div
       role={onClick ? 'button' : undefined}
       tabIndex={onClick ? 0 : undefined}
-      aria-label={onClick ? title : undefined}
+      aria-label={onClick ? (title || 'View details') : undefined}
       className={`
         relative cursor-pointer group
         focus:outline-none focus-visible:ring-2 focus-visible:ring-white/25
@@ -347,6 +347,7 @@ export function GlassCardSkeleton({
         relative w-full poster-ratio rounded-[14px]
         border border-white/[0.05] bg-surface overflow-hidden
       ">
+        {/* Single shimmer sweep — no per-element animate-pulse (cheaper to composite) */}
         <div
           className="absolute inset-0"
           style={{
@@ -356,14 +357,14 @@ export function GlassCardSkeleton({
           }}
         />
         <div className="absolute inset-x-0 bottom-0 h-[40%] bg-gradient-to-t from-black/40 to-transparent pointer-events-none" />
-        <div className="absolute top-2 left-2 h-[20px] w-[20px] rounded-full bg-white/[0.05] animate-pulse" />
-        <div className="absolute top-2 right-2 h-[14px] w-[28px] rounded-full bg-white/[0.04] animate-pulse" />
+        <div className="absolute top-2 left-2 h-[20px] w-[20px] rounded-full bg-white/[0.05]" />
+        <div className="absolute top-2 right-2 h-[14px] w-[28px] rounded-full bg-white/[0.04]" />
         <div className="absolute inset-x-0 bottom-0 px-2.5 pt-2 pb-2 bg-black/70 border-t border-white/[0.05]">
-          <div className="h-[10px] w-[82%] rounded-full bg-white/[0.08] animate-pulse mb-[4px]" />
-          <div className="h-[8px] w-[50%] rounded-full bg-white/[0.06] animate-pulse mb-[6px]" />
+          <div className="h-[10px] w-[82%] rounded-full bg-white/[0.08] mb-[4px]" />
+          <div className="h-[8px] w-[50%] rounded-full bg-white/[0.06] mb-[6px]" />
           <div className="flex gap-[4px]">
-            <div className="h-[13px] w-[13px] rounded-[3px] bg-white/[0.06] animate-pulse" />
-            <div className="h-[13px] w-[13px] rounded-[3px] bg-white/[0.05] animate-pulse" />
+            <div className="h-[13px] w-[13px] rounded-[3px] bg-white/[0.06]" />
+            <div className="h-[13px] w-[13px] rounded-[3px] bg-white/[0.05]" />
           </div>
         </div>
       </div>

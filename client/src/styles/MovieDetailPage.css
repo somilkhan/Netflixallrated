@@ -376,7 +376,7 @@
   content: '';
   position: absolute; inset: -10px;
   border-radius: 999px;
-  background: radial-gradient(circle, rgba(194,67,79,0.32) 0%, rgba(194,67,79,0.06) 55%, transparent 75%);
+  background: radial-gradient(circle, rgba(255,255,255,0.12) 0%, rgba(255,255,255,0.03) 55%, transparent 75%);
   filter: blur(5px);
   animation: glGlowPulse 2.2s ease-in-out infinite;
 }
@@ -386,7 +386,7 @@
   border-radius: 999px;
   border: 2px solid var(--dp-hairline);
   border-top-color: var(--dp-maroon-bright);
-  box-shadow: 0 0 12px -2px rgba(194,67,79,0.5);
+  box-shadow: 0 0 12px -2px rgba(255,255,255,0.25);
   animation: spin 0.9s cubic-bezier(.5,.15,.5,.85) infinite;
 }
 @keyframes spin { to { transform: rotate(360deg); } }
@@ -748,7 +748,7 @@
   .skel-bar, .skel-block { animation: none; opacity: 0.7; }
 }
 .skel-hero {
-  background: linear-gradient(160deg, rgba(156,51,62,0.14), rgba(255,255,255,0.03));
+  background: linear-gradient(160deg, rgba(255,255,255,0.05), rgba(255,255,255,0.02));
 }
 .skel-ep-row { cursor: default; pointer-events: none; }
 
@@ -829,7 +829,7 @@
 .season-tab:hover { border-color: var(--dp-hairline-bright); color: var(--dp-ink); }
 .season-tab.active {
   border-color: var(--dp-maroon-bright);
-  background: rgba(156,51,62,0.18);
+  background: rgba(255,255,255,0.07);
   color: var(--dp-ink);
 }
 
@@ -902,7 +902,7 @@
   transition: border-color 0.15s, background 0.15s;
 }
 .ep-row:hover { border-color: var(--dp-hairline-bright); background: rgba(255,255,255,0.05); }
-.ep-row.active { border-color: var(--dp-maroon-bright); background: rgba(156,51,62,0.12); }
+.ep-row.active { border-color: var(--dp-maroon-bright); background: rgba(255,255,255,0.05); }
 
 .ep-thumb {
   position: relative;

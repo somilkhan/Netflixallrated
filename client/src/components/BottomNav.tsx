@@ -29,7 +29,7 @@ export default function BottomNav() {
     <nav
       className="
         md:hidden
-        fixed bottom-4 left-1/2 -translate-x-1/2 z-50
+        fixed left-1/2 -translate-x-1/2 z-50
         flex items-center
         rounded-[30px]
         px-1.5 py-1.5
@@ -41,6 +41,7 @@ export default function BottomNav() {
         background: '#0d0e11',
         border: '1px solid rgba(255,255,255,0.07)',
         boxShadow: '0 8px 32px -4px rgba(0,0,0,0.9), inset 0 1px 0 rgba(255,255,255,0.04)',
+        bottom: 'calc(1rem + env(safe-area-inset-bottom))',
       }}
     >
       {items.map(item => {

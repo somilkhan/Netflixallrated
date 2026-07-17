@@ -200,7 +200,7 @@ export default function Anime() {
           onClick={() => nav('/anime/genres')}
           className="relative w-full overflow-hidden rounded-2xl border border-white/[0.07] group
             bg-[radial-gradient(ellipse_120%_100%_at_20%_40%,rgba(255,255,255,0.04),rgba(15,16,20,0.9)_60%)]
-            hover:border-white/[0.14] transition-all duration-300
+            hover:border-white/[0.14] transition-[border-color,box-shadow] duration-300
             hover:shadow-[0_0_40px_-8px_rgba(255,255,255,0.08)]"
         >
           <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500
@@ -219,7 +219,7 @@ export default function Anime() {
               </p>
             </div>
             <div className="shrink-0 flex items-center gap-2 font-mono text-sm text-white/50
-              group-hover:translate-x-1 group-hover:text-white/80 transition-all duration-300">
+              group-hover:translate-x-1 group-hover:text-white/80 transition-[transform,color] duration-300">
               Explore <ArrowRight size={16} strokeWidth={2.2} />
             </div>
           </div>

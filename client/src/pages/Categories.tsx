@@ -90,7 +90,7 @@ const MOODS = [
 /* ─── Design tokens (inline — Tailwind can't handle dynamic tints) ── */
 const BG      = "#09040A";
 const CARD_BG = "#141014";
-const MAROON  = "#C2434F";
+const MAROON  = "#ffffff";
 const DIM_RED = "#8B1A24";
 const WHITE   = "#EDE6E8";
 const DIM     = "#6E6070";

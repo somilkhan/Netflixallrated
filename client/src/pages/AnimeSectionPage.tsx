@@ -109,9 +109,9 @@ export default function AnimeSectionPage() {
             Back to Anime
           </button>
 
-          <span className="font-mono text-[10px] uppercase tracking-[0.22em] text-maroon-bright/70
+          <span className="font-mono text-[10px] uppercase tracking-[0.22em] text-ink-faint/60
             flex items-center gap-1.5 mb-3">
-            <span className="inline-block w-1.5 h-1.5 rounded-full bg-maroon-bright animate-pulse" />
+            <span className="inline-block w-1.5 h-1.5 rounded-full bg-white/40 animate-pulse" />
             Live from AniList
           </span>
           <h1 className="font-serif text-[38px] md:text-[52px] font-semibold tracking-tight leading-none text-ink mb-2">

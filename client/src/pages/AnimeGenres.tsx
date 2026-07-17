@@ -99,9 +99,9 @@ export default function AnimeGenres() {
             Back to Anime
           </button>
 
-          <span className="font-mono text-[10px] uppercase tracking-[0.22em] text-maroon-bright/70
+          <span className="font-mono text-[10px] uppercase tracking-[0.22em] text-ink-faint/60
             flex items-center gap-1.5 mb-3">
-            <span className="inline-block w-1.5 h-1.5 rounded-full bg-maroon-bright animate-pulse" />
+            <span className="inline-block w-1.5 h-1.5 rounded-full bg-white/40 animate-pulse" />
             Live from AniList
           </span>
           <h1 className="font-serif text-[44px] md:text-[56px] font-semibold tracking-tight leading-none text-ink mb-2">
@@ -116,7 +116,7 @@ export default function AnimeGenres() {
       </div>
 
       {/* Sticky search bar */}
-      <div className="sticky top-0 z-20 px-5 py-3 bg-void/85 backdrop-blur-md border-b border-line">
+      <div className="sticky top-0 z-20 px-5 py-3 bg-void/85 md:backdrop-blur-md border-b border-line">
         <div className="relative max-w-md">
           <Search size={13} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-ink-faint pointer-events-none" />
           <input
@@ -231,10 +231,10 @@ export default function AnimeGenres() {
                 <button
                   key={genre}
                   onClick={() => handleGenreClick(genre)}
-                  className="font-mono text-xs px-4 py-1.5 rounded-full border transition-all duration-200
+                  className="font-mono text-xs px-4 py-1.5 rounded-full border transition-[border-color,color,background-color,box-shadow] duration-200
                     bg-surface/60 border-line text-ink-faint
-                    hover:text-ink hover:border-maroon/60 hover:bg-maroon/10
-                    hover:shadow-[0_0_12px_-4px_rgba(194,67,79,0.3)]"
+                    hover:text-ink hover:border-white/30 hover:bg-white/[0.06]
+                    hover:shadow-[0_0_12px_-4px_rgba(255,255,255,0.12)]"
                 >
                   {genre}
                 </button>
@@ -270,7 +270,7 @@ export default function AnimeGenres() {
                         <button
                           key={tag.name}
                           onClick={() => handleTagClick(tag.name)}
-                          className={`font-mono text-[10.5px] px-3 py-1 rounded-full border transition-all duration-200 ${
+                          className={`font-mono text-[10.5px] px-3 py-1 rounded-full border transition-[border-color,color,background-color,box-shadow] duration-200 ${
                             active
                               ? 'border-maroon/60 text-ink shadow-[0_0_10px_-4px_rgba(194,67,79,0.35)]'
                               : 'border-white/[0.07] text-ink-faint hover:text-ink hover:border-white/20'

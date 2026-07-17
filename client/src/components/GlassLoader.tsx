@@ -81,7 +81,7 @@ export default function GlassLoader({
 
   return (
     <div
-      className={`fixed inset-0 z-[999] flex flex-col items-center justify-center gap-5 bg-[#090909]/90 backdrop-blur-md transition-opacity duration-300 ease-out ${visible ? 'opacity-100' : 'opacity-0'}`}
+      className={`fixed inset-0 z-[999] flex flex-col items-center justify-center gap-5 bg-[#090909]/90 md:backdrop-blur-md transition-opacity duration-300 ease-out ${visible ? 'opacity-100' : 'opacity-0'}`}
       role="status"
       aria-live="polite"
       aria-label={label || 'Loading'}

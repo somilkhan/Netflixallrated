@@ -56,7 +56,7 @@ const AniCard = memo(function AniCard({ anime, onClick }: AniCardProps) {
           <div className="
             absolute top-2 left-2 z-20
             inline-flex items-center gap-[3px]
-            rounded-full border border-amber/35 bg-amber/[0.12] backdrop-blur-sm
+            rounded-full border border-amber/35 bg-amber/[0.12] md:backdrop-blur-sm
             px-[6px] py-[2.5px] leading-none
           ">
             <svg
