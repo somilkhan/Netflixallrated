@@ -74,7 +74,7 @@ export default function SideRail({ onOpenSearch }: { onOpenSearch: () => void })
               className={`
                 group relative flex items-center justify-center
                 w-full h-[44px] rounded-[12px]
-                transition-all duration-200 ease-spring
+                transition-[color,background-color] duration-200 ease-spring
                 focus:outline-none
                 ${active
                   ? 'text-white bg-white/[0.09]'
@@ -106,7 +106,7 @@ export default function SideRail({ onOpenSearch }: { onOpenSearch: () => void })
                 font-sans text-[12px] font-medium text-white
                 opacity-0 -translate-x-2 scale-95
                 group-hover:opacity-100 group-hover:translate-x-0 group-hover:scale-100
-                transition-all duration-200 ease-spring z-30
+                transition-[opacity,transform] duration-200 ease-spring z-30
                 shadow-tooltip
               ">
                 {item.label}
@@ -131,7 +131,7 @@ export default function SideRail({ onOpenSearch }: { onOpenSearch: () => void })
                   flex items-center justify-center
                   font-sans font-semibold text-[13px] text-white
                   hover:bg-white/[0.15] hover:border-white/[0.20]
-                  transition-all duration-200 ease-spring
+                  transition-[color,background-color,border-color] duration-200
                 "
                 title={user.displayName || user.email}
               >
@@ -181,7 +181,7 @@ export default function SideRail({ onOpenSearch }: { onOpenSearch: () => void })
               className="
                 w-[40px] h-[40px] rounded-[12px] flex items-center justify-center
                 text-white/30 hover:text-white/65 hover:bg-white/[0.04]
-                transition-all duration-200 ease-spring
+                transition-[color,background-color] duration-200 ease-spring
               "
             >
               <LogIn size={19} strokeWidth={1.7} />

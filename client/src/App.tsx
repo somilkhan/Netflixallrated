@@ -1,6 +1,6 @@
 import { Suspense, lazy, useState, useEffect, useCallback } from 'react';
 import { Routes, Route, useLocation } from 'react-router-dom';
-import { AnimatePresence, LazyMotion, domAnimation, m } from 'framer-motion';
+import { LazyMotion, domAnimation } from 'framer-motion';
 import { AuthProvider } from './lib/auth';
 import Navbar from './components/Navbar';
 import BottomNav from './components/BottomNav';
@@ -39,37 +39,30 @@ function AnimatedRoutes() {
   const location = useLocation();
   return (
     <LazyMotion features={domAnimation} strict>
-      <AnimatePresence mode="wait" initial={false}>
-        <m.div
-          key={location.pathname}
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          exit={{ opacity: 0 }}
-          transition={{ duration: 0.22, ease: 'easeOut' }}
-        >
-          <Routes location={location}>
-            <Route path="/" element={<Wrap><Home /></Wrap>} />
-            <Route path="/title/:id" element={<Wrap><TitleDetail /></Wrap>} />
-            <Route path="/search" element={<Wrap><SearchResults /></Wrap>} />
-            <Route path="/watchlist" element={<Wrap><Watchlist /></Wrap>} />
-            <Route path="/login" element={<Wrap><Login /></Wrap>} />
-            <Route path="/register" element={<Wrap><Register /></Wrap>} />
-            <Route path="/admin" element={<Wrap><Admin /></Wrap>} />
-            <Route path="/tv" element={<Wrap><TV /></Wrap>} />
-            <Route path="/anime" element={<Wrap><Anime /></Wrap>} />
-            <Route path="/anime/genres" element={<Wrap><AnimeGenres /></Wrap>} />
-            <Route path="/anime/section" element={<Wrap><AnimeSectionPage /></Wrap>} />
-            <Route path="/categories" element={<Wrap><Categories /></Wrap>} />
-            <Route path="/studio/:slug" element={<Wrap><StudioDetail /></Wrap>} />
-            <Route path="/language/:slug" element={<Wrap><LanguageDetail /></Wrap>} />
-            <Route path="/browse/genre/:slug" element={<Wrap><GenreDetail /></Wrap>} />
-            <Route path="/browse/type/:slug" element={<Wrap><TypeDetail /></Wrap>} />
-            <Route path="/brand" element={<Wrap><BrandShowcase /></Wrap>} />
-            <Route path="/history" element={<Wrap><WatchHistory /></Wrap>} />
-            <Route path="*" element={<Wrap><NotFound /></Wrap>} />
-          </Routes>
-        </m.div>
-      </AnimatePresence>
+      {/* key re-mounts the div on every navigation → CSS page-enter fires (pure opacity, no JS/frame loop) */}
+      <div key={location.pathname} className="page-enter">
+        <Routes location={location}>
+          <Route path="/" element={<Wrap><Home /></Wrap>} />
+          <Route path="/title/:id" element={<Wrap><TitleDetail /></Wrap>} />
+          <Route path="/search" element={<Wrap><SearchResults /></Wrap>} />
+          <Route path="/watchlist" element={<Wrap><Watchlist /></Wrap>} />
+          <Route path="/login" element={<Wrap><Login /></Wrap>} />
+          <Route path="/register" element={<Wrap><Register /></Wrap>} />
+          <Route path="/admin" element={<Wrap><Admin /></Wrap>} />
+          <Route path="/tv" element={<Wrap><TV /></Wrap>} />
+          <Route path="/anime" element={<Wrap><Anime /></Wrap>} />
+          <Route path="/anime/genres" element={<Wrap><AnimeGenres /></Wrap>} />
+          <Route path="/anime/section" element={<Wrap><AnimeSectionPage /></Wrap>} />
+          <Route path="/categories" element={<Wrap><Categories /></Wrap>} />
+          <Route path="/studio/:slug" element={<Wrap><StudioDetail /></Wrap>} />
+          <Route path="/language/:slug" element={<Wrap><LanguageDetail /></Wrap>} />
+          <Route path="/browse/genre/:slug" element={<Wrap><GenreDetail /></Wrap>} />
+          <Route path="/browse/type/:slug" element={<Wrap><TypeDetail /></Wrap>} />
+          <Route path="/brand" element={<Wrap><BrandShowcase /></Wrap>} />
+          <Route path="/history" element={<Wrap><WatchHistory /></Wrap>} />
+          <Route path="*" element={<Wrap><NotFound /></Wrap>} />
+        </Routes>
+      </div>
     </LazyMotion>
   );
 }

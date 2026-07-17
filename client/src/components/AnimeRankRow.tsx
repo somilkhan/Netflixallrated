@@ -65,7 +65,7 @@ const AnimeRankRow = memo(function AnimeRankRow({ title, badge, perPage = 10, on
         </h2>
         {badge && (
           <span className="shrink-0 font-mono text-[8.5px] uppercase tracking-[0.14em] px-2 py-0.5
-            rounded-full bg-maroon/20 text-maroon-bright border border-maroon/30">
+            rounded-full bg-white/[0.07] text-white/55 border border-white/[0.12]">
             {badge}
           </span>
         )}
@@ -73,7 +73,7 @@ const AnimeRankRow = memo(function AnimeRankRow({ title, badge, perPage = 10, on
         <button
           type="button"
           onClick={() => nav(viewAllHref)}
-          className="font-sans text-[11px] text-ink-faint whitespace-nowrap hover:text-maroon-bright transition-colors shrink-0"
+          className="font-sans text-[11px] text-white/35 whitespace-nowrap hover:text-white/75 transition-colors duration-150 shrink-0"
         >
           View all
         </button>

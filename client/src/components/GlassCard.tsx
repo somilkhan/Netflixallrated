@@ -95,19 +95,21 @@ const GlassCard = memo(function GlassCard({
       onKeyDown={onClick ? handleKeyDown : undefined}
       onMouseEnter={handleMouseEnter}
     >
-      {/* Inner card — will-change only on desktop (md+) to save mobile GPU memory */}
+      {/* Inner card — will-change only on desktop (md+) to save mobile GPU memory.
+          Shadow via .card-glow opacity-trick (avoids box-shadow repaint). */}
       <div
         className="
           relative w-full poster-ratio rounded-[14px] overflow-hidden
           bg-[#1a1c20] border border-white/[0.07]
-          transition-all duration-300 ease-spring
+          transition-[transform,border-color] duration-300 ease-spring
           md:will-change-transform
           md:group-hover:-translate-y-[8px] md:group-hover:scale-[1.026]
           md:group-hover:border-white/[0.16]
-          md:group-hover:shadow-[0_28px_60px_-10px_rgba(0,0,0,0.95),0_0_0_1px_rgba(255,255,255,0.10)]
           active:scale-[0.97] md:active:scale-100
         "
       >
+        {/* Pre-rendered shadow layer — opacity is composite-only, no repaint */}
+        <div className="card-glow hidden md:block" aria-hidden />
         {/* Poster */}
         {hasImage ? (
           <>
@@ -245,8 +247,8 @@ const GlassCard = memo(function GlassCard({
           border-t border-white/[0.05]
           bg-black/80
           md:bg-black/60 md:backdrop-blur-[14px]
-          transition-[padding] duration-300 ease-spring
-          md:group-hover:pb-[10px] md:group-hover:bg-black/70
+          transition-[background-color] duration-300 ease-spring
+          md:group-hover:bg-black/70
         ">
           <p className="text-[11.5px] font-sans font-semibold leading-[1.28] line-clamp-2 text-ink">
             {title}

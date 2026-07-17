@@ -48,8 +48,8 @@ const AnimeRow = memo(function AnimeRow({
   const fetchData = useCallback(() => {
     setLoadState('loading');
     if (sectionRef.current) {
-      sectionRef.current.classList.add('opacity-100', 'translate-y-0');
-      sectionRef.current.classList.remove('opacity-0', 'translate-y-4');
+      sectionRef.current.classList.add('opacity-100');
+      sectionRef.current.classList.remove('opacity-0');
     }
     getAnimePage({ sort, genre, tag, status, season, seasonYear, format, perPage, idNotIn: notIdsRef.current })
       .then((media: any[]) => {
@@ -86,7 +86,7 @@ const AnimeRow = memo(function AnimeRow({
   return (
     <section
       ref={sectionRef}
-      className="pt-8 pb-1 opacity-0 translate-y-4 transition-all duration-500 ease-spring"
+      className="pt-8 pb-1 opacity-0 transition-opacity duration-300"
     >
       {/* Row header */}
       <div className="flex items-center px-5 mb-4 gap-3">
@@ -97,7 +97,7 @@ const AnimeRow = memo(function AnimeRow({
         {badge && (
           <span className="
             shrink-0 font-mono text-[8.5px] uppercase tracking-[0.14em] px-2 py-0.5
-            rounded-full bg-maroon/20 text-maroon-bright border border-maroon/30
+            rounded-full bg-white/[0.07] text-white/55 border border-white/[0.12]
           ">
             {badge}
           </span>
@@ -108,7 +108,7 @@ const AnimeRow = memo(function AnimeRow({
         <button
           type="button"
           onClick={() => nav(resolvedViewAllHref)}
-          className="font-sans text-[11px] text-ink-faint whitespace-nowrap hover:text-maroon-bright transition-colors shrink-0"
+          className="font-sans text-[11px] text-white/35 whitespace-nowrap hover:text-white/75 transition-colors duration-150 shrink-0"
         >
           View all
         </button>
@@ -129,7 +129,7 @@ const AnimeRow = memo(function AnimeRow({
             Failed to load —{' '}
             <button
               onClick={handleRetry}
-              className="text-maroon-bright hover:underline focus:outline-none"
+              className="text-white/55 hover:text-white underline underline-offset-2 focus:outline-none"
             >
               retry
             </button>
