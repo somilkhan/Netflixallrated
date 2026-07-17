@@ -58,7 +58,9 @@ router.get('/', async (req, res) => {
     where.id = { in: links.map(l => l.titleId) };
   }
   // "popular" = most community ratings (real signal, not fake) — used for "Top Rated" rows.
-  const orderBy = sort === 'popular' ? [{ ratings: { _count: 'desc' } }, { year: 'desc' }] : { createdAt: 'desc' };
+  const orderBy = sort === 'popular'
+    ? [{ ratings: { _count: 'desc' as const } }, { year: 'desc' as const }]
+    : { createdAt: 'desc' as const };
   const [titles, count] = await Promise.all([
     prisma.title.findMany({ where, skip, take, orderBy, include: { platforms: { include: { platform: true } }, _count: { select: { ratings: true } } } }),
     prisma.title.count({ where }),
