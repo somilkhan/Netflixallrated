@@ -59,7 +59,7 @@ const Navbar = memo(function Navbar({ onOpenSearch }: { onOpenSearch?: () => voi
 
   return (
     <nav
-      className="md:hidden sticky top-0 z-50 flex items-center gap-3 px-4 py-2.5"
+      className="md:hidden fixed top-0 left-0 right-0 z-50 flex items-center gap-3 px-4 py-2.5"
       style={{
         /* Solid bg — no backdrop-blur avoids GPU compositing on mobile */
         background: '#0f1014',

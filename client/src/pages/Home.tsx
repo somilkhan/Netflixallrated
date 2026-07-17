@@ -252,8 +252,9 @@ export default function Home() {
   void location;
 
   return (
-    /* pb-28 = 112px — clears the floating BottomNav (≈58px) + 1rem offset + safe-area on mobile */
-    <div className="pb-28 md:pb-0">
+    /* -mt-[52px] pulls the hero behind the fixed mobile Navbar so it fills the full viewport.
+       md:mt-0 resets on desktop (Navbar is hidden, SideRail handles nav). */
+    <div className="pb-28 md:pb-0 -mt-[52px] md:mt-0">
       <Hero titles={heroTitles} />
       <Tabs active={activeTab} onChange={setActiveTab} />
 

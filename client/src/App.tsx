@@ -90,7 +90,9 @@ export default function App() {
         <SideRail onOpenSearch={openSearch} />
         <Navbar onOpenSearch={openSearch} />
         <SearchOverlay open={searchOpen} onClose={closeSearch} />
-        <div className="rail-offset">
+        {/* pt-[52px] clears the fixed mobile Navbar on every page.
+            md:pt-0 resets it on desktop (SideRail handles layout there). */}
+        <div className="rail-offset pt-[52px] md:pt-0">
           <Suspense fallback={<GlassLoader visible label="Loading your experience…" />}>
             <AnimatedRoutes />
           </Suspense>

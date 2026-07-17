@@ -44,21 +44,52 @@ const ImageBg = memo(function ImageBg({
   posterUrl?: string;
   active?: boolean;
 }) {
-  const imgUrl = backdropUrl || posterUrl;
-  // Backdrop = landscape → center-center. Poster = portrait → center 25% keeps the
-  // face/subject visible rather than cropping to the sky or lower half.
-  const bgPos = backdropUrl ? 'center center' : 'center 25%';
+  // Portrait-only path — bg-cover on a 2:3 poster inside a tall portrait-phone
+  // hero zooms in far too aggressively (just a cropped face). Instead, anchor the
+  // poster to the right edge at natural height, and fill the rest with dark bg
+  // + a left-to-right gradient so the text overlay stays readable.
+  if (!backdropUrl && posterUrl) {
+    return (
+      <div className="absolute inset-0 z-0 overflow-hidden" style={{ background: '#080a0e' }}>
+        <img
+          src={posterUrl}
+          alt=""
+          loading="eager"
+          decoding="async"
+          style={{
+            position: 'absolute',
+            right: 0,
+            top: 0,
+            height: '100%',
+            width: 'auto',
+            objectFit: 'cover',
+            objectPosition: 'center top',
+            // Own compositor layer — no repaint when slides crossfade
+            transform: 'translateZ(0)',
+          }}
+        />
+        {/* Readability gradient: solid dark on the left, fades toward poster on right */}
+        <div
+          aria-hidden
+          style={{
+            position: 'absolute',
+            inset: 0,
+            background: 'linear-gradient(90deg, #080a0e 22%, rgba(8,10,14,0.78) 52%, rgba(8,10,14,0.12) 100%)',
+          }}
+        />
+      </div>
+    );
+  }
+
+  // Landscape backdrop — full-bleed, center-aligned, optional ken-burns on desktop.
   return (
     <div className="absolute inset-0 z-0 overflow-hidden">
       <div
-        className={`absolute inset-[-4%] bg-cover${active ? ' ken-burns' : ''}`}
+        className={`absolute inset-[-4%] bg-cover bg-center${active ? ' ken-burns' : ''}`}
         style={{
-          backgroundImage: imgUrl
-            ? `url(${imgUrl})`
+          backgroundImage: backdropUrl
+            ? `url(${backdropUrl})`
             : 'linear-gradient(160deg, #1a1c20, #0f1014 75%)',
-          backgroundPosition: bgPos,
-          // Promote to own compositor layer so the crossfade between slides
-          // doesn't trigger a repaint of the entire hero.
           transform: 'translateZ(0)',
         }}
       />
