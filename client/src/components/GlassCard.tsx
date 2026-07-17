@@ -1,5 +1,7 @@
 /**
- * GlassCard — premium poster card. Butter-smooth lift + gloss sweep on hover.
+ * GlassCard — premium poster card.
+ * Mobile: solid panel (no backdrop-blur), no will-change, no gloss.
+ * Desktop: glass panel, butter hover with lift + gloss sweep.
  */
 import { useState, useRef, memo, useCallback } from 'react';
 import { Play, Film } from 'lucide-react';
@@ -27,7 +29,6 @@ export interface GlassCardProps {
   className?: string;
   overlay?: React.ReactNode;
   fluid?: boolean;
-  /** When true this card is above the fold — eager load + high fetchpriority */
   priority?: boolean;
 }
 
@@ -72,7 +73,6 @@ const GlassCard = memo(function GlassCard({
     onPlay ? onPlay() : onClick?.();
   }, [onPlay, onClick]);
 
-  // Trigger gloss sweep on hover enter
   const handleMouseEnter = useCallback(() => {
     if (glossTimer.current) clearTimeout(glossTimer.current);
     setGlossing(true);
@@ -95,15 +95,17 @@ const GlassCard = memo(function GlassCard({
       onKeyDown={onClick ? handleKeyDown : undefined}
       onMouseEnter={handleMouseEnter}
     >
-      {/* Inner card */}
+      {/* Inner card — will-change only on desktop (md+) to save mobile GPU memory */}
       <div
-        className="relative w-full poster-ratio rounded-[14px] overflow-hidden
+        className="
+          relative w-full poster-ratio rounded-[14px] overflow-hidden
           bg-[#1a1c20] border border-white/[0.07]
-          transition-all duration-350 ease-spring will-change-transform
-          group-hover:-translate-y-[8px] group-hover:scale-[1.026]
-          group-hover:border-white/[0.16]
-          group-hover:shadow-card-hover
-          shadow-card-idle
+          transition-all duration-300 ease-spring
+          md:will-change-transform
+          md:group-hover:-translate-y-[8px] md:group-hover:scale-[1.026]
+          md:group-hover:border-white/[0.16]
+          md:group-hover:shadow-[0_28px_60px_-10px_rgba(0,0,0,0.95),0_0_0_1px_rgba(255,255,255,0.10)]
+          active:scale-[0.97] md:active:scale-100
         "
       >
         {/* Poster */}
@@ -126,11 +128,10 @@ const GlassCard = memo(function GlassCard({
               onError={() => setErrored(true)}
               className={`
                 absolute inset-0 h-full w-full object-cover
-                transition-all duration-500
-                ${loaded ? 'opacity-100 scale-100' : 'opacity-0 scale-105'}
-                group-hover:scale-[1.04]
+                transition-opacity duration-500
+                ${loaded ? 'opacity-100' : 'opacity-0'}
+                md:group-hover:scale-[1.04] md:transition-transform md:duration-350 md:ease-spring
               `}
-              style={{ transitionTimingFunction: 'cubic-bezier(.16,1,.3,1)' }}
             />
           </>
         ) : (
@@ -149,12 +150,10 @@ const GlassCard = memo(function GlassCard({
           </div>
         )}
 
-        {/* Gloss sweep — GPU transform only, fires on hover enter */}
+        {/* Gloss sweep — desktop only (no touch hover) */}
         <div
           aria-hidden
-          className={`
-            absolute inset-0 z-20 pointer-events-none overflow-hidden rounded-[14px]
-          `}
+          className="absolute inset-0 z-20 pointer-events-none overflow-hidden rounded-[14px] hidden md:block"
         >
           <div
             className={glossing ? 'card-gloss-sweep' : ''}
@@ -172,19 +171,19 @@ const GlassCard = memo(function GlassCard({
 
         {/* Bottom gradient */}
         <div
-          className="absolute inset-x-0 bottom-0 pointer-events-none transition-all duration-350 ease-spring"
+          className="absolute inset-x-0 bottom-0 pointer-events-none"
           style={{
             height: '65%',
             background: 'linear-gradient(to top, rgba(0,0,0,0.92) 0%, rgba(0,0,0,0.45) 35%, transparent 100%)',
           }}
         />
 
-        {/* Top-left badge: rank OR tier */}
+        {/* Top-left: rank or tier — no blur on mobile */}
         {rank != null ? (
           <div className="
             absolute top-2 left-2 z-10
             h-[22px] w-[22px] flex items-center justify-center
-            rounded-full bg-void/80 border border-white/[0.12] backdrop-blur-md
+            rounded-full bg-black/80 border border-white/[0.12]
             font-serif font-semibold text-[11px] text-ink-dim leading-none
           ">
             {rank}
@@ -194,60 +193,60 @@ const GlassCard = memo(function GlassCard({
             absolute top-2 left-2 z-10
             inline-flex items-center justify-center
             rounded-full border w-[20px] h-[20px]
-            text-[10px] font-sans font-semibold
-            backdrop-blur-sm leading-none
+            text-[10px] font-sans font-semibold leading-none
             ${tierStyle}
           `}>
             {tierLabel}
           </span>
         ) : null}
 
-        {/* Top-right: type label */}
+        {/* Top-right: type label — no blur on mobile */}
         {typeLabel && (
           <span className="
             absolute top-2 right-2 z-10
             font-mono text-[7px] px-[6px] py-[2.5px] rounded-full
-            border border-white/[0.10] bg-black/50 backdrop-blur-sm
+            border border-white/[0.10] bg-black/60
             text-ink-faint/65 uppercase tracking-[0.08em] leading-none
           ">
             {typeLabel}
           </span>
         )}
 
-        {/* Play button — premium white circle with ring */}
+        {/* Play button — desktop only */}
         <button
           type="button"
           aria-label={`Play ${title}`}
           onClick={handlePlayClick}
           className="
+            hidden md:flex
             absolute z-20 top-1/2 left-1/2 -translate-x-1/2 -translate-y-[58%]
-            flex items-center justify-center
+            items-center justify-center
             opacity-0 scale-75 pointer-events-none
             transition-all duration-300 ease-spring
             group-hover:opacity-100 group-hover:scale-100 group-hover:pointer-events-auto
           "
         >
-          {/* Outer ring */}
-          <span className="absolute inset-[-6px] rounded-full border border-white/25 scale-90 group-hover:scale-100 transition-transform duration-300 ease-spring" />
-          {/* Button */}
+          <span className="absolute inset-[-6px] rounded-full border border-white/25 transition-transform duration-300 ease-spring group-hover:scale-100 scale-90" />
           <span className="
             h-[42px] w-[42px] flex items-center justify-center rounded-full
-            bg-white text-black
-            hover:bg-white/88 transition-colors duration-150
+            bg-white text-black hover:bg-white/88 transition-colors duration-150
             shadow-[0_4px_20px_rgba(0,0,0,0.5)]
           ">
             <Play size={14} className="fill-current ml-[2px]" />
           </span>
         </button>
 
-        {/* Glass info panel */}
+        {/* Info panel:
+            Mobile → solid bg (no backdrop-blur, zero GPU cost)
+            Desktop → glass with backdrop-blur */}
         <div className="
           absolute inset-x-0 bottom-0 z-10
           px-2.5 pt-2 pb-2
-          bg-black/60 backdrop-blur-[16px]
           border-t border-white/[0.05]
-          transition-all duration-350 ease-spring
-          group-hover:pb-[10px] group-hover:bg-black/70
+          bg-black/80
+          md:bg-black/60 md:backdrop-blur-[14px]
+          transition-[padding] duration-300 ease-spring
+          md:group-hover:pb-[10px] md:group-hover:bg-black/70
         ">
           <p className="text-[11.5px] font-sans font-semibold leading-[1.28] line-clamp-2 text-ink">
             {title}
@@ -281,8 +280,8 @@ const GlassCard = memo(function GlassCard({
             </div>
           )}
 
-          {/* Expanded on hover */}
-          <div className="grid grid-rows-[0fr] group-hover:grid-rows-[1fr] transition-[grid-template-rows] duration-350 ease-spring">
+          {/* Expanded on hover — desktop only */}
+          <div className="hidden md:grid grid-rows-[0fr] group-hover:grid-rows-[1fr] transition-[grid-template-rows] duration-300 ease-spring">
             <div className="overflow-hidden">
               {rank != null && hasTier && (
                 <span className={`
@@ -357,7 +356,7 @@ export function GlassCardSkeleton({
         <div className="absolute inset-x-0 bottom-0 h-[40%] bg-gradient-to-t from-black/40 to-transparent pointer-events-none" />
         <div className="absolute top-2 left-2 h-[20px] w-[20px] rounded-full bg-white/[0.05] animate-pulse" />
         <div className="absolute top-2 right-2 h-[14px] w-[28px] rounded-full bg-white/[0.04] animate-pulse" />
-        <div className="absolute inset-x-0 bottom-0 px-2.5 pt-2 pb-2 bg-black/40 backdrop-blur-[14px] border-t border-white/[0.05]">
+        <div className="absolute inset-x-0 bottom-0 px-2.5 pt-2 pb-2 bg-black/70 border-t border-white/[0.05]">
           <div className="h-[10px] w-[82%] rounded-full bg-white/[0.08] animate-pulse mb-[4px]" />
           <div className="h-[8px] w-[50%] rounded-full bg-white/[0.06] animate-pulse mb-[6px]" />
           <div className="flex gap-[4px]">

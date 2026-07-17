@@ -1,6 +1,7 @@
 /**
- * HeroCarousel — full-bleed cinematic hero with Ken Burns, smooth slide transitions,
- * and premium CTA buttons.
+ * HeroCarousel — cinematic hero.
+ * Ken Burns only on desktop (md+) — continuous transform on mobile kills FPS.
+ * CTA blurs reduced on mobile.
  */
 import { useState, useEffect, useCallback, useMemo, memo } from 'react';
 import { useNavigate } from 'react-router-dom';
@@ -35,14 +36,14 @@ const ImageBg = memo(function ImageBg({
   const imgUrl = backdropUrl || posterUrl;
   return (
     <div className="absolute inset-0 z-0 overflow-hidden">
+      {/* ken-burns class is disabled on mobile via CSS media query in index.css */}
       <div
-        className="absolute inset-[-4%] bg-cover bg-center will-change-transform"
+        className={`absolute inset-[-4%] bg-cover bg-center${active ? ' ken-burns' : ''}`}
         style={{
           backgroundImage: imgUrl
             ? `url(${imgUrl})`
             : 'linear-gradient(160deg, #1a1c20, #0f1014 75%)',
           backgroundPosition: backdropUrl ? 'center center' : 'top center',
-          animation: active ? `kenBurns 28s ease-in-out infinite` : 'none',
         }}
       />
     </div>
@@ -102,38 +103,32 @@ export default function HeroCarousel({ titles }: { titles: any[] }) {
         </div>
       </div>
 
-      {/* Gradient overlays — cinematic depth */}
-      {/* Left vignette: content legibility */}
+      {/* Gradient overlays */}
       <div className="absolute inset-0 z-[1] pointer-events-none"
-        style={{ background: 'linear-gradient(90deg, rgba(15,16,20,0.90) 0%, rgba(15,16,20,0.55) 35%, rgba(15,16,20,0.10) 65%, transparent 100%)' }} />
-      {/* Bottom fade: into content */}
+        style={{ background: 'linear-gradient(90deg, rgba(15,16,20,0.92) 0%, rgba(15,16,20,0.55) 35%, rgba(15,16,20,0.10) 65%, transparent 100%)' }} />
       <div className="absolute inset-0 z-[1] pointer-events-none"
         style={{ background: 'linear-gradient(to top, rgba(15,16,20,1) 0%, rgba(15,16,20,0.70) 18%, rgba(15,16,20,0.18) 45%, transparent 100%)' }} />
-      {/* Top vignette */}
       <div className="absolute inset-0 z-[1] pointer-events-none"
         style={{ background: 'linear-gradient(to bottom, rgba(15,16,20,0.55) 0%, transparent 28%)' }} />
 
-      {/* Content overlay — bottom-left */}
+      {/* Content — bottom-left */}
       <div className="absolute inset-0 z-[2] flex items-end">
-        <div className="w-full max-w-[560px] px-6 md:px-10" style={{ paddingBottom: 116 }}>
+        <div className="w-full max-w-[560px] px-5 md:px-10" style={{ paddingBottom: 116 }}>
 
-          {/* Type badge */}
           {title.type && (
             <span
               key={`${title.id}-badge`}
-              className="inline-block mb-3 font-mono text-[10px] tracking-[0.12em] uppercase text-white/50 animate-fadeUp"
-              style={{ animationDelay: '0s' }}
+              className="inline-block mb-2 font-mono text-[10px] tracking-[0.12em] uppercase text-white/45 animate-fadeUp"
             >
               {title.type === 'MOVIE' ? 'Film' : title.type === 'SERIES' ? 'Series' : title.type}
             </span>
           )}
 
-          {/* Title — Bebas Neue */}
           <h1
             key={title.id}
             className="font-display text-white leading-none uppercase animate-fadeUp"
             style={{
-              fontSize: 'clamp(48px, 6.5vw, 88px)',
+              fontSize: 'clamp(42px, 6.5vw, 88px)',
               letterSpacing: '0.04em',
               textShadow: '0 2px 40px rgba(0,0,0,0.6)',
               marginBottom: 10,
@@ -143,7 +138,6 @@ export default function HeroCarousel({ titles }: { titles: any[] }) {
             {title.name}
           </h1>
 
-          {/* Meta */}
           <div
             className="flex items-center flex-wrap animate-fadeUp"
             style={{ gap: '6px 0', animationDelay: '0.10s', marginBottom: 12 }}
@@ -170,15 +164,14 @@ export default function HeroCarousel({ titles }: { titles: any[] }) {
             ))}
           </div>
 
-          {/* Synopsis */}
           {title.synopsis && (
             <p
-              className="font-sans leading-relaxed line-clamp-3 animate-fadeUp"
+              className="font-sans leading-relaxed line-clamp-2 md:line-clamp-3 animate-fadeUp"
               style={{
                 fontSize: 13.5,
                 color: 'rgba(255,255,255,0.58)',
                 maxWidth: 440,
-                marginBottom: 22,
+                marginBottom: 20,
                 animationDelay: '0.16s',
               }}
             >
@@ -186,55 +179,34 @@ export default function HeroCarousel({ titles }: { titles: any[] }) {
             </p>
           )}
 
-          {/* CTAs */}
-          <div
-            className="flex items-center gap-3 animate-fadeUp"
-            style={{ animationDelay: '0.22s' }}
-          >
-            {/* Play — premium white circle */}
+          <div className="flex items-center gap-3 animate-fadeUp" style={{ animationDelay: '0.22s' }}>
+            {/* Play */}
             <button
               onClick={() => nav(`/title/${title.id}?play=1`)}
               aria-label={`Play ${title.name}`}
-              className="group/play relative flex items-center justify-center shrink-0"
+              className="group/play relative flex items-center justify-center shrink-0 active:scale-90 transition-transform duration-150"
               style={{ width: 50, height: 50 }}
             >
-              {/* Ring */}
-              <span
-                className="absolute inset-0 rounded-full border border-white/30
-                  transition-all duration-300 ease-spring
-                  group-hover/play:inset-[-5px] group-hover/play:border-white/15"
-              />
-              {/* Circle */}
-              <span
-                className="absolute inset-0 rounded-full bg-white
-                  transition-all duration-200 ease-spring
-                  group-hover/play:bg-white/88 group-hover/play:shadow-[0_0_24px_rgba(255,255,255,0.25)]"
-              />
+              <span className="absolute inset-0 rounded-full border border-white/30 md:transition-all md:duration-300 md:ease-spring md:group-hover/play:inset-[-5px] md:group-hover/play:border-white/15" />
+              <span className="absolute inset-0 rounded-full bg-white md:group-hover/play:bg-white/88 transition-colors duration-150" />
               <Play size={15} className="relative z-10 fill-black text-black ml-[2px]" />
             </button>
 
-            {/* See More — glass pill */}
+            {/* See More — no blur on mobile */}
             <button
               onClick={() => nav(`/title/${title.id}`)}
               className="
-                group/more flex items-center gap-2.5
-                px-4 py-2.5
-                rounded-full
-                bg-white/[0.08] border border-white/[0.14]
-                backdrop-blur-[10px]
-                transition-all duration-200 ease-spring
-                hover:bg-white/[0.14] hover:border-white/[0.22]
-                hover:shadow-[0_4px_20px_rgba(0,0,0,0.4)]
+                flex items-center gap-2.5
+                px-4 py-2.5 rounded-full
+                bg-white/[0.10] border border-white/[0.16]
+                active:bg-white/[0.20] transition-colors duration-150
+                md:bg-white/[0.08] md:border-white/[0.14]
+                md:backdrop-blur-[10px]
+                md:hover:bg-white/[0.14] md:hover:border-white/[0.22]
               "
             >
-              <span className="
-                flex items-center justify-center
-                w-5 h-5 rounded-full
-                border border-white/40
-                transition-colors duration-200
-                group-hover/more:border-white/60
-              ">
-                <Info size={11} className="text-white/70 group-hover/more:text-white/90 transition-colors" />
+              <span className="flex items-center justify-center w-5 h-5 rounded-full border border-white/40">
+                <Info size={11} className="text-white/70" />
               </span>
               <span className="font-sans font-medium text-white text-[14px]">See More</span>
             </button>
@@ -271,14 +243,13 @@ export default function HeroCarousel({ titles }: { titles: any[] }) {
                     borderRadius: 7,
                     width: active ? 80 : 52,
                     height: 46,
-                    transition: 'all 0.35s cubic-bezier(.16,1,.3,1)',
+                    transition: 'width 0.35s cubic-bezier(.16,1,.3,1), outline 0.2s ease, opacity 0.2s ease',
                     outline: active ? '2px solid rgba(255,255,255,0.95)' : '1.5px solid rgba(255,255,255,0.18)',
                     outlineOffset: active ? 1.5 : 0,
                     opacity: active ? 1 : 0.5,
                     cursor: 'pointer',
                     border: 'none',
                     background: '#1a1c20',
-                    transform: active ? 'scale(1)' : 'scale(0.97)',
                   }}
                 >
                   {(t.backdropUrl || t.posterUrl) && (
@@ -307,19 +278,16 @@ export default function HeroCarousel({ titles }: { titles: any[] }) {
             })}
           </div>
 
-          {/* Next arrow */}
           <button
             onClick={scrollNext}
             aria-label="Next"
             className="
               flex items-center justify-center
               w-[36px] h-[36px] rounded-full shrink-0
-              bg-white/[0.10] border border-white/[0.18]
-              backdrop-blur-[10px] text-white
-              transition-all duration-200 ease-spring
-              hover:bg-white/[0.20] hover:border-white/[0.30]
-              hover:shadow-[0_4px_16px_rgba(0,0,0,0.5)]
-              active:scale-90
+              border border-white/[0.18] text-white
+              active:scale-90 transition-all duration-150
+              bg-white/[0.10] md:bg-white/[0.10] md:backdrop-blur-[10px]
+              md:hover:bg-white/[0.20]
             "
           >
             <ChevronRight size={15} />

@@ -97,8 +97,8 @@ export default function Anime() {
       {/* Search bar strip — kept below the hero so the banner reads uninterrupted */}
       <div className="relative px-5 pt-6 pb-2">
         <div className="flex items-center justify-between mb-4">
-          <span className="font-mono text-[10px] uppercase tracking-[0.22em] text-maroon-bright/70 flex items-center gap-1.5">
-            <span className="inline-block w-1.5 h-1.5 rounded-full bg-maroon-bright animate-pulse" />
+          <span className="font-mono text-[10px] uppercase tracking-[0.22em] text-white/35 flex items-center gap-1.5">
+            <span className="inline-block w-1.5 h-1.5 rounded-full bg-white/50 animate-pulse" />
             Live from AniList
           </span>
           <button
@@ -120,14 +120,14 @@ export default function Anime() {
               placeholder="Search any anime…"
               className="w-full bg-surface/80 border border-line rounded-full pl-10 pr-4 py-2.5
                 text-sm text-ink placeholder:text-ink-faint outline-none
-                focus:border-maroon-bright/60 focus:bg-surface transition-colors backdrop-blur-sm"
+                focus:border-white/[0.22] focus:bg-white/[0.07] transition-colors"
             />
           </div>
           <button
             type="submit"
             disabled={!query.trim() || searchState === 'loading'}
-            className="bg-maroon hover:bg-maroon-bright disabled:opacity-40 text-white font-mono
-              text-xs px-5 py-2.5 rounded-full transition-colors shrink-0"
+            className="bg-white hover:bg-white/88 disabled:opacity-40 text-black font-mono
+              text-xs px-5 py-2.5 rounded-full transition-colors shrink-0 font-semibold"
           >
             {searchState === 'loading' ? '…' : 'Search'}
           </button>
@@ -165,7 +165,7 @@ export default function Anime() {
           {searchState === 'error' && (
             <p className="font-mono text-sm text-ink-faint py-4">
               Search failed —{' '}
-              <button onClick={() => setSearchState('idle')} className="text-maroon-bright hover:underline">
+              <button onClick={() => setSearchState('idle')} className="text-white/60 hover:text-white underline underline-offset-2">
                 dismiss
               </button>
             </p>
@@ -198,17 +198,17 @@ export default function Anime() {
       <div className="px-5 pt-12 pb-8">
         <button
           onClick={() => nav('/anime/genres')}
-          className="relative w-full overflow-hidden rounded-2xl border border-maroon/30 group
-            bg-[radial-gradient(ellipse_120%_100%_at_20%_40%,rgba(122,37,48,0.35),rgba(22,16,17,0.8)_60%)]
-            hover:border-maroon/60 transition-all duration-300
-            hover:shadow-[0_0_40px_-8px_rgba(194,67,79,0.3)]"
+          className="relative w-full overflow-hidden rounded-2xl border border-white/[0.07] group
+            bg-[radial-gradient(ellipse_120%_100%_at_20%_40%,rgba(255,255,255,0.04),rgba(15,16,20,0.9)_60%)]
+            hover:border-white/[0.14] transition-all duration-300
+            hover:shadow-[0_0_40px_-8px_rgba(255,255,255,0.08)]"
         >
           <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500
-            bg-[radial-gradient(ellipse_80%_60%_at_50%_50%,rgba(194,67,79,0.08),transparent_70%)]" />
+            bg-[radial-gradient(ellipse_80%_60%_at_50%_50%,rgba(255,255,255,0.04),transparent_70%)]" />
 
           <div className="relative flex flex-col md:flex-row items-start md:items-center justify-between gap-4 px-7 py-7">
             <div>
-              <div className="font-mono text-[10px] uppercase tracking-[0.2em] text-maroon-bright/70 mb-2">
+              <div className="font-mono text-[10px] uppercase tracking-[0.2em] text-white/35 mb-2">
                 AniList · Live data
               </div>
               <h2 className="font-serif text-2xl md:text-3xl font-semibold text-ink leading-tight mb-1">
@@ -218,8 +218,8 @@ export default function Anime() {
                 Every genre and media tag from AniList — searchable, filterable, with live previews.
               </p>
             </div>
-            <div className="shrink-0 flex items-center gap-2 font-mono text-sm text-maroon-bright
-              group-hover:translate-x-1 transition-transform duration-300">
+            <div className="shrink-0 flex items-center gap-2 font-mono text-sm text-white/50
+              group-hover:translate-x-1 group-hover:text-white/80 transition-all duration-300">
               Explore <ArrowRight size={16} strokeWidth={2.2} />
             </div>
           </div>

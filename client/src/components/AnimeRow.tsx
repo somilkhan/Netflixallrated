@@ -139,8 +139,8 @@ const AnimeRow = memo(function AnimeRow({
 
       {loadState === 'done' && items.length > 0 && (
         <div
-          className="flex gap-3.5 overflow-x-auto pb-3 scrollbar-hide px-5 overscroll-x-contain"
-          style={{ scrollSnapType: 'x mandatory' }}
+          className="flex gap-3.5 overflow-x-auto pb-3 scrollbar-hide px-5"
+          style={{ scrollSnapType: 'x mandatory', WebkitOverflowScrolling: 'touch' } as React.CSSProperties}
         >
           {items.map((anime: any) => (
             <AniCard key={anime.id} anime={anime} />

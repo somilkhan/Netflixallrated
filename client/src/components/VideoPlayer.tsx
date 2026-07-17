@@ -210,8 +210,8 @@ export default function VideoPlayer({
                 onClick={() => switchServer(s.id)}
                 className={`text-[10px] font-mono px-2.5 py-1 rounded-full border transition-colors ${
                   serverId === s.id
-                    ? 'border-maroon-bright bg-maroon/20 text-ink'
-                    : 'border-line text-ink-dim hover:text-ink hover:border-line-bright'
+                    ? 'border-white/[0.22] bg-white/[0.08] text-white'
+                    : 'border-white/[0.08] text-white/40 hover:text-white/80 hover:border-white/[0.16]'
                 }`}
               >
                 {s.label}

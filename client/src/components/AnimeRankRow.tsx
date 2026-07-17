@@ -100,8 +100,8 @@ const AnimeRankRow = memo(function AnimeRankRow({ title, badge, perPage = 10, on
 
       {loadState === 'done' && items.length > 0 && (
         <div
-          className="flex gap-1 overflow-x-auto pb-3 scrollbar-hide px-5 overscroll-x-contain"
-          style={{ scrollSnapType: 'x mandatory' }}
+          className="flex gap-1 overflow-x-auto pb-3 scrollbar-hide px-5"
+          style={{ scrollSnapType: 'x mandatory', WebkitOverflowScrolling: 'touch' } as React.CSSProperties}
         >
           {items.map((anime: any, i: number) => (
             <div key={anime.id} className="relative flex items-end shrink-0 pl-6 first:pl-0">

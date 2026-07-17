@@ -298,7 +298,7 @@ function ExpandedGrid({ title, items, onBack, onOpen }: {
     <div className="px-4">
       <button
         onClick={onBack}
-        className="mb-5 flex items-center gap-1 text-sm text-ink-dim hover:text-maroon-bright transition-colors"
+        className="mb-5 flex items-center gap-1 text-sm text-white/40 hover:text-white/80 transition-colors duration-200"
       >
         <ChevronRight size={15} className="rotate-180" /> Back
       </button>

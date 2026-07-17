@@ -135,7 +135,7 @@ function HistoryRow({
         {/* Progress bar */}
         {pct !== null && !item.completed && (
           <div className="mt-1.5 h-[2px] bg-white/10 rounded-full overflow-hidden">
-            <div className="h-full bg-maroon-bright/70 rounded-full" style={{ width: `${pct}%` }} />
+            <div className="h-full bg-white/65 rounded-full" style={{ width: `${pct}%` }} />
           </div>
         )}
       </div>
@@ -144,7 +144,7 @@ function HistoryRow({
       <div className="flex items-center gap-1.5 shrink-0 opacity-0 group-hover:opacity-100 transition-opacity">
         <button
           onClick={() => navigate(`/title/${item.title.id}?play=1`)}
-          className="flex items-center gap-1 text-[10px] font-mono px-2.5 py-1.5 rounded-lg bg-maroon/20 border border-maroon/40 text-ink hover:bg-maroon/30 transition-colors"
+          className="flex items-center gap-1 text-[10px] font-mono px-2.5 py-1.5 rounded-lg bg-white/[0.06] border border-white/[0.12] text-white/70 hover:bg-white/[0.10] hover:text-white transition-colors duration-150"
           title="Resume"
         >
           <Play size={10} />
@@ -211,7 +211,7 @@ export default function WatchHistory() {
         <p className="font-serif text-xl text-ink">Sign in to see your watch history</p>
         <button
           onClick={() => navigate('/login')}
-          className="mt-2 px-5 py-2 rounded-full bg-maroon text-white text-sm font-mono border border-maroon-bright/40 hover:bg-maroon/80 transition-colors"
+          className="mt-2 px-5 py-2 rounded-full bg-white text-black text-sm font-mono font-semibold hover:bg-white/88 transition-colors duration-150"
         >
           Sign in
         </button>
@@ -257,8 +257,8 @@ export default function WatchHistory() {
               onClick={() => setFilter(tab.key)}
               className={`text-[10px] font-mono px-3 py-1.5 rounded-full border transition-colors ${
                 filter === tab.key
-                  ? 'border-maroon-bright bg-maroon/20 text-ink'
-                  : 'border-white/10 text-ink-faint hover:text-ink hover:border-white/20'
+                  ? 'border-white/[0.22] bg-white/[0.08] text-white'
+                  : 'border-white/[0.08] text-white/35 hover:text-white/75 hover:border-white/[0.16]'
               }`}
             >
               {tab.label}
@@ -277,7 +277,7 @@ export default function WatchHistory() {
           <p className="text-xs text-ink-faint">Titles you watch will appear here</p>
           <button
             onClick={() => navigate('/')}
-            className="mt-3 px-5 py-2 rounded-full bg-maroon/20 border border-maroon/40 text-ink text-sm font-mono hover:bg-maroon/30 transition-colors"
+            className="mt-3 px-5 py-2 rounded-full bg-white/[0.06] border border-white/[0.12] text-white/60 text-sm font-mono hover:bg-white/[0.10] hover:text-white transition-colors duration-150"
           >
             Browse titles
           </button>
