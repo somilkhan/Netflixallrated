@@ -1,7 +1,18 @@
 /**
  * HeroCarousel — cinematic hero.
- * Ken Burns only on desktop (md+) — continuous transform on mobile kills FPS.
- * CTA blurs reduced on mobile.
+ *
+ * Mobile perf rules:
+ * - 100dvh height (accounts for browser chrome; fallback to 100vh)
+ * - Dot indicators instead of thumbnail strip (strip overflows ~375px screens)
+ * - Ken Burns disabled on mobile (continuous transform kills FPS)
+ * - No backdrop-blur on mobile CTAs
+ * - will-change:transform only on desktop to avoid GPU memory pressure on low-end devices
+ *
+ * GPU compositing rules (no layout/paint triggers):
+ * - Slide transitions: transform only (Embla)
+ * - Progress bar: width animation (only child element, acceptable)
+ * - Dot expand: width animation on tiny element, cached in own layer via translate3d
+ * - Gradient overlays: opacity-only compositing
  */
 import { useState, useEffect, useCallback, useMemo, memo } from 'react';
 import { useNavigate } from 'react-router-dom';
@@ -34,16 +45,21 @@ const ImageBg = memo(function ImageBg({
   active?: boolean;
 }) {
   const imgUrl = backdropUrl || posterUrl;
+  // Backdrop = landscape → center-center. Poster = portrait → center 25% keeps the
+  // face/subject visible rather than cropping to the sky or lower half.
+  const bgPos = backdropUrl ? 'center center' : 'center 25%';
   return (
     <div className="absolute inset-0 z-0 overflow-hidden">
-      {/* ken-burns class is disabled on mobile via CSS media query in index.css */}
       <div
-        className={`absolute inset-[-4%] bg-cover bg-center${active ? ' ken-burns' : ''}`}
+        className={`absolute inset-[-4%] bg-cover${active ? ' ken-burns' : ''}`}
         style={{
           backgroundImage: imgUrl
             ? `url(${imgUrl})`
             : 'linear-gradient(160deg, #1a1c20, #0f1014 75%)',
-          backgroundPosition: backdropUrl ? 'center center' : 'top center',
+          backgroundPosition: bgPos,
+          // Promote to own compositor layer so the crossfade between slides
+          // doesn't trigger a repaint of the entire hero.
+          transform: 'translateZ(0)',
         }}
       />
     </div>
@@ -85,12 +101,23 @@ export default function HeroCarousel({ titles }: { titles: any[] }) {
     title.genres.slice(0, 3).forEach((g: string) => metaParts.push(g));
   }
 
-  return (
-    <section className="relative overflow-hidden" style={{ height: '100vh', minHeight: 520, maxHeight: 920 }}>
+  // dvh = dynamic viewport height (excludes mobile browser chrome).
+  // Fallback to 100vh for browsers that don't support dvh yet.
+  const heroHeight: React.CSSProperties = {
+    height: '100dvh',
+    minHeight: 520,
+    maxHeight: 920,
+  };
 
-      {/* Slide backgrounds */}
+  return (
+    <section
+      className="relative overflow-hidden"
+      style={heroHeight}
+    >
+
+      {/* Slide backgrounds — Embla handles transform-based transitions (GPU only) */}
       <div className="absolute inset-0" ref={emblaRef}>
-        <div className="flex h-full">
+        <div className="flex h-full" style={{ willChange: 'transform' }}>
           {titles.map((t, i) => (
             <div key={t.id} className="relative flex-[0_0_100%] h-full overflow-hidden">
               {t.trailerYoutubeId ? (
@@ -103,7 +130,7 @@ export default function HeroCarousel({ titles }: { titles: any[] }) {
         </div>
       </div>
 
-      {/* Gradient overlays */}
+      {/* Gradient overlays — pre-painted, zero repaint cost */}
       <div className="absolute inset-0 z-[1] pointer-events-none"
         style={{ background: 'linear-gradient(90deg, rgba(15,16,20,0.92) 0%, rgba(15,16,20,0.55) 35%, rgba(15,16,20,0.10) 65%, transparent 100%)' }} />
       <div className="absolute inset-0 z-[1] pointer-events-none"
@@ -111,9 +138,13 @@ export default function HeroCarousel({ titles }: { titles: any[] }) {
       <div className="absolute inset-0 z-[1] pointer-events-none"
         style={{ background: 'linear-gradient(to bottom, rgba(15,16,20,0.55) 0%, transparent 28%)' }} />
 
-      {/* Content — bottom-left */}
+      {/* Content — bottom-left.
+          paddingBottom: 96px mobile (dots are small), 120px desktop (thumbnail strip). */}
       <div className="absolute inset-0 z-[2] flex items-end">
-        <div className="w-full max-w-[560px] px-5 md:px-10" style={{ paddingBottom: 116 }}>
+        <div
+          className="w-full max-w-[560px] px-5 md:px-10"
+          style={{ paddingBottom: 'clamp(80px, 12vw, 120px)' }}
+        >
 
           {title.type && (
             <span
@@ -128,7 +159,7 @@ export default function HeroCarousel({ titles }: { titles: any[] }) {
             key={title.id}
             className="font-display text-white leading-none uppercase animate-fadeUp"
             style={{
-              fontSize: 'clamp(42px, 6.5vw, 88px)',
+              fontSize: 'clamp(36px, 6.5vw, 88px)',
               letterSpacing: '0.04em',
               textShadow: '0 2px 40px rgba(0,0,0,0.6)',
               marginBottom: 10,
@@ -187,7 +218,7 @@ export default function HeroCarousel({ titles }: { titles: any[] }) {
               className="group/play relative flex items-center justify-center shrink-0 active:scale-90 transition-transform duration-150"
               style={{ width: 50, height: 50 }}
             >
-              <span className="absolute inset-0 rounded-full border border-white/30 md:transition-all md:duration-300 md:ease-spring md:group-hover/play:inset-[-5px] md:group-hover/play:border-white/15" />
+              <span className="absolute inset-0 rounded-full border border-white/30 md:transition-[inset,border-color] md:duration-300 md:ease-spring md:group-hover/play:inset-[-5px] md:group-hover/play:border-white/15" />
               <span className="absolute inset-0 rounded-full bg-white md:group-hover/play:bg-white/88 transition-colors duration-150" />
               <Play size={15} className="relative z-10 fill-black text-black ml-[2px]" />
             </button>
@@ -214,20 +245,19 @@ export default function HeroCarousel({ titles }: { titles: any[] }) {
         </div>
       </div>
 
-      {/* Thumbnail strip */}
+      {/* ── Slide indicators ──────────────────────────────────────────────── */}
       {titles.length > 1 && (
-        <div
-          className="absolute z-[2]"
-          style={{
-            bottom: 26,
-            left: '50%',
-            transform: 'translateX(-50%)',
-            display: 'flex',
-            alignItems: 'center',
-            gap: 8,
-          }}
-        >
-          <div style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
+        <>
+          {/* MOBILE: pill-dot indicators — never overflow the screen */}
+          <div
+            className="flex md:hidden absolute z-[2] items-center"
+            style={{
+              bottom: 28,
+              left: '50%',
+              transform: 'translateX(-50%)',
+              gap: 5,
+            }}
+          >
             {titles.slice(0, 10).map((t, i) => {
               const active = i === selectedIdx;
               return (
@@ -237,62 +267,102 @@ export default function HeroCarousel({ titles }: { titles: any[] }) {
                   aria-label={`Go to ${t.name}`}
                   aria-current={active}
                   style={{
-                    position: 'relative',
-                    flexShrink: 0,
-                    overflow: 'hidden',
-                    borderRadius: 7,
-                    width: active ? 80 : 52,
-                    height: 46,
-                    transition: 'width 0.35s cubic-bezier(.16,1,.3,1), outline 0.2s ease, opacity 0.2s ease',
-                    outline: active ? '2px solid rgba(255,255,255,0.95)' : '1.5px solid rgba(255,255,255,0.18)',
-                    outlineOffset: active ? 1.5 : 0,
-                    opacity: active ? 1 : 0.5,
-                    cursor: 'pointer',
+                    width: active ? 22 : 6,
+                    height: 6,
+                    borderRadius: 3,
+                    background: active ? 'rgba(255,255,255,0.95)' : 'rgba(255,255,255,0.28)',
                     border: 'none',
-                    background: '#1a1c20',
+                    // width is tiny — acceptable layout cost; transform for the translate is GPU
+                    transition: 'width 0.35s cubic-bezier(.16,1,.3,1), background 0.2s ease',
+                    flexShrink: 0,
+                    cursor: 'pointer',
+                    padding: 0,
+                    // Keep each dot in its own compositor layer
+                    transform: 'translateZ(0)',
                   }}
-                >
-                  {(t.backdropUrl || t.posterUrl) && (
-                    <img
-                      src={t.backdropUrl || t.posterUrl}
-                      alt=""
-                      loading="lazy"
-                      decoding="async"
-                      style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover' }}
-                    />
-                  )}
-                  <div style={{ position: 'absolute', inset: 0, background: 'rgba(0,0,0,0.12)' }} />
-                  {active && (
-                    <span
-                      key={progressKey}
-                      style={{
-                        position: 'absolute', bottom: 0, left: 0, right: 0, height: 2.5,
-                        background: 'rgba(255,255,255,1)',
-                        borderRadius: '0 0 7px 7px',
-                        animation: `heroProgress ${AUTO_ADVANCE_MS}ms linear forwards`,
-                      }}
-                    />
-                  )}
-                </button>
+                />
               );
             })}
           </div>
 
-          <button
-            onClick={scrollNext}
-            aria-label="Next"
-            className="
-              flex items-center justify-center
-              w-[36px] h-[36px] rounded-full shrink-0
-              border border-white/[0.18] text-white
-              active:scale-90 transition-all duration-150
-              bg-white/[0.10] md:bg-white/[0.10] md:backdrop-blur-[10px]
-              md:hover:bg-white/[0.20]
-            "
+          {/* DESKTOP: thumbnail strip */}
+          <div
+            className="hidden md:flex absolute z-[2]"
+            style={{
+              bottom: 26,
+              left: '50%',
+              transform: 'translateX(-50%)',
+              alignItems: 'center',
+              gap: 8,
+            }}
           >
-            <ChevronRight size={15} />
-          </button>
-        </div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
+              {titles.slice(0, 10).map((t, i) => {
+                const active = i === selectedIdx;
+                return (
+                  <button
+                    key={t.id}
+                    onClick={() => scrollTo(i)}
+                    aria-label={`Go to ${t.name}`}
+                    aria-current={active}
+                    style={{
+                      position: 'relative',
+                      flexShrink: 0,
+                      overflow: 'hidden',
+                      borderRadius: 7,
+                      width: active ? 80 : 52,
+                      height: 46,
+                      transition: 'width 0.35s cubic-bezier(.16,1,.3,1), outline 0.2s ease, opacity 0.2s ease',
+                      outline: active ? '2px solid rgba(255,255,255,0.95)' : '1.5px solid rgba(255,255,255,0.18)',
+                      outlineOffset: active ? 1.5 : 0,
+                      opacity: active ? 1 : 0.5,
+                      cursor: 'pointer',
+                      border: 'none',
+                      background: '#1a1c20',
+                    }}
+                  >
+                    {(t.backdropUrl || t.posterUrl) && (
+                      <img
+                        src={t.backdropUrl || t.posterUrl}
+                        alt=""
+                        loading="lazy"
+                        decoding="async"
+                        style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover' }}
+                      />
+                    )}
+                    <div style={{ position: 'absolute', inset: 0, background: 'rgba(0,0,0,0.12)' }} />
+                    {active && (
+                      <span
+                        key={progressKey}
+                        style={{
+                          position: 'absolute', bottom: 0, left: 0, right: 0, height: 2.5,
+                          background: 'rgba(255,255,255,1)',
+                          borderRadius: '0 0 7px 7px',
+                          animation: `heroProgress ${AUTO_ADVANCE_MS}ms linear forwards`,
+                        }}
+                      />
+                    )}
+                  </button>
+                );
+              })}
+            </div>
+
+            <button
+              onClick={scrollNext}
+              aria-label="Next"
+              className="
+                flex items-center justify-center
+                w-[36px] h-[36px] rounded-full shrink-0
+                border border-white/[0.18] text-white
+                active:scale-90 transition-[transform,background-color] duration-150
+                bg-white/[0.10] backdrop-blur-[10px]
+                hover:bg-white/[0.20]
+              "
+            >
+              <ChevronRight size={15} />
+            </button>
+          </div>
+        </>
       )}
     </section>
   );

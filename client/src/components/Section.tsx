@@ -55,10 +55,16 @@ const Section = memo(function Section({ title, count, children, viewAllPath }: S
         )}
       </div>
 
-      {/* Horizontal slider — no overscroll-x-contain (causes iOS jank) */}
+      {/* Horizontal slider — no overscroll-x-contain (causes iOS jank).
+          will-change:scroll-position moves scrolling fully to the compositor thread. */}
       <div
         className="flex gap-3 overflow-x-auto overflow-y-visible px-5 pb-3 scrollbar-hide"
-        style={{ scrollSnapType: 'x mandatory', WebkitOverflowScrolling: 'touch' } as React.CSSProperties}
+        style={{
+          scrollSnapType: 'x mandatory',
+          WebkitOverflowScrolling: 'touch',
+          willChange: 'scroll-position',
+          contain: 'layout style',
+        } as React.CSSProperties}
       >
         {children}
       </div>

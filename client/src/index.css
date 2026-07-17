@@ -120,9 +120,16 @@
   overflow-x: auto;
   overflow-y: visible;
   padding-bottom: 10px;
+  /* Momentum scrolling on iOS */
   -webkit-overflow-scrolling: touch;
   scroll-snap-type: x mandatory;
+  /* Smooth deceleration (CSS scroll-behavior only kicks in for scrollTo calls, not touch) */
+  scroll-behavior: auto;
   scrollbar-width: none;
+  /* Contain paint so scrolling doesn't repaint siblings */
+  contain: layout style;
+  /* Promote to own stacking context; compositor handles scroll without main thread */
+  will-change: scroll-position;
 }
 .slider-scroll::-webkit-scrollbar { display: none; }
 .slider-scroll > * { scroll-snap-align: start; }
