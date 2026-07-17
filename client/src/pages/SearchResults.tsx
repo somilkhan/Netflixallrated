@@ -170,7 +170,7 @@ export default function SearchResults() {
           value={filters.genre}
           onChange={handleGenreFilter}
           aria-label="Filter by genre"
-          className="bg-white/[0.03] border border-white/[0.07] rounded-full px-3.5 py-2 text-xs font-mono text-white/40 focus:border-white/[0.22] focus:text-white outline-none transition-all duration-200 cursor-pointer hover:border-white/[0.14]"
+          className="bg-white/[0.03] border border-white/[0.07] rounded-full px-3.5 py-2 text-xs font-mono text-white/40 focus:border-white/[0.22] focus:text-white outline-none transition-[border-color,color] duration-200 cursor-pointer hover:border-white/[0.14]"
         >
           <option value="">All Genres</option>
           {genres.map(g => <option key={g} value={g}>{g}</option>)}

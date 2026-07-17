@@ -79,7 +79,7 @@ const Navbar = memo(function Navbar({ onOpenSearch }: { onOpenSearch?: () => voi
       <form onSubmit={submit} className="flex-1 max-w-[380px] relative">
         <div className={`
           flex items-center gap-2 border rounded-full px-3.5 py-2
-          transition-all duration-150
+          transition-[background-color,border-color] duration-150
           ${focused
             ? 'bg-white/[0.07] border-white/[0.20]'
             : 'bg-white/[0.04] border-white/[0.08]'

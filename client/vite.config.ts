@@ -25,6 +25,7 @@ export default defineConfig({
         manualChunks: {
           three: ['three'],
           vendor: ['react', 'react-dom', 'react-router-dom'],
+          motion: ['framer-motion'],
           carousel: ['embla-carousel-react', 'embla-carousel-autoplay'],
         },
       },

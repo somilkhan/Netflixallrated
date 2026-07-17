@@ -224,7 +224,7 @@ const GlassCard = memo(function GlassCard({
             absolute z-20 top-1/2 left-1/2 -translate-x-1/2 -translate-y-[58%]
             items-center justify-center
             opacity-0 scale-75 pointer-events-none
-            transition-all duration-300 ease-spring
+            transition-[opacity,transform] duration-300 ease-spring
             group-hover:opacity-100 group-hover:scale-100 group-hover:pointer-events-auto
           "
         >

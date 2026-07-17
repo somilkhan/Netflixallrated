@@ -131,7 +131,7 @@ export default function TV() {
       <div className="px-5 py-3 flex gap-2 overflow-x-auto scrollbar-hide border-b border-[#1a1a1a]">
         <button
           onClick={() => setSelectedGenre('')}
-          className={`shrink-0 font-sans text-[12px] px-4 py-1.5 rounded-full border transition-all ${
+          className={`shrink-0 font-sans text-[12px] px-4 py-1.5 rounded-full border transition-[background-color,border-color,color] duration-200 ${
             !selectedGenre ? 'bg-white text-black border-white' : 'bg-transparent border-[#333] text-[#888] hover:text-white hover:border-[#555]'
           }`}
         >All</button>
@@ -139,7 +139,7 @@ export default function TV() {
           <button
             key={g}
             onClick={() => setSelectedGenre(g === selectedGenre ? '' : g)}
-            className={`shrink-0 font-sans text-[12px] px-4 py-1.5 rounded-full border transition-all ${
+            className={`shrink-0 font-sans text-[12px] px-4 py-1.5 rounded-full border transition-[background-color,border-color,color] duration-200 ${
               selectedGenre === g ? 'bg-white text-black border-white' : 'bg-transparent border-[#333] text-[#888] hover:text-white hover:border-[#555]'
             }`}
           >{g}</button>

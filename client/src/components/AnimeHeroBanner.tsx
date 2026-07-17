@@ -118,7 +118,7 @@ const AnimeHeroBanner = memo(function AnimeHeroBanner({ titles }: AnimeHeroBanne
               aria-label="Play"
               onClick={() => navigateToAnime(anime, nav)}
               className="flex items-center justify-center w-[46px] h-[46px] rounded-full bg-white
-                hover:bg-white/90 active:scale-95 transition-all duration-150
+                hover:bg-white/90 active:scale-95 transition-[transform,background-color] duration-150
                 shadow-[0_4px_20px_rgba(255,255,255,0.2)]"
             >
               <Play size={17} className="text-black fill-black ml-[2px]" />
@@ -126,7 +126,7 @@ const AnimeHeroBanner = memo(function AnimeHeroBanner({ titles }: AnimeHeroBanne
             <button
               onClick={() => navigateToAnime(anime, nav)}
               className="flex items-center gap-2 font-sans text-[14px] text-white font-medium
-                hover:text-white/80 active:scale-95 transition-all duration-150"
+                hover:text-white/80 active:scale-95 transition-[transform,color] duration-150"
             >
               <span className="flex items-center justify-center w-[26px] h-[26px] rounded-full border border-white/50">
                 <Info size={13} className="text-white/80" />
@@ -143,7 +143,7 @@ const AnimeHeroBanner = memo(function AnimeHeroBanner({ titles }: AnimeHeroBanne
                   key={(t as any).id ?? i}
                   aria-label={`Go to slide ${i + 1}`}
                   onClick={() => goTo(i)}
-                  className="relative h-[2px] rounded-full overflow-hidden transition-all duration-300"
+                  className="relative h-[2px] rounded-full overflow-hidden transition-[width,background-color] duration-300"
                   style={{ width: i === idx ? 24 : 8, background: 'rgba(255,255,255,0.2)' }}
                 >
                   {i === idx && (
