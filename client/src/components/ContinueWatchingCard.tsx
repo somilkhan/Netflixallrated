@@ -1,6 +1,7 @@
 import React, { useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import GlassCard from './GlassCard';
+import { X } from 'lucide-react';
 
 interface ContinueWatchingCardProps {
   item: {
@@ -32,7 +33,7 @@ function ContinueWatchingCard({ item, onRemove }: ContinueWatchingCardProps) {
 
   const subLabel =
     title.type === 'SERIES' && seasonNumber != null && episodeNumber != null
-      ? `S${seasonNumber} E${episodeNumber}`
+      ? `S${seasonNumber} · E${episodeNumber}`
       : title.type === 'ANIME' && episodeNumber != null
       ? `Ep ${episodeNumber}`
       : null;
@@ -60,8 +61,8 @@ function ContinueWatchingCard({ item, onRemove }: ContinueWatchingCardProps) {
             left: 0,
             right: 0,
             height: 3,
-            background: 'rgba(255,255,255,0.15)',
-            borderRadius: '0 0 8px 8px',
+            background: 'rgba(255,255,255,0.10)',
+            borderRadius: '0 0 14px 14px',
             overflow: 'hidden',
           }}
         >
@@ -69,8 +70,9 @@ function ContinueWatchingCard({ item, onRemove }: ContinueWatchingCardProps) {
             style={{
               height: '100%',
               width: `${pct}%`,
-              background: '#e50914',
-              transition: 'width 0.3s ease',
+              background: 'rgba(255,255,255,0.75)',
+              borderRadius: 'inherit',
+              transition: 'width 0.4s cubic-bezier(.16,1,.3,1)',
             }}
           />
         </div>
@@ -81,16 +83,19 @@ function ContinueWatchingCard({ item, onRemove }: ContinueWatchingCardProps) {
         <div
           style={{
             position: 'absolute',
-            top: 6,
-            left: 6,
-            background: 'rgba(0,0,0,0.72)',
-            color: '#fff',
-            fontSize: 10,
-            fontWeight: 600,
-            padding: '2px 6px',
-            borderRadius: 4,
-            letterSpacing: '0.04em',
+            top: 8,
+            left: 8,
+            background: 'rgba(0,0,0,0.75)',
+            backdropFilter: 'blur(6px)',
+            color: 'rgba(255,255,255,0.9)',
+            fontSize: 9.5,
+            fontFamily: "'IBM Plex Mono', monospace",
+            fontWeight: 500,
+            padding: '2.5px 6px',
+            borderRadius: 5,
+            letterSpacing: '0.06em',
             pointerEvents: 'none',
+            border: '1px solid rgba(255,255,255,0.10)',
           }}
         >
           {subLabel}
@@ -103,27 +108,27 @@ function ContinueWatchingCard({ item, onRemove }: ContinueWatchingCardProps) {
           onClick={e => { e.stopPropagation(); onRemove(item.titleId); }}
           style={{
             position: 'absolute',
-            top: 6,
-            right: 6,
-            background: 'rgba(0,0,0,0.6)',
-            border: 'none',
+            top: 7,
+            right: 7,
+            background: 'rgba(0,0,0,0.65)',
+            backdropFilter: 'blur(6px)',
+            border: '1px solid rgba(255,255,255,0.08)',
             borderRadius: '50%',
-            width: 22,
-            height: 22,
+            width: 24,
+            height: 24,
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
             cursor: 'pointer',
             opacity: 0,
-            transition: 'opacity 0.2s',
-            color: '#fff',
+            transition: 'opacity 0.2s ease, background 0.15s ease',
+            color: 'rgba(255,255,255,0.75)',
           }}
-          className="cw-remove-btn"
+          className="cw-remove-btn hover:!bg-[rgba(0,0,0,0.85)] hover:!text-white"
           title="Remove from history"
+          aria-label="Remove from history"
         >
-          <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-            <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
-          </svg>
+          <X size={10} strokeWidth={2.5} />
         </button>
       )}
     </div>

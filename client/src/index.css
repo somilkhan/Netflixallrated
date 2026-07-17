@@ -3,13 +3,13 @@
 @tailwind utilities;
 
 @layer base {
-  /* bingr.one: white selection, white focus ring */
-  ::selection { background: rgba(255,255,255,0.2); color: #fff; }
-  :focus-visible { outline: 2px solid rgba(255,255,255,0.5); outline-offset: 2px; border-radius: 4px; }
+  /* Premium selection + focus */
+  ::selection { background: rgba(255,255,255,0.18); color: #fff; }
+  :focus-visible { outline: 2px solid rgba(255,255,255,0.4); outline-offset: 2px; border-radius: 6px; }
 
   html {
     scroll-behavior: smooth;
-    background: #0f1014;   /* bingr's exact bg — dark charcoal */
+    background: #0f1014;
     overflow-x: hidden;
     max-width: 100%;
     -webkit-font-smoothing: antialiased;
@@ -30,7 +30,11 @@
   }
 
   @media (prefers-reduced-motion: reduce) {
-    * { animation: none !important; transition: none !important; }
+    *, *::before, *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+    }
   }
 }
 
@@ -39,30 +43,30 @@
 .embla__container { display: flex; touch-action: pan-y pinch-zoom; }
 .embla__slide { flex: 0 0 100%; min-width: 0; }
 
-/* ── GlassLoader — bingr uses white glow, not maroon ───────────────────── */
+/* ── GlassLoader — white glow ───────────────────────────────────────────── */
 .glass-loader-mark { position: relative; display: flex; align-items: center; justify-content: center; }
 .glass-loader-glow {
   position: absolute; inset: -30%;
-  background: radial-gradient(circle, rgba(255,255,255,0.15) 0%, rgba(255,255,255,0.04) 55%, transparent 75%);
-  filter: blur(6px);
-  animation: glGlowPulse 2.2s ease-in-out infinite;
+  background: radial-gradient(circle, rgba(255,255,255,0.12) 0%, rgba(255,255,255,0.03) 55%, transparent 75%);
+  filter: blur(8px);
+  animation: glGlowPulse 2.4s ease-in-out infinite;
   pointer-events: none;
 }
 .glass-loader-disc {
   position: absolute; inset: 14%;
   border-radius: 999px;
-  background: rgba(15,16,20,0.7);
-  border: 1px solid rgba(255,255,255,0.12);
-  backdrop-filter: blur(8px);
-  -webkit-backdrop-filter: blur(8px);
+  background: rgba(15,16,20,0.75);
+  border: 1px solid rgba(255,255,255,0.10);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
   display: flex; align-items: center; justify-content: center;
-  box-shadow: inset 0 0 12px rgba(0,0,0,0.4);
+  box-shadow: inset 0 0 16px rgba(0,0,0,0.5);
 }
 .glass-loader-disc svg { margin-left: 2px; }
-.glass-loader-ring { animation: glSpin 1.15s cubic-bezier(.5,.15,.5,.85) infinite; transform-origin: 50% 50%; }
+.glass-loader-ring { animation: glSpin 1.2s cubic-bezier(.5,.15,.5,.85) infinite; transform-origin: 50% 50%; }
 @keyframes glSpin { to { transform: rotate(360deg); } }
-@keyframes glGlowPulse { 0%, 100% { opacity: 0.65; transform: scale(0.94); } 50% { opacity: 1; transform: scale(1.06); } }
-@keyframes glPulse { 0%, 100% { opacity: 0.55; } 50% { opacity: 1; } }
+@keyframes glGlowPulse { 0%, 100% { opacity: 0.6; transform: scale(0.92); } 50% { opacity: 1; transform: scale(1.08); } }
+@keyframes glPulse { 0%, 100% { opacity: 0.5; } 50% { opacity: 1; } }
 @media (prefers-reduced-motion: reduce) {
   .glass-loader-ring, .glass-loader-glow { animation: none; }
 }
@@ -72,16 +76,31 @@
   .scrollbar-hide::-webkit-scrollbar { display: none; }
   .scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
 
-  /* Shared aspect-ratio tokens */
+  /* Aspect-ratio tokens */
   .poster-ratio   { aspect-ratio: 2 / 3; }
   .backdrop-ratio { aspect-ratio: 16 / 9; }
   .player-ratio   { aspect-ratio: 16 / 9; }
 }
 
-/* ── Shimmer keyframe (used by GlassCard skeleton) ──────────────────────── */
+/* ── Shimmer keyframe ──────────────────────────────────────────────────── */
 @keyframes glShimmer {
   0%   { background-position: -200% 0; }
   100% { background-position:  200% 0; }
+}
+
+/* ── Card gloss sweep — GPU-only (transform) ───────────────────────────── */
+@keyframes glossSweep {
+  from { transform: translateX(-150%) skewX(-12deg); }
+  to   { transform: translateX(250%) skewX(-12deg); }
+}
+.card-gloss-sweep {
+  animation: glossSweep 0.65s cubic-bezier(.16,1,.3,1) forwards;
+}
+
+/* ── Ken Burns — hero image ambient drift ──────────────────────────────── */
+@keyframes kenBurns {
+  0%, 100% { transform: scale(1.0) translate3d(0, 0, 0); }
+  50%       { transform: scale(1.06) translate3d(-1.5%, 0.8%, 0); }
 }
 
 /* ── Smooth horizontal scroll for all sliders ──────────────────────────── */
@@ -100,38 +119,49 @@
 
 /* ── Page fade-in on route change ──────────────────────────────────────── */
 @keyframes pageFadeIn {
-  from { opacity: 0; transform: translateY(8px); }
+  from { opacity: 0; transform: translateY(10px); }
   to   { opacity: 1; transform: translateY(0); }
 }
 .page-enter {
-  animation: pageFadeIn 0.35s cubic-bezier(.16,1,.3,1) forwards;
+  animation: pageFadeIn 0.38s cubic-bezier(.16,1,.3,1) forwards;
 }
 
-/* ── Hero carousel progress bar — CSS-driven (no JS setInterval) ────────── */
+/* ── Hero carousel progress bar ────────────────────────────────────────── */
 @keyframes heroProgress {
   from { width: 0%; }
   to   { width: 100%; }
 }
 
-/* ── Continue Watching card — remove button visible on hover ─────────────── */
+/* ── Continue Watching — remove button on hover ─────────────────────────── */
 .group:hover .cw-remove-btn {
   opacity: 1 !important;
 }
 
-/* ── Search overlay fade ──────────────────────────────────────────────── */
+/* ── Search overlay fade ────────────────────────────────────────────────── */
 @keyframes searchFadeIn {
   from { opacity: 0; }
   to   { opacity: 1; }
 }
 
-/* ── Desktop/tablet content offset for the fixed left SideRail ──────────── */
-/* bingr sidebar is 64px (w-16) on desktop */
+/* ── Desktop/tablet content offset for fixed left SideRail (64px) ──────── */
 @media (min-width: 768px) {
   .rail-offset { padding-left: 64px; }
 }
 
-/* ── bingr display font utility ──────────────────────────────────────────── */
+/* ── Display font utility ───────────────────────────────────────────────── */
 .font-display {
   font-family: 'Bebas Neue', Anton, Impact, system-ui, sans-serif;
   letter-spacing: 0.04em;
+}
+
+/* ── Luxury active glow — used on SideRail active icon ─────────────────── */
+@keyframes activeGlow {
+  0%, 100% { opacity: 0.6; }
+  50%       { opacity: 1; }
+}
+
+/* ── Fade-up utility ─────────────────────────────────────────────────────── */
+@keyframes fadeUpIn {
+  from { opacity: 0; transform: translate3d(0, 16px, 0); }
+  to   { opacity: 1; transform: translate3d(0, 0, 0); }
 }

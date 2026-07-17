@@ -28,9 +28,9 @@ function LoaderMark({ size = 56 }: { size?: number }) {
         />
         <defs>
           <linearGradient id={gradId} x1="0%" y1="0%" x2="100%" y2="100%">
-            <stop offset="0%" stopColor="#C2434F" stopOpacity="0" />
-            <stop offset="55%" stopColor="#C2434F" stopOpacity="1" />
-            <stop offset="100%" stopColor="#F0A5AD" stopOpacity="1" />
+            <stop offset="0%" stopColor="rgba(255,255,255,0)" stopOpacity="0" />
+            <stop offset="55%" stopColor="rgba(255,255,255,0.55)" stopOpacity="1" />
+            <stop offset="100%" stopColor="rgba(255,255,255,0.90)" stopOpacity="1" />
           </linearGradient>
         </defs>
       </svg>

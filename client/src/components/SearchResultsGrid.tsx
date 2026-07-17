@@ -77,7 +77,7 @@ function TmdbResultCard({ item, onImported }: { item: TmdbItem; onImported?: () 
           )}
           {status === 'done' && (
             <div className="absolute inset-0 z-20 bg-void/70 flex items-center justify-center">
-              <span className="text-[11px] font-mono text-maroon-bright">Added ✓</span>
+              <span className="text-[11px] font-mono text-white/80">Added ✓</span>
             </div>
           )}
           {status === 'exists' && (

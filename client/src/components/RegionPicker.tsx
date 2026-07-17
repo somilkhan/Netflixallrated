@@ -14,7 +14,7 @@ export default function RegionPicker({ region, onChange }: RegionPickerProps) {
           aria-label="Select region"
           value={region}
           onChange={e => onChange(e.target.value)}
-          className="appearance-none bg-void border border-line rounded-md pl-2.5 pr-6 py-1 font-mono text-[11px] text-ink-dim hover:border-maroon focus:border-maroon focus:outline-none cursor-pointer transition-colors"
+          className="appearance-none bg-white/[0.03] border border-white/[0.08] rounded-md pl-2.5 pr-6 py-1 font-mono text-[11px] text-white/50 hover:border-white/[0.16] focus:border-white/[0.22] focus:text-white/80 focus:outline-none cursor-pointer transition-all duration-200"
         >
           {SUPPORTED_REGIONS.map(r => (
             <option key={r.code} value={r.code}>{r.label}</option>

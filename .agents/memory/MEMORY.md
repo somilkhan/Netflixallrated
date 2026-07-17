@@ -13,3 +13,4 @@
 - [framer-motion / client install gotcha](framer-motion-client-install.md) — package installers can target the wrong root package.json in this monorepo; verify with npm ls inside client/
 - [Bot-protected SPA scraping](bot-protected-spa-scraping.md) — headless Playwright got blocked (blank body) on a Cloudflare/bot-checked site that the Screenshot tool rendered fine; fall back to visual screenshots, not raw HTML/CSS extraction
 - [bingr.one Design System](bingr-design-system.md) — exact tokens: Bebas Neue titles, Inter body, #0f1014 bg, 64px solid sidebar; extracted from their live CSS bundle
+- [Luxury UI/UX upgrade](luxury-ui-upgrade.md) — white-only design system, GPU animations, component decisions from comprehensive UI polish pass

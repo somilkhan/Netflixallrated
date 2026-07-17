@@ -136,7 +136,7 @@ export default function SearchResults() {
           value={query}
           onChange={e => handleQueryChange(e.target.value)}
           placeholder="Search movies, shows, anime…"
-          className="w-full bg-surface border border-line rounded-full pl-10 pr-10 py-3 text-sm text-ink placeholder:text-ink-faint outline-none focus:border-maroon focus:shadow-[0_0_0_3px_rgba(122,37,48,0.15)] transition-all"
+          className="w-full bg-white/[0.04] border border-white/[0.08] rounded-full pl-10 pr-10 py-3 text-sm text-ink placeholder:text-white/25 outline-none focus:border-white/[0.22] focus:bg-white/[0.06] focus:shadow-[0_0_0_3px_rgba(255,255,255,0.05)] transition-all duration-200"
         />
         {query && (
           <button type="button" aria-label="Clear search" onClick={() => { setQuery(''); nav('/search'); }}
@@ -159,8 +159,8 @@ export default function SearchResults() {
             onClick={() => handleTypeFilter(value)}
             className={`flex items-center gap-1.5 text-xs font-mono px-3.5 py-2 rounded-full border transition-all ${
               filters.type === value
-                ? 'bg-maroon/20 border-maroon text-ink'
-                : 'bg-surface border-line text-ink-faint hover:text-ink hover:border-line-bright'
+                ? 'bg-white/[0.10] border-white/[0.22] text-white'
+                : 'bg-white/[0.03] border-white/[0.07] text-white/40 hover:text-white/75 hover:border-white/[0.14]'
             }`}
           >
             {Icon && <Icon size={11} />} {label}
@@ -170,7 +170,7 @@ export default function SearchResults() {
           value={filters.genre}
           onChange={handleGenreFilter}
           aria-label="Filter by genre"
-          className="bg-surface border border-line rounded-full px-3.5 py-2 text-xs font-mono text-ink-faint focus:border-maroon focus:text-ink outline-none transition-all cursor-pointer"
+          className="bg-white/[0.03] border border-white/[0.07] rounded-full px-3.5 py-2 text-xs font-mono text-white/40 focus:border-white/[0.22] focus:text-white outline-none transition-all duration-200 cursor-pointer hover:border-white/[0.14]"
         >
           <option value="">All Genres</option>
           {genres.map(g => <option key={g} value={g}>{g}</option>)}

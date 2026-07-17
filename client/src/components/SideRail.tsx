@@ -1,29 +1,22 @@
 /**
- * SideRail — exact bingr.one vertical navigation rail.
- * 64px wide, solid #0f1014 bg, white active icon, gray inactive.
- * No hover background boxes — color-only transitions.
+ * SideRail — vertical nav rail. 64px wide, #0f1014 bg.
+ * Active item: subtle pill background + left edge indicator.
  */
 import { useState, useRef, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { Home, Tv, Sword, Clock, LayoutGrid, Search, Shield, LogOut, LogIn, Bookmark, Zap } from 'lucide-react';
+import { Home, Tv, Sword, Clock, Search, Shield, LogOut, LogIn, Bookmark, Zap } from 'lucide-react';
 import { useAuth } from '../lib/auth';
 import { AnimatedLogoMark } from '../brand';
 
 const NAV_ITEMS = [
-  { icon: Home,       path: '/',           label: 'Home' },
-  { icon: Search,     path: '__search',    label: 'Search' },
-  { icon: Tv,         path: '/tv',         label: 'TV Shows' },
-  { icon: Clock,      path: '/history',    label: 'History' },
-  { icon: Bookmark,   path: '/watchlist',  label: 'Watchlist' },
-  { icon: Sword,      path: '/anime',      label: 'Anime' },
-  { icon: Zap,        path: '/categories', label: 'Browse' },
-  { icon: LayoutGrid, path: '/categories', label: 'Categories' },
+  { icon: Home,     path: '/',           label: 'Home' },
+  { icon: Search,   path: '__search',    label: 'Search' },
+  { icon: Tv,       path: '/tv',         label: 'TV Shows' },
+  { icon: Clock,    path: '/history',    label: 'History' },
+  { icon: Bookmark, path: '/watchlist',  label: 'Watchlist' },
+  { icon: Sword,    path: '/anime',      label: 'Anime' },
+  { icon: Zap,      path: '/categories', label: 'Browse' },
 ];
-
-// Deduplicate paths so /categories only shows once
-const UNIQUE_NAV = NAV_ITEMS.filter((item, idx, arr) =>
-  arr.findIndex(i => i.label === item.label) === idx
-);
 
 export default function SideRail({ onOpenSearch }: { onOpenSearch: () => void }) {
   const nav = useNavigate();
@@ -51,21 +44,21 @@ export default function SideRail({ onOpenSearch }: { onOpenSearch: () => void })
   return (
     <nav
       className="hidden md:flex fixed inset-y-0 left-0 z-40 flex-col items-center py-5 gap-0"
-      style={{ width: 64, background: '#0f1014' }}
+      style={{ width: 64, background: '#0f1014', borderRight: '1px solid rgba(255,255,255,0.04)' }}
       aria-label="Main navigation"
     >
       {/* Logo */}
       <button
         onClick={() => nav('/')}
-        className="shrink-0 mb-8 mt-1 transition-transform hover:scale-105 active:scale-95"
+        className="shrink-0 mb-7 mt-1 transition-transform duration-200 ease-spring hover:scale-105 active:scale-95"
         aria-label="Home"
       >
         <AnimatedLogoMark size={26} interactive title="Home" variant="mono" />
       </button>
 
       {/* Icon stack */}
-      <div className="flex flex-col items-center gap-0.5">
-        {UNIQUE_NAV.map(item => {
+      <div className="flex flex-col items-center gap-0.5 w-full px-2">
+        {NAV_ITEMS.map(item => {
           const isSearch = item.path === '__search';
           const active = !isSearch && (
             loc.pathname === item.path ||
@@ -80,25 +73,41 @@ export default function SideRail({ onOpenSearch }: { onOpenSearch: () => void })
               aria-current={active ? 'page' : undefined}
               className={`
                 group relative flex items-center justify-center
-                w-[48px] h-[44px] rounded-[12px]
-                transition-colors duration-150
+                w-full h-[44px] rounded-[12px]
+                transition-all duration-200 ease-spring
                 focus:outline-none
-                ${active ? 'text-white' : 'text-white/30 hover:text-white/70'}
+                ${active
+                  ? 'text-white bg-white/[0.09]'
+                  : 'text-white/30 hover:text-white/65 hover:bg-white/[0.04]'
+                }
               `}
             >
+              {/* Active left edge indicator */}
+              {active && (
+                <span
+                  className="absolute left-0 top-1/2 -translate-y-1/2 w-[2.5px] h-[20px] rounded-r-full bg-white"
+                  style={{ boxShadow: '0 0 8px rgba(255,255,255,0.5)' }}
+                />
+              )}
+
               <item.icon
-                size={20}
+                size={19}
                 strokeWidth={active ? 2.2 : 1.7}
-                className="relative z-10"
+                className="relative z-10 transition-transform duration-200"
+                style={{ transform: active ? 'scale(1.05)' : undefined }}
               />
 
               {/* Tooltip */}
               <span className="
                 pointer-events-none absolute left-[calc(100%+10px)] top-1/2 -translate-y-1/2
-                whitespace-nowrap rounded-lg bg-[#1a1c20] border border-white/10 px-2.5 py-1.5
-                font-sans text-[12px] text-white opacity-0 -translate-x-1 scale-95
+                whitespace-nowrap rounded-xl
+                bg-[#1a1c20] border border-white/[0.08]
+                px-2.5 py-1.5
+                font-sans text-[12px] font-medium text-white
+                opacity-0 -translate-x-2 scale-95
                 group-hover:opacity-100 group-hover:translate-x-0 group-hover:scale-100
-                transition-all duration-150 z-30 shadow-xl
+                transition-all duration-200 ease-spring z-30
+                shadow-tooltip
               ">
                 {item.label}
               </span>
@@ -118,10 +127,11 @@ export default function SideRail({ onOpenSearch }: { onOpenSearch: () => void })
                 aria-expanded={menuOpen}
                 className="
                   w-[36px] h-[36px] rounded-full
-                  bg-white/10 border border-white/15
+                  bg-white/[0.08] border border-white/[0.12]
                   flex items-center justify-center
                   font-sans font-semibold text-[13px] text-white
-                  hover:bg-white/20 transition-colors
+                  hover:bg-white/[0.15] hover:border-white/[0.20]
+                  transition-all duration-200 ease-spring
                 "
                 title={user.displayName || user.email}
               >
@@ -130,18 +140,18 @@ export default function SideRail({ onOpenSearch }: { onOpenSearch: () => void })
               {menuOpen && (
                 <div className="
                   absolute left-[calc(100%+12px)] bottom-0 w-52
-                  bg-[#1a1c20] border border-white/10 rounded-2xl
-                  shadow-[0_16px_40px_-8px_rgba(0,0,0,0.8)] overflow-hidden z-50
+                  bg-[#18191d] border border-white/[0.08] rounded-2xl
+                  shadow-overlay overflow-hidden z-50
                   animate-fadeUp
                 ">
-                  <div className="px-3.5 py-3 border-b border-white/10">
+                  <div className="px-3.5 py-3 border-b border-white/[0.07]">
                     <p className="font-sans text-[12.5px] font-semibold text-white truncate">
                       {user.displayName || 'User'}
                     </p>
-                    <p className="font-sans text-[10px] text-white/40 truncate">{user.email}</p>
+                    <p className="font-sans text-[10px] text-white/35 truncate">{user.email}</p>
                     {user.role === 'ADMIN' && (
-                      <span className="mt-1.5 inline-block font-sans text-[8.5px] text-white/70
-                        bg-white/10 border border-white/20 rounded px-1.5 py-0.5 uppercase tracking-wide">
+                      <span className="mt-1.5 inline-block font-sans text-[8.5px] text-white/60
+                        bg-white/[0.08] border border-white/[0.14] rounded px-1.5 py-0.5 uppercase tracking-wide">
                         Admin
                       </span>
                     )}
@@ -151,12 +161,12 @@ export default function SideRail({ onOpenSearch }: { onOpenSearch: () => void })
                       onClick={() => { setMenuOpen(false); nav('/admin'); }}
                       className="w-full flex items-center gap-2.5 px-3.5 py-2.5 font-sans text-[13px] text-white hover:bg-white/[0.05] transition-colors text-left"
                     >
-                      <Shield size={13} className="text-white/60" /> Admin Panel
+                      <Shield size={13} className="text-white/50" /> Admin Panel
                     </button>
                   )}
                   <button
                     onClick={handleSignOut}
-                    className="w-full flex items-center gap-2.5 px-3.5 py-2.5 font-sans text-[13px] text-white/60 hover:bg-white/[0.05] hover:text-white transition-colors text-left border-t border-white/10"
+                    className="w-full flex items-center gap-2.5 px-3.5 py-2.5 font-sans text-[13px] text-white/55 hover:bg-white/[0.05] hover:text-white transition-colors text-left border-t border-white/[0.07]"
                   >
                     <LogOut size={13} /> Sign out
                   </button>
@@ -169,12 +179,12 @@ export default function SideRail({ onOpenSearch }: { onOpenSearch: () => void })
               aria-label="Sign in"
               title="Sign in"
               className="
-                w-[48px] h-[44px] rounded-[12px] flex items-center justify-center
-                text-white/30 hover:text-white/70
-                transition-colors duration-150
+                w-[40px] h-[40px] rounded-[12px] flex items-center justify-center
+                text-white/30 hover:text-white/65 hover:bg-white/[0.04]
+                transition-all duration-200 ease-spring
               "
             >
-              <LogIn size={20} strokeWidth={1.7} />
+              <LogIn size={19} strokeWidth={1.7} />
             </button>
           )
         )}

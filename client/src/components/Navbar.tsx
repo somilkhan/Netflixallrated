@@ -55,12 +55,12 @@ const Navbar = memo(function Navbar({ onOpenSearch }: { onOpenSearch?: () => voi
   const initial = user?.displayName?.[0]?.toUpperCase() || user?.email?.[0]?.toUpperCase() || '?';
 
   return (
-    <nav className="md:hidden sticky top-0 z-50 flex items-center gap-3 px-4 py-3 bg-void/88 backdrop-blur-xl border-b border-line/60">
+    <nav className="md:hidden sticky top-0 z-50 flex items-center gap-3 px-4 py-2.5 bg-void/90 backdrop-blur-2xl border-b border-white/[0.05]">
       {/* Logo */}
       <button
         onClick={() => nav('/')}
-        className="shrink-0 rounded-[9px] transition-opacity hover:opacity-80"
-        aria-label="NetflixAllrated home"
+        className="shrink-0 rounded-[9px] transition-opacity hover:opacity-75 active:opacity-60"
+        aria-label="Allrated home"
       >
         <NavbarLogo size={32} />
       </button>
@@ -69,15 +69,15 @@ const Navbar = memo(function Navbar({ onOpenSearch }: { onOpenSearch?: () => voi
       <form onSubmit={submit} className="flex-1 max-w-[380px] relative">
         <div className={`
           flex items-center gap-2 border rounded-full px-3.5 py-2
-          transition-all duration-200
+          transition-all duration-200 ease-spring
           ${focused
-            ? 'bg-surface-2 border-maroon/60 shadow-[0_0_0_3px_rgba(122,37,48,0.12)]'
-            : 'bg-surface/80 border-line hover:border-line-bright'
+            ? 'bg-white/[0.07] border-white/[0.22] shadow-[0_0_0_3px_rgba(255,255,255,0.05)]'
+            : 'bg-white/[0.04] border-white/[0.08] hover:border-white/[0.14]'
           }
         `}>
           <Search
             size={13}
-            className={`shrink-0 transition-colors ${focused ? 'text-maroon-bright' : 'text-ink-faint'}`}
+            className={`shrink-0 transition-colors duration-200 ${focused ? 'text-white/70' : 'text-white/30'}`}
           />
           <input
             ref={inputRef}
@@ -93,19 +93,19 @@ const Navbar = memo(function Navbar({ onOpenSearch }: { onOpenSearch?: () => voi
             <button
               type="button"
               onClick={() => setQuery('')}
-              className="shrink-0 text-ink-faint hover:text-ink transition-colors"
+              className="shrink-0 text-white/35 hover:text-white transition-colors duration-150"
               aria-label="Clear search"
             >
               <X size={12} />
             </button>
           ) : (
-            <span className="font-mono text-[9.5px] text-ink-faint/60 border border-line/60 rounded px-1.5 py-0.5 shrink-0 hidden sm:inline">
+            <span className="font-mono text-[9px] text-white/22 border border-white/[0.08] rounded px-1.5 py-0.5 shrink-0 hidden sm:inline tracking-wide">
               ⌘K
             </span>
           )}
         </div>
         {!focused && !query && (
-          <span className="absolute left-[36px] top-1/2 -translate-y-1/2 text-[13px] text-ink-faint pointer-events-none select-none">
+          <span className="absolute left-[36px] top-1/2 -translate-y-1/2 text-[13px] text-white/28 pointer-events-none select-none transition-opacity duration-300">
             {placeholders[phIdx]}
           </span>
         )}
@@ -122,11 +122,11 @@ const Navbar = memo(function Navbar({ onOpenSearch }: { onOpenSearch?: () => voi
                 aria-expanded={menuOpen}
                 className="
                   w-[32px] h-[32px] rounded-full
-                  bg-gradient-to-br from-maroon to-maroon-bright
-                  border border-maroon-bright/50
+                  bg-white/[0.08] border border-white/[0.14]
                   flex items-center justify-center
-                  font-sans font-bold text-[13px] text-white shrink-0
-                  hover:opacity-85 transition-opacity
+                  font-sans font-semibold text-[13px] text-white shrink-0
+                  hover:bg-white/[0.14] hover:border-white/[0.22]
+                  transition-all duration-200 ease-spring
                 "
                 title={user.displayName || user.email}
               >
@@ -136,21 +136,21 @@ const Navbar = memo(function Navbar({ onOpenSearch }: { onOpenSearch?: () => voi
               {menuOpen && (
                 <div className="
                   absolute right-0 top-[calc(100%+8px)] w-48
-                  bg-surface border border-line rounded-2xl
-                  shadow-[0_16px_40px_-8px_rgba(0,0,0,0.6)] overflow-hidden z-50
+                  bg-[#18191d] border border-white/[0.08] rounded-2xl
+                  shadow-overlay overflow-hidden z-50
                   animate-fadeUp
                 ">
-                  <div className="px-3.5 py-3 border-b border-line">
-                    <p className="font-sans text-[12.5px] font-semibold text-ink truncate">
+                  <div className="px-3.5 py-3 border-b border-white/[0.07]">
+                    <p className="font-sans text-[12.5px] font-semibold text-white truncate">
                       {user.displayName || 'User'}
                     </p>
-                    <p className="font-mono text-[10px] text-ink-faint truncate">{user.email}</p>
+                    <p className="font-mono text-[10px] text-white/35 truncate">{user.email}</p>
                     {user.role === 'ADMIN' && (
                       <span className="
                         mt-1.5 inline-block
-                        font-mono text-[8.5px] text-maroon-bright
-                        bg-maroon/20 border border-maroon/30
-                        rounded px-1.5 py-0.5
+                        font-mono text-[8.5px] text-white/60
+                        bg-white/[0.08] border border-white/[0.14]
+                        rounded px-1.5 py-0.5 uppercase tracking-wide
                       ">
                         ADMIN
                       </span>
@@ -159,14 +159,14 @@ const Navbar = memo(function Navbar({ onOpenSearch }: { onOpenSearch?: () => voi
                   {user.role === 'ADMIN' && (
                     <button
                       onClick={() => { setMenuOpen(false); nav('/admin'); }}
-                      className="w-full flex items-center gap-2.5 px-3.5 py-2.5 font-sans text-[13px] text-ink hover:bg-surface-2 transition-colors text-left"
+                      className="w-full flex items-center gap-2.5 px-3.5 py-2.5 font-sans text-[13px] text-white hover:bg-white/[0.05] transition-colors text-left"
                     >
-                      <Shield size={13} className="text-maroon-bright" /> Admin Panel
+                      <Shield size={13} className="text-white/50" /> Admin Panel
                     </button>
                   )}
                   <button
                     onClick={handleSignOut}
-                    className="w-full flex items-center gap-2.5 px-3.5 py-2.5 font-sans text-[13px] text-ink-dim hover:bg-surface-2 hover:text-ink transition-colors text-left border-t border-line"
+                    className="w-full flex items-center gap-2.5 px-3.5 py-2.5 font-sans text-[13px] text-white/50 hover:bg-white/[0.05] hover:text-white transition-colors text-left border-t border-white/[0.07]"
                   >
                     <LogOut size={13} /> Sign out
                   </button>
@@ -178,9 +178,10 @@ const Navbar = memo(function Navbar({ onOpenSearch }: { onOpenSearch?: () => voi
               onClick={() => nav('/login')}
               className="
                 flex items-center gap-1.5
-                font-sans text-[12px] text-ink-dim
-                border border-line rounded-full px-3.5 py-1.5
-                hover:text-ink hover:border-line-bright transition-colors duration-150
+                font-sans text-[12px] text-white/45
+                border border-white/[0.10] rounded-full px-3.5 py-1.5
+                hover:text-white/80 hover:border-white/[0.22]
+                transition-all duration-200 ease-spring
               "
             >
               <LogIn size={12} /> Sign in

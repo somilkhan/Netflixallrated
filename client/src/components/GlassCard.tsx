@@ -1,8 +1,7 @@
 /**
- * GlassCard — unified premium poster card for every content surface.
- * Design: near-black void, deep mehroon glassmorphism, frosted backdrop-blur.
+ * GlassCard — premium poster card. Butter-smooth lift + gloss sweep on hover.
  */
-import { useState, memo, useCallback } from 'react';
+import { useState, useRef, memo, useCallback } from 'react';
 import { Play, Film } from 'lucide-react';
 
 export interface GlassCardProvider {
@@ -28,7 +27,7 @@ export interface GlassCardProps {
   className?: string;
   overlay?: React.ReactNode;
   fluid?: boolean;
-  /** When true this card is above the fold — use eager loading + high fetchpriority */
+  /** When true this card is above the fold — eager load + high fetchpriority */
   priority?: boolean;
 }
 
@@ -52,6 +51,8 @@ const GlassCard = memo(function GlassCard({
 }: GlassCardProps) {
   const [loaded, setLoaded] = useState(false);
   const [errored, setErrored] = useState(false);
+  const [glossing, setGlossing] = useState(false);
+  const glossTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const hasImage  = !!posterUrl && !errored;
   const runtime   = runtimeMinutes
@@ -62,7 +63,6 @@ const GlassCard = memo(function GlassCard({
   const hasTier   = !!tierStyle && !!tierLabel;
   const metaParts = [year, runtime].filter(Boolean).join(' · ');
 
-  // Stable handler — avoids new function ref on every render
   const handleKeyDown = useCallback((e: React.KeyboardEvent) => {
     if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onClick?.(); }
   }, [onClick]);
@@ -72,6 +72,13 @@ const GlassCard = memo(function GlassCard({
     onPlay ? onPlay() : onClick?.();
   }, [onPlay, onClick]);
 
+  // Trigger gloss sweep on hover enter
+  const handleMouseEnter = useCallback(() => {
+    if (glossTimer.current) clearTimeout(glossTimer.current);
+    setGlossing(true);
+    glossTimer.current = setTimeout(() => setGlossing(false), 700);
+  }, []);
+
   return (
     <div
       role={onClick ? 'button' : undefined}
@@ -79,23 +86,26 @@ const GlassCard = memo(function GlassCard({
       aria-label={onClick ? title : undefined}
       className={`
         relative cursor-pointer group
-        focus:outline-none focus-visible:ring-2 focus-visible:ring-white/30
+        focus:outline-none focus-visible:ring-2 focus-visible:ring-white/25
         rounded-[14px]
         ${fluid ? 'w-full' : 'shrink-0 w-[148px] md:w-[168px] scroll-snap-start'}
         ${className}
       `}
       onClick={onClick}
       onKeyDown={onClick ? handleKeyDown : undefined}
+      onMouseEnter={handleMouseEnter}
     >
       {/* Inner card */}
-      <div className="
-        relative w-full poster-ratio rounded-[14px] overflow-hidden
-        bg-[#1a1c20] border border-white/[0.07]
-        transition-all duration-300 ease-spring will-change-transform
-        group-hover:-translate-y-[5px] group-hover:scale-[1.022]
-        group-hover:border-white/[0.14]
-        group-hover:shadow-[0_20px_40px_-8px_rgba(0,0,0,0.9)]
-      ">
+      <div
+        className="relative w-full poster-ratio rounded-[14px] overflow-hidden
+          bg-[#1a1c20] border border-white/[0.07]
+          transition-all duration-350 ease-spring will-change-transform
+          group-hover:-translate-y-[8px] group-hover:scale-[1.026]
+          group-hover:border-white/[0.16]
+          group-hover:shadow-card-hover
+          shadow-card-idle
+        "
+      >
         {/* Poster */}
         {hasImage ? (
           <>
@@ -116,9 +126,11 @@ const GlassCard = memo(function GlassCard({
               onError={() => setErrored(true)}
               className={`
                 absolute inset-0 h-full w-full object-cover
-                transition-opacity duration-500
-                ${loaded ? 'opacity-100' : 'opacity-0'}
+                transition-all duration-500
+                ${loaded ? 'opacity-100 scale-100' : 'opacity-0 scale-105'}
+                group-hover:scale-[1.04]
               `}
+              style={{ transitionTimingFunction: 'cubic-bezier(.16,1,.3,1)' }}
             />
           </>
         ) : (
@@ -137,10 +149,34 @@ const GlassCard = memo(function GlassCard({
           </div>
         )}
 
-        {/* Bottom gradient — slim and subtle */}
+        {/* Gloss sweep — GPU transform only, fires on hover enter */}
         <div
-          className="absolute inset-x-0 bottom-0 pointer-events-none"
-          style={{ height: '60%', background: 'linear-gradient(to top, rgba(0,0,0,0.88) 0%, rgba(0,0,0,0.3) 40%, transparent 100%)' }}
+          aria-hidden
+          className={`
+            absolute inset-0 z-20 pointer-events-none overflow-hidden rounded-[14px]
+          `}
+        >
+          <div
+            className={glossing ? 'card-gloss-sweep' : ''}
+            style={{
+              position: 'absolute',
+              top: 0,
+              left: 0,
+              width: '60%',
+              height: '100%',
+              background: 'linear-gradient(105deg, transparent 0%, rgba(255,255,255,0.07) 50%, transparent 100%)',
+              transform: 'translateX(-150%) skewX(-12deg)',
+            }}
+          />
+        </div>
+
+        {/* Bottom gradient */}
+        <div
+          className="absolute inset-x-0 bottom-0 pointer-events-none transition-all duration-350 ease-spring"
+          style={{
+            height: '65%',
+            background: 'linear-gradient(to top, rgba(0,0,0,0.92) 0%, rgba(0,0,0,0.45) 35%, transparent 100%)',
+          }}
         />
 
         {/* Top-left badge: rank OR tier */}
@@ -148,7 +184,7 @@ const GlassCard = memo(function GlassCard({
           <div className="
             absolute top-2 left-2 z-10
             h-[22px] w-[22px] flex items-center justify-center
-            rounded-full bg-void/75 border border-white/[0.12] backdrop-blur-md
+            rounded-full bg-void/80 border border-white/[0.12] backdrop-blur-md
             font-serif font-semibold text-[11px] text-ink-dim leading-none
           ">
             {rank}
@@ -178,32 +214,40 @@ const GlassCard = memo(function GlassCard({
           </span>
         )}
 
-        {/* Centre play button — bingr: white solid circle */}
+        {/* Play button — premium white circle with ring */}
         <button
           type="button"
           aria-label={`Play ${title}`}
           onClick={handlePlayClick}
           className="
-            absolute z-20 top-1/2 left-1/2 -translate-x-1/2 -translate-y-[55%]
-            h-[40px] w-[40px] flex items-center justify-center rounded-full
-            bg-white text-black
+            absolute z-20 top-1/2 left-1/2 -translate-x-1/2 -translate-y-[58%]
+            flex items-center justify-center
             opacity-0 scale-75 pointer-events-none
-            transition-all duration-250 ease-spring
+            transition-all duration-300 ease-spring
             group-hover:opacity-100 group-hover:scale-100 group-hover:pointer-events-auto
-            hover:bg-white/90
           "
         >
-          <Play size={13} className="fill-current ml-[2px]" />
+          {/* Outer ring */}
+          <span className="absolute inset-[-6px] rounded-full border border-white/25 scale-90 group-hover:scale-100 transition-transform duration-300 ease-spring" />
+          {/* Button */}
+          <span className="
+            h-[42px] w-[42px] flex items-center justify-center rounded-full
+            bg-white text-black
+            hover:bg-white/88 transition-colors duration-150
+            shadow-[0_4px_20px_rgba(0,0,0,0.5)]
+          ">
+            <Play size={14} className="fill-current ml-[2px]" />
+          </span>
         </button>
 
         {/* Glass info panel */}
         <div className="
           absolute inset-x-0 bottom-0 z-10
           px-2.5 pt-2 pb-2
-          bg-black/55 backdrop-blur-[14px]
-          border-t border-white/[0.06]
-          transition-all duration-300 ease-spring
-          group-hover:pb-[10px]
+          bg-black/60 backdrop-blur-[16px]
+          border-t border-white/[0.05]
+          transition-all duration-350 ease-spring
+          group-hover:pb-[10px] group-hover:bg-black/70
         ">
           <p className="text-[11.5px] font-sans font-semibold leading-[1.28] line-clamp-2 text-ink">
             {title}
@@ -238,7 +282,7 @@ const GlassCard = memo(function GlassCard({
           )}
 
           {/* Expanded on hover */}
-          <div className="grid grid-rows-[0fr] group-hover:grid-rows-[1fr] transition-[grid-template-rows] duration-300 ease-spring">
+          <div className="grid grid-rows-[0fr] group-hover:grid-rows-[1fr] transition-[grid-template-rows] duration-350 ease-spring">
             <div className="overflow-hidden">
               {rank != null && hasTier && (
                 <span className={`
@@ -256,7 +300,7 @@ const GlassCard = memo(function GlassCard({
                       key={g}
                       className="
                         text-[7.5px] font-mono px-[5px] py-[2px] rounded-full
-                        border border-white/[0.07] bg-white/[0.03] text-ink-faint/70
+                        border border-white/[0.08] bg-white/[0.04] text-ink-faint/75
                         leading-none
                       "
                     >
@@ -266,7 +310,7 @@ const GlassCard = memo(function GlassCard({
                 </div>
               )}
               {overview && (
-                <p className="mt-[5px] text-[8.5px] leading-[1.45] text-ink-faint/65 line-clamp-2">
+                <p className="mt-[5px] text-[8.5px] leading-[1.48] text-ink-faint/65 line-clamp-2">
                   {overview}
                 </p>
               )}
@@ -299,13 +343,13 @@ export function GlassCardSkeleton({
       `}
     >
       <div className="
-        relative w-full poster-ratio rounded-[18px]
+        relative w-full poster-ratio rounded-[14px]
         border border-white/[0.05] bg-surface overflow-hidden
       ">
         <div
           className="absolute inset-0"
           style={{
-            background: 'linear-gradient(120deg, #1a1c20 25%, #1f2126 50%, #1a1c20 75%)',
+            background: 'linear-gradient(120deg, #1a1c20 25%, #222529 50%, #1a1c20 75%)',
             backgroundSize: '200% 100%',
             animation: 'glShimmer 1.8s ease-in-out infinite',
           }}
@@ -313,7 +357,7 @@ export function GlassCardSkeleton({
         <div className="absolute inset-x-0 bottom-0 h-[40%] bg-gradient-to-t from-black/40 to-transparent pointer-events-none" />
         <div className="absolute top-2 left-2 h-[20px] w-[20px] rounded-full bg-white/[0.05] animate-pulse" />
         <div className="absolute top-2 right-2 h-[14px] w-[28px] rounded-full bg-white/[0.04] animate-pulse" />
-        <div className="absolute inset-x-0 bottom-0 px-2.5 pt-2 pb-2 bg-black/38 backdrop-blur-[14px] border-t border-white/[0.05]">
+        <div className="absolute inset-x-0 bottom-0 px-2.5 pt-2 pb-2 bg-black/40 backdrop-blur-[14px] border-t border-white/[0.05]">
           <div className="h-[10px] w-[82%] rounded-full bg-white/[0.08] animate-pulse mb-[4px]" />
           <div className="h-[8px] w-[50%] rounded-full bg-white/[0.06] animate-pulse mb-[6px]" />
           <div className="flex gap-[4px]">
