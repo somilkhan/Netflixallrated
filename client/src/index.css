@@ -159,6 +159,21 @@
   .group:hover .card-glow { opacity: 1; }
 }
 
+/* ── Hero carousel — responsive content padding + thumbnail strip offsets ── */
+/* Mobile: padding-bottom clears thumbnail strip (54px) + gap + bottom nav pill (~65px) */
+.hero-content-pb {
+  padding-bottom: 172px;
+}
+/* Thumbnail strip — mobile sits above the floating BottomNav pill (~65px from bottom) */
+.hero-thumbstrip {
+  bottom: 82px;
+}
+@media (min-width: 768px) {
+  /* Desktop: no floating BottomNav, thumbnails sit low */
+  .hero-content-pb { padding-bottom: 134px; }
+  .hero-thumbstrip  { bottom: 28px; }
+}
+
 /* ── Hero carousel progress bar ────────────────────────────────────────── */
 @keyframes heroProgress {
   from { width: 0%; }

@@ -8,18 +8,19 @@
  */
 import { useState, useEffect, useCallback, useMemo, memo } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Play, Info, ChevronRight } from 'lucide-react';
+import { Play, Info, ChevronRight, Volume2, VolumeX } from 'lucide-react';
 import useEmblaCarousel from 'embla-carousel-react';
 import Autoplay from 'embla-carousel-autoplay';
 
 const AUTO_ADVANCE_MS = 10000;
 
-const TrailerBg = memo(function TrailerBg({ youtubeId }: { youtubeId: string }) {
+const TrailerBg = memo(function TrailerBg({ youtubeId, muted }: { youtubeId: string; muted: boolean }) {
   return (
     <div className="absolute inset-0 z-0 overflow-hidden">
       <iframe
+        key={`${youtubeId}-${muted ? 'muted' : 'unmuted'}`}
         className="absolute w-[177.78vh] min-w-full h-[56.25vw] min-h-full top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 pointer-events-none"
-        src={`https://www.youtube-nocookie.com/embed/${youtubeId}?autoplay=1&mute=1&loop=1&playlist=${youtubeId}&controls=0&showinfo=0&rel=0&iv_load_policy=3&disablekb=1&fs=0&modestbranding=1&playsinline=1`}
+        src={`https://www.youtube-nocookie.com/embed/${youtubeId}?autoplay=1&mute=${muted ? 1 : 0}&loop=1&playlist=${youtubeId}&controls=0&showinfo=0&rel=0&iv_load_policy=3&disablekb=1&fs=0&modestbranding=1&playsinline=1`}
         allow="autoplay; encrypted-media"
         title="trailer"
       />
@@ -62,6 +63,7 @@ export default function HeroCarousel({ titles }: { titles: any[] }) {
   const [emblaRef, emblaApi] = useEmblaCarousel({ loop: true, duration: 28 }, [autoplay]);
   const [selectedIdx, setSelectedIdx] = useState(0);
   const [progressKey, setProgressKey] = useState(0);
+  const [isMuted, setIsMuted] = useState(true);
 
   const onSelect = useCallback(() => {
     if (!emblaApi) return;
@@ -97,7 +99,7 @@ export default function HeroCarousel({ titles }: { titles: any[] }) {
           {titles.map((t, i) => (
             <div key={t.id} className="relative flex-[0_0_100%] h-full overflow-hidden">
               {t.trailerYoutubeId
-                ? <TrailerBg youtubeId={t.trailerYoutubeId} />
+                ? <TrailerBg youtubeId={t.trailerYoutubeId} muted={isMuted} />
                 : <ImageBg backdropUrl={t.backdropUrl} posterUrl={t.posterUrl} active={i === selectedIdx} />
               }
             </div>
@@ -115,7 +117,7 @@ export default function HeroCarousel({ titles }: { titles: any[] }) {
 
       {/* ── Info panel — bottom-left ───────────────────────────── */}
       <div className="absolute inset-0 z-[2] flex items-end">
-        <div className="w-full max-w-[520px] px-5 md:px-10" style={{ paddingBottom: 134 }}>
+        <div className="w-full max-w-[520px] px-5 md:px-10 hero-content-pb">
 
           {/* Title — straight to display text, no badge */}
           <h1
@@ -210,6 +212,26 @@ export default function HeroCarousel({ titles }: { titles: any[] }) {
               </span>
               <span className="font-sans font-medium text-white text-[14px]">See More</span>
             </button>
+
+            {/* Mute / unmute — only when a trailer is available (bingr style, right of CTAs) */}
+            {title.trailerYoutubeId && (
+              <button
+                onClick={() => setIsMuted(m => !m)}
+                aria-label={isMuted ? 'Unmute trailer' : 'Mute trailer'}
+                className="
+                  ml-auto flex items-center justify-center
+                  w-[40px] h-[40px] rounded-full
+                  bg-white/[0.08] border border-white/[0.14]
+                  active:scale-90 transition-[transform,background-color] duration-150
+                  hover:bg-white/[0.14]
+                "
+              >
+                {isMuted
+                  ? <VolumeX size={15} className="text-white/70" />
+                  : <Volume2 size={15} className="text-white" />
+                }
+              </button>
+            )}
           </div>
         </div>
       </div>
@@ -235,9 +257,8 @@ export default function HeroCarousel({ titles }: { titles: any[] }) {
       {/* ── Thumbnail strip — bottom-center (bingr style) ──────── */}
       {titles.length > 1 && (
         <div
-          className="absolute z-[2]"
+          className="hero-thumbstrip absolute z-[2]"
           style={{
-            bottom: 28,
             left: '50%',
             transform: 'translateX(-50%)',
             display: 'flex',
