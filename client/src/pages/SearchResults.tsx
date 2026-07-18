@@ -41,7 +41,6 @@ export default function SearchResults() {
     abortRef.current = controller;
 
     if (!q) {
-      setTmdbResults([]);
       if (!filters.genre && !filters.type) {
         setLocalResults([]);
         setLoading(false);

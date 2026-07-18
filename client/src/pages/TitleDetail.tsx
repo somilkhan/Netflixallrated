@@ -864,12 +864,12 @@ export default function TitleDetail() {
 
   const heroBgStyle = backdropUrl
     ? {
-        backgroundImage: `radial-gradient(ellipse 120% 90% at 30% 10%, rgba(196,72,90,0.12), transparent 55%), url(${backdropUrl})`,
+        backgroundImage: `url(${backdropUrl})`,
         backgroundSize: 'cover',
-        backgroundPosition: 'center 30%',
+        backgroundPosition: 'center 25%',
       }
     : {
-        background: `radial-gradient(90% 70% at 30% 0%, ${title.posterColorFrom || '#4a1520'}, ${title.posterColorTo || '#0c0a0a'} 80%)`,
+        background: `radial-gradient(90% 70% at 30% 0%, ${title.posterColorFrom || '#1a1a2e'}, ${title.posterColorTo || '#0c0a0a'} 80%)`,
       };
 
   return (
@@ -882,7 +882,7 @@ export default function TitleDetail() {
             <polyline points="15 18 9 12 15 6" />
           </svg>
         </button>
-        <span className="detail-brand">ALLRATED</span>
+        <span className="detail-brand">{displayName || 'ALLRATED'}</span>
         <div style={{ width: 36 }} />
       </header>
 
@@ -923,7 +923,7 @@ export default function TitleDetail() {
         )}
         {title.type === 'ANIME' && !isStaticAnimeProvider && (animeProvider === 'gogoanime' ? gogoEmbedLoading : animeEmbedLoading) && (
           <div style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%,-50%)' }}>
-            <div style={{ width: 40, height: 40, border: '2px solid rgba(245,240,236,0.12)', borderTopColor: '#C4485A', borderRadius: '50%', animation: 'spin 0.8s linear infinite' }} />
+            <div style={{ width: 40, height: 40, border: '2px solid rgba(245,240,236,0.12)', borderTopColor: 'rgba(245,240,236,0.7)', borderRadius: '50%', animation: 'spin 0.8s linear infinite' }} />
           </div>
         )}
       </div>
