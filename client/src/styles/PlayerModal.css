@@ -100,7 +100,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  transition: all 0.2s;
+  transition: background 0.15s, transform 0.15s;
 }
 .modal-close-btn:hover { background: #e50914; transform: rotate(90deg); }
 
@@ -132,7 +132,7 @@
   font-size: 0.85rem;
   font-weight: 500;
   white-space: nowrap;
-  transition: all 0.2s;
+  transition: background 0.15s, color 0.15s, border-color 0.15s;
 }
 .server-tab:hover { background: rgba(255,255,255,0.15); color: #fff; }
 .server-tab.active { background: #e50914; border-color: #e50914; color: #fff; }
@@ -190,7 +190,7 @@
   border-radius: 6px;
   cursor: pointer;
   font-size: 0.9rem;
-  transition: all 0.2s;
+  transition: background 0.15s, opacity 0.15s;
 }
 .nav-btn:hover:not(:disabled) { background: rgba(255,255,255,0.2); }
 .nav-btn:disabled { opacity: 0.3; cursor: not-allowed; }

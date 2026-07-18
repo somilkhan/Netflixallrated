@@ -3,7 +3,7 @@
  * Mobile: solid panel (no backdrop-blur), no will-change, no gloss.
  * Desktop: glass panel, butter hover with lift + gloss sweep.
  */
-import { useState, useRef, memo, useCallback } from 'react';
+import { useState, useRef, memo, useCallback, useEffect } from 'react';
 import { Play, Film } from 'lucide-react';
 
 export interface GlassCardProvider {
@@ -73,6 +73,9 @@ const GlassCard = memo(function GlassCard({
     onPlay ? onPlay() : onClick?.();
   }, [onPlay, onClick]);
 
+  // Clear timer on unmount to avoid setState on unmounted component
+  useEffect(() => () => { if (glossTimer.current) clearTimeout(glossTimer.current); }, []);
+
   const handleMouseEnter = useCallback(() => {
     if (glossTimer.current) clearTimeout(glossTimer.current);
     setGlossing(true);
@@ -114,11 +117,13 @@ const GlassCard = memo(function GlassCard({
         {hasImage ? (
           <>
             {!loaded && (
-              <div className="absolute inset-0" style={{
-                background: 'linear-gradient(120deg, #1a1c20 25%, #1f2126 50%, #1a1c20 75%)',
-                backgroundSize: '200% 100%',
-                animation: 'glShimmer 1.8s ease-in-out infinite',
-              }} />
+              <div className="absolute inset-0 overflow-hidden" style={{ background: '#1a1c20' }}>
+                <div style={{
+                  position: 'absolute', inset: 0,
+                  background: 'linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.06) 50%, transparent 100%)',
+                  animation: 'glShimmer 1.8s ease-in-out infinite',
+                }} />
+              </div>
             )}
             <img
               src={posterUrl!}
@@ -347,15 +352,14 @@ export function GlassCardSkeleton({
         relative w-full poster-ratio rounded-[14px]
         border border-white/[0.05] bg-surface overflow-hidden
       ">
-        {/* Single shimmer sweep — no per-element animate-pulse (cheaper to composite) */}
-        <div
-          className="absolute inset-0"
-          style={{
-            background: 'linear-gradient(120deg, #1a1c20 25%, #222529 50%, #1a1c20 75%)',
-            backgroundSize: '200% 100%',
+        {/* Single shimmer sweep — transform-only, GPU composited */}
+        <div className="absolute inset-0 overflow-hidden" style={{ background: '#1a1c20' }}>
+          <div style={{
+            position: 'absolute', inset: 0,
+            background: 'linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.06) 50%, transparent 100%)',
             animation: 'glShimmer 1.8s ease-in-out infinite',
-          }}
-        />
+          }} />
+        </div>
         <div className="absolute inset-x-0 bottom-0 h-[40%] bg-gradient-to-t from-black/40 to-transparent pointer-events-none" />
         <div className="absolute top-2 left-2 h-[20px] w-[20px] rounded-full bg-white/[0.05]" />
         <div className="absolute top-2 right-2 h-[14px] w-[28px] rounded-full bg-white/[0.04]" />
