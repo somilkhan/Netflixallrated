@@ -13,10 +13,8 @@ export default function SearchResults() {
   const [query, setQuery] = useState(q);
   const [filters, setFilters] = useState({ type: params.get('type') || '', genre: params.get('genre') || '' });
   const [localResults, setLocalResults] = useState<any[]>([]);
-  const [tmdbResults, setTmdbResults] = useState<any[]>([]);
   const [anilistResult, setAnilistResult] = useState<any>(null);
   const [loading, setLoading] = useState(false);
-  const [tmdbKey, setTmdbKey] = useState(0);
   // Live genre list (never hardcoded) — keeps this dropdown in sync with the
   // real catalog instead of a static array that could drift.
   const [genres, setGenres] = useState<string[]>([]);
@@ -71,12 +69,6 @@ export default function SearchResults() {
         if (filters.type) local = local.filter((t: any) => t.type === filters.type);
         if (filters.genre) local = local.filter((t: any) => t.genres?.includes(filters.genre));
         setLocalResults(local);
-
-        let tmdb: any[] = live.tmdb || [];
-        if (filters.type === 'ANIME') tmdb = [];
-        else if (filters.type === 'MOVIE') tmdb = tmdb.filter((r: any) => r.mediaType === 'movie');
-        else if (filters.type === 'SERIES') tmdb = tmdb.filter((r: any) => r.mediaType === 'tv');
-        setTmdbResults(tmdb);
         setLoading(false);
       })
       .catch((err: any) => {
@@ -85,7 +77,7 @@ export default function SearchResults() {
       });
 
     return () => { controller.abort(); };
-  }, [q, filters, tmdbKey]);
+  }, [q, filters]);
 
   useEffect(() => {
     if (!q || filters.type !== 'ANIME') { setAnilistResult(null); return; }
@@ -235,10 +227,8 @@ export default function SearchResults() {
       {/* Results grid — handles loading skeleton, local results, TMDB results, empty states */}
       <SearchResultsGrid
         localResults={localResults}
-        tmdbResults={tmdbResults}
         loading={loading}
         q={q}
-        onImported={() => setTmdbKey(k => k + 1)}
       />
 
       {/* Empty state — no query and no active filter */}

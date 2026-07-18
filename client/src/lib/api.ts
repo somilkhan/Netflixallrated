@@ -80,7 +80,6 @@ export const api = {
     ratings: (id: string) => fetcher(`/titles/${id}/ratings`),
     liveSearch: (q: string, signal?: AbortSignal) =>
       fetcher(`/titles/live-search?q=${encodeURIComponent(q)}`, signal ? { signal } : undefined),
-    syncTmdb: () => fetcher('/titles/sync-tmdb', { method: 'POST' }),
     syncStatus: () => fetcher('/titles/sync-status'),
  
     seasons: (id: string) => fetcher(`/titles/${id}/seasons`),

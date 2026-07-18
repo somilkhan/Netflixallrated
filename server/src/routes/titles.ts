@@ -386,29 +386,15 @@ router.get('/recent', async (_req, res) => {
 // --- Public live search (DB + optional TMDB fallback) -------------------
 router.get('/live-search', async (req, res) => {
   const q = (req.query.q as string || '').trim();
-  if (!q || q.length < 2) return res.json({ local: [], tmdb: [] });
+  if (!q || q.length < 2) return res.json({ local: [] });
 
   try {
-    // Local DB search
-    const dbResults = await prisma.title.findMany({
+    const local = await prisma.title.findMany({
       where: { OR: [{ name: { contains: q, mode: 'insensitive' } }, { synopsis: { contains: q, mode: 'insensitive' } }] },
       take: 20,
       include: { platforms: { include: { platform: true } } },
     });
-
-    // TMDB live search (only if key is configured)
-    let tmdbResults: any[] = [];
-    if (process.env.TMDB_API_KEY) {
-      try {
-        const raw = await searchTmdb(q);
-        const localTmdbIds = new Set(dbResults.map((t) => t.tmdbId).filter(Boolean));
-        tmdbResults = raw
-          .filter((r) => !localTmdbIds.has(r.tmdbId))
-          .slice(0, 12);
-      } catch { /* TMDB unavailable — still return local */ }
-    }
-
-    res.json({ local: dbResults, tmdb: tmdbResults });
+    res.json({ local });
   } catch (err) {
     res.status(500).json({ error: 'Search failed', detail: sanitizeErrorDetail((err as Error).message) });
   }
