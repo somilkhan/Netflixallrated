@@ -91,7 +91,7 @@ const AnimeRankRow = memo(function AnimeRankRow({ title, badge, perPage = 10, on
         <div className="mx-5 flex items-center justify-center py-8 border border-dashed border-line rounded-xl">
           <p className="font-mono text-[11px] text-ink-faint">
             Failed to load —{' '}
-            <button onClick={() => { didFetch.current = true; fetchData(); }} className="text-maroon-bright hover:underline">
+            <button onClick={() => { didFetch.current = true; fetchData(); }} className="text-white/55 hover:text-white underline underline-offset-2">
               retry
             </button>
           </p>
