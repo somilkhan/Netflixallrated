@@ -414,51 +414,8 @@ router.get('/live-search', async (req, res) => {
   }
 });
 
-// --- TMDB catalog lookup (admin only) -----------------------------------
-router.get('/tmdb-search', authenticate, requireAdmin, async (req: AuthRequest, res) => {
-  const q = (req.query.q as string || '').trim();
-  if (!q) return res.json([]);
-  try {
-    const results = await searchTmdb(q);
-    res.json(results);
-  } catch (err) {
-    res.status(502).json({ error: 'TMDB lookup failed', detail: sanitizeErrorDetail((err as Error).message) });
-  }
-});
-
-router.post('/import-tmdb', authenticate, requireAdmin, async (req: AuthRequest, res) => {
-  const schema = z.object({ tmdbId: z.number(), mediaType: z.enum(['movie', 'tv']), type: z.enum(['MOVIE', 'SERIES', 'ANIME']) });
-  const parsed = schema.safeParse(req.body);
-  if (!parsed.success) return res.status(400).json({ error: parsed.error.flatten() });
-
-  const existing = await prisma.title.findUnique({ where: { tmdbId: parsed.data.tmdbId } });
-  if (existing) return res.status(409).json({ error: 'Already imported', title: existing });
-
-  try {
-    const details = await getTmdbDetails(parsed.data.tmdbId, parsed.data.mediaType);
-    const palette = randomPalette();
-    const title = await prisma.title.create({
-      data: {
-        name: details.name,
-        type: parsed.data.type,
-        year: details.year,
-        runtimeMinutes: details.runtimeMinutes ?? undefined,
-        genres: details.genres,
-        synopsis: details.synopsis,
-        posterColorFrom: palette.from,
-        posterColorTo: palette.to,
-        trailerYoutubeId: details.trailerYoutubeId ?? undefined,
-        tmdbId: details.tmdbId,
-        posterUrl: details.posterUrl ?? undefined,
-        backdropUrl: details.backdropUrl ?? undefined,
-        officialWatchLinks: [],
-      },
-    });
-    res.status(201).json(title);
-  } catch (err) {
-    res.status(502).json({ error: 'TMDB import failed', detail: sanitizeErrorDetail((err as Error).message) });
-  }
-});
+// Manual title search and import removed — catalog is fully managed by the
+// automatic TMDB sync (daily Railway cron + POST /sync-tmdb for manual triggers).
 
 /**
  * POST /api/titles/sync-tmdb

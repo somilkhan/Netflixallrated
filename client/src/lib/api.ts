@@ -80,9 +80,6 @@ export const api = {
     ratings: (id: string) => fetcher(`/titles/${id}/ratings`),
     liveSearch: (q: string, signal?: AbortSignal) =>
       fetcher(`/titles/live-search?q=${encodeURIComponent(q)}`, signal ? { signal } : undefined),
-    tmdbSearch: (q: string) => fetcher(`/titles/tmdb-search?q=${encodeURIComponent(q)}`),
-    importTmdb: (data: { tmdbId: number; mediaType: 'movie' | 'tv'; type: string }) =>
-      fetcher('/titles/import-tmdb', { method: 'POST', body: JSON.stringify(data) }),
     syncTmdb: () => fetcher('/titles/sync-tmdb', { method: 'POST' }),
     syncStatus: () => fetcher('/titles/sync-status'),
  
