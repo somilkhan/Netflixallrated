@@ -11,7 +11,21 @@ export default defineConfig({
   server: {
     port: 5000,
     allowedHosts: true as const,
-    proxy: { '/api': { target: 'https://netflixallrated.up.railway.app', changeOrigin: true } },
+    proxy: {
+      // Sports: proxy directly to api.bingr.one with the required Origin header.
+      // This rule must come BEFORE the generic /api rule (Vite matches first-wins).
+      // In production Railway serves /api/sports/* via server/src/routes/sports.ts.
+      '/api/sports': {
+        target: 'https://api.bingr.one',
+        changeOrigin: true,
+        headers: {
+          Origin:  'https://bingr.one',
+          Referer: 'https://bingr.one/',
+          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36',
+        },
+      },
+      '/api': { target: 'https://netflixallrated.up.railway.app', changeOrigin: true },
+    },
   },
   preview: {
     host: '0.0.0.0',

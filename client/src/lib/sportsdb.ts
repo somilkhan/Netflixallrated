@@ -1,100 +1,84 @@
 /**
- * TheSportsDB — free public API (no key required, tier 3).
- * Docs: https://www.thesportsdb.com/api.php
+ * Sports API — two data sources:
+ *
+ * 1. api.bingr.one (proxied via /api/sports/*) — live match listings + real HLS/embed streams.
+ * 2. TheSportsDB (direct, free) — match results with YouTube highlights as fallback.
  */
 
-const BASE = 'https://www.thesportsdb.com/api/v1/json/3';
+// ── Bingr / live stream types ───────────────────────────────────────────────
 
-export interface SportsMatch {
-  idEvent: string;
-  strEvent: string;
-  strLeague: string;
-  idLeague: string;
-  dateEvent: string;
-  strTime: string;
-  strTimestamp: string;
-  strHomeTeam: string;
-  strAwayTeam: string;
-  strHomeTeamBadge: string;
-  strAwayTeamBadge: string;
-  intHomeScore: string | null;
-  intAwayScore: string | null;
-  strStatus: string;
-  strPostponed: string;
-  strVenue: string;
-  strThumb: string;
-  strVideo: string | null;
-  strResult: string | null;
-  strCountry: string;
+export interface LiveMatch {
+  id: string;            // e.g. "wc/2026-07-19/esp-arg"
+  title: string;
+  category: string;      // "football", "basketball", "baseball", …
+  date: number;          // unix ms
+  poster: string | null;
+  popular: boolean;
+  teams: {
+    home: { name: string; badge: string };
+    away: { name: string; badge: string };
+  };
+  sources: { source: string; id: string }[];
 }
 
-export interface SportsLeague {
+export interface MatchStream {
   id: string;
-  label: string;
-  color: string;
-  emoji: string;
+  streamNo: number;
+  language: string;
+  hd: boolean;
+  embedUrl: string;
+  source: string;
 }
 
-export const LEAGUES: SportsLeague[] = [
-  { id: '4328', label: 'Premier League', color: '#3d195b', emoji: '🏴󠁧󠁢󠁥󠁮󠁧󠁿' },
-  { id: '4335', label: 'La Liga',        color: '#ee8700', emoji: '🇪🇸' },
-  { id: '4332', label: 'Serie A',        color: '#024494', emoji: '🇮🇹' },
-  { id: '4331', label: 'Bundesliga',     color: '#d20515', emoji: '🇩🇪' },
-  { id: '4334', label: 'Ligue 1',        color: '#1a1f7d', emoji: '🇫🇷' },
-  { id: '4480', label: 'Champions',      color: '#001a5e', emoji: '🏆' },
-];
+export const CATEGORY_META: Record<string, { emoji: string; label: string }> = {
+  'football':          { emoji: '⚽', label: 'Football' },
+  'basketball':        { emoji: '🏀', label: 'Basketball' },
+  'baseball':          { emoji: '⚾', label: 'Baseball' },
+  'american-football': { emoji: '🏈', label: 'NFL' },
+  'cricket':           { emoji: '🏏', label: 'Cricket' },
+  'volleyball':        { emoji: '🏐', label: 'Volleyball' },
+  'darts':             { emoji: '🎯', label: 'Darts' },
+  'golf':              { emoji: '⛳', label: 'Golf' },
+  '24/7-streams':      { emoji: '📡', label: '24/7 Streams' },
+};
 
-async function get<T>(path: string): Promise<T> {
-  const res = await fetch(`${BASE}${path}`, {
-    headers: { 'Accept': 'application/json' },
-  });
-  if (!res.ok) throw new Error(`TheSportsDB ${res.status}`);
+/** Fetch all today's live / upcoming matches from our Railway proxy. */
+export async function getLiveMatches(): Promise<LiveMatch[]> {
+  const res = await fetch('/api/sports/matches');
+  if (!res.ok) throw new Error(`sports/matches ${res.status}`);
   return res.json();
 }
 
-export async function getUpcomingMatches(leagueId: string): Promise<SportsMatch[]> {
-  try {
-    const data = await get<{ events: SportsMatch[] | null }>(
-      `/eventsnextleague.php?id=${leagueId}`
-    );
-    return data.events ?? [];
-  } catch {
-    return [];
-  }
+/** Fetch stream options for a specific match source+id. */
+export async function getMatchStreams(source: string, id: string): Promise<MatchStream[]> {
+  const res = await fetch(
+    `/api/sports/stream/${encodeURIComponent(source)}/${encodeURIComponent(id)}`
+  );
+  if (!res.ok) throw new Error(`sports/stream ${res.status}`);
+  return res.json();
 }
 
-export async function getPastMatches(leagueId: string): Promise<SportsMatch[]> {
-  try {
-    const data = await get<{ events: SportsMatch[] | null }>(
-      `/eventspastleague.php?id=${leagueId}`
-    );
-    return data.events ?? [];
-  } catch {
-    return [];
-  }
+/**
+ * Classify an embedUrl:
+ *  - "hls"   → m3u8 URL, play with hls.js
+ *  - "embed" → iframe page, show in <iframe>
+ */
+export function classifyStream(embedUrl: string): 'hls' | 'embed' {
+  if (embedUrl.includes('.m3u8') || embedUrl.includes('proxy/m3u8')) return 'hls';
+  return 'embed';
 }
 
-/** Extract a YouTube video ID from a thesportsdb strVideo URL */
-export function extractYouTubeId(url: string | null | undefined): string | null {
-  if (!url) return null;
-  const m = url.match(/(?:v=|youtu\.be\/)([A-Za-z0-9_-]{11})/);
-  return m ? m[1] : null;
-}
-
-/** Format a match date/time nicely */
-export function formatMatchTime(match: SportsMatch): string {
-  if (!match.dateEvent) return '';
-  const date = new Date(`${match.dateEvent}T${match.strTime || '00:00:00'}`);
-  const now = new Date();
+/** Format a unix-ms timestamp for display. */
+export function formatLiveMatchTime(dateMs: number): string {
+  const date = new Date(dateMs);
+  const now  = new Date();
   const diff = date.getTime() - now.getTime();
 
-  if (Math.abs(diff) < 3 * 60 * 60 * 1000 && match.strStatus?.toLowerCase() === 'live') {
-    return 'LIVE';
-  }
+  // Within 3 h of start → could be live
+  if (Math.abs(diff) < 3 * 60 * 60 * 1000) return 'Live Now';
 
   const today    = now.toDateString();
-  const tomorrow = new Date(now.getTime() + 86400000).toDateString();
-
+  const tomorrow = new Date(now.getTime() + 86_400_000).toDateString();
   let dayStr = date.toDateString();
   if (dayStr === today)    dayStr = 'Today';
   if (dayStr === tomorrow) dayStr = 'Tomorrow';
@@ -103,9 +87,39 @@ export function formatMatchTime(match: SportsMatch): string {
   return `${dayStr} · ${timeStr}`;
 }
 
-export function getMatchStatus(match: SportsMatch): 'live' | 'upcoming' | 'finished' {
-  const s = (match.strStatus ?? '').toLowerCase();
-  if (s === 'live' || s === 'match finished' && !match.intHomeScore) return 'live';
-  if (match.intHomeScore !== null && match.intAwayScore !== null) return 'finished';
-  return 'upcoming';
+export function isLiveOrSoon(dateMs: number): boolean {
+  const diff = dateMs - Date.now();
+  return diff > -3 * 60 * 60 * 1000 && diff < 3 * 60 * 60 * 1000;
+}
+
+// ── TheSportsDB (YouTube highlights fallback) ────────────────────────────────
+
+const TSDB_BASE = 'https://www.thesportsdb.com/api/v1/json/3';
+
+export interface TSDBMatch {
+  idEvent: string;
+  strEvent: string;
+  strLeague: string;
+  dateEvent: string;
+  strHomeTeam: string;
+  strAwayTeam: string;
+  strHomeTeamBadge: string;
+  strAwayTeamBadge: string;
+  intHomeScore: string | null;
+  intAwayScore: string | null;
+  strVideo: string | null;
+}
+
+export async function getPastMatches(leagueId: string): Promise<TSDBMatch[]> {
+  try {
+    const res = await fetch(`${TSDB_BASE}/eventspastleague.php?id=${leagueId}`);
+    const data = await res.json();
+    return (data.events ?? []).reverse();
+  } catch { return []; }
+}
+
+export function extractYouTubeId(url: string | null | undefined): string | null {
+  if (!url) return null;
+  const m = url.match(/(?:v=|youtu\.be\/)([A-Za-z0-9_-]{11})/);
+  return m ? m[1] : null;
 }
