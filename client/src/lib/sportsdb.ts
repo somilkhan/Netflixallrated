@@ -1,17 +1,13 @@
 /**
- * Sports API — two data sources:
- *
- * 1. api.bingr.one (proxied via /api/sports/*) — live match listings + real HLS/embed streams.
- * 2. TheSportsDB (direct, free) — match results with YouTube highlights as fallback.
+ * Sports API — api.bingr.one proxied via /api/sports/*.
+ * No TheSportsDB dead code here — that is removed.
  */
 
-// ── Bingr / live stream types ───────────────────────────────────────────────
-
 export interface LiveMatch {
-  id: string;            // e.g. "wc/2026-07-19/esp-arg"
+  id: string;
   title: string;
-  category: string;      // "football", "basketball", "baseball", …
-  date: number;          // unix ms
+  category: string;   // "football" | "basketball" | "baseball" | …
+  date: number;       // unix ms
   poster: string | null;
   popular: boolean;
   teams: {
@@ -30,96 +26,101 @@ export interface MatchStream {
   source: string;
 }
 
-export const CATEGORY_META: Record<string, { emoji: string; label: string }> = {
-  'football':          { emoji: '⚽', label: 'Football' },
-  'basketball':        { emoji: '🏀', label: 'Basketball' },
-  'baseball':          { emoji: '⚾', label: 'Baseball' },
-  'american-football': { emoji: '🏈', label: 'NFL' },
-  'cricket':           { emoji: '🏏', label: 'Cricket' },
-  'volleyball':        { emoji: '🏐', label: 'Volleyball' },
-  'darts':             { emoji: '🎯', label: 'Darts' },
-  'golf':              { emoji: '⛳', label: 'Golf' },
-  '24/7-streams':      { emoji: '📡', label: '24/7 Streams' },
+export const CATEGORY_META: Record<string, { emoji: string; label: string; order: number }> = {
+  'football':          { emoji: '⚽', label: 'Football',   order: 0 },
+  'cricket':           { emoji: '🏏', label: 'Cricket',    order: 1 },
+  'basketball':        { emoji: '🏀', label: 'Basketball', order: 2 },
+  'baseball':          { emoji: '⚾', label: 'Baseball',   order: 3 },
+  'american-football': { emoji: '🏈', label: 'NFL',        order: 4 },
+  'volleyball':        { emoji: '🏐', label: 'Volleyball', order: 5 },
+  'darts':             { emoji: '🎯', label: 'Darts',      order: 6 },
+  'golf':              { emoji: '⛳', label: 'Golf',        order: 7 },
+  '24/7-streams':      { emoji: '📡', label: '24/7',       order: 8 },
 };
 
-/** Fetch all today's live / upcoming matches (proxied via Vite → api.bingr.one). */
-export async function getLiveMatches(): Promise<LiveMatch[]> {
-  const res = await fetch('/api/sports/matches/all');
-  if (!res.ok) throw new Error(`sports/matches ${res.status}`);
-  return res.json();
-}
-
-/** Fetch stream options for a specific match source+id. */
-export async function getMatchStreams(source: string, id: string): Promise<MatchStream[]> {
-  const res = await fetch(
-    `/api/sports/stream/${encodeURIComponent(source)}/${encodeURIComponent(id)}`
-  );
-  if (!res.ok) throw new Error(`sports/stream ${res.status}`);
-  return res.json();
+export function categoryMeta(cat: string) {
+  return CATEGORY_META[cat] ?? { emoji: '🎮', label: cat.replace(/-/g, ' '), order: 99 };
 }
 
 /**
- * Classify an embedUrl:
- *  - "hls"   → m3u8 URL, play with hls.js
- *  - "embed" → iframe page, show in <iframe>
+ * A match is "live or imminent" if it starts within the next 60 min
+ * OR started up to 4 hours ago (covers full match duration + extra time).
  */
-export function classifyStream(embedUrl: string): 'hls' | 'embed' {
-  if (embedUrl.includes('.m3u8') || embedUrl.includes('proxy/m3u8')) return 'hls';
-  return 'embed';
-}
-
-/** Format a unix-ms timestamp for display. */
-export function formatLiveMatchTime(dateMs: number): string {
-  const date = new Date(dateMs);
-  const now  = new Date();
-  const diff = date.getTime() - now.getTime();
-
-  // Within 3 h of start → could be live
-  if (Math.abs(diff) < 3 * 60 * 60 * 1000) return 'Live Now';
-
-  const today    = now.toDateString();
-  const tomorrow = new Date(now.getTime() + 86_400_000).toDateString();
-  let dayStr = date.toDateString();
-  if (dayStr === today)    dayStr = 'Today';
-  if (dayStr === tomorrow) dayStr = 'Tomorrow';
-
-  const timeStr = date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-  return `${dayStr} · ${timeStr}`;
-}
-
 export function isLiveOrSoon(dateMs: number): boolean {
   const diff = dateMs - Date.now();
-  return diff > -3 * 60 * 60 * 1000 && diff < 3 * 60 * 60 * 1000;
+  return diff > -4 * 60 * 60 * 1000 && diff < 60 * 60 * 1000;
 }
 
-// ── TheSportsDB (YouTube highlights fallback) ────────────────────────────────
-
-const TSDB_BASE = 'https://www.thesportsdb.com/api/v1/json/3';
-
-export interface TSDBMatch {
-  idEvent: string;
-  strEvent: string;
-  strLeague: string;
-  dateEvent: string;
-  strHomeTeam: string;
-  strAwayTeam: string;
-  strHomeTeamBadge: string;
-  strAwayTeamBadge: string;
-  intHomeScore: string | null;
-  intAwayScore: string | null;
-  strVideo: string | null;
+/** True if the match is scheduled for today (local calendar day). */
+export function isToday(dateMs: number): boolean {
+  const d = new Date(dateMs);
+  const n = new Date();
+  return d.getFullYear() === n.getFullYear()
+      && d.getMonth()    === n.getMonth()
+      && d.getDate()     === n.getDate();
 }
 
-export async function getPastMatches(leagueId: string): Promise<TSDBMatch[]> {
-  try {
-    const res = await fetch(`${TSDB_BASE}/eventspastleague.php?id=${leagueId}`);
-    const data = await res.json();
-    return (data.events ?? []).reverse();
-  } catch { return []; }
+export function formatMatchTime(dateMs: number): string {
+  if (isLiveOrSoon(dateMs)) return 'Live Now';
+  const d    = new Date(dateMs);
+  const now  = new Date();
+  const diff = dateMs - Date.now();
+
+  // Within 24 h
+  if (diff > 0 && diff < 24 * 60 * 60 * 1000) {
+    const timeStr = d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    const isToday = d.toDateString() === now.toDateString();
+    return isToday ? `Today ${timeStr}` : timeStr;
+  }
+  return d.toLocaleDateString([], { month: 'short', day: 'numeric' })
+       + ' · ' + d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
 }
 
-export function extractYouTubeId(url: string | null | undefined): string | null {
-  if (!url) return null;
-  const m = url.match(/(?:v=|youtu\.be\/)([A-Za-z0-9_-]{11})/);
-  return m ? m[1] : null;
+/**
+ * True if embedUrl is a direct HLS/m3u8 stream.
+ * False → show in an iframe.
+ */
+export function isHlsStream(embedUrl: string): boolean {
+  return embedUrl.includes('.m3u8') || embedUrl.includes('proxy/m3u8');
+}
+
+/** Remove junk entries: no real title, missing away team, or empty sources. */
+export function filterJunkMatches(matches: LiveMatch[]): LiveMatch[] {
+  return matches.filter(m => {
+    if (!m.sources?.length) return false;
+    if (!m.teams?.home?.name || !m.teams?.away?.name) return false;
+    // Drop placeholder entries
+    if (m.teams.away.name.trim() === '') return false;
+    if (/special live|placeholder|test/i.test(m.title)) return false;
+    return true;
+  });
+}
+
+/** Sort matches: live first → today (by time) → future */
+export function sortMatches(matches: LiveMatch[]): LiveMatch[] {
+  return [...matches].sort((a, b) => {
+    const aLive = isLiveOrSoon(a.date) ? 0 : 1;
+    const bLive = isLiveOrSoon(b.date) ? 0 : 1;
+    if (aLive !== bLive) return aLive - bLive;
+    return a.date - b.date;
+  });
+}
+
+// ── API calls ────────────────────────────────────────────────────────────────
+
+export async function getLiveMatches(): Promise<LiveMatch[]> {
+  const res = await fetch('/api/sports/matches/all');
+  if (!res.ok) throw new Error(`sports/matches ${res.status}`);
+  const raw: LiveMatch[] = await res.json();
+  return sortMatches(filterJunkMatches(raw));
+}
+
+export async function getMatchStreams(source: string, id: string): Promise<MatchStream[]> {
+  const res = await fetch(
+    `/api/sports/stream/${encodeURIComponent(source)}/${encodeURIComponent(id)}`,
+  );
+  if (!res.ok) throw new Error(`sports/stream ${res.status}`);
+  const data = await res.json();
+  // API returns array; guard against error objects
+  return Array.isArray(data) ? data : [];
 }
