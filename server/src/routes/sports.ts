@@ -28,9 +28,9 @@ async function proxyGet(url: string) {
   return res.json();
 }
 
-// ── GET /api/sports/matches ──────────────────────────────────────────────────
+// ── GET /api/sports/matches/all ──────────────────────────────────────────────
 // Returns all today's live / scheduled matches from bingr's feed.
-router.get('/matches', async (_req, res) => {
+router.get('/matches/all', async (_req, res) => {
   try {
     const data = await proxyGet(`${UPSTREAM}/matches/all`);
     res.json(data);

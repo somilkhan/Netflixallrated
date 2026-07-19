@@ -42,9 +42,9 @@ export const CATEGORY_META: Record<string, { emoji: string; label: string }> = {
   '24/7-streams':      { emoji: '📡', label: '24/7 Streams' },
 };
 
-/** Fetch all today's live / upcoming matches from our Railway proxy. */
+/** Fetch all today's live / upcoming matches (proxied via Vite → api.bingr.one). */
 export async function getLiveMatches(): Promise<LiveMatch[]> {
-  const res = await fetch('/api/sports/matches');
+  const res = await fetch('/api/sports/matches/all');
   if (!res.ok) throw new Error(`sports/matches ${res.status}`);
   return res.json();
 }
