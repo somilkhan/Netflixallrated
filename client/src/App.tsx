@@ -30,6 +30,7 @@ const GenreDetail = lazy(() => import('./pages/DiscoveryPages').then(m => ({ def
 const TypeDetail = lazy(() => import('./pages/DiscoveryPages').then(m => ({ default: m.TypeDetail })));
 const BrandShowcase = lazy(() => import('./pages/BrandShowcase'));
 const WatchHistory = lazy(() => import('./pages/WatchHistory'));
+const Sports = lazy(() => import('./pages/Sports'));
 
 function Wrap({ children }: { children: React.ReactNode }) {
   return <ErrorBoundary>{children}</ErrorBoundary>;
@@ -60,6 +61,7 @@ function AnimatedRoutes() {
           <Route path="/browse/type/:slug" element={<Wrap><TypeDetail /></Wrap>} />
           <Route path="/brand" element={<Wrap><BrandShowcase /></Wrap>} />
           <Route path="/history" element={<Wrap><WatchHistory /></Wrap>} />
+          <Route path="/sports" element={<Wrap><Sports /></Wrap>} />
           <Route path="*" element={<Wrap><NotFound /></Wrap>} />
         </Routes>
       </div>

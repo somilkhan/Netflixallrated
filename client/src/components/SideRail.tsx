@@ -4,7 +4,7 @@
  */
 import { useState, useRef, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { Home, Tv, Sword, Clock, Search, Shield, LogOut, LogIn, Bookmark, Zap } from 'lucide-react';
+import { Home, Tv, Sword, Clock, Search, Shield, LogOut, LogIn, Bookmark, Zap, Trophy } from 'lucide-react';
 import { useAuth } from '../lib/auth';
 import { AnimatedLogoMark } from '../brand';
 
@@ -12,6 +12,7 @@ const NAV_ITEMS = [
   { icon: Home,     path: '/',           label: 'Home' },
   { icon: Search,   path: '__search',    label: 'Search' },
   { icon: Tv,       path: '/tv',         label: 'TV Shows' },
+  { icon: Trophy,   path: '/sports',     label: 'Sports' },
   { icon: Clock,    path: '/history',    label: 'History' },
   { icon: Bookmark, path: '/watchlist',  label: 'Watchlist' },
   { icon: Sword,    path: '/anime',      label: 'Anime' },

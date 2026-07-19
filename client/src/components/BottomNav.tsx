@@ -2,12 +2,13 @@
  * BottomNav — solid background (no backdrop-blur on mobile = no GPU compositing cost).
  */
 import { useNavigate, useLocation } from 'react-router-dom';
-import { Home, Tv, Compass, Sword, BookMarked, Clock, User, Shield } from 'lucide-react';
+import { Home, Tv, Compass, Sword, BookMarked, Clock, User, Shield, Trophy } from 'lucide-react';
 import { useAuth } from '../lib/auth';
 
 const BASE_ITEMS = [
   { icon: Home,       path: '/',           label: 'Home' },
   { icon: Tv,         path: '/tv',         label: 'TV' },
+  { icon: Trophy,     path: '/sports',     label: 'Sports' },
   { icon: Compass,    path: '/categories', label: 'Browse' },
   { icon: Sword,      path: '/anime',      label: 'Anime' },
   { icon: BookMarked, path: '/watchlist',  label: 'Watch' },
