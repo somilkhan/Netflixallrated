@@ -22,7 +22,7 @@ const PROXY_HEADERS: Record<string, string> = {
 async function proxyGet(url: string) {
   const res = await fetch(url, {
     headers: PROXY_HEADERS,
-    signal: AbortSignal.timeout(12_000),
+    signal: AbortSignal.timeout(6_000),
   });
   if (!res.ok) throw Object.assign(new Error(`upstream ${res.status}`), { status: res.status });
   return res.json();

@@ -17,7 +17,7 @@ import {
   RefreshCw, ChevronRight, Radio,
 } from 'lucide-react';
 import {
-  getLiveMatches, getMatchStreams,
+  getLiveMatches, getMatchStreams, buildFallbackStreams,
   isHlsStream, isLiveOrSoon, formatMatchTime,
   categoryMeta, CATEGORY_META,
   type LiveMatch, type MatchStream,
@@ -132,29 +132,43 @@ function StreamModal({ match, onClose }: { match: LiveMatch; onClose: () => void
     return () => window.removeEventListener('keydown', h);
   }, [onClose]);
 
-  // Load all stream sources for the match
+  // Load streams: try bingr API (6 s timeout) → fall back to direct embed URLs
   useEffect(() => {
     failedRef.current = new Set();
     setIdx(0);
     setLoading(true);
     setFetchErr(null);
 
-    const ac = new AbortController();
+    let cancelled = false;
+
     ;(async () => {
-      const all: MatchStream[] = [];
-      for (const src of match.sources) {
-        try {
-          const s = await getMatchStreams(src.source, src.id);
-          all.push(...s);
-        } catch { /* skip failed source */ }
+      // Phase 1 — try the bingr.one stream API (has gid tokens + HLS options)
+      const apiStreams: MatchStream[] = [];
+      await Promise.all(
+        match.sources.map(async src => {
+          const s = await getMatchStreams(src.source, src.id); // never throws, returns []
+          apiStreams.push(...s);
+        })
+      );
+
+      if (cancelled) return;
+
+      if (apiStreams.length > 0) {
+        // API worked — use rich streams
+        setStreams(apiStreams);
+        setLoading(false);
+        return;
       }
-      if (ac.signal.aborted) return;
-      setStreams(all);
-      if (all.length === 0) setFetchErr('No streams available for this match right now.');
+
+      // Phase 2 — API timed out or returned nothing → use direct embed URLs
+      // embedindia.st/embed/{id} works without the gid token
+      const fallback = buildFallbackStreams(match);
+      setStreams(fallback);
       setLoading(false);
+      // Don't set fetchErr — fallback streams are valid, just let the player try
     })();
 
-    return () => ac.abort();
+    return () => { cancelled = true; };
   }, [match]);
 
   const active = streams[idx] ?? null;
