@@ -6,11 +6,12 @@
 - [FebBox lookup failures](febbox-outage-handling.md) — often a febbox.com full-site outage, not a code bug; isolate with a standalone script before assuming regression
 - [Title schema real-data limits](titles-schema-limits.md) — only genre/type/platform are real filterable fields; no language or studio field exists
 - [Aperture Star brand identity](brand-identity-aperture-star.md) — logo system lives in client/src/brand/, review at /brand, WebGL fallback caveat for headless screenshots
-- [UI typography decision](typography-decision.md) — Cormorant Garamond replaces Fraunces as the serif font; font-serif in tailwind + index.html + MovieDetailPage.css all updated
+- [UI typography decision](typography-decision.md) — Inter replaces all display fonts (Bebas Neue/Cormorant); design-tokens.css is the new source of truth for all tokens
 - [Watch History feature](watch-history.md) — WatchProgress model in Prisma; history route at /api/history; wall-clock tracking in TitleDetail; Continue Watching row on Home; push to GitHub for Railway to deploy backend
 - [Client package installs](client-package-installs.md) — repo-root package.json is a separate unused project; client npm packages must be installed inside client/, not via default package tooling
 - [react-window v2 API](react-window-v2.md) — v2 API (List + rowComponent/rowHeight/rowCount/rowProps) differs completely from v1; don't install @types/react-window, it ships its own types
 - [framer-motion / client install gotcha](framer-motion-client-install.md) — package installers can target the wrong root package.json in this monorepo; verify with npm ls inside client/
 - [Bot-protected SPA scraping](bot-protected-spa-scraping.md) — headless Playwright got blocked (blank body) on a Cloudflare/bot-checked site that the Screenshot tool rendered fine; fall back to visual screenshots, not raw HTML/CSS extraction
 - [bingr.one Design System](bingr-design-system.md) — exact tokens: Bebas Neue titles, Inter body, #0f1014 bg, 64px solid sidebar; extracted from their live CSS bundle
-- [Luxury UI/UX upgrade](luxury-ui-upgrade.md) — white-only design system, GPU animations, component decisions from comprehensive UI polish pass
+- [Redesign 2025 nav architecture](redesign-nav-arch.md) — SideRail+Navbar+BottomNav all replaced by single TopNav (client/src/components/layout/TopNav.tsx); no rail-offset padding; App.tsx has no padding on main
+- [New component locations](redesign-component-map.md) — ContentCard in ui/, ContentRow+HeroSection+TopTenRow in sections/, hooks in hooks/, tokens in styles/design-tokens.css

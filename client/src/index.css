@@ -2,137 +2,103 @@
 @tailwind components;
 @tailwind utilities;
 
+@import './styles/design-tokens.css';
+@import './styles/animations.css';
+
 @layer base {
-  /* Premium selection + focus */
-  ::selection { background: rgba(255,255,255,0.18); color: #fff; }
-  :focus-visible { outline: 2px solid rgba(255,255,255,0.4); outline-offset: 2px; border-radius: 6px; }
+  /* ── Selection & focus ───────────────────────────────────────────────── */
+  ::selection { background: rgba(255,255,255,0.15); color: #fff; }
+  :focus-visible {
+    outline: 2px solid rgba(255,255,255,0.35);
+    outline-offset: 2px;
+    border-radius: var(--radius-md);
+  }
 
   html {
     scroll-behavior: smooth;
-    background: #0f1014;
+    background: var(--bg-primary);
     overflow-x: hidden;
     max-width: 100%;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
-    /* optimizeSpeed avoids per-glyph kerning recalc that slows Chrome/Android */
     text-rendering: optimizeSpeed;
+    /* Prevent layout shift from scrollbar */
+    scrollbar-gutter: stable;
   }
+
   body {
-    background: #0f1014;
+    background: var(--bg-primary);
     overflow-x: hidden;
     max-width: 100%;
     min-height: 100vh;
-    color: #ffffff;
-    font-family: 'Inter', system-ui, sans-serif;
+    color: var(--text-primary);
+    font-family: 'Inter', system-ui, -apple-system, sans-serif;
   }
-  /* Eliminate 300ms tap delay on all interactive elements */
-  a, button, [role="button"] { touch-action: manipulation; }
+
+  /* Eliminate 300ms tap delay */
+  a, button, [role="button"] {
+    touch-action: manipulation;
+  }
+
   #root {
     overflow-x: hidden;
     max-width: 100%;
   }
 
+  /* Reduce all motion for accessibility */
   @media (prefers-reduced-motion: reduce) {
     *, *::before, *::after {
       animation-duration: 0.01ms !important;
       animation-iteration-count: 1 !important;
       transition-duration: 0.01ms !important;
     }
+    .ken-burns { animation: none !important; }
   }
 }
 
-/* ── Embla Carousel ─────────────────────────────────────────────────────── */
-.embla__viewport { overflow: hidden; }
-.embla__container { display: flex; touch-action: pan-y pinch-zoom; }
-.embla__slide { flex: 0 0 100%; min-width: 0; }
-
-/* ── GlassLoader — white glow ───────────────────────────────────────────── */
-.glass-loader-mark { position: relative; display: flex; align-items: center; justify-content: center; }
-.glass-loader-glow {
-  position: absolute; inset: -30%;
-  background: radial-gradient(circle, rgba(255,255,255,0.12) 0%, rgba(255,255,255,0.03) 55%, transparent 75%);
-  filter: blur(8px);
-  animation: glGlowPulse 2.4s ease-in-out infinite;
-  pointer-events: none;
-}
-.glass-loader-disc {
-  position: absolute; inset: 14%;
-  border-radius: 999px;
-  background: rgba(15,16,20,0.90);
-  border: 1px solid rgba(255,255,255,0.10);
-  display: flex; align-items: center; justify-content: center;
-  box-shadow: inset 0 0 16px rgba(0,0,0,0.5);
-}
-.glass-loader-disc svg { margin-left: 2px; }
-.glass-loader-ring { animation: glSpin 1.2s cubic-bezier(.5,.15,.5,.85) infinite; transform-origin: 50% 50%; }
-@keyframes glSpin { to { transform: rotate(360deg); } }
-@keyframes glGlowPulse { 0%, 100% { opacity: 0.6; transform: scale(0.92); } 50% { opacity: 1; transform: scale(1.08); } }
-@keyframes glPulse { 0%, 100% { opacity: 0.5; } 50% { opacity: 1; } }
-@media (prefers-reduced-motion: reduce) {
-  .glass-loader-ring, .glass-loader-glow { animation: none; }
-}
-
-/* ── Scrollbars ─────────────────────────────────────────────────────────── */
 @layer utilities {
+  /* ── Scrollbar hide ──────────────────────────────────────────────────── */
   .scrollbar-hide::-webkit-scrollbar { display: none; }
-  .scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
+  .scrollbar-hide {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
 
-  /* Aspect-ratio tokens */
+  /* ── Aspect ratio tokens ─────────────────────────────────────────────── */
   .poster-ratio   { aspect-ratio: 2 / 3; }
   .backdrop-ratio { aspect-ratio: 16 / 9; }
   .player-ratio   { aspect-ratio: 16 / 9; }
+
+  /* ── Glass surface ───────────────────────────────────────────────────── */
+  .glass {
+    background: var(--glass-bg-low);
+    backdrop-filter: blur(var(--glass-blur-md));
+    -webkit-backdrop-filter: blur(var(--glass-blur-md));
+    border: 1px solid var(--border-subtle);
+    border-radius: var(--radius-lg);
+  }
+  .glass-hover:hover {
+    background: var(--glass-bg-mid);
+    border-color: var(--border-hover);
+  }
 }
 
-/* ── Shimmer keyframe — transform-only so it composites on GPU ─────────── */
-@keyframes glShimmer {
-  0%   { transform: translateX(-150%); }
-  100% { transform: translateX(150%); }
-}
-
-/* ── Card gloss sweep — GPU-only (transform) ───────────────────────────── */
-@keyframes glossSweep {
-  from { transform: translateX(-150%) skewX(-12deg); }
-  to   { transform: translateX(250%) skewX(-12deg); }
-}
-.card-gloss-sweep {
-  animation: glossSweep 0.65s cubic-bezier(.16,1,.3,1) forwards;
-}
-
-/* ── Ken Burns — hero image ambient drift (desktop only) ───────────────── */
+/* ── Ken Burns — GPU-composited, disabled on mobile ─────────────────────── */
 @keyframes kenBurns {
   0%, 100% { transform: scale(1.0) translate3d(0, 0, 0); }
-  50%       { transform: scale(1.06) translate3d(-1.5%, 0.8%, 0); }
+  50%       { transform: scale(1.06) translate3d(-1.2%, 0.6%, 0); }
 }
-.ken-burns {
-  animation: kenBurns 28s ease-in-out infinite;
-}
-/* Disable expensive continuous animations on mobile */
 @media (max-width: 767px) {
   .ken-burns { animation: none !important; }
 }
 
-/* ── Smooth horizontal scroll for all sliders ──────────────────────────── */
-.slider-scroll {
-  display: flex;
-  gap: 14px;
-  overflow-x: auto;
-  overflow-y: visible;
-  padding-bottom: 10px;
-  /* Momentum scrolling on iOS */
-  -webkit-overflow-scrolling: touch;
-  scroll-snap-type: x mandatory;
-  /* Smooth deceleration (CSS scroll-behavior only kicks in for scrollTo calls, not touch) */
-  scroll-behavior: auto;
-  scrollbar-width: none;
-  /* Contain paint so scrolling doesn't repaint siblings */
-  contain: layout style;
-  /* Promote to own stacking context; compositor handles scroll without main thread */
-  will-change: scroll-position;
+/* ── Hero progress fill ──────────────────────────────────────────────────── */
+@keyframes progressFill {
+  from { width: 0%; }
+  to   { width: 100%; }
 }
-.slider-scroll::-webkit-scrollbar { display: none; }
-.slider-scroll > * { scroll-snap-align: start; }
 
-/* ── Page fade-in on route change — opacity only (GPU composite, no layout) */
+/* ── Page transition — opacity only (GPU composite) ─────────────────────── */
 @keyframes pageFadeIn {
   from { opacity: 0; }
   to   { opacity: 1; }
@@ -141,17 +107,31 @@
   animation: pageFadeIn 0.18s ease both;
 }
 
-/* ── Card shadow layer — pre-rendered, toggled via opacity (zero repaint) ── */
-/* box-shadow on the element itself forces paint; this avoids it entirely    */
+/* ── Horizontal scroll rows ──────────────────────────────────────────────── */
+.slider-scroll {
+  display: flex;
+  gap: 12px;
+  overflow-x: auto;
+  overflow-y: visible;
+  padding-bottom: 8px;
+  -webkit-overflow-scrolling: touch;
+  scroll-snap-type: x mandatory;
+  scroll-behavior: auto;
+  scrollbar-width: none;
+  contain: layout style;
+  will-change: scroll-position;
+}
+.slider-scroll::-webkit-scrollbar { display: none; }
+.slider-scroll > * { scroll-snap-align: start; }
+
+/* ── Card shadow — pre-rendered via opacity toggle (no repaint) ─────────── */
 .card-glow {
   position: absolute;
   inset: 0;
-  border-radius: 14px;
-  box-shadow:
-    0 28px 60px -10px rgba(0,0,0,0.95),
-    0 0 0 1px rgba(255,255,255,0.10);
+  border-radius: 12px;
+  box-shadow: 0 16px 48px -8px rgba(0,0,0,0.8), 0 0 0 1px rgba(255,255,255,0.08);
   opacity: 0;
-  transition: opacity 0.3s cubic-bezier(.16,1,.3,1);
+  transition: opacity 0.3s cubic-bezier(0.4,0,0.2,1);
   pointer-events: none;
   z-index: -1;
 }
@@ -159,57 +139,105 @@
   .group:hover .card-glow { opacity: 1; }
 }
 
-/* ── Hero carousel — responsive content padding + thumbnail strip offsets ── */
-/* Mobile: padding-bottom clears thumbnail strip (54px) + gap + bottom nav pill (~65px) */
-.hero-content-pb {
-  padding-bottom: 172px;
+/* ── GlassCard gloss sweep ───────────────────────────────────────────────── */
+@keyframes glossSweep {
+  from { transform: translateX(-150%) skewX(-12deg); }
+  to   { transform: translateX(250%) skewX(-12deg); }
 }
-/* Thumbnail strip — mobile sits above the floating BottomNav pill (~65px from bottom) */
-.hero-thumbstrip {
-  bottom: 82px;
-}
-@media (min-width: 768px) {
-  /* Desktop: no floating BottomNav, thumbnails sit low */
-  .hero-content-pb { padding-bottom: 134px; }
-  .hero-thumbstrip  { bottom: 28px; }
+.card-gloss-sweep {
+  animation: glossSweep 0.65s cubic-bezier(0.16,1,0.3,1) forwards;
 }
 
-/* ── Hero carousel progress bar ────────────────────────────────────────── */
-@keyframes heroProgress {
-  from { width: 0%; }
-  to   { width: 100%; }
+/* ── Shimmer for skeletons ───────────────────────────────────────────────── */
+@keyframes shimmer {
+  0%   { transform: translateX(-150%); }
+  100% { transform: translateX(150%); }
 }
 
-/* ── Continue Watching — remove button on hover ─────────────────────────── */
-.group:hover .cw-remove-btn {
-  opacity: 1 !important;
+/* ── GlassLoader ─────────────────────────────────────────────────────────── */
+.glass-loader-mark { position: relative; display: flex; align-items: center; justify-content: center; }
+.glass-loader-glow {
+  position: absolute; inset: -30%;
+  background: radial-gradient(circle, rgba(255,255,255,0.10) 0%, rgba(255,255,255,0.02) 55%, transparent 75%);
+  filter: blur(8px);
+  animation: glGlowPulse 2.4s ease-in-out infinite;
+  pointer-events: none;
+}
+.glass-loader-disc {
+  position: absolute; inset: 14%;
+  border-radius: 999px;
+  background: rgba(10,10,10,0.92);
+  border: 1px solid rgba(255,255,255,0.08);
+  display: flex; align-items: center; justify-content: center;
+  box-shadow: inset 0 0 16px rgba(0,0,0,0.5);
+}
+.glass-loader-disc svg { margin-left: 2px; }
+.glass-loader-ring { animation: glSpin 1.2s cubic-bezier(0.5,0.15,0.5,0.85) infinite; transform-origin: 50% 50%; }
+@keyframes glSpin { to { transform: rotate(360deg); } }
+@keyframes glGlowPulse { 0%, 100% { opacity: 0.6; transform: scale(0.92); } 50% { opacity: 1; transform: scale(1.08); } }
+@media (prefers-reduced-motion: reduce) {
+  .glass-loader-ring, .glass-loader-glow { animation: none; }
 }
 
-/* ── Search overlay fade ────────────────────────────────────────────────── */
-@keyframes searchFadeIn {
-  from { opacity: 0; }
-  to   { opacity: 1; }
-}
+/* ── Embla Carousel (legacy, used in some pages) ─────────────────────────── */
+.embla__viewport { overflow: hidden; }
+.embla__container { display: flex; touch-action: pan-y pinch-zoom; }
+.embla__slide { flex: 0 0 100%; min-width: 0; }
 
-/* ── Desktop/tablet content offset for fixed left SideRail (64px) ──────── */
-@media (min-width: 768px) {
-  .rail-offset { padding-left: 64px; }
-}
-
-/* ── Display font utility ───────────────────────────────────────────────── */
+/* ── Display font (legacy compatibility) ─────────────────────────────────── */
 .font-display {
-  font-family: 'Bebas Neue', Anton, Impact, system-ui, sans-serif;
-  letter-spacing: 0.04em;
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  letter-spacing: -0.02em;
 }
 
-/* ── Luxury active glow — used on SideRail active icon ─────────────────── */
+/* ── Marquee ─────────────────────────────────────────────────────────────── */
+@keyframes marquee {
+  from { transform: translate3d(0,0,0); }
+  to   { transform: translate3d(-50%,0,0); }
+}
+
+/* ── Fade-up (used in legacy components) ────────────────────────────────── */
+@keyframes fadeUp {
+  from { opacity: 0; transform: translate3d(0,18px,0); }
+  to   { opacity: 1; transform: translate3d(0,0,0); }
+}
+
+/* ── Active glow (SideRail legacy) ─────────────────────────────────────── */
 @keyframes activeGlow {
   0%, 100% { opacity: 0.6; }
   50%       { opacity: 1; }
 }
 
-/* ── Fade-up utility ─────────────────────────────────────────────────────── */
-@keyframes fadeUpIn {
-  from { opacity: 0; transform: translate3d(0, 16px, 0); }
-  to   { opacity: 1; transform: translate3d(0, 0, 0); }
+/* ── Hero carousel progress (legacy) ─────────────────────────────────────── */
+@keyframes heroProgress {
+  from { width: 0%; }
+  to   { width: 100%; }
+}
+
+/* ── Continue Watching remove button ─────────────────────────────────────── */
+.group:hover .cw-remove-btn {
+  opacity: 1 !important;
+}
+
+/* ── Search overlay ──────────────────────────────────────────────────────── */
+@keyframes searchFadeIn {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+/* ── Mobile menu ─────────────────────────────────────────────────────────── */
+@keyframes menuSlideDown {
+  from { opacity: 0; transform: translate3d(0,-8px,0); }
+  to   { opacity: 1; transform: translate3d(0,0,0); }
+}
+.animate-menu {
+  animation: menuSlideDown 0.2s cubic-bezier(0.4,0,0.2,1) both;
+}
+
+/* ── Fade animations ─────────────────────────────────────────────────────── */
+.animate-fade-up {
+  animation: fadeUp 0.3s cubic-bezier(0.4,0,0.2,1) both;
+}
+.animate-fade-in {
+  animation: pageFadeIn 0.2s cubic-bezier(0.4,0,0.2,1) both;
 }

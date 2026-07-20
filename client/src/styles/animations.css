@@ -1,0 +1,96 @@
+/* ── Shared Animations — GPU-composited only ─────────────────────────────── */
+
+/* Page transitions */
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+@keyframes fadeUpIn {
+  from { opacity: 0; transform: translate3d(0, 20px, 0); }
+  to   { opacity: 1; transform: translate3d(0, 0, 0); }
+}
+
+@keyframes fadeDownIn {
+  from { opacity: 0; transform: translate3d(0, -12px, 0); }
+  to   { opacity: 1; transform: translate3d(0, 0, 0); }
+}
+
+/* Skeleton shimmer */
+@keyframes shimmer {
+  0%   { transform: translateX(-150%); }
+  100% { transform: translateX(150%); }
+}
+
+/* Ken Burns — hero image drift (desktop only via media query) */
+@keyframes kenBurns {
+  0%, 100% { transform: scale(1.0) translate3d(0, 0, 0); }
+  50%       { transform: scale(1.06) translate3d(-1.2%, 0.6%, 0); }
+}
+
+/* Progress bar fill */
+@keyframes progressFill {
+  from { width: 0%; }
+  to   { width: 100%; }
+}
+
+/* Spin */
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+/* Slide in from right */
+@keyframes slideInRight {
+  from { opacity: 0; transform: translate3d(24px, 0, 0); }
+  to   { opacity: 1; transform: translate3d(0, 0, 0); }
+}
+
+/* Slide in from left */
+@keyframes slideInLeft {
+  from { opacity: 0; transform: translate3d(-24px, 0, 0); }
+  to   { opacity: 1; transform: translate3d(0, 0, 0); }
+}
+
+/* Mobile menu slide down */
+@keyframes menuSlideDown {
+  from { opacity: 0; transform: translate3d(0, -8px, 0); }
+  to   { opacity: 1; transform: translate3d(0, 0, 0); }
+}
+
+/* Pulse for skeletons */
+@keyframes pulse {
+  0%, 100% { opacity: 0.4; }
+  50%       { opacity: 0.8; }
+}
+
+/* Card hover glow */
+@keyframes cardGlow {
+  0%, 100% { box-shadow: 0 12px 40px rgba(0,0,0,0.4); }
+  50%       { box-shadow: 0 16px 48px rgba(0,0,0,0.6); }
+}
+
+/* ── Utility animation classes ─────────────────────────────────────────────── */
+.animate-fade-in      { animation: fadeIn 0.2s var(--ease-smooth) both; }
+.animate-fade-up      { animation: fadeUpIn 0.3s var(--ease-smooth) both; }
+.animate-fade-down    { animation: fadeDownIn 0.2s var(--ease-smooth) both; }
+.animate-slide-right  { animation: slideInRight 0.25s var(--ease-smooth) both; }
+.animate-slide-left   { animation: slideInLeft 0.25s var(--ease-smooth) both; }
+.animate-menu         { animation: menuSlideDown 0.2s var(--ease-smooth) both; }
+.animate-shimmer      { animation: shimmer 1.8s ease-in-out infinite; }
+.animate-pulse-soft   { animation: pulse 2s ease-in-out infinite; }
+.animate-spin         { animation: spin 1s linear infinite; }
+
+/* Disable all animations if user prefers reduced motion */
+@media (prefers-reduced-motion: reduce) {
+  .animate-fade-in,
+  .animate-fade-up,
+  .animate-fade-down,
+  .animate-slide-right,
+  .animate-slide-left,
+  .animate-menu,
+  .animate-shimmer,
+  .animate-pulse-soft,
+  .animate-spin {
+    animation: none !important;
+  }
+}

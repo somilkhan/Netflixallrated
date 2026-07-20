@@ -34,7 +34,12 @@ client/          ← React 18 + Vite + Tailwind (runs on Replit)
     lib/supabase.ts     ← Supabase client (initialized from /api/config)
     lib/api.ts          ← Fetch helpers
     pages/              ← Home, TitleDetail, Watchlist, Admin, Login, etc.
-    components/         ← Navbar, Card, Hero, VideoPlayer, etc.
+    components/
+      layout/           ← TopNav (unified nav bar — replaces SideRail + Navbar + BottomNav)
+      sections/         ← HeroSection, ContentRow, TopTenRow
+      ui/               ← ContentCard, FilterPill, SkeletonCard
+    hooks/              ← useScrollDirection, useMediaQuery, useClickOutside
+    styles/             ← design-tokens.css, animations.css
 
 server/          ← Express + Prisma (deploy to Railway via GitHub)
   src/
