@@ -171,7 +171,7 @@ export default function SearchResults() {
       {/* AniList best match */}
       {filters.type === 'ANIME' && q && anilistResult && (
         <div className="mb-8">
-          <p className="font-mono text-[11px] text-ink-faint uppercase tracking-wider mb-3">Best match · AniList</p>
+          <p className="text-[11px] text-white/35 uppercase tracking-wider mb-3">Best match · AniList</p>
           <div
             className="flex gap-4 p-4 rounded-xl border border-line bg-surface max-w-xl cursor-pointer hover:border-white/25 transition-colors"
             role="button"
@@ -189,13 +189,13 @@ export default function SearchResults() {
               />
             )}
             <div className="flex-1 min-w-0 space-y-1.5">
-              <p className="font-serif text-base font-semibold leading-tight">
+              <p className="text-base font-semibold leading-tight">
                 {anilistResult.title.english || anilistResult.title.romaji}
               </p>
               {anilistResult.title.english && anilistResult.title.romaji && (
-                <p className="font-mono text-[11px] text-ink-faint">{anilistResult.title.romaji}</p>
+                <p className="text-[11px] text-white/40">{anilistResult.title.romaji}</p>
               )}
-              <div className="font-mono text-[11px] text-ink-dim flex flex-wrap gap-1.5 items-center">
+              <div className="text-[11px] text-white/35 flex flex-wrap gap-1.5 items-center">
                 {anilistResult.startDate?.year && <span>{anilistResult.startDate.year}</span>}
                 {anilistResult.episodes && <><span>·</span><span>{anilistResult.episodes} eps</span></>}
                 {anilistResult.averageScore && (
@@ -233,7 +233,7 @@ export default function SearchResults() {
       {/* Empty state — no query and no active filter */}
       {!q && !loading && !filters.genre && !filters.type && (
         <div className="py-16 pb-28 text-center">
-          <p className="font-serif text-xl font-semibold mb-2">Search the catalog</p>
+          <p className="text-xl font-semibold mb-2">Search the catalog</p>
           <p className="text-ink-faint text-sm mb-8">Movies, TV shows, anime — all in one place</p>
           <div className="flex flex-wrap gap-2 justify-center max-w-sm mx-auto">
             {['Action', 'Drama', 'Sci-Fi', 'Anime', 'Comedy', 'Thriller', 'Horror', 'Romance'].map(g => (

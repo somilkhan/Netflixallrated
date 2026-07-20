@@ -93,7 +93,7 @@ function HistoryRow({
         {pct !== null && !item.completed && (
           <div className="absolute bottom-0 left-0 right-0 h-[3px] bg-white/10">
             <div
-              className="h-full bg-[#e50914]"
+              className="h-full bg-white/65"
               style={{ width: `${pct}%` }}
             />
           </div>
@@ -114,12 +114,12 @@ function HistoryRow({
         onClick={() => navigate(`/title/${item.title.id}?play=1`)}
         onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); navigate(`/title/${item.title.id}?play=1`); } }}
       >
-        <p className="font-serif text-sm font-semibold text-ink leading-tight truncate">{item.title.name}</p>
-        <p className="text-[10px] text-ink-dim font-mono mt-0.5">
+        <p className="text-sm font-semibold text-white leading-tight truncate">{item.title.name}</p>
+        <p className="text-[10px] text-white/40 mt-0.5">
           {typeLabel} · {item.title.year}
         </p>
         {subLabel && (
-          <p className="text-[10px] text-ink-dim mt-0.5 truncate">{subLabel}</p>
+          <p className="text-[10px] text-white/40 mt-0.5 truncate">{subLabel}</p>
         )}
         <div className="flex items-center gap-2 mt-1">
           {pct !== null && !item.completed && (
@@ -152,7 +152,7 @@ function HistoryRow({
         </button>
         <button
           onClick={() => onRemove(item.titleId)}
-          className="p-1.5 rounded-lg border border-white/10 text-ink-faint hover:text-ink hover:border-white/20 transition-colors"
+          className="p-1.5 rounded-lg border border-white/10 text-white/40 hover:text-white hover:border-white/20 transition-colors"
           title="Remove from history"
         >
           <X size={12} />
@@ -207,8 +207,8 @@ export default function WatchHistory() {
   if (!user) {
     return (
       <div className="min-h-[60vh] flex flex-col items-center justify-center gap-4 px-6 text-center">
-        <Clock size={36} className="text-ink-faint" />
-        <p className="font-serif text-xl text-ink">Sign in to see your watch history</p>
+        <Clock size={36} className="text-white/30" />
+        <p className="text-xl font-semibold text-white">Sign in to see your watch history</p>
         <button
           onClick={() => navigate('/login')}
           className="mt-2 px-5 py-2 rounded-full bg-white text-black text-sm font-mono font-semibold hover:bg-white/88 transition-colors duration-150"
@@ -224,8 +224,8 @@ export default function WatchHistory() {
       {/* Header */}
       <div className="flex items-center justify-between px-4 mb-4">
         <div className="flex items-center gap-2">
-          <Clock size={18} className="text-ink-dim" />
-          <h1 className="font-serif text-xl font-semibold text-ink">Watch History</h1>
+          <Clock size={18} className="text-white/40" />
+          <h1 className="text-xl font-semibold text-white tracking-tight">Watch History</h1>
           {items.length > 0 && (
             <span className="text-[10px] font-mono text-ink-faint bg-white/5 border border-white/10 rounded-full px-2 py-0.5">
               {items.length}
@@ -272,9 +272,9 @@ export default function WatchHistory() {
         <InlineLoader label="Loading history…" minHeight={300} />
       ) : items.length === 0 ? (
         <div className="flex flex-col items-center justify-center gap-3 py-24 text-center px-6">
-          <Clock size={32} className="text-ink-faint/40" />
-          <p className="font-serif text-lg text-ink-dim">Nothing watched yet</p>
-          <p className="text-xs text-ink-faint">Titles you watch will appear here</p>
+          <Clock size={32} className="text-white/20" />
+          <p className="text-lg text-white/50">Nothing watched yet</p>
+          <p className="text-xs text-white/30">Titles you watch will appear here</p>
           <button
             onClick={() => navigate('/')}
             className="mt-3 px-5 py-2 rounded-full bg-white/[0.06] border border-white/[0.12] text-white/60 text-sm font-mono hover:bg-white/[0.10] hover:text-white transition-colors duration-150"

@@ -2,9 +2,9 @@ import { useState, useEffect, useRef, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Tv, Inbox } from 'lucide-react';
 import { api } from '../lib/api';
-import Card from '../components/Card';
+import ContentCard from '../components/ui/ContentCard';
 import Section from '../components/Section';
-import { GlassCardSkeleton } from '../components/GlassCard';
+import { SkeletonCard } from '../components/ui/SkeletonCard';
 
 const PAGE_LIMIT = 24;
 
@@ -155,14 +155,14 @@ export default function TV() {
           </div>
           {loading ? (
             <div className="flex flex-wrap gap-3.5">
-              {Array.from({ length: 10 }).map((_, i) => <GlassCardSkeleton key={i} />)}
+              {Array.from({ length: 10 }).map((_, i) => <SkeletonCard key={i} />)}
             </div>
           ) : all.length > 0 ? (
             <>
               <div className="flex flex-wrap gap-3.5">
-                {all.map(t => <Card key={t.id} title={t} />)}
+                {all.map(t => <ContentCard key={t.id} title={t} />)}
                 {loadState === 'more' &&
-                  Array.from({ length: 4 }).map((_, i) => <GlassCardSkeleton key={`sk-${i}`} />)
+                  Array.from({ length: 4 }).map((_, i) => <SkeletonCard key={`sk-${i}`} />)
                 }
               </div>
               <div ref={sentinelRef} className="h-8" />
@@ -182,14 +182,14 @@ export default function TV() {
         </div>
       ) : loading ? (
         <div className="px-5 pt-8 flex flex-wrap gap-3.5">
-          {Array.from({ length: 10 }).map((_, i) => <GlassCardSkeleton key={i} />)}
+          {Array.from({ length: 10 }).map((_, i) => <SkeletonCard key={i} />)}
         </div>
       ) : (
         <>
           {all.length > 0 && (
             <>
               <Section title="All TV Shows" count={`${all.length}${hasNext ? '+' : ''}`} viewAllPath="/search?q=&type=SERIES">
-                {all.slice(0, 20).map(t => <Card key={t.id} title={t} />)}
+                {all.slice(0, 20).map(t => <ContentCard key={t.id} title={t} />)}
               </Section>
               {/* Infinite-scroll sentinel placed after the first section row */}
               <div ref={sentinelRef} className="h-1" />
@@ -200,7 +200,7 @@ export default function TV() {
             if (!titles || titles.length === 0) return null;
             return (
               <Section key={g} title={g} count={`${titles.length}`} viewAllPath={`/search?q=&type=SERIES&genre=${g}`}>
-                {titles.map(t => <Card key={t.id} title={t} />)}
+                {titles.map(t => <ContentCard key={t.id} title={t} />)}
               </Section>
             );
           })}

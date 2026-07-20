@@ -11,7 +11,6 @@ import {
 import { SERVERS } from '../lib/servers';
 import { FebBoxPlayer } from '../components/VideoPlayer';
 import type { FebboxStream } from '../components/VideoPlayer';
-import GlassCard from '../components/GlassCard';
 import { navigateToAnime } from '../lib/animeResolve';
 import EpisodeBrowser from '../components/title-detail/EpisodeBrowser';
 import RelatedRow from '../components/title-detail/RelatedRow';
@@ -31,6 +30,59 @@ const TIER_LABEL: Record<string, string> = {
   SKIP: 'Skip', TIMEPASS: 'Timepass', GO_FOR_IT: 'Go for it', PERFECTION: 'Perfection',
 };
 
+/** Lightweight poster card for Related rows — ContentCard visual style,
+ *  custom async onClick (can't use ContentCard directly because those cards
+ *  need async TMDB/AniList resolution before navigating). */
+const RelatedPosterCard = memo(function RelatedPosterCard({
+  name, posterUrl, typeLabel, year, onClick,
+}: {
+  name: string;
+  posterUrl?: string | null;
+  typeLabel?: string;
+  year?: number | string | null;
+  onClick: () => void;
+}) {
+  const [imgError, setImgError] = useState(false);
+  return (
+    <div
+      role="button"
+      tabIndex={0}
+      aria-label={name}
+      onClick={onClick}
+      onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onClick(); } }}
+      className="group relative shrink-0 w-[130px] scroll-snap-start cursor-pointer touch-manipulation select-none focus:outline-none focus-visible:ring-2 focus-visible:ring-white/30 rounded-xl"
+      style={{ WebkitTapHighlightColor: 'transparent' }}
+    >
+      <div
+        className="relative w-full overflow-hidden rounded-xl bg-[#141414] transition-transform duration-300 ease-[cubic-bezier(0.4,0,0.2,1)] md:group-hover:scale-[1.05] active:scale-[0.97]"
+        style={{ aspectRatio: '2/3', boxShadow: '0 4px 16px rgba(0,0,0,0.3)' }}
+      >
+        {typeLabel && (
+          <span className="absolute top-2 right-2 z-20 text-[9px] font-medium px-[6px] py-[3px] rounded-full border border-white/[0.08] bg-black/60 text-white/50 uppercase tracking-wide leading-none">
+            {typeLabel}
+          </span>
+        )}
+        <div className="absolute inset-0 pointer-events-none z-10" style={{ background: 'linear-gradient(to top, rgba(0,0,0,0.85) 0%, rgba(0,0,0,0.3) 30%, transparent 60%)' }} />
+        {posterUrl && !imgError ? (
+          <img
+            src={posterUrl} alt={name} loading="lazy" decoding="async"
+            onError={() => setImgError(true)}
+            className="absolute inset-0 w-full h-full object-cover"
+          />
+        ) : (
+          <div className="absolute inset-0 flex items-center justify-center px-2">
+            <span className="text-white/20 text-[9px] text-center leading-tight">{name}</span>
+          </div>
+        )}
+      </div>
+      <div className="mt-2 px-0.5">
+        <p className="text-[12px] font-medium text-white leading-tight line-clamp-2">{name}</p>
+        {year && <span className="text-[11px] text-[#737373]">{year}</span>}
+      </div>
+    </div>
+  );
+});
+
 /** Similar/Recommended TMDB card — resolves the TMDB item into the local
  * catalog on click and routes to the SAME unified /title/:id detail page. */
 const RelatedTmdbCard = memo(function RelatedTmdbCard({ item }: { item: any }) {
@@ -42,9 +94,9 @@ const RelatedTmdbCard = memo(function RelatedTmdbCard({ item }: { item: any }) {
     } catch { /* best-effort — stay put on failure */ }
   };
   return (
-    <GlassCard
-      title={item.name}
-      typeLabel={item.mediaType === 'movie' ? 'Movie' : 'Series'}
+    <RelatedPosterCard
+      name={item.name}
+      typeLabel={item.mediaType === 'movie' ? 'Film' : 'TV'}
       year={item.year}
       posterUrl={item.posterUrl}
       onClick={handleClick}
@@ -57,9 +109,6 @@ const RelatedTmdbCard = memo(function RelatedTmdbCard({ item }: { item: any }) {
 const RelatedAnimeCard = memo(function RelatedAnimeCard({ node }: { node: any }) {
   const nav = useNavigate();
   const handleClick = async () => {
-    // Relation edges only carry id/title/format/coverImage — fetch the full
-    // AniList record first so the created title gets real year/genres/synopsis
-    // instead of placeholder defaults.
     try {
       const full = await getAnimeDetail({ id: node.id });
       await navigateToAnime(full ?? { id: node.id, title: node.title, coverImage: node.coverImage }, nav);
@@ -68,8 +117,8 @@ const RelatedAnimeCard = memo(function RelatedAnimeCard({ node }: { node: any })
     }
   };
   return (
-    <GlassCard
-      title={node.title.english || node.title.romaji}
+    <RelatedPosterCard
+      name={node.title.english || node.title.romaji}
       typeLabel="Anime"
       posterUrl={node.coverImage?.extraLarge || node.coverImage?.large}
       onClick={handleClick}
@@ -103,8 +152,6 @@ export default function TitleDetail() {
   const [titleError, setTitleError] = useState(false);
   const [watchlistStatus, setWatchlistStatus] = useState('');
   const [ratingSubmitting, setRatingSubmitting] = useState(false);
-  const [scrolled, setScrolled] = useState(false);
-
   // Player
   const [isPlaying, setIsPlaying] = useState(false);
   const [isIframeLoading, setIsIframeLoading] = useState(false);
@@ -287,13 +334,6 @@ export default function TitleDetail() {
   const [episodes, setEpisodes] = useState<any[]>([]);
   const [seasonsLoading, setSeasonsLoading] = useState(false);
   const [epsLoading, setEpsLoading] = useState(false);
-
-  // Topbar scroll detection
-  useEffect(() => {
-    const onScroll = () => setScrolled(window.scrollY > 20);
-    window.addEventListener('scroll', onScroll, { passive: true });
-    return () => window.removeEventListener('scroll', onScroll);
-  }, []);
 
   useEffect(() => {
     if (!id) return;
@@ -875,17 +915,6 @@ export default function TitleDetail() {
   return (
     <div className="movie-detail-page">
 
-      {/* ── Topbar ───────────────────────────────────────────────── */}
-      <header className={`detail-topbar${scrolled ? ' scrolled' : ''}`}>
-        <button className="detail-back-btn" aria-label="Go back" onClick={() => navigate(-1)}>
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2">
-            <polyline points="15 18 9 12 15 6" />
-          </svg>
-        </button>
-        <span className="detail-brand">{displayName || 'ALLRATED'}</span>
-        <div style={{ width: 36 }} />
-      </header>
-
       {/* ── Hero ─────────────────────────────────────────────────── */}
       {/* Always the static backdrop — no autoplaying embed, so there's never a
           black box or a broken iframe fighting the browser's autoplay policy.
@@ -895,6 +924,18 @@ export default function TitleDetail() {
         <div className="hero-bg" style={heroBgStyle} />
         <div className="hero-gradient" />
         <div className="hero-noise" />
+
+        {/* Back button — top-left of hero */}
+        <button
+          className="hero-back-btn"
+          aria-label="Go back"
+          onClick={() => navigate(-1)}
+        >
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2">
+            <polyline points="15 18 9 12 15 6" />
+          </svg>
+        </button>
+
         {trailerAvailable && (
           <button className="hero-trailer-btn" onClick={() => setTrailerModalOpen(true)}>
             <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor"><polygon points="8,5 8,19 19,12" /></svg>
