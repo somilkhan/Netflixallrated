@@ -6,7 +6,7 @@
  */
 import { useState, useEffect, useCallback, useMemo, memo } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Play, Info, Volume2, VolumeX, ChevronRight } from 'lucide-react';
+import { Play, Info, Volume2, VolumeX, ChevronRight, ChevronDown } from 'lucide-react';
 
 const AUTO_MS = 9000;
 
@@ -60,7 +60,7 @@ const HeroSection = memo(function HeroSection({ titles }: HeroSectionProps) {
     <section
       className="relative w-full overflow-hidden"
       style={{
-        height: 'clamp(480px, 70svh, 960px)',
+        height: 'clamp(480px, 75svh, 960px)',
       }}
       // Desktop override via CSS — 100svh on md+
       aria-label={`Featured: ${current.name}`}
@@ -129,25 +129,25 @@ const HeroSection = memo(function HeroSection({ titles }: HeroSectionProps) {
       )}
 
       {/* ── Gradient overlays ─────────────────────────────────────────── */}
-      {/* Left: text readability */}
+      {/* Universal scrim — ensures text is always readable over any backdrop */}
       <div
         className="absolute inset-0 z-[2] pointer-events-none"
-        style={{ background: 'linear-gradient(105deg, rgba(10,10,10,0.95) 0%, rgba(10,10,10,0.7) 30%, rgba(10,10,10,0.2) 60%, transparent 80%)' }}
+        style={{ background: 'linear-gradient(to top, rgba(0,0,0,0.95) 0%, rgba(0,0,0,0.6) 40%, rgba(0,0,0,0.2) 100%)' }}
       />
-      {/* Bottom: fade to page bg */}
+      {/* Left: extra text-area darkening on desktop */}
       <div
-        className="absolute inset-0 z-[2] pointer-events-none"
-        style={{ background: 'linear-gradient(to top, #0A0A0A 0%, rgba(10,10,10,0.75) 18%, rgba(10,10,10,0.1) 42%, transparent 100%)' }}
+        className="absolute inset-0 z-[2] pointer-events-none hidden md:block"
+        style={{ background: 'linear-gradient(105deg, rgba(10,10,10,0.85) 0%, rgba(10,10,10,0.5) 40%, transparent 70%)' }}
       />
       {/* Top: nav readability */}
       <div
         className="absolute inset-0 z-[2] pointer-events-none"
-        style={{ background: 'linear-gradient(to bottom, rgba(0,0,0,0.45) 0%, transparent 22%)' }}
+        style={{ background: 'linear-gradient(to bottom, rgba(0,0,0,0.5) 0%, transparent 20%)' }}
       />
 
       {/* ── Content — bottom-left ─────────────────────────────────────── */}
       <div className="absolute inset-0 z-[3] flex items-end">
-        <div className="w-full max-w-[620px] px-4 sm:px-8 md:px-12 pb-20 md:pb-28">
+        <div className="w-full max-w-[620px] px-4 sm:px-8 md:px-12 pb-24 md:pb-28">
 
           {/* Genre pills */}
           {current.genres?.length > 0 && (
@@ -211,8 +211,14 @@ const HeroSection = memo(function HeroSection({ titles }: HeroSectionProps) {
           {/* Synopsis */}
           {current.synopsis && (
             <p
-              className="text-[14px] md:text-[15px] text-[#A3A3A3] leading-relaxed line-clamp-2 md:line-clamp-3 mb-6 max-w-[500px] animate-fade-up"
-              style={{ animationDelay: '0.12s' }}
+              className="text-[14px] md:text-[15px] text-[#A3A3A3] leading-relaxed mb-6 max-w-[500px] animate-fade-up"
+              style={{
+                animationDelay: '0.12s',
+                display: '-webkit-box',
+                WebkitLineClamp: 2,
+                WebkitBoxOrient: 'vertical',
+                overflow: 'hidden',
+              }}
             >
               {current.synopsis}
             </p>
@@ -229,14 +235,14 @@ const HeroSection = memo(function HeroSection({ titles }: HeroSectionProps) {
               aria-label={`Play ${current.name}`}
               className="
                 flex items-center justify-center gap-2.5
-                h-12 sm:h-12 px-8 rounded-lg
+                w-full sm:w-auto px-8 rounded-xl
                 bg-white text-black
                 text-[15px] font-semibold
                 hover:bg-white/90 active:scale-[0.97]
                 transition-all duration-200 touch-manipulation
                 shadow-[0_4px_24px_rgba(0,0,0,0.5)]
               "
-              style={{ minHeight: 56 }}
+              style={{ minHeight: 56, height: 56 }}
             >
               <Play size={17} className="fill-current shrink-0" />
               Play Now
@@ -248,7 +254,7 @@ const HeroSection = memo(function HeroSection({ titles }: HeroSectionProps) {
               aria-label={`More info about ${current.name}`}
               className="
                 flex items-center justify-center gap-2.5
-                h-12 sm:h-12 px-8 rounded-lg
+                w-full sm:w-auto px-8 rounded-xl
                 bg-transparent border border-white/[0.35] text-white
                 text-[15px] font-medium
                 hover:bg-white/[0.10] hover:border-white/[0.50]
@@ -256,7 +262,7 @@ const HeroSection = memo(function HeroSection({ titles }: HeroSectionProps) {
                 transition-all duration-200 touch-manipulation
                 backdrop-blur-sm
               "
-              style={{ minHeight: 56 }}
+              style={{ minHeight: 56, height: 56 }}
             >
               <Info size={16} className="shrink-0" />
               More Info
@@ -335,6 +341,15 @@ const HeroSection = memo(function HeroSection({ titles }: HeroSectionProps) {
             <ChevronRight size={15} />
           </button>
         )}
+      </div>
+
+      {/* ── Scroll hint — mobile only ──────────────────────────────────── */}
+      <div
+        className="absolute bottom-4 left-1/2 -translate-x-1/2 z-[4] md:hidden pointer-events-none"
+        style={{ opacity: 0.5, animation: 'bounce 2s infinite' }}
+        aria-hidden
+      >
+        <ChevronDown size={22} className="text-white" />
       </div>
     </section>
   );

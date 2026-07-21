@@ -234,7 +234,7 @@ export default function Home() {
   }, [showAll, activeTab, movies, series, anime]);
 
   return (
-    <div className="pb-36 md:pb-24">
+    <div className="pb-32 md:pb-24">
       {/* ── Hero ──────────────────────────────────────────────────────────── */}
       <HeroSection titles={heroTitles} />
 
