@@ -1,223 +1,310 @@
+/**
+ * TV Shows — rebuilt to use live TMDB API data directly.
+ * No backend calls for content — all rows come from TMDB.
+ */
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Tv, Inbox } from 'lucide-react';
+import {
+  getTrending,
+  getPopularTVShows,
+  getTopRatedTVShows,
+  getTVByGenre,
+  getTVVideos,
+  type TmdbNormalized,
+} from '../services/tmdb';
 import { api } from '../lib/api';
-import ContentCard from '../components/ui/ContentCard';
+import HeroSection from '../components/sections/HeroSection';
 import ContentRow from '../components/sections/ContentRow';
-import { SkeletonCard } from '../components/ui/SkeletonCard';
+import TmdbContentCard from '../components/TmdbContentCard';
+import { SkeletonRow } from '../components/ui/SkeletonCard';
 
-const PAGE_LIMIT = 24;
+// Static TMDB TV genre list (these rarely change)
+const TV_GENRES = [
+  { id: 10759, name: 'Action & Adventure' },
+  { id: 16,    name: 'Animation' },
+  { id: 35,    name: 'Comedy' },
+  { id: 80,    name: 'Crime' },
+  { id: 99,    name: 'Documentary' },
+  { id: 18,    name: 'Drama' },
+  { id: 10751, name: 'Family' },
+  { id: 10762, name: 'Kids' },
+  { id: 9648,  name: 'Mystery' },
+  { id: 10765, name: 'Sci-Fi & Fantasy' },
+  { id: 10768, name: 'War & Politics' },
+  { id: 37,    name: 'Western' },
+];
 
-function useInfiniteTitles(type: string, genre: string) {
-  const [items,     setItems]     = useState<any[]>([]);
-  const [loadState, setLoadState] = useState<'idle' | 'loading' | 'more' | 'done'>('idle');
-  const [hasNext,   setHasNext]   = useState(false);
-  const pageRef     = useRef(1);
-  const inFlight    = useRef(false);
-  const versionRef  = useRef(0);
+// ── Infinite-scroll hook for genre-filtered results ────────────────────────
+function useGenreScroll(genreId: number | null) {
+  const [items,   setItems]   = useState<TmdbNormalized[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [hasMore, setHasMore] = useState(false);
+  const pageRef   = useRef(1);
+  const inFlight  = useRef(false);
+  const versionRef = useRef(0);
   const sentinelRef = useRef<HTMLDivElement>(null);
 
-  // Reset on filter change
-  const filterKey = `${type}|${genre}`;
+  // Reset + first page whenever genre changes
   useEffect(() => {
     versionRef.current += 1;
     inFlight.current = false;
     pageRef.current = 1;
     setItems([]);
-    setHasNext(false);
-    setLoadState('idle');
-  }, [filterKey]); // eslint-disable-line react-hooks/exhaustive-deps
+    setHasMore(false);
+    if (genreId === null) return;
 
-  const loadPage = useCallback((pageNum: number, replace: boolean, version: number) => {
-    if (inFlight.current) return;
+    const v = versionRef.current;
+    setLoading(true);
+    getTVByGenre(genreId, 1).then(results => {
+      if (v !== versionRef.current) return;
+      setItems(results);
+      setHasMore(results.length >= 18);
+      setLoading(false);
+      inFlight.current = false;
+    }).catch(() => {
+      if (v !== versionRef.current) return;
+      setLoading(false);
+      inFlight.current = false;
+    });
+  }, [genreId]);
+
+  const loadNext = useCallback(() => {
+    if (inFlight.current || !hasMore || genreId === null) return;
     inFlight.current = true;
-    setLoadState(pageNum === 1 ? 'loading' : 'more');
-    const p: Record<string, string> = { type, limit: String(PAGE_LIMIT), page: String(pageNum) };
-    if (genre) p.genre = genre;
-    api.titles.list(p)
-      .then((d: any) => {
-        if (version !== versionRef.current) return;
-        const titles = d.titles || [];
-        setItems(prev => replace ? titles : [...prev, ...titles]);
-        setHasNext(d.page < d.pages);
-        setLoadState('done');
-      })
-      .catch(() => {
-        if (version !== versionRef.current) return;
-        setLoadState('done');
-      })
-      .finally(() => {
-        if (version === versionRef.current) inFlight.current = false;
+    const next = pageRef.current + 1;
+    const v = versionRef.current;
+    setLoading(true);
+    getTVByGenre(genreId, next).then(results => {
+      if (v !== versionRef.current) return;
+      pageRef.current = next;
+      setItems(prev => {
+        const seen = new Set(prev.map(i => i.id));
+        return [...prev, ...results.filter(i => !seen.has(i.id))];
       });
-  }, [type, genre]);
+      setHasMore(results.length >= 18);
+      setLoading(false);
+      inFlight.current = false;
+    }).catch(() => {
+      if (v !== versionRef.current) return;
+      setLoading(false);
+      inFlight.current = false;
+    });
+  }, [hasMore, genreId]);
 
-  // Kick off first page when idle
-  useEffect(() => {
-    if (loadState === 'idle') {
-      loadPage(1, true, versionRef.current);
-    }
-  }, [loadState, loadPage]);
-
-  // Infinite-scroll sentinel
   useEffect(() => {
     const el = sentinelRef.current;
     if (!el) return;
     const io = new IntersectionObserver(
-      ([entry]) => {
-        if (entry.isIntersecting && hasNext && loadState === 'done' && !inFlight.current) {
-          const next = pageRef.current + 1;
-          pageRef.current = next;
-          loadPage(next, false, versionRef.current);
-        }
-      },
+      ([entry]) => { if (entry.isIntersecting) loadNext(); },
       { rootMargin: '400px 0px' },
     );
     io.observe(el);
     return () => io.disconnect();
-  }, [hasNext, loadState, loadPage]);
+  }, [loadNext]);
 
-  return { items, loadState, hasNext, sentinelRef };
+  return { items, loading, sentinelRef };
 }
 
-export default function TV() {
-  const nav = useNavigate();
-  const [selectedGenre, setSelectedGenre] = useState('');
-  const [genreList, setGenreList] = useState<string[]>([]);
-  // Genre-section preview rows (home-style, limited to 20 per genre — correct)
-  const [genreSections, setGenreSections] = useState<Record<string, any[]>>({});
+// ── Skeleton row ───────────────────────────────────────────────────────────
+function SectionSkeleton() {
+  return (
+    <div className="py-5">
+      <div className="px-4 md:px-6 mb-3 h-6 w-40 rounded-full bg-[#1A1A1A] animate-pulse" />
+      <SkeletonRow count={8} />
+    </div>
+  );
+}
 
+// ── Card grid for genre view ───────────────────────────────────────────────
+function CardGrid({ items }: { items: TmdbNormalized[] }) {
+  return (
+    <div className="flex flex-wrap gap-3.5">
+      {items.map(item => (
+        <TmdbContentCard key={item.id} item={item} />
+      ))}
+    </div>
+  );
+}
+
+// ── Main component ─────────────────────────────────────────────────────────
+export default function TVShows() {
+  const navigate = useNavigate();
+
+  const [selectedGenre, setSelectedGenre] = useState<{ id: number; name: string } | null>(null);
+
+  // Row data
+  const [trending,  setTrending]  = useState<TmdbNormalized[]>([]);
+  const [popular,   setPopular]   = useState<TmdbNormalized[]>([]);
+  const [topRated,  setTopRated]  = useState<TmdbNormalized[]>([]);
+  const [heroItems, setHeroItems] = useState<TmdbNormalized[]>([]);
+  const [loading,   setLoading]   = useState(true);
+
+  // Genre scroll (only active when genre selected)
+  const { items: genreItems, loading: genreLoading, sentinelRef } =
+    useGenreScroll(selectedGenre?.id ?? null);
+
+  // Fetch all rows on mount
   useEffect(() => {
-    api.titles.genres()
-      .then(({ genres }: { genres: { genre: string; count: number }[] }) => {
-        setGenreList(genres.slice(0, 12).map(g => g.genre));
-      })
-      .catch(() => {});
+    Promise.allSettled([
+      getTrending('tv', 'day'),
+      getPopularTVShows(),
+      getTopRatedTVShows(),
+    ]).then(([trendRes, popRes, topRes]) => {
+      const trend = trendRes.status === 'fulfilled' ? trendRes.value : [];
+      const pop   = popRes.status   === 'fulfilled' ? popRes.value   : [];
+      const top   = topRes.status   === 'fulfilled' ? topRes.value   : [];
+      setTrending(trend);
+      setPopular(pop);
+      setTopRated(top);
+      setHeroItems(trend.slice(0, 6));
+      setLoading(false);
+    });
   }, []);
 
-  // Load preview rows for genres (intentionally limited — these are horizontal scrollers)
+  // Fetch trailers for hero items in background
   useEffect(() => {
-    if (selectedGenre || genreList.length === 0) return;
+    if (!heroItems.length) return;
     Promise.all(
-      genreList.map(g =>
-        api.titles.list({ type: 'SERIES', genre: g, limit: '20' })
-          .then(d => [g, d.titles || []] as [string, any[]])
-          .catch(() => [g, []] as [string, any[]])
-      )
-    ).then(results => {
-      setGenreSections(Object.fromEntries(results.filter(([, t]) => t.length > 0)));
+      heroItems.slice(0, 5).map(item => getTVVideos(item.tmdbId).catch(() => null)),
+    ).then(keys => {
+      setHeroItems(prev =>
+        prev.map((item, i) =>
+          i < keys.length && keys[i] ? { ...item, trailerYoutubeId: keys[i]! } : item,
+        ),
+      );
     });
-  }, [selectedGenre, genreList]);
+  }, [trending]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // All shows with infinite scroll (either filtered by genre, or unfiltered)
-  const { items: all, loadState, hasNext, sentinelRef } = useInfiniteTitles('SERIES', selectedGenre);
-  const loading = loadState === 'loading';
+  // Hero action — resolve TMDB → backend ID, then navigate
+  const heroAction = useCallback(async (item: TmdbNormalized, play: boolean) => {
+    try {
+      const { id } = await api.titles.resolveTmdb(item.tmdbId, item.mediaType);
+      navigate(`/title/${id}${play ? '?play=1' : ''}`);
+    } catch {
+      navigate(`/search?q=${encodeURIComponent(item.name)}&type=SERIES`);
+    }
+  }, [navigate]);
 
   return (
-    <div className="min-h-screen">
-      {/* Header — bingr style */}
-      <div className="relative overflow-hidden border-b border-[#1a1a1a]">
-        <div className="relative px-5 pt-10 pb-7">
-          <div className="flex items-center gap-3 mb-1.5">
-            <Tv size={20} className="text-white shrink-0" strokeWidth={1.8} />
-            <h1 className="font-sans text-[28px] font-bold tracking-tight text-white leading-none">TV Shows</h1>
-          </div>
-          <p className="font-sans text-[13.5px] text-[#666] ml-[31px]">
-            Series, dramas, documentaries &amp; more
-          </p>
+    <div className="min-h-screen pb-28 md:pb-0">
+
+      {/* ── Hero ─────────────────────────────────────────────────────── */}
+      {heroItems.length > 0 ? (
+        <HeroSection titles={heroItems} onAction={heroAction} />
+      ) : loading ? (
+        <div className="w-full bg-[#0f0f0f] animate-pulse"
+          style={{ height: 'clamp(320px, 55svh, 640px)' }} />
+      ) : null}
+
+      {/* ── Page header ──────────────────────────────────────────────── */}
+      <div className="px-5 pt-8 pb-4 border-b border-[#1a1a1a]">
+        <div className="flex items-center gap-3 mb-1">
+          <Tv size={20} className="text-white shrink-0" strokeWidth={1.8} />
+          <h1 className="text-[28px] font-bold tracking-tight text-white leading-none">TV Shows</h1>
         </div>
+        <p className="text-[13.5px] text-[#666] ml-[31px]">
+          Series, dramas, documentaries &amp; more — live from TMDB
+        </p>
       </div>
 
-      {/* Genre filter pills — bingr style */}
+      {/* ── Genre filter pills ────────────────────────────────────────── */}
       <div className="px-5 py-3 flex gap-2 overflow-x-auto scrollbar-hide border-b border-[#1a1a1a]">
         <button
-          onClick={() => setSelectedGenre('')}
-          className={`shrink-0 font-sans text-[12px] px-4 py-1.5 rounded-full border transition-[background-color,border-color,color] duration-200 ${
-            !selectedGenre ? 'bg-white text-black border-white' : 'bg-transparent border-[#333] text-[#888] hover:text-white hover:border-[#555]'
+          onClick={() => setSelectedGenre(null)}
+          className={`shrink-0 text-[12px] px-4 py-1.5 rounded-full border transition-colors duration-200 ${
+            !selectedGenre
+              ? 'bg-white text-black border-white'
+              : 'bg-transparent border-[#333] text-[#888] hover:text-white hover:border-[#555]'
           }`}
-        >All</button>
-        {genreList.map(g => (
+        >
+          All
+        </button>
+        {TV_GENRES.map(g => (
           <button
-            key={g}
-            onClick={() => setSelectedGenre(g === selectedGenre ? '' : g)}
-            className={`shrink-0 font-sans text-[12px] px-4 py-1.5 rounded-full border transition-[background-color,border-color,color] duration-200 ${
-              selectedGenre === g ? 'bg-white text-black border-white' : 'bg-transparent border-[#333] text-[#888] hover:text-white hover:border-[#555]'
+            key={g.id}
+            onClick={() => setSelectedGenre(s => s?.id === g.id ? null : g)}
+            className={`shrink-0 text-[12px] px-4 py-1.5 rounded-full border transition-colors duration-200 ${
+              selectedGenre?.id === g.id
+                ? 'bg-white text-black border-white'
+                : 'bg-transparent border-[#333] text-[#888] hover:text-white hover:border-[#555]'
             }`}
-          >{g}</button>
+          >
+            {g.name}
+          </button>
         ))}
       </div>
 
-      {/* Filtered view (genre selected) */}
+      {/* ── Genre-filtered view ───────────────────────────────────────── */}
       {selectedGenre ? (
         <div className="px-5 pt-8">
           <div className="flex items-baseline gap-2 mb-5">
-            <span className="font-sans text-[22px] font-semibold">{selectedGenre}</span>
-            {!loading && <span className="font-mono text-[11px] text-ink-faint">{all.length} shows{hasNext ? '+' : ''}</span>}
+            <span className="text-[22px] font-semibold text-white">{selectedGenre.name}</span>
           </div>
-          {loading ? (
-            <div className="flex flex-wrap gap-3.5">
-              {Array.from({ length: 10 }).map((_, i) => <SkeletonCard key={i} />)}
-            </div>
-          ) : all.length > 0 ? (
+
+          {genreLoading && genreItems.length === 0 ? (
+            <SkeletonRow count={8} />
+          ) : genreItems.length > 0 ? (
             <>
-              <div className="flex flex-wrap gap-3.5">
-                {all.map(t => <ContentCard key={t.id} title={t} />)}
-                {loadState === 'more' &&
-                  Array.from({ length: 4 }).map((_, i) => <SkeletonCard key={`sk-${i}`} />)
-                }
-              </div>
-              <div ref={sentinelRef} className="h-8" />
-              {loadState === 'done' && !hasNext && all.length > 0 && (
-                <p className="font-mono text-[11px] text-ink-faint/50 text-center py-6 pb-24">
-                  You've reached the end · {all.length} show{all.length !== 1 ? 's' : ''}
-                </p>
+              <CardGrid items={genreItems} />
+              {genreLoading && (
+                <div className="flex flex-wrap gap-3.5 mt-3.5">
+                  {Array.from({ length: 4 }).map((_, i) => (
+                    <div
+                      key={i}
+                      className="w-[120px] sm:w-[140px] md:w-[180px] aspect-[2/3] bg-[#1A1A1A] rounded-xl animate-pulse"
+                    />
+                  ))}
+                </div>
               )}
+              <div ref={sentinelRef} className="h-8" />
+            </>
+          ) : !genreLoading ? (
+            <div className="py-20 text-center">
+              <Inbox size={36} className="mx-auto text-white/20 mb-4" />
+              <p className="text-lg font-semibold text-white">No results</p>
+            </div>
+          ) : null}
+        </div>
+
+      ) : (
+        /* ── Default rows view ─────────────────────────────────────── */
+        <>
+          {loading ? (
+            <>
+              <SectionSkeleton />
+              <SectionSkeleton />
+              <SectionSkeleton />
             </>
           ) : (
-            <div className="py-20 text-center">
-              <Inbox size={36} className="mx-auto text-ink-faint/30 mb-4" />
-              <p className="font-sans text-lg text-ink">No {selectedGenre} shows yet</p>
-              <p className="text-ink-faint text-sm mt-1">Check back soon as the catalog grows</p>
-            </div>
-          )}
-        </div>
-      ) : loading ? (
-        <div className="px-5 pt-8 flex flex-wrap gap-3.5">
-          {Array.from({ length: 10 }).map((_, i) => <SkeletonCard key={i} />)}
-        </div>
-      ) : (
-        <>
-          {all.length > 0 && (
             <>
-              <ContentRow title="All TV Shows" viewAllPath="/search?q=&type=SERIES">
-                {all.slice(0, 20).map(t => <ContentCard key={t.id} title={t} />)}
-              </ContentRow>
-              {/* Infinite-scroll sentinel placed after the first section row */}
-              <div ref={sentinelRef} className="h-1" />
+              {trending.length > 0 && (
+                <ContentRow title="Trending TV Shows">
+                  {trending.slice(0, 20).map(item => (
+                    <TmdbContentCard key={item.id} item={item} />
+                  ))}
+                </ContentRow>
+              )}
+              {popular.length > 0 && (
+                <ContentRow title="Popular TV Shows">
+                  {popular.slice(0, 20).map(item => (
+                    <TmdbContentCard key={item.id} item={item} />
+                  ))}
+                </ContentRow>
+              )}
+              {topRated.length > 0 && (
+                <ContentRow title="Top Rated TV Shows">
+                  {topRated.slice(0, 20).map(item => (
+                    <TmdbContentCard key={item.id} item={item} />
+                  ))}
+                </ContentRow>
+              )}
             </>
-          )}
-          {genreList.map(g => {
-            const titles = genreSections[g];
-            if (!titles || titles.length === 0) return null;
-            return (
-              <ContentRow key={g} title={g} viewAllPath={`/search?q=&type=SERIES&genre=${g}`}>
-                {titles.map(t => <ContentCard key={t.id} title={t} />)}
-              </ContentRow>
-            );
-          })}
-          {all.length === 0 && Object.keys(genreSections).length === 0 && (
-            <div className="py-20 text-center">
-              <Tv size={40} className="mx-auto text-ink-faint/30 mb-5" strokeWidth={1.5} />
-              <p className="font-sans text-xl font-semibold mb-2">No TV shows yet</p>
-              <p className="text-ink-faint text-sm">
-                The catalog is being populated.{' '}
-                <button onClick={() => nav('/admin')} className="text-white/70 hover:text-white underline">Add shows</button>
-                {' '}or wait for auto-sync.
-              </p>
-            </div>
           )}
         </>
       )}
-      <div className="h-28" />
+
+      <div className="h-16" />
     </div>
   );
 }
