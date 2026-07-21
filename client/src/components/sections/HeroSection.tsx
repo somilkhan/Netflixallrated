@@ -20,6 +20,8 @@ const HeroSection = memo(function HeroSection({ titles }: HeroSectionProps) {
   const [progressKey, setProgressKey] = useState(0);
   const [muted,       setMuted]       = useState(true);
   const [imgLoaded,   setImgLoaded]   = useState<Record<number, boolean>>({});
+  // Pre-fire all slides as loaded immediately; the hidden <img> below triggers
+  // proper load events so the background renders without waiting for a div.onLoad.
 
   const current = titles[idx];
 
@@ -76,17 +78,27 @@ const HeroSection = memo(function HeroSection({ titles }: HeroSectionProps) {
             >
               {imgUrl ? (
                 <>
-                  {!imgLoaded[i] && (
-                    <div className="absolute inset-0 bg-[#111]" />
-                  )}
+                  {/* Hidden <img> fires onLoad — div background-image never does */}
+                  <img
+                    src={imgUrl}
+                    alt=""
+                    aria-hidden
+                    className="sr-only"
+                    onLoad={() => setImgLoaded(prev => ({ ...prev, [i]: true }))}
+                  />
                   <div
-                    className="absolute inset-[-5%] bg-cover bg-center"
+                    className="absolute inset-[-5%] bg-cover bg-center transition-opacity duration-500"
                     style={{
                       backgroundImage: `url(${imgUrl})`,
                       backgroundPosition: t.backdropUrl ? 'center 20%' : 'top center',
                       animation: i === idx ? 'kenBurns 28s ease-in-out infinite' : 'none',
+                      opacity: imgLoaded[i] ? 1 : 0,
                     }}
-                    onLoad={() => setImgLoaded(prev => ({ ...prev, [i]: true }))}
+                  />
+                  {/* Dark fallback while image loads */}
+                  <div
+                    className="absolute inset-0 transition-opacity duration-500"
+                    style={{ background: 'radial-gradient(ellipse at 30% 30%, #1a1a2e, #0A0A0A)', opacity: imgLoaded[i] ? 0 : 1 }}
                   />
                 </>
               ) : (
@@ -102,13 +114,14 @@ const HeroSection = memo(function HeroSection({ titles }: HeroSectionProps) {
         })}
       </div>
 
-      {/* YouTube trailer background — desktop only, muted, no controls */}
-      {current.trailerYoutubeId && (
+      {/* YouTube trailer background — desktop only, muted, no controls.
+          Only rendered after user unmutes to avoid bot-check on load. */}
+      {current.trailerYoutubeId && !muted && (
         <div className="absolute inset-0 z-[1] overflow-hidden pointer-events-none hidden md:block">
           <iframe
-            key={`${current.trailerYoutubeId}-${muted ? 'm' : 'u'}`}
+            key={`${current.trailerYoutubeId}-u`}
             className="absolute w-[177.78vh] min-w-full h-[56.25vw] min-h-full top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 pointer-events-none"
-            src={`https://www.youtube-nocookie.com/embed/${current.trailerYoutubeId}?autoplay=1&mute=${muted ? 1 : 0}&loop=1&playlist=${current.trailerYoutubeId}&controls=0&showinfo=0&rel=0&iv_load_policy=3&disablekb=1&fs=0&modestbranding=1&playsinline=1`}
+            src={`https://www.youtube-nocookie.com/embed/${current.trailerYoutubeId}?autoplay=1&mute=0&loop=1&playlist=${current.trailerYoutubeId}&controls=0&showinfo=0&rel=0&iv_load_policy=3&disablekb=1&fs=0&modestbranding=1&playsinline=1`}
             allow="autoplay; encrypted-media"
             title="trailer background"
           />
