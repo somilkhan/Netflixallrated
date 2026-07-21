@@ -1,11 +1,12 @@
 /**
- * HeroSection — full-viewport cinematic hero with auto-advancing slides.
- * Desktop: 100vh, Ken Burns on image. Mobile: 70vh, no animation.
- * Content anchored bottom-left. Gradient fades to page background.
+ * HeroSection — rebuilt from scratch.
+ * Full-viewport cinematic hero with auto-advancing slides.
+ * Desktop: 100vh, Ken Burns. Mobile: 70vh, no animation.
+ * Gradient fades bottom to page, left for text readability.
  */
 import { useState, useEffect, useCallback, useMemo, memo } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Play, Info, ChevronRight, Volume2, VolumeX } from 'lucide-react';
+import { Play, Info, Volume2, VolumeX, ChevronRight } from 'lucide-react';
 
 const AUTO_MS = 9000;
 
@@ -15,9 +16,10 @@ interface HeroSectionProps {
 
 const HeroSection = memo(function HeroSection({ titles }: HeroSectionProps) {
   const nav = useNavigate();
-  const [idx, setIdx] = useState(0);
+  const [idx,         setIdx]         = useState(0);
   const [progressKey, setProgressKey] = useState(0);
-  const [muted, setMuted] = useState(true);
+  const [muted,       setMuted]       = useState(true);
+  const [imgLoaded,   setImgLoaded]   = useState<Record<number, boolean>>({});
 
   const current = titles[idx];
 
@@ -34,10 +36,19 @@ const HeroSection = memo(function HeroSection({ titles }: HeroSectionProps) {
   }, [idx, next, titles.length]);
 
   const rating = current?.rating || current?.imdbRating || current?.voteAverage;
+
   const metaParts = useMemo(() => {
+    if (!current) return [];
     const parts: string[] = [];
-    if (current?.year) parts.push(String(current.year));
-    if (current?.genres?.length) parts.push(...current.genres.slice(0, 2));
+    if (current.year) parts.push(String(current.year));
+    if (current.type) {
+      const label = current.type === 'MOVIE' ? 'Film'
+        : current.type === 'SERIES' ? 'TV Series'
+        : current.type === 'ANIME' ? 'Anime'
+        : current.type;
+      parts.push(label);
+    }
+    if (current.genres?.length) parts.push(...current.genres.slice(0, 2));
     return parts;
   }, [current]);
 
@@ -45,11 +56,13 @@ const HeroSection = memo(function HeroSection({ titles }: HeroSectionProps) {
 
   return (
     <section
-      className="relative overflow-hidden"
-      style={{ height: '100svh', minHeight: 520, maxHeight: 960 }}
+      className="relative w-full overflow-hidden"
+      style={{
+        height: 'clamp(520px, 100svh, 960px)',
+      }}
       aria-label={`Featured: ${current.name}`}
     >
-      {/* ── Background slides ─────────────────────────────────────────── */}
+      {/* ── Background slides ────────────────────────────────────────── */}
       <div className="absolute inset-0">
         {titles.map((t, i) => {
           const imgUrl = t.backdropUrl || t.posterUrl;
@@ -60,23 +73,35 @@ const HeroSection = memo(function HeroSection({ titles }: HeroSectionProps) {
               style={{ opacity: i === idx ? 1 : 0, pointerEvents: i === idx ? 'auto' : 'none' }}
               aria-hidden={i !== idx}
             >
-              {/* Ken Burns wrapper — disabled on mobile via media query */}
-              <div
-                className="absolute inset-[-4%] bg-cover bg-center"
-                style={{
-                  backgroundImage: imgUrl
-                    ? `url(${imgUrl})`
-                    : 'linear-gradient(160deg, #1A1A1A, #0A0A0A)',
-                  backgroundPosition: t.backdropUrl ? 'center center' : 'top center',
-                  animation: i === idx ? 'kenBurns 28s ease-in-out infinite' : 'none',
-                }}
-              />
+              {imgUrl ? (
+                <>
+                  {!imgLoaded[i] && (
+                    <div className="absolute inset-0 bg-[#111]" />
+                  )}
+                  <div
+                    className="absolute inset-[-5%] bg-cover bg-center"
+                    style={{
+                      backgroundImage: `url(${imgUrl})`,
+                      backgroundPosition: t.backdropUrl ? 'center 20%' : 'top center',
+                      animation: i === idx ? 'kenBurns 28s ease-in-out infinite' : 'none',
+                    }}
+                    onLoad={() => setImgLoaded(prev => ({ ...prev, [i]: true }))}
+                  />
+                </>
+              ) : (
+                <div
+                  className="absolute inset-0"
+                  style={{
+                    background: `radial-gradient(ellipse at 30% 30%, #1a1a2e, #0A0A0A)`,
+                  }}
+                />
+              )}
             </div>
           );
         })}
       </div>
 
-      {/* YouTube trailer background (muted autoplay) */}
+      {/* YouTube trailer background — desktop only, muted, no controls */}
       {current.trailerYoutubeId && (
         <div className="absolute inset-0 z-[1] overflow-hidden pointer-events-none hidden md:block">
           <iframe
@@ -90,34 +115,55 @@ const HeroSection = memo(function HeroSection({ titles }: HeroSectionProps) {
       )}
 
       {/* ── Gradient overlays ─────────────────────────────────────────── */}
-      {/* Left gradient for text readability */}
+      {/* Left: text readability */}
       <div
         className="absolute inset-0 z-[2] pointer-events-none"
-        style={{ background: 'linear-gradient(90deg, rgba(10,10,10,0.92) 0%, rgba(10,10,10,0.6) 35%, rgba(10,10,10,0.15) 65%, transparent 100%)' }}
+        style={{ background: 'linear-gradient(105deg, rgba(10,10,10,0.95) 0%, rgba(10,10,10,0.7) 30%, rgba(10,10,10,0.2) 60%, transparent 80%)' }}
       />
-      {/* Bottom gradient to fade into page */}
+      {/* Bottom: fade to page bg */}
       <div
         className="absolute inset-0 z-[2] pointer-events-none"
-        style={{ background: 'linear-gradient(to top, #0A0A0A 0%, rgba(10,10,10,0.7) 18%, rgba(10,10,10,0.15) 40%, transparent 100%)' }}
+        style={{ background: 'linear-gradient(to top, #0A0A0A 0%, rgba(10,10,10,0.75) 18%, rgba(10,10,10,0.1) 42%, transparent 100%)' }}
       />
-      {/* Top gradient for nav readability */}
+      {/* Top: nav readability */}
       <div
         className="absolute inset-0 z-[2] pointer-events-none"
-        style={{ background: 'linear-gradient(to bottom, rgba(0,0,0,0.4) 0%, transparent 20%)' }}
+        style={{ background: 'linear-gradient(to bottom, rgba(0,0,0,0.45) 0%, transparent 22%)' }}
       />
 
-      {/* ── Content panel — bottom-left ───────────────────────────────── */}
+      {/* ── Content — bottom-left ─────────────────────────────────────── */}
       <div className="absolute inset-0 z-[3] flex items-end">
-        <div className="w-full max-w-[600px] px-4 md:px-12 pb-24 md:pb-28">
+        <div className="w-full max-w-[620px] px-4 sm:px-8 md:px-12 pb-20 md:pb-28">
+
+          {/* Genre pills */}
+          {current.genres?.length > 0 && (
+            <div
+              className="flex flex-wrap gap-1.5 mb-3 animate-fade-up"
+              style={{ animationDelay: '0.02s' }}
+            >
+              {current.genres.slice(0, 3).map((g: string) => (
+                <span
+                  key={g}
+                  className="
+                    text-[10px] font-medium px-2.5 py-1 rounded-full
+                    border border-white/[0.12] bg-white/[0.06]
+                    text-white/70 backdrop-blur-sm leading-none
+                  "
+                >
+                  {g}
+                </span>
+              ))}
+            </div>
+          )}
 
           {/* Title */}
           <h1
             key={current.id}
-            className="font-bold text-white leading-tight mb-3 animate-fade-up"
+            className="font-bold text-white leading-[1.05] mb-3 animate-fade-up"
             style={{
-              fontSize: 'clamp(28px, 4.5vw, 52px)',
-              letterSpacing: '-0.02em',
-              textShadow: '0 2px 24px rgba(0,0,0,0.5)',
+              fontSize: 'clamp(28px, 5vw, 56px)',
+              letterSpacing: '-0.025em',
+              textShadow: '0 2px 32px rgba(0,0,0,0.6)',
             }}
           >
             {current.name}
@@ -127,27 +173,22 @@ const HeroSection = memo(function HeroSection({ titles }: HeroSectionProps) {
           {(rating || metaParts.length > 0) && (
             <div
               className="flex items-center flex-wrap gap-x-2 gap-y-1 mb-3 animate-fade-up"
-              style={{ animationDelay: '0.06s' }}
+              style={{ animationDelay: '0.07s' }}
             >
               {rating && (
-                <span className="flex items-center gap-1">
-                  <svg width="11" height="11" viewBox="0 0 24 24" aria-hidden>
-                    <polygon
-                      points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"
-                      fill="#f5c518"
-                    />
+                <span className="flex items-center gap-1.5 bg-[#f5c518]/15 border border-[#f5c518]/25 rounded-full px-2 py-0.5">
+                  <svg width="9" height="9" viewBox="0 0 24 24" aria-hidden>
+                    <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" fill="#f5c518" />
                   </svg>
-                  <span className="text-[14px] font-semibold text-white">
+                  <span className="text-[12px] font-semibold text-white/90">
                     {typeof rating === 'number' ? rating.toFixed(1) : rating}
                   </span>
                 </span>
               )}
               {metaParts.map((part, i) => (
                 <span key={part + i} className="flex items-center gap-2">
-                  <span className="text-[14px] text-[#A3A3A3]">{part}</span>
-                  {i < metaParts.length - 1 && (
-                    <span className="text-[10px] text-white/25">·</span>
-                  )}
+                  <span className="text-[13px] text-[#A3A3A3]">{part}</span>
+                  {i < metaParts.length - 1 && <span className="text-[10px] text-white/20">·</span>}
                 </span>
               ))}
             </div>
@@ -156,7 +197,7 @@ const HeroSection = memo(function HeroSection({ titles }: HeroSectionProps) {
           {/* Synopsis */}
           {current.synopsis && (
             <p
-              className="text-[15px] md:text-base text-[#A3A3A3] leading-relaxed line-clamp-2 md:line-clamp-3 mb-5 max-w-[500px] animate-fade-up"
+              className="text-[14px] md:text-[15px] text-[#A3A3A3] leading-relaxed line-clamp-2 md:line-clamp-3 mb-6 max-w-[500px] animate-fade-up"
               style={{ animationDelay: '0.12s' }}
             >
               {current.synopsis}
@@ -165,41 +206,40 @@ const HeroSection = memo(function HeroSection({ titles }: HeroSectionProps) {
 
           {/* CTA buttons */}
           <div
-            className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 animate-fade-up"
+            className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2.5 animate-fade-up"
             style={{ animationDelay: '0.18s' }}
           >
-            {/* Play — white fill */}
             <button
               type="button"
               onClick={() => nav(`/title/${current.id}?play=1`)}
               aria-label={`Play ${current.name}`}
               className="
                 flex items-center justify-center gap-2.5
-                h-11 px-6 rounded-full
+                h-11 px-7 rounded-full
                 bg-white text-black
                 text-[14px] font-semibold
-                hover:bg-white/90
-                transition-all duration-200 active:scale-[0.97]
-                touch-manipulation
+                hover:bg-white/90 active:scale-[0.97]
+                transition-all duration-200 touch-manipulation
+                shadow-[0_4px_20px_rgba(0,0,0,0.4)]
               "
             >
               <Play size={16} className="fill-current shrink-0" />
               Play Now
             </button>
 
-            {/* More Info — glass */}
             <button
               type="button"
               onClick={() => nav(`/title/${current.id}`)}
               aria-label={`More info about ${current.name}`}
               className="
                 flex items-center justify-center gap-2.5
-                h-11 px-6 rounded-full
+                h-11 px-7 rounded-full
                 bg-white/[0.08] border border-white/[0.20] text-white
                 text-[14px] font-medium
-                hover:bg-white/[0.14] hover:border-white/[0.30]
-                transition-all duration-200 active:scale-[0.97]
-                touch-manipulation
+                hover:bg-white/[0.14] hover:border-white/[0.32]
+                active:scale-[0.97]
+                transition-all duration-200 touch-manipulation
+                backdrop-blur-sm
               "
             >
               <Info size={15} className="shrink-0" />
@@ -209,11 +249,10 @@ const HeroSection = memo(function HeroSection({ titles }: HeroSectionProps) {
         </div>
       </div>
 
-      {/* ── Bottom controls — thumbnail strip + mute ─────────────────── */}
-      <div
-        className="absolute bottom-4 md:bottom-6 right-4 md:right-10 z-[4] flex items-center gap-3"
-      >
-        {/* Mute toggle — only when trailer is playing */}
+      {/* ── Controls: mute + indicators + next ────────────────────────── */}
+      <div className="absolute bottom-5 md:bottom-7 right-4 md:right-10 z-[4] flex items-center gap-3">
+
+        {/* Mute toggle — only when trailer present */}
         {current.trailerYoutubeId && (
           <button
             type="button"
@@ -222,16 +261,16 @@ const HeroSection = memo(function HeroSection({ titles }: HeroSectionProps) {
             className="
               hidden md:flex items-center justify-center
               w-8 h-8 rounded-full
-              bg-white/[0.06] border border-white/[0.10]
-              text-white/60 hover:text-white hover:bg-white/[0.10]
-              transition-colors duration-200
+              bg-white/[0.07] border border-white/[0.12]
+              text-white/65 hover:text-white hover:bg-white/[0.12]
+              backdrop-blur-sm transition-all duration-200
             "
           >
             {muted ? <VolumeX size={13} /> : <Volume2 size={13} />}
           </button>
         )}
 
-        {/* Slide indicators */}
+        {/* Slide dot indicators */}
         {titles.length > 1 && (
           <div className="flex items-center gap-2">
             {titles.map((_, i) => (
@@ -239,25 +278,22 @@ const HeroSection = memo(function HeroSection({ titles }: HeroSectionProps) {
                 key={i}
                 type="button"
                 onClick={() => { setIdx(i); setProgressKey(k => k + 1); }}
-                aria-label={`Go to slide ${i + 1}`}
+                aria-label={`Slide ${i + 1}`}
                 aria-current={i === idx ? 'true' : undefined}
                 className="touch-manipulation"
               >
                 <div
                   className="h-[3px] rounded-full transition-all duration-300 overflow-hidden"
                   style={{
-                    width: i === idx ? 24 : 8,
-                    background: i === idx ? 'rgba(255,255,255,0.9)' : 'rgba(255,255,255,0.25)',
+                    width:      i === idx ? 28 : 8,
+                    background: i === idx ? 'rgba(255,255,255,0.9)' : 'rgba(255,255,255,0.22)',
                   }}
                 >
                   {i === idx && (
                     <div
                       key={progressKey}
-                      className="h-full bg-white/60 rounded-full"
-                      style={{
-                        animation: `progressFill ${AUTO_MS}ms linear forwards`,
-                        transformOrigin: 'left',
-                      }}
+                      className="h-full bg-white/55 rounded-full"
+                      style={{ animation: `progressFill ${AUTO_MS}ms linear forwards` }}
                     />
                   )}
                 </div>
@@ -275,9 +311,9 @@ const HeroSection = memo(function HeroSection({ titles }: HeroSectionProps) {
             className="
               hidden md:flex items-center justify-center
               w-8 h-8 rounded-full
-              bg-white/[0.06] border border-white/[0.10]
-              text-white/60 hover:text-white hover:bg-white/[0.10]
-              transition-colors duration-200
+              bg-white/[0.07] border border-white/[0.12]
+              text-white/65 hover:text-white hover:bg-white/[0.12]
+              backdrop-blur-sm transition-all duration-200
             "
           >
             <ChevronRight size={15} />

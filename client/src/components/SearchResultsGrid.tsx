@@ -1,9 +1,7 @@
 /**
  * SearchResultsGrid — renders local catalog search results.
- * The catalog is fully managed by the automatic TMDB sync;
- * there is no manual import flow.
  */
-import Card from './Card';
+import ContentCard from './ui/ContentCard';
 import { GlassCardSkeleton } from './GlassCard';
 
 interface SearchResultsGridProps {
@@ -30,17 +28,17 @@ export default function SearchResultsGrid({ localResults, loading, q }: SearchRe
       {localResults.length > 0 ? (
         <div className="mb-10">
           <div className="flex items-baseline gap-2 mb-4">
-            <span className="font-serif text-xl font-semibold">Results</span>
-            <span className="font-mono text-[11px] text-ink-faint">{localResults.length} titles</span>
+            <span className="text-xl font-semibold text-white">Results</span>
+            <span className="text-[11px] text-[#737373]">{localResults.length} titles</span>
           </div>
           <div className="flex flex-wrap gap-4">
-            {localResults.map((t, i) => <Card key={t.id} title={t} index={i} />)}
+            {localResults.map((t) => <ContentCard key={t.id} title={t} />)}
           </div>
         </div>
       ) : (
         <div className="py-20 text-center">
-          <p className="font-serif text-xl font-semibold mb-2">No results for "{q}"</p>
-          <p className="text-ink-faint text-sm">Try different keywords or adjust your filters</p>
+          <p className="text-xl font-semibold text-white mb-2">No results for "{q}"</p>
+          <p className="text-[#737373] text-sm">Try different keywords or adjust your filters</p>
         </div>
       )}
     </div>

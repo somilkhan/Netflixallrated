@@ -2,32 +2,36 @@ import { Suspense, lazy, useState, useEffect, useCallback } from 'react';
 import { Routes, Route, useLocation } from 'react-router-dom';
 import { LazyMotion, domAnimation } from 'framer-motion';
 import { AuthProvider } from './lib/auth';
+import { PlayerProvider } from './lib/playerContext';
 import TopNav from './components/layout/TopNav';
+import BottomPlayer from './components/layout/BottomPlayer';
 import SearchOverlay from './components/SearchOverlay';
 import ErrorBoundary from './components/ErrorBoundary';
 import GlassLoader from './components/GlassLoader';
 import NotFound from './pages/NotFound';
 
 // Route-level code splitting — each page loads on demand
-const Home           = lazy(() => import('./pages/Home'));
-const TitleDetail    = lazy(() => import('./pages/TitleDetail'));
-const SearchResults  = lazy(() => import('./pages/SearchResults'));
-const Watchlist      = lazy(() => import('./pages/Watchlist'));
-const Login          = lazy(() => import('./pages/Login'));
-const Register       = lazy(() => import('./pages/Register'));
-const Admin          = lazy(() => import('./pages/Admin'));
-const TV             = lazy(() => import('./pages/TV'));
-const Anime          = lazy(() => import('./pages/Anime'));
-const AnimeGenres    = lazy(() => import('./pages/AnimeGenres'));
+const Home            = lazy(() => import('./pages/Home'));
+const TitleDetail     = lazy(() => import('./pages/TitleDetail'));
+const SearchResults   = lazy(() => import('./pages/SearchResults'));
+const Watchlist       = lazy(() => import('./pages/Watchlist'));
+const Login           = lazy(() => import('./pages/Login'));
+const Register        = lazy(() => import('./pages/Register'));
+const Admin           = lazy(() => import('./pages/Admin'));
+const TV              = lazy(() => import('./pages/TV'));
+const Anime           = lazy(() => import('./pages/Anime'));
+const AnimeGenres     = lazy(() => import('./pages/AnimeGenres'));
 const AnimeSectionPage = lazy(() => import('./pages/AnimeSectionPage'));
-const Categories     = lazy(() => import('./pages/Categories'));
-const StudioDetail   = lazy(() => import('./pages/DiscoveryPages').then(m => ({ default: m.StudioDetail })));
-const LanguageDetail = lazy(() => import('./pages/DiscoveryPages').then(m => ({ default: m.LanguageDetail })));
-const GenreDetail    = lazy(() => import('./pages/DiscoveryPages').then(m => ({ default: m.GenreDetail })));
-const TypeDetail     = lazy(() => import('./pages/DiscoveryPages').then(m => ({ default: m.TypeDetail })));
-const BrandShowcase  = lazy(() => import('./pages/BrandShowcase'));
-const WatchHistory   = lazy(() => import('./pages/WatchHistory'));
-const Sports         = lazy(() => import('./pages/Sports'));
+const Categories      = lazy(() => import('./pages/Categories'));
+const Browse          = lazy(() => import('./pages/Browse'));
+const Profile         = lazy(() => import('./pages/Profile'));
+const StudioDetail    = lazy(() => import('./pages/DiscoveryPages').then(m => ({ default: m.StudioDetail })));
+const LanguageDetail  = lazy(() => import('./pages/DiscoveryPages').then(m => ({ default: m.LanguageDetail })));
+const GenreDetail     = lazy(() => import('./pages/DiscoveryPages').then(m => ({ default: m.GenreDetail })));
+const TypeDetail      = lazy(() => import('./pages/DiscoveryPages').then(m => ({ default: m.TypeDetail })));
+const BrandShowcase   = lazy(() => import('./pages/BrandShowcase'));
+const WatchHistory    = lazy(() => import('./pages/WatchHistory'));
+const Sports          = lazy(() => import('./pages/Sports'));
 
 function Wrap({ children }: { children: React.ReactNode }) {
   return <ErrorBoundary>{children}</ErrorBoundary>;
@@ -39,26 +43,28 @@ function AnimatedRoutes() {
     <LazyMotion features={domAnimation} strict>
       <div key={location.pathname} className="page-enter">
         <Routes location={location}>
-          <Route path="/"                  element={<Wrap><Home /></Wrap>} />
-          <Route path="/title/:id"         element={<Wrap><TitleDetail /></Wrap>} />
-          <Route path="/search"            element={<Wrap><SearchResults /></Wrap>} />
-          <Route path="/watchlist"         element={<Wrap><Watchlist /></Wrap>} />
-          <Route path="/login"             element={<Wrap><Login /></Wrap>} />
-          <Route path="/register"          element={<Wrap><Register /></Wrap>} />
-          <Route path="/admin"             element={<Wrap><Admin /></Wrap>} />
-          <Route path="/tv"                element={<Wrap><TV /></Wrap>} />
-          <Route path="/anime"             element={<Wrap><Anime /></Wrap>} />
-          <Route path="/anime/genres"      element={<Wrap><AnimeGenres /></Wrap>} />
-          <Route path="/anime/section"     element={<Wrap><AnimeSectionPage /></Wrap>} />
-          <Route path="/categories"        element={<Wrap><Categories /></Wrap>} />
-          <Route path="/studio/:slug"      element={<Wrap><StudioDetail /></Wrap>} />
-          <Route path="/language/:slug"    element={<Wrap><LanguageDetail /></Wrap>} />
-          <Route path="/browse/genre/:slug" element={<Wrap><GenreDetail /></Wrap>} />
-          <Route path="/browse/type/:slug" element={<Wrap><TypeDetail /></Wrap>} />
-          <Route path="/brand"             element={<Wrap><BrandShowcase /></Wrap>} />
-          <Route path="/history"           element={<Wrap><WatchHistory /></Wrap>} />
-          <Route path="/sports"            element={<Wrap><Sports /></Wrap>} />
-          <Route path="*"                  element={<Wrap><NotFound /></Wrap>} />
+          <Route path="/"                    element={<Wrap><Home /></Wrap>} />
+          <Route path="/title/:id"           element={<Wrap><TitleDetail /></Wrap>} />
+          <Route path="/search"              element={<Wrap><SearchResults /></Wrap>} />
+          <Route path="/watchlist"           element={<Wrap><Watchlist /></Wrap>} />
+          <Route path="/login"               element={<Wrap><Login /></Wrap>} />
+          <Route path="/register"            element={<Wrap><Register /></Wrap>} />
+          <Route path="/admin"               element={<Wrap><Admin /></Wrap>} />
+          <Route path="/tv"                  element={<Wrap><TV /></Wrap>} />
+          <Route path="/anime"               element={<Wrap><Anime /></Wrap>} />
+          <Route path="/anime/genres"        element={<Wrap><AnimeGenres /></Wrap>} />
+          <Route path="/anime/section"       element={<Wrap><AnimeSectionPage /></Wrap>} />
+          <Route path="/categories"          element={<Wrap><Categories /></Wrap>} />
+          <Route path="/browse"              element={<Wrap><Browse /></Wrap>} />
+          <Route path="/profile"             element={<Wrap><Profile /></Wrap>} />
+          <Route path="/studio/:slug"        element={<Wrap><StudioDetail /></Wrap>} />
+          <Route path="/language/:slug"      element={<Wrap><LanguageDetail /></Wrap>} />
+          <Route path="/browse/genre/:slug"  element={<Wrap><GenreDetail /></Wrap>} />
+          <Route path="/browse/type/:slug"   element={<Wrap><TypeDetail /></Wrap>} />
+          <Route path="/brand"               element={<Wrap><BrandShowcase /></Wrap>} />
+          <Route path="/history"             element={<Wrap><WatchHistory /></Wrap>} />
+          <Route path="/sports"              element={<Wrap><Sports /></Wrap>} />
+          <Route path="*"                    element={<Wrap><NotFound /></Wrap>} />
         </Routes>
       </div>
     </LazyMotion>
@@ -84,24 +90,24 @@ export default function App() {
 
   return (
     <AuthProvider>
-      {/* Full-width, no horizontal overflow, dark background */}
-      <div
-        className="min-h-screen overflow-x-hidden max-w-full"
-        style={{ background: '#0A0A0A', color: '#FFFFFF' }}
-      >
-        {/* Top navigation bar — replaces SideRail + Navbar + BottomNav */}
-        <TopNav onOpenSearch={openSearch} />
+      <PlayerProvider>
+        <div
+          className="min-h-screen overflow-x-hidden max-w-full"
+          style={{ background: '#0A0A0A', color: '#FFFFFF' }}
+        >
+          <TopNav onOpenSearch={openSearch} />
+          <SearchOverlay open={searchOpen} onClose={closeSearch} />
 
-        {/* Search overlay */}
-        <SearchOverlay open={searchOpen} onClose={closeSearch} />
+          <main>
+            <Suspense fallback={<GlassLoader visible label="Loading…" />}>
+              <AnimatedRoutes />
+            </Suspense>
+          </main>
 
-        {/* Page content — no rail offset, no top padding (hero covers nav) */}
-        <main>
-          <Suspense fallback={<GlassLoader visible label="Loading…" />}>
-            <AnimatedRoutes />
-          </Suspense>
-        </main>
-      </div>
+          {/* Persistent bottom player — sits above mobile system chrome */}
+          <BottomPlayer />
+        </div>
+      </PlayerProvider>
     </AuthProvider>
   );
 }

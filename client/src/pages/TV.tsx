@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { Tv, Inbox } from 'lucide-react';
 import { api } from '../lib/api';
 import ContentCard from '../components/ui/ContentCard';
-import Section from '../components/Section';
+import ContentRow from '../components/sections/ContentRow';
 import { SkeletonCard } from '../components/ui/SkeletonCard';
 
 const PAGE_LIMIT = 24;
@@ -188,9 +188,9 @@ export default function TV() {
         <>
           {all.length > 0 && (
             <>
-              <Section title="All TV Shows" count={`${all.length}${hasNext ? '+' : ''}`} viewAllPath="/search?q=&type=SERIES">
+              <ContentRow title="All TV Shows" viewAllPath="/search?q=&type=SERIES">
                 {all.slice(0, 20).map(t => <ContentCard key={t.id} title={t} />)}
-              </Section>
+              </ContentRow>
               {/* Infinite-scroll sentinel placed after the first section row */}
               <div ref={sentinelRef} className="h-1" />
             </>
@@ -199,9 +199,9 @@ export default function TV() {
             const titles = genreSections[g];
             if (!titles || titles.length === 0) return null;
             return (
-              <Section key={g} title={g} count={`${titles.length}`} viewAllPath={`/search?q=&type=SERIES&genre=${g}`}>
+              <ContentRow key={g} title={g} viewAllPath={`/search?q=&type=SERIES&genre=${g}`}>
                 {titles.map(t => <ContentCard key={t.id} title={t} />)}
-              </Section>
+              </ContentRow>
             );
           })}
           {all.length === 0 && Object.keys(genreSections).length === 0 && (

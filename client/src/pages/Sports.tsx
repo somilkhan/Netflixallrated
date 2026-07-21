@@ -13,13 +13,13 @@
 import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import Hls from 'hls.js';
 import {
-  Play, X, Wifi, WifiOff, Loader,
+  Play, X, WifiOff, Loader,
   RefreshCw, ChevronRight, Radio,
 } from 'lucide-react';
 import {
   getLiveMatches, getMatchStreams, buildFallbackStreams,
   isHlsStream, isLiveOrSoon, formatMatchTime,
-  categoryMeta, CATEGORY_META,
+  categoryMeta,
   type LiveMatch, type MatchStream,
 } from '../lib/sportsdb';
 

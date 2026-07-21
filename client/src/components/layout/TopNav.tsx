@@ -1,31 +1,38 @@
 /**
- * TopNav — unified top navigation bar.
+ * TopNav — unified top navigation bar (rebuilt from scratch).
  * Desktop: transparent → glassmorphism on scroll. Logo | nav links | search + profile.
  * Mobile:  Logo | search icon | hamburger → full-screen menu overlay.
  */
 import { useState, useRef, useCallback, useEffect, memo } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { Search, X, Menu, LogIn, LogOut, Shield, User, Bookmark, Clock, Home, Tv, Swords, Trophy, Compass } from 'lucide-react';
+import {
+  Search, X, Menu, LogIn, LogOut, Shield, User,
+  Bookmark, Clock, Home, Tv, Trophy, Swords, Compass,
+  ChevronDown, Film, LayoutGrid,
+} from 'lucide-react';
 import { useAuth } from '../../lib/auth';
 import { useScrollDirection } from '../../hooks/useScrollDirection';
 import { useClickOutside } from '../../hooks/useClickOutside';
+import { Avatar } from '../ui/Avatar';
 
 const NAV_LINKS = [
-  { label: 'Home',      path: '/' },
-  { label: 'Browse',    path: '/categories' },
-  { label: 'TV Shows',  path: '/tv' },
-  { label: 'Anime',     path: '/anime' },
-  { label: 'My List',   path: '/watchlist' },
+  { label: 'Home',     path: '/' },
+  { label: 'Browse',   path: '/browse' },
+  { label: 'TV Shows', path: '/tv' },
+  { label: 'Anime',    path: '/anime' },
+  { label: 'My List',  path: '/watchlist' },
 ];
 
 const MOBILE_NAV = [
-  { icon: Home,     label: 'Home',     path: '/' },
-  { icon: Tv,       label: 'TV Shows', path: '/tv' },
-  { icon: Trophy,   label: 'Sports',   path: '/sports' },
-  { icon: Swords,   label: 'Anime',    path: '/anime' },
-  { icon: Compass,  label: 'Browse',   path: '/categories' },
-  { icon: Bookmark, label: 'My List',  path: '/watchlist' },
-  { icon: Clock,    label: 'History',  path: '/history' },
+  { icon: Home,       label: 'Home',      path: '/' },
+  { icon: Film,       label: 'Browse',    path: '/browse' },
+  { icon: Tv,         label: 'TV Shows',  path: '/tv' },
+  { icon: Trophy,     label: 'Sports',    path: '/sports' },
+  { icon: Swords,     label: 'Anime',     path: '/anime' },
+  { icon: LayoutGrid, label: 'Categories',path: '/categories' },
+  { icon: Bookmark,   label: 'My List',   path: '/watchlist' },
+  { icon: Clock,      label: 'History',   path: '/history' },
+  { icon: Compass,    label: 'Profile',   path: '/profile' },
 ];
 
 interface TopNavProps {
@@ -38,25 +45,23 @@ const TopNav = memo(function TopNav({ onOpenSearch }: TopNavProps) {
   const { user, signOut, isLoading } = useAuth();
   const { scrollY } = useScrollDirection();
 
-  const [searchOpen, setSearchOpen] = useState(false);
+  const [searchOpen,  setSearchOpen]  = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
-  const [menuOpen, setMenuOpen] = useState(false);
+  const [menuOpen,    setMenuOpen]    = useState(false);
   const [profileOpen, setProfileOpen] = useState(false);
 
   const searchInputRef = useRef<HTMLInputElement>(null);
-  const profileRef = useRef<HTMLDivElement>(null);
-  const searchRef = useRef<HTMLDivElement>(null);
+  const profileRef     = useRef<HTMLDivElement>(null);
+  const searchRef      = useRef<HTMLDivElement>(null);
 
   const isScrolled = scrollY > 50;
-  const initial = user?.displayName?.[0]?.toUpperCase() || user?.email?.[0]?.toUpperCase() || '?';
-
   useClickOutside(profileRef, useCallback(() => setProfileOpen(false), []), profileOpen);
-  useClickOutside(searchRef, useCallback(() => { setSearchOpen(false); setSearchQuery(''); }, []), searchOpen);
+  useClickOutside(searchRef,  useCallback(() => { setSearchOpen(false); setSearchQuery(''); }, []), searchOpen);
 
   // Close mobile menu on navigation
   useEffect(() => { setMenuOpen(false); }, [loc.pathname]);
 
-  // Ctrl+K opens search
+  // Keyboard shortcuts
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
       if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
@@ -79,7 +84,7 @@ const TopNav = memo(function TopNav({ onOpenSearch }: TopNavProps) {
     return () => window.removeEventListener('keydown', handler);
   }, [onOpenSearch]);
 
-  // Lock body scroll when mobile menu is open
+  // Lock body scroll when mobile menu open
   useEffect(() => {
     document.body.style.overflow = menuOpen ? 'hidden' : '';
     return () => { document.body.style.overflow = ''; };
@@ -110,18 +115,22 @@ const TopNav = memo(function TopNav({ onOpenSearch }: TopNavProps) {
     }
   }, [onOpenSearch]);
 
+  const isActive = (path: string) =>
+    path === '/' ? loc.pathname === '/' : loc.pathname.startsWith(path);
+
   return (
     <>
-      {/* ── Main nav bar ────────────────────────────────────────────────── */}
+      {/* ── Main nav bar ──────────────────────────────────────────────────── */}
       <nav
         className="fixed top-0 inset-x-0 z-50 flex items-center h-16 px-4 md:px-6 transition-all duration-300"
         style={{
           background: isScrolled
-            ? 'rgba(10, 10, 10, 0.85)'
-            : 'linear-gradient(to bottom, rgba(0,0,0,0.5), transparent)',
-          backdropFilter: isScrolled ? 'blur(12px)' : 'none',
-          WebkitBackdropFilter: isScrolled ? 'blur(12px)' : 'none',
+            ? 'rgba(10, 10, 10, 0.88)'
+            : 'linear-gradient(to bottom, rgba(0,0,0,0.55), transparent)',
+          backdropFilter: isScrolled ? 'blur(14px)' : 'none',
+          WebkitBackdropFilter: isScrolled ? 'blur(14px)' : 'none',
           borderBottom: isScrolled ? '1px solid rgba(255,255,255,0.06)' : 'none',
+          boxShadow: isScrolled ? '0 4px 24px rgba(0,0,0,0.4)' : 'none',
         }}
         aria-label="Main navigation"
       >
@@ -132,16 +141,15 @@ const TopNav = memo(function TopNav({ onOpenSearch }: TopNavProps) {
           className="shrink-0 mr-6 touch-manipulation active:opacity-70 transition-opacity"
           aria-label="Allrated home"
         >
-          <span className="text-white font-bold text-xl tracking-[-0.03em] leading-none">
-            all<span className="text-white/50">rated</span>
+          <span className="text-white font-bold text-xl tracking-[-0.03em] leading-none select-none">
+            all<span className="text-white/45">rated</span>
           </span>
         </button>
 
         {/* Desktop nav links */}
-        <div className="hidden md:flex items-center gap-1 mr-auto">
+        <div className="hidden md:flex items-center gap-0.5 mr-auto">
           {NAV_LINKS.map(link => {
-            const active = loc.pathname === link.path ||
-              (link.path !== '/' && loc.pathname.startsWith(link.path));
+            const active = isActive(link.path);
             return (
               <button
                 key={link.path}
@@ -149,11 +157,11 @@ const TopNav = memo(function TopNav({ onOpenSearch }: TopNavProps) {
                 onClick={() => nav(link.path)}
                 aria-current={active ? 'page' : undefined}
                 className={`
-                  h-9 px-3.5 rounded-lg text-sm font-medium
-                  transition-colors duration-200 touch-manipulation
+                  h-9 px-3.5 rounded-lg text-[13px] font-medium
+                  transition-all duration-200 touch-manipulation
                   ${active
-                    ? 'text-white bg-white/[0.08]'
-                    : 'text-[#A3A3A3] hover:text-white hover:bg-white/[0.04]'
+                    ? 'text-white bg-white/[0.09]'
+                    : 'text-[#A3A3A3] hover:text-white hover:bg-white/[0.05]'
                   }
                 `}
               >
@@ -164,17 +172,18 @@ const TopNav = memo(function TopNav({ onOpenSearch }: TopNavProps) {
         </div>
 
         {/* Right side: search + profile */}
-        <div className="ml-auto flex items-center gap-2">
+        <div className="ml-auto flex items-center gap-1.5">
 
-          {/* Search — expandable on desktop, icon-only trigger on mobile */}
+          {/* Expandable search — desktop */}
           <div ref={searchRef} className="relative">
             {searchOpen ? (
               <form onSubmit={handleSearchSubmit} className="flex items-center">
                 <div className="
                   flex items-center gap-2
                   h-9 px-3 rounded-full
-                  bg-white/[0.07] border border-white/[0.12]
+                  bg-white/[0.08] border border-white/[0.14]
                   w-[200px] md:w-[280px]
+                  transition-all duration-200
                 ">
                   <Search size={13} className="shrink-0 text-white/50" />
                   <input
@@ -193,7 +202,7 @@ const TopNav = memo(function TopNav({ onOpenSearch }: TopNavProps) {
                   <button
                     type="button"
                     onClick={() => { setSearchOpen(false); setSearchQuery(''); }}
-                    className="shrink-0 text-white/40 hover:text-white/80 transition-colors"
+                    className="shrink-0 text-white/40 hover:text-white/80 transition-colors touch-manipulation"
                     aria-label="Close search"
                   >
                     <X size={12} />
@@ -208,7 +217,7 @@ const TopNav = memo(function TopNav({ onOpenSearch }: TopNavProps) {
                 className="
                   flex items-center justify-center w-9 h-9 rounded-full
                   text-[#A3A3A3] hover:text-white hover:bg-white/[0.06]
-                  transition-colors duration-200 touch-manipulation
+                  transition-all duration-200 touch-manipulation
                 "
               >
                 <Search size={17} strokeWidth={1.8} />
@@ -227,68 +236,96 @@ const TopNav = memo(function TopNav({ onOpenSearch }: TopNavProps) {
                     aria-label="Account menu"
                     aria-expanded={profileOpen}
                     className="
-                      w-8 h-8 rounded-full flex items-center justify-center
-                      bg-white/[0.08] border border-white/[0.12]
-                      text-[13px] font-semibold text-white
-                      hover:bg-white/[0.14] hover:border-white/[0.20]
-                      transition-colors duration-200
+                      flex items-center gap-1.5
+                      h-9 pl-1 pr-2.5 rounded-full
+                      bg-white/[0.06] border border-white/[0.09]
+                      hover:bg-white/[0.10] hover:border-white/[0.15]
+                      transition-all duration-200
                     "
                     title={user.displayName || user.email || ''}
                   >
-                    {initial}
+                    <Avatar
+                      name={user.displayName}
+                      email={user.email}
+                      src={user.avatarUrl}
+                      size={26}
+                    />
+                    <span className="text-[12px] font-medium text-white/80 max-w-[80px] truncate">
+                      {user.displayName?.split(' ')[0] || 'Account'}
+                    </span>
+                    <ChevronDown
+                      size={12}
+                      className={`text-white/40 transition-transform duration-200 ${profileOpen ? 'rotate-180' : ''}`}
+                    />
                   </button>
 
                   {profileOpen && (
-                    <div className="
-                      absolute right-0 top-[calc(100%+8px)] w-52 z-50
-                      rounded-xl border border-white/[0.08] overflow-hidden
-                      animate-menu
-                    " style={{ background: '#141414', boxShadow: '0 8px 32px rgba(0,0,0,0.6)' }}>
-                      <div className="px-3.5 py-3 border-b border-white/[0.06]">
-                        <p className="text-[12.5px] font-semibold text-white truncate">
+                    <div
+                      className="
+                        absolute right-0 top-[calc(100%+8px)] w-56 z-50
+                        rounded-2xl border border-white/[0.08] overflow-hidden
+                        animate-menu
+                      "
+                      style={{ background: '#141414', boxShadow: '0 8px 40px rgba(0,0,0,0.7)' }}
+                    >
+                      {/* User info */}
+                      <div className="px-4 py-3.5 border-b border-white/[0.06]">
+                        <p className="text-[13px] font-semibold text-white truncate">
                           {user.displayName || 'User'}
                         </p>
                         <p className="text-[11px] text-[#737373] truncate mt-0.5">{user.email}</p>
                         {user.role === 'ADMIN' && (
-                          <span className="mt-1.5 inline-block text-[9px] text-white/50 bg-white/[0.06] border border-white/[0.10] rounded px-1.5 py-0.5 uppercase tracking-wide">
-                            Admin
+                          <span className="mt-1.5 inline-flex items-center gap-1 text-[9px] text-white/50 bg-white/[0.06] border border-white/[0.10] rounded-full px-2 py-0.5 uppercase tracking-wide">
+                            <Shield size={7} /> Admin
                           </span>
                         )}
                       </div>
-                      {user.role === 'ADMIN' && (
+
+                      {/* Menu items */}
+                      <div className="py-1">
                         <button
                           type="button"
-                          onClick={() => { setProfileOpen(false); nav('/admin'); }}
-                          className="w-full flex items-center gap-2.5 px-3.5 py-2.5 text-[13px] text-white/80 hover:bg-white/[0.04] hover:text-white transition-colors text-left"
+                          onClick={() => { setProfileOpen(false); nav('/profile'); }}
+                          className="w-full flex items-center gap-2.5 px-4 py-2.5 text-[13px] text-white/75 hover:bg-white/[0.04] hover:text-white transition-colors text-left"
                         >
-                          <Shield size={13} className="text-white/40" />
-                          Admin Panel
+                          <User size={13} className="text-white/40 shrink-0" />
+                          Profile
                         </button>
-                      )}
-                      <button
-                        type="button"
-                        onClick={() => { setProfileOpen(false); nav('/history'); }}
-                        className="w-full flex items-center gap-2.5 px-3.5 py-2.5 text-[13px] text-white/80 hover:bg-white/[0.04] hover:text-white transition-colors text-left"
-                      >
-                        <Clock size={13} className="text-white/40" />
-                        Watch History
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => { setProfileOpen(false); nav('/watchlist'); }}
-                        className="w-full flex items-center gap-2.5 px-3.5 py-2.5 text-[13px] text-white/80 hover:bg-white/[0.04] hover:text-white transition-colors text-left"
-                      >
-                        <Bookmark size={13} className="text-white/40" />
-                        My List
-                      </button>
-                      <button
-                        type="button"
-                        onClick={handleSignOut}
-                        className="w-full flex items-center gap-2.5 px-3.5 py-2.5 text-[13px] text-[#737373] hover:bg-white/[0.04] hover:text-white transition-colors text-left border-t border-white/[0.06]"
-                      >
-                        <LogOut size={13} />
-                        Sign out
-                      </button>
+                        {user.role === 'ADMIN' && (
+                          <button
+                            type="button"
+                            onClick={() => { setProfileOpen(false); nav('/admin'); }}
+                            className="w-full flex items-center gap-2.5 px-4 py-2.5 text-[13px] text-white/75 hover:bg-white/[0.04] hover:text-white transition-colors text-left"
+                          >
+                            <Shield size={13} className="text-white/40 shrink-0" />
+                            Admin Panel
+                          </button>
+                        )}
+                        <button
+                          type="button"
+                          onClick={() => { setProfileOpen(false); nav('/history'); }}
+                          className="w-full flex items-center gap-2.5 px-4 py-2.5 text-[13px] text-white/75 hover:bg-white/[0.04] hover:text-white transition-colors text-left"
+                        >
+                          <Clock size={13} className="text-white/40 shrink-0" />
+                          Watch History
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => { setProfileOpen(false); nav('/watchlist'); }}
+                          className="w-full flex items-center gap-2.5 px-4 py-2.5 text-[13px] text-white/75 hover:bg-white/[0.04] hover:text-white transition-colors text-left"
+                        >
+                          <Bookmark size={13} className="text-white/40 shrink-0" />
+                          My List
+                        </button>
+                        <button
+                          type="button"
+                          onClick={handleSignOut}
+                          className="w-full flex items-center gap-2.5 px-4 py-2.5 text-[13px] text-[#737373] hover:bg-white/[0.04] hover:text-white transition-colors text-left border-t border-white/[0.06] mt-1"
+                        >
+                          <LogOut size={13} className="shrink-0" />
+                          Sign out
+                        </button>
+                      </div>
                     </div>
                   )}
                 </>
@@ -298,13 +335,13 @@ const TopNav = memo(function TopNav({ onOpenSearch }: TopNavProps) {
                   onClick={() => nav('/login')}
                   className="
                     flex items-center gap-1.5
-                    h-8 px-3.5 rounded-full
-                    text-[12px] font-medium text-white/70
-                    border border-white/[0.12] hover:border-white/[0.22] hover:text-white
-                    transition-colors duration-200
+                    h-9 px-4 rounded-full
+                    text-[13px] font-medium text-white/75
+                    border border-white/[0.12] hover:border-white/[0.24] hover:text-white
+                    transition-all duration-200
                   "
                 >
-                  <LogIn size={12} /> Sign in
+                  <LogIn size={13} /> Sign in
                 </button>
               )
             )}
@@ -323,12 +360,12 @@ const TopNav = memo(function TopNav({ onOpenSearch }: TopNavProps) {
               transition-colors duration-200 touch-manipulation
             "
           >
-            {menuOpen ? <X size={18} strokeWidth={1.8} /> : <Menu size={18} strokeWidth={1.8} />}
+            {menuOpen ? <X size={19} strokeWidth={1.8} /> : <Menu size={19} strokeWidth={1.8} />}
           </button>
         </div>
       </nav>
 
-      {/* ── Mobile full-screen menu ──────────────────────────────────────── */}
+      {/* ── Mobile full-screen menu overlay ────────────────────────────────── */}
       {menuOpen && (
         <div
           className="md:hidden fixed inset-0 z-40 flex flex-col"
@@ -344,11 +381,10 @@ const TopNav = memo(function TopNav({ onOpenSearch }: TopNavProps) {
           {/* Spacer for nav bar */}
           <div className="h-16" />
 
-          {/* Nav items — large tap targets */}
-          <nav className="flex-1 flex flex-col justify-center px-6 gap-1">
+          {/* Nav items — large 56px tap targets */}
+          <nav className="flex-1 overflow-y-auto flex flex-col px-4 py-2 gap-0.5">
             {MOBILE_NAV.map(item => {
-              const active = loc.pathname === item.path ||
-                (item.path !== '/' && loc.pathname.startsWith(item.path));
+              const active = isActive(item.path);
               return (
                 <button
                   key={item.path}
@@ -357,17 +393,16 @@ const TopNav = memo(function TopNav({ onOpenSearch }: TopNavProps) {
                   aria-current={active ? 'page' : undefined}
                   className={`
                     flex items-center gap-4
-                    h-14 px-4 rounded-xl
-                    text-lg font-medium
+                    min-h-[56px] px-4 rounded-2xl
+                    text-[17px] font-medium
                     transition-colors duration-200 touch-manipulation
-                    active:bg-white/[0.06]
                     ${active
-                      ? 'text-white bg-white/[0.06]'
-                      : 'text-[#A3A3A3]'
+                      ? 'text-white bg-white/[0.07]'
+                      : 'text-[#A3A3A3] hover:text-white hover:bg-white/[0.04]'
                     }
                   `}
                 >
-                  <item.icon size={20} strokeWidth={active ? 2.2 : 1.8} />
+                  <item.icon size={21} strokeWidth={active ? 2.2 : 1.7} className="shrink-0" />
                   {item.label}
                 </button>
               );
@@ -375,35 +410,35 @@ const TopNav = memo(function TopNav({ onOpenSearch }: TopNavProps) {
           </nav>
 
           {/* Profile section at bottom */}
-          <div className="px-6 pb-8 pt-4 border-t border-white/[0.06]">
+          <div className="px-4 pb-8 pt-3 border-t border-white/[0.06]">
             {!isLoading && (
               user ? (
                 <div className="space-y-1">
-                  <div className="flex items-center gap-3 px-4 py-3">
-                    <div className="w-10 h-10 rounded-full bg-white/[0.08] border border-white/[0.12] flex items-center justify-center text-sm font-semibold text-white">
-                      {initial}
+                  <button
+                    type="button"
+                    onClick={() => nav('/profile')}
+                    className="w-full flex items-center gap-3 px-4 py-3 rounded-2xl hover:bg-white/[0.04] transition-colors touch-manipulation"
+                  >
+                    <Avatar
+                      name={user.displayName}
+                      email={user.email}
+                      src={user.avatarUrl}
+                      size={40}
+                      className="shrink-0"
+                    />
+                    <div className="text-left min-w-0">
+                      <p className="text-sm font-semibold text-white truncate">
+                        {user.displayName || 'User'}
+                      </p>
+                      <p className="text-xs text-[#737373] truncate">{user.email}</p>
                     </div>
-                    <div>
-                      <p className="text-sm font-semibold text-white">{user.displayName || 'User'}</p>
-                      <p className="text-xs text-[#737373]">{user.email}</p>
-                    </div>
-                  </div>
-                  {user.role === 'ADMIN' && (
-                    <button
-                      type="button"
-                      onClick={() => nav('/admin')}
-                      className="w-full flex items-center gap-3 h-12 px-4 rounded-xl text-sm text-white/70 hover:text-white hover:bg-white/[0.04] transition-colors text-left touch-manipulation"
-                    >
-                      <Shield size={16} className="text-white/40" />
-                      Admin Panel
-                    </button>
-                  )}
+                  </button>
                   <button
                     type="button"
                     onClick={handleSignOut}
-                    className="w-full flex items-center gap-3 h-12 px-4 rounded-xl text-sm text-[#737373] hover:text-white hover:bg-white/[0.04] transition-colors text-left touch-manipulation"
+                    className="w-full flex items-center gap-3 h-12 px-4 rounded-2xl text-sm text-[#737373] hover:text-white hover:bg-white/[0.04] transition-colors touch-manipulation"
                   >
-                    <LogOut size={16} />
+                    <LogOut size={16} className="shrink-0" />
                     Sign out
                   </button>
                 </div>
@@ -411,7 +446,7 @@ const TopNav = memo(function TopNav({ onOpenSearch }: TopNavProps) {
                 <button
                   type="button"
                   onClick={() => nav('/login')}
-                  className="w-full flex items-center justify-center gap-2 h-12 rounded-xl text-sm font-medium text-white bg-white/[0.08] border border-white/[0.12] hover:bg-white/[0.12] transition-colors touch-manipulation"
+                  className="w-full flex items-center justify-center gap-2 h-12 rounded-2xl text-sm font-medium text-white bg-white/[0.08] border border-white/[0.12] hover:bg-white/[0.12] transition-colors touch-manipulation"
                 >
                   <User size={16} />
                   Sign in
