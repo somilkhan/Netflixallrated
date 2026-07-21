@@ -8,7 +8,7 @@ WORKDIR /app
 
 # ── Client build ─────────────────────────────────────────────────────────────
 COPY client/package.json client/package-lock.json ./client/
-RUN cd client && npm ci --prefer-offline=false
+RUN cd client && npm install --prefer-offline=false
 
 # Declare build-time env vars that Vite bakes into the bundle
 ARG VITE_TMDB_API_KEY
@@ -23,7 +23,7 @@ RUN cd client && npm run build
 # ── Server build ─────────────────────────────────────────────────────────────
 COPY server/package.json server/package-lock.json ./server/
 COPY server/prisma ./server/prisma/
-RUN cd server && npm ci --prefer-offline=false
+RUN cd server && npm install --prefer-offline=false
 
 COPY server ./server
 RUN cd server && npx prisma generate && npm run build
