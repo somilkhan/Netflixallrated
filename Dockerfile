@@ -4,6 +4,10 @@ ENV NODE_OPTIONS="--max-old-space-size=4096"
 
 RUN apt-get update -y && apt-get install -y openssl ca-certificates && rm -rf /var/lib/apt/lists/*
 
+# Upgrade npm — node:22-slim ships with npm 10.9.8 which has a fatal
+# "Exit handler never called!" bug. npm 12+ fixes it.
+RUN npm install -g npm@latest
+
 WORKDIR /app
 
 # ── Client build ─────────────────────────────────────────────────────────────
