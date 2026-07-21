@@ -58,8 +58,9 @@ const HeroSection = memo(function HeroSection({ titles }: HeroSectionProps) {
     <section
       className="relative w-full overflow-hidden"
       style={{
-        height: 'clamp(520px, 100svh, 960px)',
+        height: 'clamp(480px, 70svh, 960px)',
       }}
+      // Desktop override via CSS — 100svh on md+
       aria-label={`Featured: ${current.name}`}
     >
       {/* ── Background slides ────────────────────────────────────────── */}
@@ -206,7 +207,7 @@ const HeroSection = memo(function HeroSection({ titles }: HeroSectionProps) {
 
           {/* CTA buttons */}
           <div
-            className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2.5 animate-fade-up"
+            className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 animate-fade-up"
             style={{ animationDelay: '0.18s' }}
           >
             <button
@@ -215,15 +216,16 @@ const HeroSection = memo(function HeroSection({ titles }: HeroSectionProps) {
               aria-label={`Play ${current.name}`}
               className="
                 flex items-center justify-center gap-2.5
-                h-11 px-7 rounded-full
+                h-12 sm:h-12 px-8 rounded-lg
                 bg-white text-black
-                text-[14px] font-semibold
+                text-[15px] font-semibold
                 hover:bg-white/90 active:scale-[0.97]
                 transition-all duration-200 touch-manipulation
-                shadow-[0_4px_20px_rgba(0,0,0,0.4)]
+                shadow-[0_4px_24px_rgba(0,0,0,0.5)]
               "
+              style={{ minHeight: 56 }}
             >
-              <Play size={16} className="fill-current shrink-0" />
+              <Play size={17} className="fill-current shrink-0" />
               Play Now
             </button>
 
@@ -233,16 +235,17 @@ const HeroSection = memo(function HeroSection({ titles }: HeroSectionProps) {
               aria-label={`More info about ${current.name}`}
               className="
                 flex items-center justify-center gap-2.5
-                h-11 px-7 rounded-full
-                bg-white/[0.08] border border-white/[0.20] text-white
-                text-[14px] font-medium
-                hover:bg-white/[0.14] hover:border-white/[0.32]
+                h-12 sm:h-12 px-8 rounded-lg
+                bg-transparent border border-white/[0.35] text-white
+                text-[15px] font-medium
+                hover:bg-white/[0.10] hover:border-white/[0.50]
                 active:scale-[0.97]
                 transition-all duration-200 touch-manipulation
                 backdrop-blur-sm
               "
+              style={{ minHeight: 56 }}
             >
-              <Info size={15} className="shrink-0" />
+              <Info size={16} className="shrink-0" />
               More Info
             </button>
           </div>

@@ -113,7 +113,7 @@ const BottomPlayer = memo(function BottomPlayer() {
 
       {/* ── Main persistent bar ─────────────────────────────────────────── */}
       <div
-        className="fixed bottom-0 inset-x-0 z-[49] h-16 md:h-20 flex items-center border-t"
+        className="fixed bottom-16 md:bottom-0 inset-x-0 z-[49] h-16 md:h-20 flex items-center border-t"
         style={{
           background: nowPlaying ? '#0D0D0D' : 'rgba(10,10,10,0.92)',
           borderColor: nowPlaying ? 'rgba(255,255,255,0.06)' : 'rgba(255,255,255,0.04)',

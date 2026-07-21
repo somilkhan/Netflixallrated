@@ -83,6 +83,13 @@
   }
 }
 
+/* ── Hero height: 70svh mobile → 100svh desktop ─────────────────────────── */
+@media (min-width: 768px) {
+  section[aria-label^="Featured"] {
+    height: clamp(600px, 100svh, 1080px) !important;
+  }
+}
+
 /* ── Ken Burns — GPU-composited, disabled on mobile ─────────────────────── */
 @keyframes kenBurns {
   0%, 100% { transform: scale(1.0) translate3d(0, 0, 0); }

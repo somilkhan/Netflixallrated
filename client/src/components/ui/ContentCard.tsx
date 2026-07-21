@@ -62,7 +62,7 @@ const ContentCard = memo(function ContentCard({
       className={`
         group relative cursor-pointer select-none touch-manipulation
         focus:outline-none focus-visible:ring-2 focus-visible:ring-white/25 rounded-xl
-        ${fluid ? 'w-full' : 'shrink-0 w-[148px] md:w-[160px] scroll-snap-start'}
+        ${fluid ? 'w-full' : 'shrink-0 w-[120px] sm:w-[140px] md:w-[180px] scroll-snap-start'}
         ${className}
       `}
       style={{ WebkitTapHighlightColor: 'transparent' }}
@@ -72,8 +72,8 @@ const ContentCard = memo(function ContentCard({
         className="
           relative w-full rounded-xl overflow-hidden
           bg-[#141414]
-          transition-transform duration-300 ease-[cubic-bezier(0.4,0,0.2,1)]
-          md:group-hover:scale-[1.04] md:group-hover:-translate-y-1
+          transition-transform duration-[400ms] ease-[cubic-bezier(0.4,0,0.2,1)]
+          md:group-hover:scale-[1.08] md:group-hover:-translate-y-1
           active:scale-[0.97] md:active:scale-100 md:active:translate-y-0
         "
         style={{
@@ -85,9 +85,9 @@ const ContentCard = memo(function ContentCard({
         <div
           className="
             absolute inset-0 rounded-xl pointer-events-none z-[-1]
-            opacity-0 md:group-hover:opacity-100 transition-opacity duration-300
+            opacity-0 md:group-hover:opacity-100 transition-opacity duration-[400ms]
           "
-          style={{ boxShadow: '0 16px 48px rgba(0,0,0,0.7), 0 0 0 1px rgba(255,255,255,0.07)' }}
+          style={{ boxShadow: '0 20px 60px rgba(0,0,0,0.6), 0 0 0 1px rgba(255,255,255,0.08)' }}
           aria-hidden
         />
 
@@ -233,8 +233,8 @@ const ContentCard = memo(function ContentCard({
 
         {/* Progress bar (continue watching) */}
         {showProgress && progressPct > 0 && (
-          <div className="absolute bottom-0 inset-x-0 z-30 h-[3px] bg-white/10">
-            <div className="h-full bg-white rounded-r-full" style={{ width: `${progressPct}%` }} />
+          <div className="absolute bottom-0 inset-x-0 z-30 h-[4px] bg-white/10">
+            <div className="h-full rounded-r-full" style={{ width: `${progressPct}%`, background: '#E50914' }} />
           </div>
         )}
       </div>

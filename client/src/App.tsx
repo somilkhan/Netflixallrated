@@ -5,6 +5,7 @@ import { AuthProvider } from './lib/auth';
 import { PlayerProvider } from './lib/playerContext';
 import TopNav from './components/layout/TopNav';
 import BottomPlayer from './components/layout/BottomPlayer';
+import MobileBottomNav from './components/layout/MobileBottomNav';
 import SearchOverlay from './components/SearchOverlay';
 import ErrorBoundary from './components/ErrorBoundary';
 import GlassLoader from './components/GlassLoader';
@@ -104,8 +105,11 @@ export default function App() {
             </Suspense>
           </main>
 
-          {/* Persistent bottom player — sits above mobile system chrome */}
+          {/* Persistent bottom player — sits above mobile bottom nav */}
           <BottomPlayer />
+
+          {/* Mobile bottom navigation — Home | Search | Downloads | Profile */}
+          <MobileBottomNav />
         </div>
       </PlayerProvider>
     </AuthProvider>

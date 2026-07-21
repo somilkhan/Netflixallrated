@@ -29,7 +29,7 @@ const TopTenRow = memo(function TopTenRow({ title, items, viewAllPath }: TopTenR
     <section className="py-5">
       {/* Header */}
       <div className="flex items-center justify-between px-4 md:px-6 mb-3">
-        <h2 className="text-[15px] md:text-[17px] font-semibold text-white tracking-tight leading-none">
+        <h2 className="text-[18px] md:text-[24px] font-semibold text-white tracking-tight leading-none">
           {title}
         </h2>
         {viewAllPath && (

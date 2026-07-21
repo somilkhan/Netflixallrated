@@ -60,7 +60,7 @@ function ContinueWatchingCard({ item, onRemove }: ContinueWatchingCardProps) {
             bottom: 0,
             left: 0,
             right: 0,
-            height: 3,
+            height: 4,
             background: 'rgba(255,255,255,0.10)',
             borderRadius: '0 0 14px 14px',
             overflow: 'hidden',
@@ -70,7 +70,7 @@ function ContinueWatchingCard({ item, onRemove }: ContinueWatchingCardProps) {
             style={{
               height: '100%',
               width: `${pct}%`,
-              background: 'rgba(255,255,255,0.75)',
+              background: '#E50914',
               borderRadius: 'inherit',
               transition: 'width 0.4s cubic-bezier(.16,1,.3,1)',
             }}

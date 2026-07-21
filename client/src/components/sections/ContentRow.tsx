@@ -32,7 +32,7 @@ const ContentRow = memo(function ContentRow({
     <section className={`py-5 ${className}`}>
       {/* Row header */}
       <div className="flex items-center justify-between px-4 md:px-6 mb-3">
-        <h2 className="text-[15px] md:text-[17px] font-semibold text-white tracking-tight leading-none">
+        <h2 className="text-[18px] md:text-[24px] font-semibold text-white tracking-tight leading-none">
           {title}
         </h2>
         {viewAllPath && (
@@ -111,7 +111,7 @@ const ContentRow = memo(function ContentRow({
         <div
           ref={scrollRef}
           className="
-            flex gap-3 overflow-x-auto overflow-y-visible
+            flex gap-4 overflow-x-auto overflow-y-visible
             px-4 md:px-6 pb-3
             scrollbar-hide
           "
