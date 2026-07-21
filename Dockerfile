@@ -4,9 +4,9 @@ ENV NODE_OPTIONS="--max-old-space-size=4096"
 
 RUN apt-get update -y && apt-get install -y openssl ca-certificates && rm -rf /var/lib/apt/lists/*
 
-# Upgrade npm — node:22-slim ships with npm 10.9.8 which has a fatal
-# "Exit handler never called!" bug. npm 12+ fixes it.
-RUN npm install -g npm@latest
+# node:22-slim ships with npm 10.9.8 ("Exit handler never called" bug).
+# npm 12.x breaks npx ("Class extends undefined"). Pin to npm 10.8.x which is stable.
+RUN npm install -g npm@10.8.0
 
 WORKDIR /app
 
@@ -35,4 +35,4 @@ RUN cd server && npx prisma generate && npm run build
 ENV NODE_ENV=production
 EXPOSE 3000
 
-CMD ["sh", "-c", "cd server && npx prisma migrate deploy && node dist/server.js"]
+CMD ["sh", "-c", "cd server && node_modules/.bin/prisma migrate deploy && node dist/server.js"]
