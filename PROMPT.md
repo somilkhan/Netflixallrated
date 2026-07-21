@@ -531,3 +531,79 @@ PHASE 5: TESTING & VALIDATION — ZERO TOLERANCE
   [ ] No random whitespace or misalignment
   [ ] Consistent spacing (use ruler if needed)
   [ ] All interactive elemen
+  ═══════════════════════════════════════════════════════════════════
+PROOF REQUIREMENTS — YOU ARE NOT DONE UNTIL ALL PROVIDED
+═══════════════════════════════════════════════════════════════════
+
+Before saying "done" or "complete," you MUST provide ALL of the
+following. No exceptions. No shortcuts.
+
+1. COMPONENT INVENTORY
+   List every file in /src/components/ with one-line description.
+   Format: "TopNav.jsx — Glassmorphism navigation bar, 64px height"
+
+2. EMOJI AUDIT OUTPUT
+   Run in shell and paste result:
+   grep -r "🎬\|▶\|⏸\|🔍\|🔔\|👤\|➕\|✓\|✕\|❌\|👍\|👎\|ℹ\|⛶\|⚙\|🔊\|🔇" src/ 2>/dev/null || echo "NO EMOJIS FOUND"
+
+3. ICON LIBRARY PROOF
+   Run in shell and paste result:
+   cat package.json | grep -E "lucide|phosphor"
+
+4. MOBILE SCREENSHOTS
+   Open Chrome DevTools → Device Mode
+   Take screenshots of: Home, Browse, Watch, Profile
+   On: iPhone 14 Pro AND Pixel 7
+   Describe what you see in each screenshot
+
+5. CONSOLE PROOF
+   Open DevTools → Console tab
+   Screenshot or copy-paste: there must be ZERO red errors and ZERO yellow warnings
+
+6. LIGHTHOUSE SCORES
+   Run Lighthouse audit
+   Report exact numbers: Performance / Accessibility / Best Practices / SEO
+   ALL must be 90+
+
+7. PLAYER PROOF
+   Navigate to a video page
+   Confirm: controls are CUSTOM (your styled UI) not browser default
+   Test and confirm working: play, pause, seek, volume, fullscreen, quality
+
+8. AUTH FLOW CONFIRMATION
+   Walk through: Register → Login → Browse → Logout
+   Confirm each step succeeds
+
+═══════════════════════════════════════════════════════════════════
+ABSOLUTE RULES — BREAK ANY = FAILED
+═══════════════════════════════════════════════════════════════════
+
+1. NEVER leave a feature half-working. Start it = finish it.
+2. NEVER say "good enough." Perfect or nothing.
+3. NEVER ignore console warnings. Fix ALL.
+4. NEVER use !important in CSS unless unavoidable.
+5. NEVER use inline styles. CSS modules, styled-components, or Tailwind.
+6. NEVER commit secrets, API keys, .env files.
+7. NEVER skip mobile testing.
+8. NEVER add a feature without checking if it breaks another.
+9. NEVER use bright colors, gradients, flashy effects.
+10. NEVER use emojis. Lucide/Phosphor icons ONLY.
+11. NEVER stop until checklist is 100% complete.
+12. IF YOU ONLY CHANGE COLORS, YOU HAVE FAILED. REBUILD EVERYTHING.
+13. EVERY PAGE MUST LOOK DIFFERENT FROM BEFORE. NO EXCEPTIONS.
+14. NEVER say "done" without providing ALL 8 proof requirements above.
+15. NEVER skip a phase. Complete Phase 0 before Phase 1. Complete Phase 1 before Phase 2. And so on.
+
+═══════════════════════════════════════════════════════════════════
+IF YOU TRY TO SAY "DONE" WITHOUT PROOF
+═══════════════════════════════════════════════════════════════════
+
+I will respond with: "Proof missing. Continue working."
+You will then provide the missing proof before proceeding.
+There is no negotiation. There is no "almost done." Only done or not done.
+
+═══════════════════════════════════════════════════════════════════
+START NOW. PHASE 0. NO EXCUSES.
+═══════════════════════════════════════════════════════════════════
+
+  
