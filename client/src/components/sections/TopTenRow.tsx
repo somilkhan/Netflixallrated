@@ -11,9 +11,11 @@ interface TopTenRowProps {
   title: string;
   items: any[];
   viewAllPath?: string;
+  /** Custom card renderer — defaults to <ContentCard title={item} /> */
+  renderCard?: (item: any, index: number) => React.ReactNode;
 }
 
-const TopTenRow = memo(function TopTenRow({ title, items, viewAllPath }: TopTenRowProps) {
+const TopTenRow = memo(function TopTenRow({ title, items, viewAllPath, renderCard }: TopTenRowProps) {
   const nav       = useNavigate();
   const scrollRef = useRef<HTMLDivElement>(null);
 
@@ -109,7 +111,7 @@ const TopTenRow = memo(function TopTenRow({ title, items, viewAllPath }: TopTenR
               </div>
               {/* Card positioned so numeral peeks left */}
               <div className="relative z-10" style={{ marginLeft: index === 0 ? 0 : '40px' }}>
-                <ContentCard title={item} />
+                {renderCard ? renderCard(item, index) : <ContentCard title={item} />}
               </div>
             </div>
           ))}

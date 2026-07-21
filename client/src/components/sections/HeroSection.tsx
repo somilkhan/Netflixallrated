@@ -12,9 +12,11 @@ const AUTO_MS = 9000;
 
 interface HeroSectionProps {
   titles: any[];
+  /** Override default /title/:id navigation. Receives the current item and whether Play was clicked. */
+  onAction?: (item: any, play: boolean) => void;
 }
 
-const HeroSection = memo(function HeroSection({ titles }: HeroSectionProps) {
+const HeroSection = memo(function HeroSection({ titles, onAction }: HeroSectionProps) {
   const nav = useNavigate();
   const [idx,         setIdx]         = useState(0);
   const [progressKey, setProgressKey] = useState(0);
@@ -231,7 +233,7 @@ const HeroSection = memo(function HeroSection({ titles }: HeroSectionProps) {
           >
             <button
               type="button"
-              onClick={() => nav(`/title/${current.id}?play=1`)}
+              onClick={() => onAction ? onAction(current, true) : nav(`/title/${current.id}?play=1`)}
               aria-label={`Play ${current.name}`}
               className="
                 flex items-center justify-center gap-2.5
@@ -250,7 +252,7 @@ const HeroSection = memo(function HeroSection({ titles }: HeroSectionProps) {
 
             <button
               type="button"
-              onClick={() => nav(`/title/${current.id}`)}
+              onClick={() => onAction ? onAction(current, false) : nav(`/title/${current.id}`)}
               aria-label={`More info about ${current.name}`}
               className="
                 flex items-center justify-center gap-2.5

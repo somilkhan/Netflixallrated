@@ -16,6 +16,8 @@ export interface ContentCardProps {
   className?: string;
   onAddToList?: (titleId: string) => void;
   fluid?: boolean;
+  /** Override default /title/:id navigation. Called with play=true for the Play button. */
+  onNavigate?: (play?: boolean) => void;
 }
 
 const TYPE_LABEL: Record<string, string> = {
@@ -31,6 +33,7 @@ const ContentCard = memo(function ContentCard({
   className = '',
   onAddToList,
   fluid = false,
+  onNavigate,
 }: ContentCardProps) {
   const nav = useNavigate();
   const [imgLoaded, setImgLoaded] = useState(false);
@@ -42,10 +45,10 @@ const ContentCard = memo(function ContentCard({
     ? Math.min(100, (progressSeconds / durationSeconds) * 100)
     : 0;
 
-  const handleClick    = useCallback(() => nav(`/title/${title.id}`), [nav, title.id]);
-  const handlePlay     = useCallback((e: React.MouseEvent) => { e.stopPropagation(); nav(`/title/${title.id}?play=1`); }, [nav, title.id]);
+  const handleClick    = useCallback(() => { if (onNavigate) { onNavigate(false); } else { nav(`/title/${title.id}`); } }, [nav, title.id, onNavigate]);
+  const handlePlay     = useCallback((e: React.MouseEvent) => { e.stopPropagation(); if (onNavigate) { onNavigate(true); } else { nav(`/title/${title.id}?play=1`); } }, [nav, title.id, onNavigate]);
   const handleAddList  = useCallback((e: React.MouseEvent) => { e.stopPropagation(); onAddToList?.(title.id); }, [onAddToList, title.id]);
-  const handleInfo     = useCallback((e: React.MouseEvent) => { e.stopPropagation(); nav(`/title/${title.id}`); }, [nav, title.id]);
+  const handleInfo     = useCallback((e: React.MouseEvent) => { e.stopPropagation(); if (onNavigate) { onNavigate(false); } else { nav(`/title/${title.id}`); } }, [nav, title.id, onNavigate]);
   const handleKeyDown  = useCallback((e: React.KeyboardEvent) => {
     if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); handleClick(); }
   }, [handleClick]);

@@ -1,207 +1,233 @@
 /**
- * Home — rebuilt from scratch.
- * Layout: HeroSection → content rows using ContentCard + ContentRow.
- * Data fetching logic preserved; only the presentation layer is new.
+ * Home — rebuilt to use live TMDB API data directly.
+ * All content rows fetch from TMDB on mount. No hardcoded arrays.
+ * Continue Watching is the only section using the backend (user history).
  */
-import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Film } from 'lucide-react';
+import { AlertCircle, RefreshCw, KeyRound } from 'lucide-react';
+import {
+  getTrending,
+  getPopularMovies,
+  getPopularTVShows,
+  getTopRatedMovies,
+  getTopRatedTVShows,
+  getNowPlayingMovies,
+  getGenres,
+  getMovieVideos,
+  getTVVideos,
+  hasTmdbKey,
+  type TmdbNormalized,
+} from '../services/tmdb';
 import { api } from '../lib/api';
 import { useAuth } from '../lib/auth';
-import { getRegionCookie, setRegionCookie, normalizeRegion } from '../lib/regionConfig';
-import { slugify } from '../lib/slug';
-import {
-  GENRE_VISUAL, DEFAULT_TINT, PLATFORM_LOGO,
-  GENRE_TILE_IMG, CURATED_GENRE_TITLE, LANGUAGE_TILE_IMG, POPULAR_LANGUAGES,
-} from '../lib/categoryVisuals';
 
 import HeroSection from '../components/sections/HeroSection';
 import ContentRow from '../components/sections/ContentRow';
 import TopTenRow from '../components/sections/TopTenRow';
-import ContentCard from '../components/ui/ContentCard';
-import { FilterPill } from '../components/ui/FilterPill';
-import { SkeletonRow } from '../components/ui/SkeletonCard';
-import RegionPicker from '../components/RegionPicker';
+import TmdbContentCard from '../components/TmdbContentCard';
 import ContinueWatchingCard from '../components/ContinueWatchingCard';
-import TmdbCard from '../components/TmdbCard';
-import type { TmdbItem } from '../components/TmdbCard';
-import { ImgTile, LogoTile, TileRowSkeleton } from '../components/CategoryTile';
+import { SkeletonRow } from '../components/ui/SkeletonCard';
+import { ImgTile } from '../components/CategoryTile';
+import {
+  GENRE_VISUAL,
+  DEFAULT_TINT,
+  GENRE_TILE_IMG,
+} from '../lib/categoryVisuals';
+import { slugify } from '../lib/slug';
 
-interface GeoRow {
-  id: string;
-  label: string;
-  items: TmdbItem[];
+// ── Types ─────────────────────────────────────────────────────────────────
+interface GenreInfo {
+  id: number;
+  name: string;
 }
 
-// Module-level cache — survives React unmount/remount during navigation
+// ── Module-level cache (survives React unmount/remount during navigation) ──
 interface HomeCache {
-  top10: any[];
-  trending: any[];
-  recent: any[];
-  movies: any[];
-  series: any[];
-  anime: any[];
-  genreList: string[];
-  genreSections: Record<string, any[]>;
-  topRatedTV: any[];
-  geoRows: GeoRow[];
-  region: string;
+  trending: TmdbNormalized[];
+  popularMovies: TmdbNormalized[];
+  popularTV: TmdbNormalized[];
+  topRated: TmdbNormalized[];
+  nowPlaying: TmdbNormalized[];
+  genres: GenreInfo[];
   scrollY: number;
 }
 let _cache: HomeCache | null = null;
 
-const TABS = ['All', 'Movies', 'Series', 'Anime'] as const;
+const TABS = ['All', 'Movies', 'Series'] as const;
 type Tab = typeof TABS[number];
-const TAB_TYPE: Record<Tab, string> = {
-  All: '',
-  Movies: 'MOVIE',
-  Series: 'SERIES',
-  Anime: 'ANIME',
-};
 
+// ── No-key error state ─────────────────────────────────────────────────────
+function NoKeyBanner() {
+  return (
+    <div className="min-h-screen flex items-center justify-center px-6">
+      <div className="max-w-md text-center">
+        <KeyRound size={40} className="mx-auto text-amber-400 mb-4" />
+        <h2 className="text-xl font-bold text-white mb-2">TMDB API key required</h2>
+        <p className="text-[#A3A3A3] text-sm leading-relaxed mb-4">
+          Add your free TMDB API key as{' '}
+          <code className="bg-white/10 px-1.5 py-0.5 rounded text-xs font-mono text-amber-300">
+            VITE_TMDB_API_KEY
+          </code>{' '}
+          in Replit Secrets, then restart the app.
+        </p>
+        <p className="text-[#737373] text-xs">
+          Get a free key at{' '}
+          <a
+            href="https://www.themoviedb.org/settings/api"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="underline text-white/50 hover:text-white"
+          >
+            themoviedb.org/settings/api
+          </a>
+        </p>
+      </div>
+    </div>
+  );
+}
+
+// ── Row skeleton ───────────────────────────────────────────────────────────
+function SectionSkeleton() {
+  return (
+    <div className="py-5">
+      <div className="px-4 md:px-6 mb-3 h-6 w-36 rounded-full bg-[#1A1A1A] animate-pulse" />
+      <SkeletonRow count={8} />
+    </div>
+  );
+}
+
+// ── Error row ──────────────────────────────────────────────────────────────
+function ErrorRow({ label, onRetry }: { label: string; onRetry: () => void }) {
+  return (
+    <div className="py-5 px-4 md:px-6 flex items-center gap-3">
+      <AlertCircle size={15} className="text-[#737373] shrink-0" />
+      <span className="text-[13px] text-[#737373]">{label}</span>
+      <button
+        type="button"
+        onClick={onRetry}
+        className="flex items-center gap-1.5 text-[12px] text-white/50 hover:text-white transition-colors"
+      >
+        <RefreshCw size={11} /> Retry
+      </button>
+    </div>
+  );
+}
+
+// ── Main component ─────────────────────────────────────────────────────────
 export default function Home() {
   const { user } = useAuth();
   const navigate = useNavigate();
   const isRestoring = useRef(false);
 
   const [activeTab, setActiveTab] = useState<Tab>('All');
+
+  // ── TMDB sections ──────────────────────────────────────────────────────
+  const [trending,      setTrending]      = useState<TmdbNormalized[]>(_cache?.trending      ?? []);
+  const [popularMovies, setPopularMovies] = useState<TmdbNormalized[]>(_cache?.popularMovies ?? []);
+  const [popularTV,     setPopularTV]     = useState<TmdbNormalized[]>(_cache?.popularTV     ?? []);
+  const [topRated,      setTopRated]      = useState<TmdbNormalized[]>(_cache?.topRated      ?? []);
+  const [nowPlaying,    setNowPlaying]    = useState<TmdbNormalized[]>(_cache?.nowPlaying    ?? []);
+  const [genres,        setGenres]        = useState<GenreInfo[]>(_cache?.genres             ?? []);
+
+  // ── Loading / error flags ──────────────────────────────────────────────
+  const [loading,       setLoading]       = useState(!_cache);
+  const [errors,        setErrors]        = useState<Record<string, string>>({});
+
+  // ── Continue Watching (backend) ────────────────────────────────────────
   const [continueWatching, setContinueWatching] = useState<any[]>([]);
-  const [top10,       setTop10]       = useState<any[]>(_cache?.top10       ?? []);
-  const [trending,    setTrending]    = useState<any[]>(_cache?.trending    ?? []);
-  const [recent,      setRecent]      = useState<any[]>(_cache?.recent      ?? []);
-  const [movies,      setMovies]      = useState<any[]>(_cache?.movies      ?? []);
-  const [series,      setSeries]      = useState<any[]>(_cache?.series      ?? []);
-  const [anime,       setAnime]       = useState<any[]>(_cache?.anime       ?? []);
-  const [topRatedTV,  setTopRatedTV]  = useState<any[]>(_cache?.topRatedTV  ?? []);
-  const [genreSections, setGenreSections] = useState<Record<string, any[]>>(_cache?.genreSections ?? {});
-  const [genreList,   setGenreList]   = useState<string[]>(_cache?.genreList ?? []);
-  const [initialLoading, setInitialLoading] = useState(!_cache);
 
-  const [region,    setRegion]    = useState<string>(() => _cache?.region ?? normalizeRegion(getRegionCookie()));
-  const [geoRows,   setGeoRows]   = useState<GeoRow[]>(_cache?.geoRows ?? []);
-  const [geoLoading, setGeoLoading] = useState(false);
-  const [studios,   setStudios]   = useState<{ slug: string; label: string; logoUrl?: string }[]>([]);
-
-  // ── Geo content ──────────────────────────────────────────────────────────
-  const loadGeoContent = useCallback(async (r: string) => {
-    setGeoLoading(true);
-    try {
-      const data = await api.geo.content(r);
-      setGeoRows(data.rows || []);
-    } catch {
-      setGeoRows([]);
-    } finally {
-      setGeoLoading(false);
-    }
-  }, []);
-
-  // Restore scroll position from cache
+  // ── Scroll restore ─────────────────────────────────────────────────────
   useEffect(() => {
     if (_cache && _cache.scrollY > 0) {
-      requestAnimationFrame(() => {
-        window.scrollTo({ top: _cache!.scrollY, behavior: 'instant' as ScrollBehavior });
-      });
+      requestAnimationFrame(() => window.scrollTo({ top: _cache!.scrollY, behavior: 'instant' as ScrollBehavior }));
     }
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Save scroll position on scroll
   useEffect(() => {
     const onScroll = () => { if (_cache) _cache.scrollY = window.scrollY; };
     window.addEventListener('scroll', onScroll, { passive: true });
     return () => window.removeEventListener('scroll', onScroll);
   }, []);
 
-  // Geo detect / restore
+  // ── Main TMDB fetch ────────────────────────────────────────────────────
+  const fetchAll = useCallback(async () => {
+    if (!hasTmdbKey()) return;
+    setLoading(true);
+    setErrors({});
+
+    const results = await Promise.allSettled([
+      getTrending('all', 'day', 1),       // 0
+      getPopularMovies(1),                // 1
+      getPopularTVShows(1),               // 2
+      Promise.all([getTopRatedMovies(1), getTopRatedTVShows(1)]).then(
+        ([movies, tv]) =>
+          [...movies, ...tv]
+            .sort((a, b) => (b.rating ?? 0) - (a.rating ?? 0))
+            .slice(0, 20),
+      ),                                  // 3
+      getNowPlayingMovies(1),             // 4
+      getGenres(),                        // 5
+    ]);
+
+    const set = <T,>(idx: number, setter: (v: T) => void, key: string) => {
+      const r = results[idx];
+      if (r.status === 'fulfilled') setter(r.value as T);
+      else setErrors(prev => ({ ...prev, [key]: 'Failed to load' }));
+    };
+
+    set<TmdbNormalized[]>(0, setTrending,      'trending');
+    set<TmdbNormalized[]>(1, setPopularMovies, 'popularMovies');
+    set<TmdbNormalized[]>(2, setPopularTV,     'popularTV');
+    set<TmdbNormalized[]>(3, setTopRated,      'topRated');
+    set<TmdbNormalized[]>(4, setNowPlaying,    'nowPlaying');
+    set<GenreInfo[]>     (5, setGenres,        'genres');
+
+    setLoading(false);
+  }, []);
+
   useEffect(() => {
-    if (_cache) {
-      if (!_cache.geoRows.length) loadGeoContent(_cache.region);
-      isRestoring.current = true;
-      return;
-    }
-    const cookie = getRegionCookie();
-    if (cookie) {
-      loadGeoContent(cookie);
-    } else {
-      api.geo.detect()
-        .then((data: { region: string }) => {
-          const detected = data.region || 'IN';
-          setRegion(detected);
-          setRegionCookie(detected);
-          return loadGeoContent(detected);
-        })
-        .catch(() => loadGeoContent('IN'));
-    }
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+    if (_cache) { isRestoring.current = true; return; }
+    fetchAll();
+  }, [fetchAll]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  const handleRegionChange = useCallback((newRegion: string) => {
-    setRegion(newRegion);
-    setRegionCookie(newRegion);
-    loadGeoContent(newRegion);
-  }, [loadGeoContent]);
-
-  // Studios
+  // Populate cache when data arrives
   useEffect(() => {
-    if (studios.length) return;
-    Promise.all([
-      api.platforms.list().catch(() => []),
-      api.titles.watchProvidersList('US').catch(() => []),
-    ]).then(([platforms, providers]: [any[], any[]]) => {
-      const providerSlugs = new Map<string, any>(
-        providers.map((prov: any) => [slugify(prov.name || ''), prov])
-      );
-      setStudios(
-        platforms.slice(0, 12).map((p: any) => {
-          const slug = slugify(p.name);
-          const liveMatch = providerSlugs.get(slug)
-            ?? [...providerSlugs.entries()].find(([ps]) => ps.includes(slug) || slug.includes(ps))?.[1];
-          return { slug, label: p.name, logoUrl: liveMatch?.logoUrl };
-        }),
-      );
-    }).catch(() => {});
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps
-
-  // Main data fetch
-  useEffect(() => {
-    if (isRestoring.current || _cache) return;
-
-    Promise.all([
-      api.titles.top10().then(setTop10).catch(() => {}),
-      api.titles.trending().then(setTrending).catch(() => {}),
-      api.titles.recent().then(setRecent).catch(() => {}),
-    ]).finally(() => setInitialLoading(false));
-
-    api.titles.list({ type: 'MOVIE',  limit: '20' }).then(d => setMovies(d.titles   || [])).catch(() => {});
-    api.titles.list({ type: 'SERIES', limit: '20' }).then(d => setSeries(d.titles   || [])).catch(() => {});
-    api.titles.list({ type: 'ANIME',  limit: '20' }).then(d => setAnime(d.titles    || [])).catch(() => {});
-    api.titles.list({ type: 'SERIES', limit: '20', sort: 'popular' }).then(d => setTopRatedTV(d.titles || [])).catch(() => {});
-
-    api.titles.genres().then(({ genres }: { genres: { genre: string; count: number }[] }) => {
-      const top = genres.slice(0, 10).map(g => g.genre);
-      setGenreList(top);
-      Promise.all(
-        top.map(genre =>
-          api.titles.list({ genre, limit: '20' })
-            .then((d: any) => [genre, d.titles || []] as [string, any[]])
-            .catch(() => [genre, []] as [string, any[]])
-        )
-      ).then(results => {
-        setGenreSections(Object.fromEntries(results.filter(([, t]) => t.length > 0)));
-      }).catch(() => {});
-    }).catch(() => {});
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps
-
-  // Populate cache
-  useEffect(() => {
-    if (top10.length || trending.length || recent.length) {
+    if (trending.length || popularMovies.length) {
       _cache = {
-        top10, trending, recent, movies, series, anime,
-        genreList, genreSections, topRatedTV, geoRows, region,
+        trending, popularMovies, popularTV, topRated, nowPlaying, genres,
         scrollY: _cache?.scrollY ?? 0,
       };
     }
-  }, [top10, trending, recent, movies, series, anime, genreList, genreSections, topRatedTV, geoRows, region]);
+  }, [trending, popularMovies, popularTV, topRated, nowPlaying, genres]);
 
-  // Continue Watching
+  // ── Hero trailer injection ─────────────────────────────────────────────
+  // Fetch trailers for up to 5 hero items after initial data loads.
+  const [heroTitles, setHeroTitles] = useState<TmdbNormalized[]>([]);
+  useEffect(() => {
+    const base = trending.slice(0, 8);
+    if (!base.length) { setHeroTitles([]); return; }
+    setHeroTitles(base); // show immediately without trailers
+
+    // Fetch trailers for the first 5 hero slides in background
+    const topFive = base.slice(0, 5);
+    Promise.all(
+      topFive.map(item =>
+        (item.mediaType === 'movie' ? getMovieVideos(item.tmdbId) : getTVVideos(item.tmdbId))
+          .catch(() => null),
+      ),
+    ).then(trailerKeys => {
+      setHeroTitles(prev =>
+        prev.map((item, i) =>
+          i < trailerKeys.length && trailerKeys[i]
+            ? { ...item, trailerYoutubeId: trailerKeys[i]! }
+            : item,
+        ),
+      );
+    });
+  }, [trending]);
+
+  // ── Continue Watching ──────────────────────────────────────────────────
   useEffect(() => {
     if (!user) { setContinueWatching([]); return; }
     api.history.mine()
@@ -214,56 +240,59 @@ export default function Home() {
     api.history.remove(titleId).catch(() => {});
   }, []);
 
-  // ── Filtered lists ───────────────────────────────────────────────────────
-  const filterByTab = useCallback((items: any[]) => {
-    const type = TAB_TYPE[activeTab];
-    const filtered = type ? items.filter(t => t.type === type) : items;
-    const seen = new Set<string>();
-    return filtered.filter(t => { if (seen.has(t.id)) return false; seen.add(t.id); return true; });
-  }, [activeTab]);
+  // ── Hero action (TMDB resolve before navigate) ─────────────────────────
+  const heroAction = useCallback(async (item: TmdbNormalized, play: boolean) => {
+    try {
+      const { id } = await api.titles.resolveTmdb(item.tmdbId, item.mediaType);
+      navigate(`/title/${id}${play ? '?play=1' : ''}`);
+    } catch {
+      navigate(`/search?q=${encodeURIComponent(item.name)}&type=${item.type}`);
+    }
+  }, [navigate]);
 
-  const filteredTop10    = useMemo(() => filterByTab(top10),    [top10,    filterByTab]);
-  const filteredTrending = useMemo(() => filterByTab(trending), [trending, filterByTab]);
-  const filteredRecent   = useMemo(() => filterByTab(recent),   [recent,   filterByTab]);
-  const heroTitles       = useMemo(() => (top10.length ? top10 : trending).slice(0, 8), [top10, trending]);
-  const showAll          = activeTab === 'All';
+  // ── Genre tile click ───────────────────────────────────────────────────
+  const handleGenreClick = useCallback((genre: string) => {
+    navigate(`/browse/genre/${slugify(genre)}`);
+  }, [navigate]);
 
-  const typeSpecificItems = useMemo(() => {
-    if (showAll) return [];
-    return activeTab === 'Movies' ? movies : activeTab === 'Series' ? series : anime;
-  }, [showAll, activeTab, movies, series, anime]);
+  // ── Tab visibility helpers ─────────────────────────────────────────────
+  const showAll     = activeTab === 'All';
+  const showMovies  = activeTab === 'All' || activeTab === 'Movies';
+  const showSeries  = activeTab === 'All' || activeTab === 'Series';
+
+  // ── No key guard ───────────────────────────────────────────────────────
+  if (!hasTmdbKey()) return <NoKeyBanner />;
 
   return (
     <div className="pb-32 md:pb-24">
-      {/* ── Hero ──────────────────────────────────────────────────────────── */}
-      <HeroSection titles={heroTitles} />
 
-      {/* ── Content area ─────────────────────────────────────────────────── */}
+      {/* ── Hero ──────────────────────────────────────────────────────── */}
+      <HeroSection titles={heroTitles} onAction={heroAction} />
+
+      {/* ── Content area ─────────────────────────────────────────────── */}
       <div className="relative z-10 mt-0">
 
         {/* Tab filter pills */}
         <div className="flex gap-2 overflow-x-auto scrollbar-hide px-4 md:px-6 pt-6 pb-2">
           {TABS.map(tab => (
-            <FilterPill
+            <button
               key={tab}
-              label={tab}
-              active={activeTab === tab}
+              type="button"
               onClick={() => setActiveTab(tab)}
-            />
+              className={`
+                shrink-0 px-4 py-2 rounded-full text-[13px] font-medium
+                transition-all duration-200 touch-manipulation
+                ${activeTab === tab
+                  ? 'bg-white text-black'
+                  : 'bg-white/[0.07] text-[#A3A3A3] border border-white/[0.08] hover:bg-white/[0.12] hover:text-white'}
+              `}
+            >
+              {tab}
+            </button>
           ))}
         </div>
 
-        {/* Loading skeletons */}
-        {initialLoading && (
-          <div className="pt-6">
-            <div className="px-4 md:px-6 mb-3">
-              <div className="h-5 w-32 rounded-full bg-[#1A1A1A] animate-pulse-soft" />
-            </div>
-            <SkeletonRow count={8} />
-          </div>
-        )}
-
-        {/* Continue Watching */}
+        {/* ── Continue Watching (backend, hide if empty) ─────────────── */}
         {continueWatching.length > 0 && (
           <ContentRow title="Continue Watching">
             {continueWatching.map(item => (
@@ -272,176 +301,111 @@ export default function Home() {
           </ContentRow>
         )}
 
-        {/* Top 10 — with large rank numerals */}
-        {filteredTop10.length > 0 && (
+        {/* ── Top 10 Today ──────────────────────────────────────────── */}
+        {loading && <SectionSkeleton />}
+
+        {!loading && errors.trending && (
+          <ErrorRow label="Trending unavailable" onRetry={fetchAll} />
+        )}
+
+        {!loading && trending.length > 0 && (
           <TopTenRow
             title="Top 10 Today"
-            items={filteredTop10}
-            viewAllPath={`/search?q=&type=${TAB_TYPE[activeTab]}`}
+            items={trending.slice(0, 10)}
+            renderCard={(item, i) => (
+              <TmdbContentCard key={item.id} item={item} rank={i + 1} />
+            )}
           />
         )}
 
-        {/* New Movies (All tab) */}
-        {showAll && movies.length > 0 && (
-          <ContentRow title="New Movies" viewAllPath="/search?q=&type=MOVIE">
-            {movies.map(t => <ContentCard key={t.id} title={t} />)}
+        {/* ── Trending Now ──────────────────────────────────────────── */}
+        {!loading && trending.length > 0 && (
+          <ContentRow title="Trending Now">
+            {trending.slice(0, 20).map(item => (
+              <TmdbContentCard key={item.id} item={item} />
+            ))}
           </ContentRow>
         )}
 
-        {/* Popular TV Shows (All tab) */}
-        {showAll && series.length > 0 && (
-          <ContentRow title="Popular TV Shows" viewAllPath="/search?q=&type=SERIES">
-            {series.map(t => <ContentCard key={t.id} title={t} />)}
-          </ContentRow>
-        )}
-
-        {/* Anime Series (All tab) */}
-        {showAll && anime.length > 0 && (
-          <ContentRow title="Anime Series" viewAllPath="/search?q=&type=ANIME">
-            {anime.map(t => <ContentCard key={t.id} title={t} />)}
-          </ContentRow>
-        )}
-
-        {/* Top Rated TV (All tab) */}
-        {showAll && topRatedTV.length > 0 && (
-          <ContentRow title="Top Rated TV" viewAllPath="/search?q=&type=SERIES">
-            {topRatedTV.map(t => <ContentCard key={t.id} title={t} />)}
-          </ContentRow>
-        )}
-
-        {/* Type-specific items (filtered tabs) */}
-        {!showAll && typeSpecificItems.length > 0 && (
-          <ContentRow
-            title={activeTab === 'Movies' ? 'All Movies' : activeTab === 'Series' ? 'TV Shows' : 'All Anime'}
-            viewAllPath={`/search?q=&type=${TAB_TYPE[activeTab]}`}
-          >
-            {typeSpecificItems.map(t => <ContentCard key={t.id} title={t} />)}
-          </ContentRow>
-        )}
-
-        {/* Trending Now */}
-        {filteredTrending.length > 0 && (
-          <ContentRow title="Trending Now" viewAllPath="/search?q=trending">
-            {filteredTrending.map(t => <ContentCard key={t.id} title={t} />)}
-          </ContentRow>
-        )}
-
-        {/* Recently Added */}
-        {filteredRecent.length > 0 && (
-          <ContentRow title="Recently Added" viewAllPath="/search?q=">
-            {filteredRecent.map(t => <ContentCard key={t.id} title={t} />)}
-          </ContentRow>
-        )}
-
-        {/* Geo region rows */}
-        {showAll && (
-          <>
-            <div className="px-4 md:px-6 pt-2">
-              <RegionPicker region={region} onChange={handleRegionChange} />
-            </div>
-            {geoLoading && geoRows.length === 0 && (
-              <div className="pt-4"><SkeletonRow count={6} /></div>
-            )}
-            {geoRows.map(row =>
-              row.items.length > 0 ? (
-                <ContentRow key={row.id} title={row.label}>
-                  {row.items.map(item => <TmdbCard key={item.tmdbId} item={item} />)}
-                </ContentRow>
-              ) : null
-            )}
-          </>
-        )}
-
-        {/* Genre sections */}
-        {showAll && genreList.map(genre => {
-          const titles = genreSections[genre];
-          if (!titles?.length) return null;
-          return (
-            <ContentRow
-              key={genre}
-              title={CURATED_GENRE_TITLE[genre] ?? genre}
-              viewAllPath={`/search?q=${genre}&genre=${genre}`}
-            >
-              {titles.map(t => <ContentCard key={t.id} title={t} />)}
+        {/* ── Popular Movies ────────────────────────────────────────── */}
+        {showMovies && (
+          loading ? <SectionSkeleton /> :
+          errors.popularMovies ? (
+            <ErrorRow label="Popular Movies unavailable" onRetry={fetchAll} />
+          ) : popularMovies.length > 0 ? (
+            <ContentRow title="Popular Movies">
+              {popularMovies.slice(0, 20).map(item => (
+                <TmdbContentCard key={item.id} item={item} />
+              ))}
             </ContentRow>
-          );
-        })}
-
-        {/* ── Studios browse rail ─────────────────────────────────────── */}
-        {showAll && (
-          <section className="py-6">
-            <div className="flex items-center justify-between px-4 md:px-6 mb-3">
-              <h2 className="text-base md:text-lg font-semibold text-white tracking-tight">Studios</h2>
-            </div>
-            {studios.length === 0 ? (
-              <TileRowSkeleton />
-            ) : (
-              <div className="flex gap-2.5 overflow-x-auto px-4 md:px-6 pb-2 scrollbar-hide">
-                {studios.map(s => {
-                  const known = PLATFORM_LOGO[s.slug];
-                  return known ? (
-                    <LogoTile key={s.slug} logo={known.logo} color={known.color} onClick={() => navigate(`/studio/${s.slug}`)} />
-                  ) : (
-                    <ImgTile key={s.slug} label={s.label} img={s.logoUrl} tint={DEFAULT_TINT} onClick={() => navigate(`/studio/${s.slug}`)} />
-                  );
-                })}
-              </div>
-            )}
-          </section>
+          ) : null
         )}
 
-        {/* ── Popular Genres browse rail ──────────────────────────────── */}
-        {showAll && genreList.length > 0 && (
+        {/* ── Popular TV Shows ──────────────────────────────────────── */}
+        {showSeries && (
+          loading ? <SectionSkeleton /> :
+          errors.popularTV ? (
+            <ErrorRow label="Popular TV Shows unavailable" onRetry={fetchAll} />
+          ) : popularTV.length > 0 ? (
+            <ContentRow title="Popular TV Shows">
+              {popularTV.slice(0, 20).map(item => (
+                <TmdbContentCard key={item.id} item={item} />
+              ))}
+            </ContentRow>
+          ) : null
+        )}
+
+        {/* ── Top Rated ─────────────────────────────────────────────── */}
+        {showAll && (
+          loading ? <SectionSkeleton /> :
+          errors.topRated ? (
+            <ErrorRow label="Top Rated unavailable" onRetry={fetchAll} />
+          ) : topRated.length > 0 ? (
+            <ContentRow title="Top Rated">
+              {topRated.slice(0, 20).map(item => (
+                <TmdbContentCard key={item.id} item={item} />
+              ))}
+            </ContentRow>
+          ) : null
+        )}
+
+        {/* ── Now Playing ───────────────────────────────────────────── */}
+        {showMovies && (
+          loading ? <SectionSkeleton /> :
+          errors.nowPlaying ? (
+            <ErrorRow label="Now Playing unavailable" onRetry={fetchAll} />
+          ) : nowPlaying.length > 0 ? (
+            <ContentRow title="Now Playing in Theaters">
+              {nowPlaying.slice(0, 20).map(item => (
+                <TmdbContentCard key={item.id} item={item} />
+              ))}
+            </ContentRow>
+          ) : null
+        )}
+
+        {/* ── Browse by Genre ───────────────────────────────────────── */}
+        {showAll && genres.length > 0 && (
           <section className="py-6">
             <div className="flex items-center justify-between px-4 md:px-6 mb-3">
-              <h2 className="text-base md:text-lg font-semibold text-white tracking-tight">Popular Genres</h2>
+              <h2 className="text-base md:text-lg font-semibold text-white tracking-tight">
+                Browse by Genre
+              </h2>
             </div>
             <div className="flex gap-2.5 overflow-x-auto px-4 md:px-6 pb-2 scrollbar-hide">
-              {genreList.map(genre => {
-                const tint = GENRE_VISUAL[genre]?.tint ?? DEFAULT_TINT;
+              {genres.slice(0, 16).map(genre => {
+                const tint = GENRE_VISUAL[genre.name]?.tint ?? DEFAULT_TINT;
                 return (
                   <ImgTile
-                    key={genre}
-                    label={genre}
-                    img={GENRE_TILE_IMG[genre]}
+                    key={genre.id}
+                    label={genre.name}
+                    img={GENRE_TILE_IMG[genre.name]}
                     tint={tint}
-                    onClick={() => navigate(`/browse/genre/${slugify(genre)}`)}
+                    onClick={() => handleGenreClick(genre.name)}
                   />
                 );
               })}
             </div>
           </section>
-        )}
-
-        {/* ── Popular Languages browse rail ───────────────────────────── */}
-        {showAll && (
-          <section className="py-6">
-            <div className="flex items-center justify-between px-4 md:px-6 mb-3">
-              <h2 className="text-base md:text-lg font-semibold text-white tracking-tight">Popular Languages</h2>
-            </div>
-            <div className="flex gap-2.5 overflow-x-auto px-4 md:px-6 pb-2 scrollbar-hide">
-              {POPULAR_LANGUAGES.map(lang => (
-                <ImgTile
-                  key={lang}
-                  label={lang}
-                  img={LANGUAGE_TILE_IMG[lang]}
-                  tint={DEFAULT_TINT}
-                  onClick={() => navigate(`/language/${slugify(lang)}`)}
-                />
-              ))}
-            </div>
-          </section>
-        )}
-
-        {/* Empty state */}
-        {top10.length === 0 && trending.length === 0 && recent.length === 0 && !initialLoading && (
-          <div className="px-4 py-24 text-center">
-            <Film size={36} className="mx-auto text-white/15 mb-4" />
-            <p className="text-xl font-semibold text-white mb-2">Building your catalog…</p>
-            <p className="text-sm text-[#737373] max-w-sm mx-auto leading-relaxed">
-              The catalog is being populated from TMDB. It'll be ready shortly — check back in a moment.
-            </p>
-          </div>
         )}
 
         <div className="h-8" />
