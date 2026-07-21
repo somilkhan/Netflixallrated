@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback, useRef, useMemo, memo } from 'react';
+import { Play as PlayIcon } from 'lucide-react';
 import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
 import { api } from '../lib/api';
 import { useAuth } from '../lib/auth';
@@ -1324,7 +1325,10 @@ export default function TitleDetail() {
                 }}
                 disabled={animeProvider === 'gogoanime' ? gogoEmbedLoading : animeEmbedLoading}
               >
-                {(animeProvider === 'gogoanime' ? gogoEmbedLoading : animeEmbedLoading) ? 'Loading…' : `▶ Watch Episode ${selectedEp}`}
+                {(animeProvider === 'gogoanime' ? gogoEmbedLoading : animeEmbedLoading)
+                  ? 'Loading…'
+                  : <><PlayIcon size={13} className="fill-current shrink-0" /> Watch Episode {selectedEp}</>
+                }
               </button>
             )}
 

@@ -1,19 +1,16 @@
 /**
  * VideoPlayer — fullscreen overlay player for TitleDetail.
  *
- * Fix #1 applied:
- * - Source-selector pills live in the top bar (normal block flow, above the iframe).
- * - Prev / Refresh / Next buttons also in the top bar — never overlap the video.
- * - The iframe is wrapped in a `min-h-0` flex child + `player-ratio` container so
- *   it stays in a 16:9 box and cannot overflow its parent.
- *
- * Fix #2 applied:
- * - FebBox streams are played natively via hls.js (direct HLS URLs from shegu.net)
- *   instead of the FebBox embed iframe which requires browser login.
+ * FebBoxPlayer: native HLS/MP4 with fully custom HTML5 controls (no browser bar).
+ * All other servers: iframe embed (controls come from the embed provider).
  */
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, useCallback } from 'react';
 import Hls from 'hls.js';
-import { RefreshCw, ExternalLink } from 'lucide-react';
+import {
+  RefreshCw, ExternalLink, X, SkipBack, SkipForward,
+  Play, Pause, Volume2, VolumeX, Maximize, Minimize,
+  ChevronLeft, ChevronRight,
+} from 'lucide-react';
 import { SERVERS } from '../lib/servers';
 export type { Server } from '../lib/servers';
 export { SERVERS };
@@ -24,9 +21,21 @@ export interface FebboxStream {
   name: string;
 }
 
-// ---------------------------------------------------------------------------
-// FebBoxPlayer — native HLS player for direct shegu.net stream URLs
-// ---------------------------------------------------------------------------
+// ─────────────────────────────────────────────────────────────────────────────
+// Helpers
+// ─────────────────────────────────────────────────────────────────────────────
+function fmtTime(s: number): string {
+  if (!isFinite(s) || s < 0) return '0:00';
+  const h = Math.floor(s / 3600);
+  const m = Math.floor((s % 3600) / 60);
+  const sec = Math.floor(s % 60);
+  if (h > 0) return `${h}:${String(m).padStart(2, '0')}:${String(sec).padStart(2, '0')}`;
+  return `${m}:${String(sec).padStart(2, '0')}`;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// FebBoxPlayer — native HLS with fully custom controls overlay
+// ─────────────────────────────────────────────────────────────────────────────
 export function FebBoxPlayer({
   streams,
   iframeKey,
@@ -34,114 +43,314 @@ export function FebBoxPlayer({
   streams: FebboxStream[];
   iframeKey: number;
 }) {
-  const videoRef = useRef<HTMLVideoElement>(null);
-  const hlsRef = useRef<Hls | null>(null);
-  const [qualityIdx, setQualityIdx] = useState(0);
-  const [error, setError] = useState<string | null>(null);
+  const videoRef   = useRef<HTMLVideoElement>(null);
+  const hlsRef     = useRef<Hls | null>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
+  const hideTimer  = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  // When streams or selected quality changes, attach hls.js
+  const [qualityIdx,  setQualityIdx]  = useState(0);
+  const [error,       setError]       = useState<string | null>(null);
+  const [playing,     setPlaying]     = useState(false);
+  const [currentTime, setCurrentTime] = useState(0);
+  const [duration,    setDuration]    = useState(0);
+  const [buffered,    setBuffered]    = useState(0);
+  const [muted,       setMuted]       = useState(false);
+  const [volume,      setVolume]      = useState(1);
+  const [fullscreen,  setFullscreen]  = useState(false);
+  const [showCtrl,    setShowCtrl]    = useState(true);
+
+  // ── Attach HLS / direct source ───────────────────────────────────────────
   useEffect(() => {
-    if (!streams.length) return () => {};
+    if (!streams.length) return;
     const video = videoRef.current;
-    if (!video) return () => {};
+    if (!video) return;
 
-    // Destroy previous instance
-    if (hlsRef.current) {
-      hlsRef.current.destroy();
-      hlsRef.current = null;
-    }
+    hlsRef.current?.destroy();
+    hlsRef.current = null;
     setError(null);
+    setPlaying(false);
+    setCurrentTime(0);
+    setDuration(0);
 
     const src = streams[qualityIdx]?.url ?? streams[0].url;
+    const isHLS = src.includes('.m3u8') || src.includes('/hls/');
 
-    if (src.includes('.m3u8') || src.includes('hls')) {
+    if (isHLS) {
       if (Hls.isSupported()) {
-        const hls = new Hls({ enableWorker: true });
+        const hls = new Hls({ enableWorker: true, lowLatencyMode: true });
         hlsRef.current = hls;
-        // Use native video events for play-on-ready and error so that
-        // static analysis can verify the cleanup via removeEventListener.
-        const onCanPlay = () => video.play().catch(() => {});
-        const onVideoError = () => setError('Stream playback error');
-        video.addEventListener('canplay', onCanPlay);
-        video.addEventListener('error', onVideoError);
-
         hls.loadSource(src);
         hls.attachMedia(video);
-
-        return () => {
-          video.removeEventListener('canplay', onCanPlay);
-          video.removeEventListener('error', onVideoError);
-          hls.destroy();
-          hlsRef.current = null;
-        };
+        hls.on(Hls.Events.MANIFEST_PARSED, () => { video.play().catch(() => {}); });
+        hls.on(Hls.Events.ERROR, (_, data) => {
+          if (data.fatal) setError('Stream playback error — try another quality');
+        });
       } else if (video.canPlayType('application/vnd.apple.mpegurl')) {
-        // Safari native HLS
         video.src = src;
         video.play().catch(() => {});
       } else {
-        setError('HLS not supported in this browser');
+        setError('HLS is not supported in this browser');
       }
     } else {
-      // Direct MP4 / MKV
       video.src = src;
       video.play().catch(() => {});
     }
 
     return () => {
-      if (hlsRef.current) {
-        hlsRef.current.destroy();
-        hlsRef.current = null;
-      }
+      hlsRef.current?.destroy();
+      hlsRef.current = null;
     };
   }, [streams, qualityIdx, iframeKey]);
 
+  // ── Video event listeners ────────────────────────────────────────────────
+  useEffect(() => {
+    const video = videoRef.current;
+    if (!video) return;
+    const onPlay  = () => setPlaying(true);
+    const onPause = () => setPlaying(false);
+    const onTime  = () => {
+      setCurrentTime(video.currentTime);
+      if (video.buffered.length) setBuffered(video.buffered.end(video.buffered.length - 1));
+    };
+    const onMeta  = () => setDuration(video.duration);
+    const onVol   = () => { setMuted(video.muted); setVolume(video.volume); };
+    const onFull  = () => setFullscreen(!!document.fullscreenElement);
+    video.addEventListener('play',         onPlay);
+    video.addEventListener('pause',        onPause);
+    video.addEventListener('timeupdate',   onTime);
+    video.addEventListener('loadedmetadata', onMeta);
+    video.addEventListener('volumechange', onVol);
+    document.addEventListener('fullscreenchange', onFull);
+    return () => {
+      video.removeEventListener('play',         onPlay);
+      video.removeEventListener('pause',        onPause);
+      video.removeEventListener('timeupdate',   onTime);
+      video.removeEventListener('loadedmetadata', onMeta);
+      video.removeEventListener('volumechange', onVol);
+      document.removeEventListener('fullscreenchange', onFull);
+    };
+  }, []);
+
+  // ── Auto-hide controls ───────────────────────────────────────────────────
+  const resetHideTimer = useCallback(() => {
+    setShowCtrl(true);
+    if (hideTimer.current) clearTimeout(hideTimer.current);
+    hideTimer.current = setTimeout(() => setShowCtrl(false), 3000);
+  }, []);
+
+  // ── Controls ─────────────────────────────────────────────────────────────
+  const togglePlay = useCallback(() => {
+    const v = videoRef.current;
+    if (!v) return;
+    v.paused ? v.play() : v.pause();
+    resetHideTimer();
+  }, [resetHideTimer]);
+
+  const seek = useCallback((e: React.MouseEvent<HTMLDivElement>) => {
+    const v = videoRef.current;
+    if (!v || !duration) return;
+    const rect = e.currentTarget.getBoundingClientRect();
+    v.currentTime = ((e.clientX - rect.left) / rect.width) * duration;
+    resetHideTimer();
+  }, [duration, resetHideTimer]);
+
+  const toggleMute = useCallback(() => {
+    const v = videoRef.current;
+    if (!v) return;
+    v.muted = !v.muted;
+  }, []);
+
+  const changeVolume = useCallback((e: React.MouseEvent<HTMLDivElement>) => {
+    const v = videoRef.current;
+    if (!v) return;
+    const rect = e.currentTarget.getBoundingClientRect();
+    v.volume = Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width));
+    v.muted  = false;
+  }, []);
+
+  const skip = useCallback((secs: number) => {
+    const v = videoRef.current;
+    if (!v) return;
+    v.currentTime = Math.max(0, Math.min(duration, v.currentTime + secs));
+    resetHideTimer();
+  }, [duration, resetHideTimer]);
+
+  const toggleFullscreen = useCallback(() => {
+    const el = containerRef.current;
+    if (!el) return;
+    if (!document.fullscreenElement) el.requestFullscreen?.();
+    else document.exitFullscreen?.();
+  }, []);
+
   if (!streams.length) {
     return (
-      <div className="absolute inset-0 flex items-center justify-center text-ink-dim text-sm">
+      <div className="absolute inset-0 flex items-center justify-center text-white/40 text-sm">
         No streams available
       </div>
     );
   }
 
-  return (
-    <div className="absolute inset-0 flex flex-col bg-black">
-      {/* Quality selector */}
-      <div className="absolute top-2 right-2 z-10 flex gap-1.5 flex-wrap justify-end">
-        {streams.map((s, i) => (
-          <button
-            key={s.url ?? s.quality ?? i}
-            onClick={() => setQualityIdx(i)}
-            className={`text-[10px] font-mono px-2 py-0.5 rounded border transition-colors ${
-              qualityIdx === i
-                ? 'border-white bg-white/20 text-white'
-                : 'border-white/20 text-[#999] bg-black/60 hover:text-white hover:border-white/40'
-            }`}
-          >
-            {s.quality || s.name || `Q${i + 1}`}
-          </button>
-        ))}
-      </div>
+  const pct         = duration > 0 ? (currentTime / duration) * 100 : 0;
+  const bufferedPct = duration > 0 ? (buffered    / duration) * 100 : 0;
 
-      {error ? (
-        <div className="flex-1 flex items-center justify-center text-red-400 text-sm px-4 text-center">
-          {error}
+  return (
+    <div
+      ref={containerRef}
+      className="absolute inset-0 bg-black select-none"
+      onMouseMove={resetHideTimer}
+      onMouseLeave={() => setShowCtrl(false)}
+      onClick={togglePlay}
+      style={{ cursor: showCtrl ? 'default' : 'none' }}
+    >
+      {/* Video element — no browser controls */}
+      <video
+        ref={videoRef}
+        className="w-full h-full object-contain"
+        playsInline
+      />
+
+      {/* Quality selector */}
+      {streams.length > 1 && showCtrl && (
+        <div
+          className="absolute top-3 right-3 z-20 flex gap-1.5 flex-wrap justify-end"
+          onClick={e => e.stopPropagation()}
+        >
+          {streams.map((s, i) => (
+            <button
+              key={s.url ?? s.quality ?? i}
+              onClick={() => setQualityIdx(i)}
+              className={`text-[10px] font-mono px-2 py-0.5 rounded border transition-colors ${
+                qualityIdx === i
+                  ? 'border-white/40 bg-white/20 text-white'
+                  : 'border-white/10 text-white/40 bg-black/60 hover:text-white hover:border-white/30'
+              }`}
+            >
+              {s.quality || s.name || `Q${i + 1}`}
+            </button>
+          ))}
         </div>
-      ) : (
-        <video
-          ref={videoRef}
-          className="w-full h-full object-contain"
-          controls
-          autoPlay
-          playsInline
-        />
       )}
+
+      {/* Error overlay */}
+      {error && (
+        <div className="absolute inset-0 flex items-center justify-center bg-black/80 z-30">
+          <p className="text-red-400 text-sm text-center px-8">{error}</p>
+        </div>
+      )}
+
+      {/* ── Custom controls overlay ─────────────────────────────────────── */}
+      <div
+        className="absolute inset-0 z-10 flex flex-col justify-end transition-opacity duration-300"
+        style={{
+          opacity: showCtrl ? 1 : 0,
+          pointerEvents: showCtrl ? 'auto' : 'none',
+          background: 'linear-gradient(to top, rgba(0,0,0,0.85) 0%, transparent 35%)',
+        }}
+        onClick={e => e.stopPropagation()}
+      >
+        {/* Progress bar */}
+        <div className="px-4 pb-1">
+          <div
+            className="relative h-1 hover:h-2 bg-white/20 rounded-full cursor-pointer transition-all duration-150 group"
+            onClick={seek}
+          >
+            {/* Buffered */}
+            <div
+              className="absolute inset-y-0 left-0 bg-white/25 rounded-full"
+              style={{ width: `${bufferedPct}%` }}
+            />
+            {/* Played */}
+            <div
+              className="absolute inset-y-0 left-0 bg-white rounded-full"
+              style={{ width: `${pct}%` }}
+            />
+            {/* Scrubber thumb */}
+            <div
+              className="absolute top-1/2 -translate-y-1/2 w-3 h-3 rounded-full bg-white shadow-md opacity-0 group-hover:opacity-100 transition-opacity -translate-x-1/2"
+              style={{ left: `${pct}%` }}
+            />
+          </div>
+        </div>
+
+        {/* Bottom control row */}
+        <div className="flex items-center gap-1 px-3 pb-3">
+          {/* Play/Pause */}
+          <button
+            type="button"
+            aria-label={playing ? 'Pause' : 'Play'}
+            onClick={togglePlay}
+            className="flex items-center justify-center w-9 h-9 rounded-full hover:bg-white/10 text-white transition-colors"
+          >
+            {playing
+              ? <Pause size={18} className="fill-current" />
+              : <Play  size={18} className="fill-current ml-0.5" />
+            }
+          </button>
+
+          {/* Skip back */}
+          <button
+            type="button"
+            aria-label="Skip back 10s"
+            onClick={() => skip(-10)}
+            className="flex items-center justify-center w-8 h-8 rounded-full hover:bg-white/10 text-white/70 hover:text-white transition-colors"
+          >
+            <SkipBack size={15} />
+          </button>
+
+          {/* Skip forward */}
+          <button
+            type="button"
+            aria-label="Skip forward 10s"
+            onClick={() => skip(10)}
+            className="flex items-center justify-center w-8 h-8 rounded-full hover:bg-white/10 text-white/70 hover:text-white transition-colors"
+          >
+            <SkipForward size={15} />
+          </button>
+
+          {/* Time */}
+          <span className="text-[11px] font-mono text-white/60 ml-1 mr-auto tabular-nums">
+            {fmtTime(currentTime)} / {fmtTime(duration)}
+          </span>
+
+          {/* Volume */}
+          <button
+            type="button"
+            aria-label={muted ? 'Unmute' : 'Mute'}
+            onClick={toggleMute}
+            className="flex items-center justify-center w-8 h-8 rounded-full hover:bg-white/10 text-white/70 hover:text-white transition-colors"
+          >
+            {muted || volume === 0 ? <VolumeX size={15} /> : <Volume2 size={15} />}
+          </button>
+
+          {/* Volume bar */}
+          <div
+            className="w-16 h-1 bg-white/20 rounded-full cursor-pointer hidden md:block"
+            onClick={changeVolume}
+          >
+            <div
+              className="h-full bg-white rounded-full"
+              style={{ width: `${muted ? 0 : volume * 100}%` }}
+            />
+          </div>
+
+          {/* Fullscreen */}
+          <button
+            type="button"
+            aria-label={fullscreen ? 'Exit fullscreen' : 'Fullscreen'}
+            onClick={toggleFullscreen}
+            className="flex items-center justify-center w-8 h-8 rounded-full hover:bg-white/10 text-white/70 hover:text-white transition-colors ml-1"
+          >
+            {fullscreen ? <Minimize size={15} /> : <Maximize size={15} />}
+          </button>
+        </div>
+      </div>
     </div>
   );
 }
 
-// ---------------------------------------------------------------------------
+// ─────────────────────────────────────────────────────────────────────────────
 // VideoPlayerProps
-// ---------------------------------------------------------------------------
+// ─────────────────────────────────────────────────────────────────────────────
 interface VideoPlayerProps {
   title: any;
   playerOpen: boolean;
@@ -154,11 +363,8 @@ interface VideoPlayerProps {
   selectedEp: number;
   setSelectedEp: React.Dispatch<React.SetStateAction<number>>;
   embedUrl: string | null;
-  /** Direct HLS/MP4 streams from FebBox — when present, renders native player */
   febboxStreams?: FebboxStream[];
-  /** Called when the user clicks ← Prev inside the anime player */
   onAnimePrev?: () => void;
-  /** Called when the user clicks Next → inside the anime player */
   onAnimeNext?: () => void;
 }
 
@@ -178,21 +384,22 @@ export default function VideoPlayer({
   onAnimePrev,
   onAnimeNext,
 }: VideoPlayerProps) {
-  // FebBox with streams → show native player (no embedUrl needed)
   const showFebboxNative = serverId === 'febbox' && febboxStreams.length > 0;
-
   if (!playerOpen || (!embedUrl && !showFebboxNative)) return null;
 
   return (
-    <div className="fixed inset-0 z-50 bg-void flex flex-col">
-      {/*
-       * Top bar — source-selector pills + controls all sit HERE (normal block flow).
-       * They are shrink-0 so they never get squeezed by the player below.
-       */}
-      <div className="flex items-center justify-between px-4 py-2.5 border-b border-line shrink-0 bg-surface/80 md:backdrop-blur-sm gap-3 flex-wrap">
+    <div className="fixed inset-0 z-50 bg-black flex flex-col">
+      {/* ── Top bar ─────────────────────────────────────────────────────── */}
+      <div
+        className="flex items-center justify-between px-4 py-2.5 shrink-0 gap-3 flex-wrap border-b border-white/[0.06]"
+        style={{ background: 'rgba(10,10,10,0.95)', backdropFilter: 'blur(12px)' }}
+      >
+        {/* Title + episode info */}
         <div className="shrink-0">
-          <p className="font-serif text-sm font-semibold leading-tight">{title.name}</p>
-          <p className="text-[10px] text-ink-dim font-mono">
+          <p className="text-[13px] font-semibold text-white leading-tight truncate max-w-[200px] md:max-w-none">
+            {title.name}
+          </p>
+          <p className="text-[10px] text-white/40 font-mono mt-0.5">
             {title.type === 'SERIES'
               ? `S${selectedSeason} · E${selectedEp}`
               : title.type === 'ANIME'
@@ -201,7 +408,7 @@ export default function VideoPlayer({
           </p>
         </div>
 
-        {/* Source-selector pills — above the player, not overlapping it */}
+        {/* Server pills — non-anime only */}
         {title.type !== 'ANIME' && (
           <div className="flex gap-1.5 flex-wrap">
             {SERVERS.map(s => (
@@ -210,7 +417,7 @@ export default function VideoPlayer({
                 onClick={() => switchServer(s.id)}
                 className={`text-[10px] font-mono px-2.5 py-1 rounded-full border transition-colors ${
                   serverId === s.id
-                    ? 'border-white/[0.22] bg-white/[0.08] text-white'
+                    ? 'border-white/20 bg-white/[0.08] text-white'
                     : 'border-white/[0.08] text-white/40 hover:text-white/80 hover:border-white/[0.16]'
                 }`}
               >
@@ -219,81 +426,92 @@ export default function VideoPlayer({
             ))}
           </div>
         )}
+
+        {/* Anime source label */}
         {title.type === 'ANIME' && (
-          <span className="text-[10px] font-mono text-ink-dim border border-line rounded-full px-2.5 py-1">
+          <span className="text-[10px] font-mono text-white/30 border border-white/[0.08] rounded-full px-2.5 py-1">
             Anicrush
           </span>
         )}
 
-        {/* Controls — always outside the player box */}
-        <div className="flex gap-2 shrink-0">
+        {/* Action buttons */}
+        <div className="flex items-center gap-1.5 shrink-0">
           <button
+            type="button"
             onClick={() => setIframeKey(k => k + 1)}
             title="Reload player"
-            className="text-xs text-ink-dim border border-line rounded-lg px-2.5 py-1.5 hover:text-ink transition-colors"
+            className="flex items-center justify-center w-8 h-8 rounded-lg text-white/40 border border-white/[0.08] hover:text-white hover:bg-white/[0.06] transition-colors"
           >
-            <RefreshCw size={12} />
+            <RefreshCw size={13} />
           </button>
 
-          {/* SERIES: Prev / Next */}
           {title.type === 'SERIES' && (
             <>
               <button
+                type="button"
                 onClick={() => { setSelectedEp(p => Math.max(1, p - 1)); setIframeKey(k => k + 1); }}
-                className="text-xs text-ink-dim border border-line rounded-lg px-3 py-1.5 hover:text-ink transition-colors"
-              >← Prev</button>
+                className="flex items-center gap-1 h-8 px-2.5 rounded-lg text-[11px] text-white/40 border border-white/[0.08] hover:text-white hover:bg-white/[0.06] transition-colors"
+              >
+                <ChevronLeft size={12} /> Prev
+              </button>
               <button
+                type="button"
                 onClick={() => { setSelectedEp(p => p + 1); setIframeKey(k => k + 1); }}
-                className="text-xs text-ink-dim border border-line rounded-lg px-3 py-1.5 hover:text-ink transition-colors"
-              >Next →</button>
+                className="flex items-center gap-1 h-8 px-2.5 rounded-lg text-[11px] text-white/40 border border-white/[0.08] hover:text-white hover:bg-white/[0.06] transition-colors"
+              >
+                Next <ChevronRight size={12} />
+              </button>
             </>
           )}
 
-          {/* ANIME: Prev / Next — fetches new embed URL each time */}
           {title.type === 'ANIME' && (
             <>
               <button
+                type="button"
                 onClick={onAnimePrev}
                 disabled={selectedEp <= 1}
-                className="text-xs text-ink-dim border border-line rounded-lg px-3 py-1.5 hover:text-ink transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
-              >← Prev</button>
+                className="flex items-center gap-1 h-8 px-2.5 rounded-lg text-[11px] text-white/40 border border-white/[0.08] hover:text-white hover:bg-white/[0.06] transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
+              >
+                <ChevronLeft size={12} /> Prev
+              </button>
               <button
+                type="button"
                 onClick={onAnimeNext}
-                className="text-xs text-ink-dim border border-line rounded-lg px-3 py-1.5 hover:text-ink transition-colors"
-              >Next →</button>
+                className="flex items-center gap-1 h-8 px-2.5 rounded-lg text-[11px] text-white/40 border border-white/[0.08] hover:text-white hover:bg-white/[0.06] transition-colors"
+              >
+                Next <ChevronRight size={12} />
+              </button>
             </>
           )}
 
-          {/* External link — only for iframe servers, not native HLS */}
           {!showFebboxNative && (
             <a
               href={embedUrl ?? '#'}
               target="_blank"
               rel="noreferrer"
               title="Open in new tab"
-              className="text-xs text-ink-dim border border-line rounded-lg px-2.5 py-1.5 hover:text-ink transition-colors inline-flex items-center"
+              className="flex items-center justify-center w-8 h-8 rounded-lg text-white/40 border border-white/[0.08] hover:text-white hover:bg-white/[0.06] transition-colors"
             >
-              <ExternalLink size={12} />
+              <ExternalLink size={13} />
             </a>
           )}
+
           <button
+            type="button"
             onClick={() => setPlayerOpen(false)}
-            className="text-xs text-ink-dim border border-line rounded-lg px-3 py-1.5 hover:text-ink transition-colors"
-          >✕</button>
+            aria-label="Close player"
+            className="flex items-center justify-center w-8 h-8 rounded-lg text-white/40 border border-white/[0.08] hover:text-white hover:bg-white/[0.06] transition-colors"
+          >
+            <X size={14} />
+          </button>
         </div>
       </div>
 
-      {/*
-       * Player area: flex-1 + min-h-0 is the standard fix for flex children that
-       * would otherwise overflow their parent.
-       */}
+      {/* ── Player area ─────────────────────────────────────────────────── */}
       <div className="flex-1 min-h-0 overflow-hidden bg-black flex items-center justify-center">
         <div className="relative player-ratio w-full overflow-hidden">
           {showFebboxNative ? (
-            <FebBoxPlayer
-              streams={febboxStreams}
-              iframeKey={iframeKey}
-            />
+            <FebBoxPlayer streams={febboxStreams} iframeKey={iframeKey} />
           ) : (
             <iframe
               key={`${serverId}-${selectedSeason}-${selectedEp}-${iframeKey}`}

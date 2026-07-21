@@ -412,7 +412,7 @@ function MatchCard({ match, onWatch }: { match: LiveMatch; onWatch: () => void }
           )}
           {match.popular && (
             <span className="bg-amber-500 rounded-full px-2 py-0.5">
-              <span className="font-mono text-[9px] font-bold text-black">🔥 HOT</span>
+              <span className="font-mono text-[9px] font-bold text-black">HOT</span>
             </span>
           )}
         </div>
@@ -563,7 +563,7 @@ export default function Sports() {
           <div className="px-5 py-3 flex gap-2 overflow-x-auto scrollbar-hide border-b border-[#181818]">
             {categories.map(cat => {
               const isActive = cat === activeCat;
-              const meta = cat === ALL ? { emoji: '🌐', label: 'All Sports' } : categoryMeta(cat);
+              const meta = cat === ALL ? { label: 'All Sports' } : categoryMeta(cat);
               const catLiveCount = cat === ALL ? liveCount : matches.filter(m => m.category === cat && isLiveOrSoon(m.date)).length;
               return (
                 <button
@@ -579,7 +579,6 @@ export default function Sports() {
                     }
                   `}
                 >
-                  <span className="leading-none">{meta.emoji}</span>
                   {meta.label}
                   {catLiveCount > 0 && (
                     <span className={`
