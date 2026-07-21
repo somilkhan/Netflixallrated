@@ -6,16 +6,24 @@ RUN apt-get update -y && apt-get install -y openssl ca-certificates && rm -rf /v
 
 WORKDIR /app
 
-COPY client/package.json ./client/
-RUN cd client && yarn install --network-timeout 300000 --ignore-engines
-COPY client ./client
-RUN cd client && yarn build
+# ── Client build ─────────────────────────────────────────────────────────────
+COPY client/package.json client/package-lock.json ./client/
+RUN cd client && npm ci --prefer-offline=false
 
-COPY server/package.json ./server/
+# Declare build-time env vars that Vite bakes into the bundle
+ARG VITE_TMDB_API_KEY
+ENV VITE_TMDB_API_KEY=$VITE_TMDB_API_KEY
+
+COPY client ./client
+RUN cd client && npm run build
+
+# ── Server build ─────────────────────────────────────────────────────────────
+COPY server/package.json server/package-lock.json ./server/
 COPY server/prisma ./server/prisma/
-RUN cd server && yarn install --network-timeout 300000 --ignore-engines
+RUN cd server && npm ci --prefer-offline=false
+
 COPY server ./server
-RUN cd server && npx prisma generate && yarn build
+RUN cd server && npx prisma generate && npm run build
 
 ENV NODE_ENV=production
 EXPOSE 3000
