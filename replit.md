@@ -102,10 +102,11 @@ Or set `ADMIN_EMAIL` secret on Railway — that email auto-gets ADMIN on first l
 
 ## Secrets / environment variables
 
-Secrets live on **Railway** (server) and **Replit** (client uses none directly — they come from `/api/config`).
+Secrets live on **Railway** (server) and **Replit** (homepage uses `VITE_TMDB_API_KEY` directly; other config comes from `/api/config`).
 
 | Key | Where | Purpose |
 |---|---|---|
+| `VITE_TMDB_API_KEY` | **Replit** | Direct TMDB API calls from the homepage client |
 | `SUPABASE_URL` | Railway | Supabase project URL |
 | `SUPABASE_ANON_KEY` | Railway | Supabase anon key (served to client via /api/config) |
 | `TMDB_API_KEY` | Railway | TMDB catalog sync + search |

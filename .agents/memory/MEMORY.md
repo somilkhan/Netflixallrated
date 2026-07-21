@@ -15,3 +15,4 @@
 - [bingr.one Design System](bingr-design-system.md) — exact tokens: Bebas Neue titles, Inter body, #0f1014 bg, 64px solid sidebar; extracted from their live CSS bundle
 - [Redesign 2025 nav architecture](redesign-nav-arch.md) — SideRail+Navbar+BottomNav all replaced by single TopNav (client/src/components/layout/TopNav.tsx); no rail-offset padding; App.tsx has no padding on main
 - [New component locations](redesign-component-map.md) — ContentCard in ui/, ContentRow+HeroSection+TopTenRow in sections/, hooks in hooks/, tokens in styles/design-tokens.css
+- [TMDB client-side service](tmdb-client-service.md) — homepage calls TMDB directly via VITE_TMDB_API_KEY; TmdbContentCard resolves to backend ID on click; onNavigate/onAction/renderCard props added to ContentCard/HeroSection/TopTenRow
