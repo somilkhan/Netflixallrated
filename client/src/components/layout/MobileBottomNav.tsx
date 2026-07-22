@@ -38,7 +38,7 @@ const MobileBottomNav = memo(function MobileBottomNav({ onOpenSearch }: MobileBo
 
   return (
     <nav
-      className="md:hidden fixed bottom-0 inset-x-0 z-[46] flex items-start"
+      className="md:hidden fixed bottom-0 inset-x-0 z-[50] flex items-start"
       style={{
         height: 'calc(64px + env(safe-area-inset-bottom))',
         paddingBottom: 'env(safe-area-inset-bottom)',

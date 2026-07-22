@@ -114,7 +114,7 @@ const BottomPlayer = memo(function BottomPlayer() {
       {/* ── Main persistent bar ─────────────────────────────────────────── */}
       {/* On mobile: hidden when idle (only MobileBottomNav shows). Visible when playing. */}
       <div
-        className={`fixed inset-x-0 z-[49] md:h-20 md:bottom-0 md:flex items-center border-t
+        className={`fixed inset-x-0 z-[45] md:h-20 md:bottom-0 md:flex items-center border-t
           ${nowPlaying
             ? 'bottom-16 h-16 flex'
             : 'hidden md:flex md:h-20'
