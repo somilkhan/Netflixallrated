@@ -1,0 +1,10 @@
+{
+  "projectId": "4c2fcb54-1b16-4356-a1b7-1709051c7c0e",
+  "environmentName": "production",
+  "services": {
+    "Netflixallrated": {
+      "serviceId": "f2cca51b-8087-4250-a6a9-dc54d1837702",
+      "environmentId": "36e13bd1-66b2-4830-b95d-8d8a39cc1c3f"
+    }
+  }
+}
