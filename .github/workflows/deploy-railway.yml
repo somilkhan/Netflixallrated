@@ -14,9 +14,10 @@ jobs:
 
       - name: Install Railway CLI (native binary)
         run: |
-          RAILWAY_VERSION=$(curl -s https://api.github.com/repos/railwayapp/cli/releases/latest | grep '"tag_name"' | cut -d'"' -f4)
-          curl -fsSL "https://github.com/railwayapp/cli/releases/download/${RAILWAY_VERSION}/railway-${RAILWAY_VERSION}-amd64.deb" -o railway.deb
-          sudo dpkg -i railway.deb
+          curl -fsSL "https://github.com/railwayapp/cli/releases/download/v5.27.2/railway-v5.27.2-x86_64-unknown-linux-gnu.tar.gz" -o railway.tar.gz
+          tar -xzf railway.tar.gz
+          chmod +x railway
+          sudo mv railway /usr/local/bin/railway
           railway --version
 
       - name: Deploy to Railway
