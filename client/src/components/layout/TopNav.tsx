@@ -107,6 +107,10 @@ const TopNav = memo(function TopNav({ onOpenSearch }: TopNavProps) {
   }, [signOut, nav]);
 
   const handleSearchOpen = useCallback(() => {
+    if (window.matchMedia('(max-width: 767px)').matches) {
+      nav('/search');
+      return;
+    }
     if (onOpenSearch) {
       onOpenSearch();
     } else {

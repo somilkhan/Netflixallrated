@@ -24,13 +24,9 @@ const MobileBottomNav = memo(function MobileBottomNav({ onOpenSearch }: MobileBo
       icon: Search,
       label: 'Search',
       path: '/search',
-      action: () => {
-        if (onOpenSearch) {
-          onOpenSearch();
-        } else {
-          nav('/search');
-        }
-      },
+      // Use the dedicated page on mobile so the tap never gets swallowed by
+      // an overlay or immediately focuses an input underneath the nav.
+      action: () => nav('/search'),
     },
     { icon: Download, label: 'Downloads', path: '/downloads', action: () => nav('/downloads') },
     { icon: User,     label: 'Profile',   path: '/profile',  action: () => nav('/profile') },

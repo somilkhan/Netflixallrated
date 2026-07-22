@@ -149,9 +149,8 @@ export default function SearchResults() {
           size={16}
           className="absolute left-4 top-1/2 -translate-y-1/2 text-white/35 pointer-events-none"
         />
-        <input
+         <input
           ref={inputRef}
-          autoFocus
           type="text"
           value={query}
           onChange={e => handleChange(e.target.value)}
