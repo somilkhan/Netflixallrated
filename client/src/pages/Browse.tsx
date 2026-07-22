@@ -175,7 +175,7 @@ export default function Browse() {
       </div>
 
       {/* ── Grid ─────────────────────────────────────────────────────────── */}
-      <div className="px-4 md:px-6 pt-6">
+      <div className="px-4 md:px-6 pt-[88px]">
         {loading ? (
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3 md:gap-4">
             {Array.from({ length: PAGE_SIZE }).map((_, i) => (

@@ -85,7 +85,7 @@ const ContentCard = memo(function ContentCard({
       className={`
         group relative cursor-pointer select-none touch-manipulation
         focus:outline-none focus-visible:ring-2 focus-visible:ring-white/25 rounded-lg
-        ${fluid ? 'w-full' : 'shrink-0 w-[148px] sm:w-[160px] md:w-[190px] scroll-snap-start'}
+        ${fluid ? 'w-full' : 'shrink-0 w-[164px] sm:w-[170px] md:w-[190px] scroll-snap-start'}
         ${className}
       `}
       style={{ WebkitTapHighlightColor: 'transparent' }}
@@ -263,7 +263,7 @@ const ContentCard = memo(function ContentCard({
         {/* Progress bar (continue watching) */}
         {showProgress && progressPct > 0 && (
           <div className="absolute bottom-0 inset-x-0 z-30 h-[4px] bg-white/10">
-            <div className="h-full rounded-r-full" style={{ width: `${progressPct}%`, background: '#E50914' }} />
+            <div className="h-full rounded-r-full" style={{ width: `${progressPct}%`, background: 'rgba(255,255,255,0.9)' }} />
           </div>
         )}
       </div>

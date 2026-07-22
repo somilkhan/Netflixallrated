@@ -50,7 +50,7 @@ export default function Downloads() {
   const usedPercent = Math.min(100, (usedMb / capacityMb) * 100);
 
   return (
-    <div className="mx-auto max-w-[1400px] px-5 py-8 pb-32">
+    <div className="mx-auto max-w-[1400px] px-5 pt-[88px] pb-32">
       <div className="mb-7 flex flex-wrap items-end justify-between gap-4">
         <div>
           <div className="mb-2 flex items-center gap-2 text-white/45">

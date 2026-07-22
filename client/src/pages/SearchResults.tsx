@@ -140,7 +140,7 @@ export default function SearchResults() {
 
   return (
     <div
-      className="min-h-screen px-4 md:px-6 py-8 max-w-[1300px] mx-auto"
+       className="min-h-screen px-4 md:px-6 pt-[88px] pb-8 max-w-[1300px] mx-auto"
       style={{ paddingBottom: 'calc(80px + env(safe-area-inset-bottom))' }}
     >
       {!hasTmdbKey() && (
