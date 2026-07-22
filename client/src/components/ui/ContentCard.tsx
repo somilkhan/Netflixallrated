@@ -85,7 +85,7 @@ const ContentCard = memo(function ContentCard({
       className={`
         group relative cursor-pointer select-none touch-manipulation
         focus:outline-none focus-visible:ring-2 focus-visible:ring-white/25 rounded-lg
-        ${fluid ? 'w-full' : 'shrink-0 w-[120px] sm:w-[140px] md:w-[180px] scroll-snap-start'}
+        ${fluid ? 'w-full' : 'shrink-0 w-[148px] sm:w-[160px] md:w-[190px] scroll-snap-start'}
         ${className}
       `}
       style={{ WebkitTapHighlightColor: 'transparent' }}
@@ -270,7 +270,7 @@ const ContentCard = memo(function ContentCard({
 
       {/* ── Text below poster ──────────────────────────────────────────── */}
       <div className="mt-2 px-0.5">
-        <p className="text-[13px] font-medium text-white leading-tight truncate">
+            <p className="text-[14px] font-semibold text-white leading-[1.25] line-clamp-2">
           {highlightQuery
             ? <HighlightText text={title.name} query={highlightQuery} />
             : title.name}
@@ -279,12 +279,12 @@ const ContentCard = memo(function ContentCard({
           {rating && (
             <span className="flex items-center gap-0.5">
               <Star size={9} className="fill-[#f5c518] text-[#f5c518]" />
-              <span className="text-[11px] text-[#737373]">
+              <span className="text-[12px] text-[#8a8a8a]">
                 {typeof rating === 'number' ? rating.toFixed(1) : rating}
               </span>
             </span>
           )}
-          {title.year && <span className="text-[11px] text-[#737373]">{title.year}</span>}
+          {title.year && <span className="text-[12px] text-[#8a8a8a]">{title.year}</span>}
         </div>
       </div>
     </div>

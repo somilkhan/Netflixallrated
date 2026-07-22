@@ -187,7 +187,7 @@ export default function MyList() {
       )}
 
       {!loading && !error && filtered.length > 0 && (
-        <div className="grid grid-cols-2 gap-x-4 gap-y-7 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6">
+        <div className="grid grid-cols-2 gap-x-4 gap-y-7 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5">
           {filtered.map(item => (
             <div key={item.id} className={removing === item.id ? 'pointer-events-none opacity-50' : ''}>
               <SwipeCard item={item} onRemove={removeItem} />

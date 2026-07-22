@@ -6,7 +6,7 @@
  */
 import { memo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import GlassCard from './GlassCard';
+import ContentCard from './ui/ContentCard';
 import { navigateToAnime } from '../lib/animeResolve';
 
 export interface AniListMediaLike {
@@ -43,34 +43,18 @@ const AniCard = memo(function AniCard({ anime, onClick }: AniCardProps) {
   });
 
   return (
-    <GlassCard
-      title={titleStr}
-      typeLabel="Anime"
-      posterUrl={posterUrl}
-      year={anime.startDate?.year}
-      genres={anime.genres}
-      overview={synopsis}
-      onClick={handleClick}
-      overlay={
-        score ? (
-          <div className="
-            absolute top-2 left-2 z-20
-            inline-flex items-center gap-[3px]
-            rounded-full border border-amber/35 bg-amber/[0.12] md:backdrop-blur-sm
-            px-[6px] py-[2.5px] leading-none
-          ">
-            <svg
-              width="6" height="6" viewBox="0 0 24 24"
-              fill="currentColor" className="text-amber shrink-0"
-            >
-              <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
-            </svg>
-            <span className="font-mono text-[7px] text-amber uppercase tracking-[0.06em]">
-              {score}
-            </span>
-          </div>
-        ) : null
-      }
+    <ContentCard
+      title={{
+        id: `anime-${anime.id}`,
+        name: titleStr,
+        type: 'ANIME',
+        year: anime.startDate?.year ?? null,
+        posterUrl,
+        rating: score ? Number(score) : null,
+        genres: anime.genres ?? [],
+        synopsis: synopsis ?? '',
+      }}
+      onNavigate={() => handleClick()}
     />
   );
 });

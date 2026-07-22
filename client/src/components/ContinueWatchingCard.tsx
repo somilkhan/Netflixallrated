@@ -1,6 +1,6 @@
 import React, { useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
-import GlassCard from './GlassCard';
+import ContentCard from './ui/ContentCard';
 import { X } from 'lucide-react';
 
 interface ContinueWatchingCardProps {
@@ -43,88 +43,37 @@ function ContinueWatchingCard({ item, onRemove }: ContinueWatchingCardProps) {
   }, [navigate, title.id]);
 
   return (
-    <div className="relative group" style={{ display: 'inline-block' }}>
-      <GlassCard
-        title={title.name}
-        typeLabel={title.type === 'MOVIE' ? 'Movie' : title.type === 'SERIES' ? 'Series' : 'Anime'}
-        year={title.year}
-        posterUrl={title.posterUrl ?? undefined}
-        onClick={handleClick}
+    <div className="relative group shrink-0 w-[148px] md:w-[190px]">
+      <ContentCard
+        title={{
+          ...title,
+          posterUrl: title.posterUrl,
+          rating: undefined,
+          synopsis: subLabel ? `${subLabel}${item.episodeTitle ? ` · ${item.episodeTitle}` : ''}` : '',
+        }}
+        showProgress={!completed}
+        progressSeconds={positionSeconds}
+        durationSeconds={durationSeconds ?? 0}
+        onNavigate={() => handleClick()}
       />
 
       {/* Progress bar */}
-      {!completed && pct > 0 && (
-        <div
-          style={{
-            position: 'absolute',
-            bottom: 0,
-            left: 0,
-            right: 0,
-            height: 4,
-            background: 'rgba(255,255,255,0.10)',
-            borderRadius: '0 0 14px 14px',
-            overflow: 'hidden',
-          }}
-        >
-          <div
-            style={{
-              height: '100%',
-              width: `${pct}%`,
-              background: '#E50914',
-              borderRadius: 'inherit',
-              transition: 'width 0.4s cubic-bezier(.16,1,.3,1)',
-            }}
-          />
-        </div>
+      {!completed && pct > 0 && subLabel && (
+        <span className="pointer-events-none absolute left-2 top-2 z-30 rounded-md border border-white/10 bg-black/75 px-1.5 py-1 text-[10px] font-medium text-white/85">
+          {subLabel}
+        </span>
       )}
 
       {/* Episode badge */}
       {subLabel && (
-        <div
-          style={{
-            position: 'absolute',
-            top: 8,
-            left: 8,
-            background: 'rgba(0,0,0,0.75)',
-            backdropFilter: 'blur(6px)',
-            color: 'rgba(255,255,255,0.9)',
-            fontSize: 9.5,
-            fontFamily: "'IBM Plex Mono', monospace",
-            fontWeight: 500,
-            padding: '2.5px 6px',
-            borderRadius: 5,
-            letterSpacing: '0.06em',
-            pointerEvents: 'none',
-            border: '1px solid rgba(255,255,255,0.10)',
-          }}
-        >
-          {subLabel}
-        </div>
+        <span className="sr-only">{subLabel}</span>
       )}
 
       {/* Remove button */}
       {onRemove && (
         <button
           onClick={e => { e.stopPropagation(); onRemove(item.titleId); }}
-          style={{
-            position: 'absolute',
-            top: 7,
-            right: 7,
-            background: 'rgba(0,0,0,0.65)',
-            backdropFilter: 'blur(6px)',
-            border: '1px solid rgba(255,255,255,0.08)',
-            borderRadius: '50%',
-            width: 24,
-            height: 24,
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            cursor: 'pointer',
-            opacity: 0,
-            transition: 'opacity 0.2s ease, background 0.15s ease',
-            color: 'rgba(255,255,255,0.75)',
-          }}
-          className="cw-remove-btn hover:!bg-[rgba(0,0,0,0.85)] hover:!text-white"
+          className="absolute right-2 top-2 z-30 flex h-7 w-7 items-center justify-center rounded-full border border-white/15 bg-black/75 text-white/80 opacity-0 transition-opacity hover:bg-black hover:text-white group-hover:opacity-100"
           title="Remove from history"
           aria-label="Remove from history"
         >
