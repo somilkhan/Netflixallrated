@@ -8,8 +8,10 @@ import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Search, X, Clock, TrendingUp } from 'lucide-react';
 import { m, AnimatePresence } from 'framer-motion';
+import { searchMulti } from '../services/tmdb';
+import TmdbContentCard from './TmdbContentCard';
+import type { TmdbNormalized } from '../services/tmdb';
 import { api } from '../lib/api';
-import ContentCard from './ui/ContentCard';
 
 /* ── Constants ─────────────────────────────────────────────────────────── */
 
@@ -94,8 +96,8 @@ interface Props { open: boolean; onClose: () => void; }
 export default function SearchOverlay({ open, onClose }: Props) {
   const [query,       setQuery]       = useState('');
   const [activeTab,   setActiveTab]   = useState('all');
-  const [allResults,  setAllResults]  = useState<any[]>([]);
-  const [suggestions, setSuggestions] = useState<any[]>([]);
+   const [allResults,  setAllResults]  = useState<TmdbNormalized[]>([]);
+   const [suggestions, setSuggestions] = useState<TmdbNormalized[]>([]);
   const [loading,     setLoading]     = useState(false);
   const [showSuggs,   setShowSuggs]   = useState(false);  // suggestions dropdown visible
   const [recentSearches, setRecentSearches] = useState<string[]>([]);
@@ -150,12 +152,11 @@ export default function SearchOverlay({ open, onClose }: Props) {
     setShowSuggs(true);
     const ctrl = new AbortController();
     abortRef.current = ctrl;
-    api.titles.liveSearch(q.trim(), ctrl.signal)
-      .then((res: any) => {
+   searchMulti(q.trim())
+     .then((results) => {
         if (ctrl.signal.aborted) return;
-        const local: any[] = res.local || [];
-        setAllResults(local);
-        setSuggestions(local.slice(0, 8));
+        setAllResults(results);
+        setSuggestions(results.slice(0, 8));
         setLoading(false);
       })
       .catch((err: any) => {
@@ -181,10 +182,16 @@ export default function SearchOverlay({ open, onClose }: Props) {
   }, []);
 
   /* Click on a suggestion → navigate to title */
-  const handleSuggestionClick = useCallback((item: any) => {
+  const handleSuggestionClick = useCallback(async (item: TmdbNormalized) => {
     persistRecent(item.name);
-    onClose();
-    nav(`/title/${item.id}`);
+    try {
+      const { id } = await api.titles.resolveTmdb(item.tmdbId, item.mediaType);
+      onClose();
+      nav(`/title/${id}`);
+    } catch {
+      nav(`/search?q=${encodeURIComponent(item.name)}`);
+      onClose();
+    }
   }, [persistRecent, onClose, nav]);
 
   /* Click recent/trending chip → fill query and search */
@@ -345,7 +352,7 @@ export default function SearchOverlay({ open, onClose }: Props) {
                       <HighlightMatch text={item.name} query={query} />
                     </div>
                     <div className="text-white/45 text-[13px] mt-0.5">
-                      {TYPE_LABEL[item.type] ?? item.type}
+                   {TYPE_LABEL[item.type] ?? item.type}
                       {item.year ? ` • ${item.year}` : ''}
                     </div>
                   </div>
@@ -409,7 +416,7 @@ export default function SearchOverlay({ open, onClose }: Props) {
                 <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
                   {filteredResults.map(t => (
                     <div key={t.id} onClick={onClose}>
-                      <ContentCard title={t} fluid highlightQuery={query || undefined} />
+                       <TmdbContentCard item={t} />
                     </div>
                   ))}
                 </div>

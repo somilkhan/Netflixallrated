@@ -7,8 +7,9 @@ import { useEffect, useState, useRef, useMemo } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import { Search, X, Film, Tv, Swords } from 'lucide-react';
 import { m } from 'framer-motion';
-import { api } from '../lib/api';
-import ContentCard from '../components/ui/ContentCard';
+import { searchMulti, hasTmdbKey } from '../services/tmdb';
+import TmdbContentCard from '../components/TmdbContentCard';
+import type { TmdbNormalized } from '../services/tmdb';
 
 /* ── Skeleton card ─────────────────────────────────────────────────────── */
 function SkeletonCard() {
@@ -46,7 +47,7 @@ export default function SearchResults() {
 
   const [query,   setQuery]   = useState(params.get('q') || '');
   const [type,    setType]    = useState(params.get('type') || '');
-  const [rawResults, setRawResults] = useState<any[]>([]);
+  const [rawResults, setRawResults] = useState<TmdbNormalized[]>([]);
   const [loading, setLoading] = useState(false);
   const [searched, setSearched] = useState(false);
 
@@ -81,10 +82,10 @@ export default function SearchResults() {
     setSearched(true);
     const ctrl = new AbortController();
     abortRef.current = ctrl;
-    api.titles.liveSearch(q.trim(), ctrl.signal)
-      .then((res: any) => {
+    searchMulti(q.trim())
+      .then((results) => {
         if (ctrl.signal.aborted) return;
-        setRawResults(res.local || []);
+        setRawResults(results);
         setLoading(false);
       })
       .catch((err: any) => {
@@ -143,6 +144,14 @@ export default function SearchResults() {
       className="min-h-screen px-4 md:px-6 py-8 max-w-[1300px] mx-auto"
       style={{ paddingBottom: 'calc(80px + env(safe-area-inset-bottom))' }}
     >
+      {!hasTmdbKey() && (
+        <div className="mb-5 rounded-xl border border-amber-400/20 bg-amber-400/5 px-4 py-3 text-sm text-amber-100/70">
+          TMDB search is unavailable until <code>VITE_TMDB_API_KEY</code> is configured.
+        </div>
+      )}
+      <p className="mb-4 text-[11px] uppercase tracking-[0.16em] text-white/30">
+        Smart search powered by TMDB
+      </p>
       {/* ── Search bar ─────────────────────────────────────────────── */}
       <form onSubmit={handleSubmit} className="relative mb-5 max-w-2xl">
         <Search
@@ -228,7 +237,7 @@ export default function SearchResults() {
             className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3 md:gap-4"
           >
             {results.map(t => (
-              <ContentCard key={t.id} title={t} fluid highlightQuery={query || undefined} />
+              <TmdbContentCard key={`${t.mediaType}-${t.tmdbId}`} item={t} />
             ))}
           </m.div>
         </>
