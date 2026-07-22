@@ -109,8 +109,11 @@ export default function SearchOverlay({ open, onClose }: Props) {
   useEffect(() => {
     if (!open) return;
     setRecentSearches(getRecent());
-    const t = setTimeout(() => inputRef.current?.focus(), 80);
-    return () => clearTimeout(t);
+    // Let mobile users see the search tab before the keyboard opens.
+    if (window.matchMedia('(min-width: 768px)').matches) {
+      const t = setTimeout(() => inputRef.current?.focus(), 80);
+      return () => clearTimeout(t);
+    }
   }, [open]);
 
   /* Reset everything on close */
