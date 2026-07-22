@@ -1,21 +1,22 @@
 /**
- * SearchResults — clean, focused search page.
- * Single search bar, type filter pills, results grid. No frills.
+ * SearchResults — dedicated /search page.
+ * Tabs: All · Movies · Series · Anime  with live counts.
+ * Shareable URL: /search?q=iron&type=MOVIE
  */
-import { useEffect, useState, useRef } from 'react';
+import { useEffect, useState, useRef, useMemo } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
-import { Search, X, Film, Tv, Sword } from 'lucide-react';
+import { Search, X, Film, Tv, Swords } from 'lucide-react';
 import { m } from 'framer-motion';
 import { api } from '../lib/api';
 import ContentCard from '../components/ui/ContentCard';
 
-/* ── skeleton card ──────────────────────────────────────────── */
+/* ── Skeleton card ─────────────────────────────────────────────────────── */
 function SkeletonCard() {
   return (
     <div className="w-full flex flex-col gap-2">
       <div
-        className="w-full rounded-lg overflow-hidden relative bg-white/[0.06]"
-        style={{ aspectRatio: '2/3' }}
+        className="w-full rounded-lg overflow-hidden relative"
+        style={{ aspectRatio: '2/3', background: 'rgba(255,255,255,0.06)' }}
       >
         <div
           className="absolute inset-0"
@@ -25,92 +26,94 @@ function SkeletonCard() {
           }}
         />
       </div>
-      <div className="h-3 rounded bg-white/[0.05] w-3/4" style={{ animation: 'shimmer 1.8s ease-in-out infinite' }} />
-      <div className="h-2.5 rounded bg-white/[0.04] w-1/2" style={{ animation: 'shimmer 1.8s ease-in-out 0.1s infinite' }} />
+      <div className="h-3 rounded w-3/4" style={{ background: 'rgba(255,255,255,0.05)', animation: 'shimmer 1.8s ease-in-out infinite' }} />
+      <div className="h-2.5 rounded w-1/2" style={{ background: 'rgba(255,255,255,0.04)', animation: 'shimmer 1.8s ease-in-out 0.1s infinite' }} />
     </div>
   );
 }
 
-const TYPE_FILTERS = [
-  { label: 'All',      value: '',       icon: null },
-  { label: 'Movies',   value: 'MOVIE',  icon: Film },
-  { label: 'TV Shows', value: 'SERIES', icon: Tv },
-  { label: 'Anime',    value: 'ANIME',  icon: Sword },
+/* ── Tabs config ───────────────────────────────────────────────────────── */
+const TABS = [
+  { label: 'All',    value: '',       icon: null   },
+  { label: 'Movies', value: 'MOVIE',  icon: Film   },
+  { label: 'Series', value: 'SERIES', icon: Tv     },
+  { label: 'Anime',  value: 'ANIME',  icon: Swords },
 ];
 
 export default function SearchResults() {
   const [params] = useSearchParams();
   const nav = useNavigate();
 
-  // Query lives in local state — no URL nav while typing prevents input flicker
-  const [query, setQuery]     = useState(params.get('q') || '');
-  const [type, setType]       = useState(params.get('type') || '');
-  const [results, setResults] = useState<any[]>([]);
+  const [query,   setQuery]   = useState(params.get('q') || '');
+  const [type,    setType]    = useState(params.get('type') || '');
+  const [rawResults, setRawResults] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
-  const [searched, setSearched] = useState(false); // has a search been attempted
+  const [searched, setSearched] = useState(false);
 
-  const inputRef  = useRef<HTMLInputElement>(null);
-  const abortRef  = useRef<AbortController | null>(null);
+  const inputRef    = useRef<HTMLInputElement>(null);
+  const abortRef    = useRef<AbortController | null>(null);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  // Sync URL param → local state on first load only
-  useEffect(() => {
-    const q = params.get('q') || '';
-    if (q) {
-      setQuery(q);
-      runSearch(q, params.get('type') || '');
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  /* Tab-filtered results via useMemo — no re-filter on every render */
+  const results = useMemo(() => {
+    if (!type) return rawResults;
+    return rawResults.filter((x: any) => x.type === type);
+  }, [rawResults, type]);
 
-  function runSearch(q: string, t: string) {
+  /* Per-tab counts */
+  const tabCounts = useMemo(() => {
+    const counts: Record<string, number> = { '': rawResults.length };
+    for (const item of rawResults) {
+      counts[item.type] = (counts[item.type] || 0) + 1;
+    }
+    return counts;
+  }, [rawResults]);
+
+  function runSearch(q: string) {
     if (abortRef.current) abortRef.current.abort();
     if (!q.trim()) {
-      setResults([]);
+      setRawResults([]);
       setLoading(false);
       setSearched(false);
       return;
     }
-
     setLoading(true);
     setSearched(true);
-
     const ctrl = new AbortController();
     abortRef.current = ctrl;
-
     api.titles.liveSearch(q.trim(), ctrl.signal)
       .then((res: any) => {
         if (ctrl.signal.aborted) return;
-        let local: any[] = res.local || [];
-        if (t) local = local.filter((x: any) => x.type === t);
-        setResults(local);
+        setRawResults(res.local || []);
         setLoading(false);
       })
       .catch((err: any) => {
         if (err?.name === 'AbortError' || ctrl.signal.aborted) return;
-        setResults([]);
+        setRawResults([]);
         setLoading(false);
       });
   }
 
-  // Debounced search as user types
+  /* Run search on mount if URL has a query param */
+  useEffect(() => {
+    const q = params.get('q') || '';
+    if (q) {
+      setQuery(q);
+      runSearch(q);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  /* Debounced typing handler — 150 ms */
   const handleChange = (val: string) => {
     setQuery(val);
     if (debounceRef.current) clearTimeout(debounceRef.current);
-    debounceRef.current = setTimeout(() => {
-      runSearch(val, type);
-    }, 300);
-  };
-
-  // Type filter pill click — re-run search immediately
-  const handleType = (val: string) => {
-    setType(val);
-    runSearch(query, val);
+    debounceRef.current = setTimeout(() => runSearch(val), 150);
   };
 
   const handleClear = () => {
     setQuery('');
-    setResults([]);
+    setRawResults([]);
     setSearched(false);
     if (debounceRef.current) clearTimeout(debounceRef.current);
     if (abortRef.current) abortRef.current.abort();
@@ -120,15 +123,19 @@ export default function SearchResults() {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (debounceRef.current) clearTimeout(debounceRef.current);
-    runSearch(query, type);
-    // Update URL so the result is shareable/bookmarkable
+    runSearch(query);
     const p = new URLSearchParams();
     if (query.trim()) p.set('q', query.trim());
     if (type) p.set('type', type);
     nav(`/search?${p.toString()}`, { replace: true });
   };
 
-  const isEmpty   = searched && !loading && results.length === 0;
+  /* Change tab — client-side filter only, no new API call */
+  const handleTab = (val: string) => {
+    setType(val);
+  };
+
+  const isEmpty    = searched && !loading && results.length === 0;
   const hasResults = !loading && results.length > 0;
 
   return (
@@ -136,7 +143,7 @@ export default function SearchResults() {
       className="min-h-screen px-4 md:px-6 py-8 max-w-[1300px] mx-auto"
       style={{ paddingBottom: 'calc(80px + env(safe-area-inset-bottom))' }}
     >
-      {/* ── Search bar ────────────────────────────────────────────── */}
+      {/* ── Search bar ─────────────────────────────────────────────── */}
       <form onSubmit={handleSubmit} className="relative mb-5 max-w-2xl">
         <Search
           size={16}
@@ -150,14 +157,13 @@ export default function SearchResults() {
           onChange={e => handleChange(e.target.value)}
           placeholder="Search movies, series, anime..."
           className="
-            w-full bg-white/[0.05] border border-white/[0.09] rounded-xl
-            pl-10 pr-10 py-3.5 text-[15px] text-white
+            w-full rounded-xl pl-10 pr-10 py-3.5 text-[15px] text-white
+            border border-white/[0.09] outline-none
             placeholder:text-white/28
-            outline-none
-            focus:border-white/[0.22] focus:bg-white/[0.07]
-            focus:shadow-[0_0_0_3px_rgba(255,255,255,0.04)]
-            transition-[border-color,background-color,box-shadow] duration-200
+            focus:border-white/[0.22] focus:shadow-[0_0_0_3px_rgba(255,255,255,0.04)]
+            transition-[border-color,box-shadow] duration-200
           "
+          style={{ background: 'rgba(255,255,255,0.05)' }}
         />
         {query && (
           <button
@@ -171,25 +177,34 @@ export default function SearchResults() {
         )}
       </form>
 
-      {/* ── Type filter pills ─────────────────────────────────────── */}
+      {/* ── Tabs ───────────────────────────────────────────────────── */}
       <div className="flex gap-2 mb-7 flex-wrap">
-        {TYPE_FILTERS.map(({ label, value, icon: Icon }) => (
-          <button
-            key={value}
-            onClick={() => handleType(value)}
-            className={`
-              flex items-center gap-1.5 px-3.5 py-2 rounded-full text-sm border
-              transition-[border-color,background-color,color] duration-150
-              ${type === value
-                ? 'bg-white/[0.11] border-white/[0.28] text-white font-medium'
-                : 'bg-white/[0.03] border-white/[0.08] text-white/45 hover:text-white/80 hover:border-white/[0.18]'
-              }
-            `}
-          >
-            {Icon && <Icon size={12} />}
-            {label}
-          </button>
-        ))}
+        {TABS.map(({ label, value, icon: Icon }) => {
+          const count = tabCounts[value] ?? 0;
+          return (
+            <button
+              key={value}
+              onClick={() => handleTab(value)}
+              className={`
+                flex items-center gap-1.5 px-3.5 py-2 rounded-full text-sm border
+                transition-[border-color,background-color,color] duration-150
+                ${type === value
+                  ? 'border-white/[0.28] text-white font-medium'
+                  : 'border-white/[0.08] text-white/45 hover:text-white/80 hover:border-white/[0.18]'
+                }
+              `}
+              style={type === value ? { background: 'rgba(255,255,255,0.11)' } : { background: 'rgba(255,255,255,0.03)' }}
+            >
+              {Icon && <Icon size={12} />}
+              {label}
+              {searched && count > 0 && (
+                <span className={`text-[11px] ${type === value ? 'text-white/70' : 'text-white/30'}`}>
+                  ({count})
+                </span>
+              )}
+            </button>
+          );
+        })}
       </div>
 
       {/* ── Loading skeletons ─────────────────────────────────────── */}
@@ -220,15 +235,32 @@ export default function SearchResults() {
         </>
       )}
 
-      {/* ── No results ────────────────────────────────────────────── */}
-      {isEmpty && (
+      {/* ── Empty: tab has 0 but all has some ─────────────────────── */}
+      {isEmpty && rawResults.length > 0 && (
+        <div className="text-center py-16">
+          <p className="text-base font-semibold text-white/60 mb-2">
+            No {TABS.find(t => t.value === type)?.label} results for "{query}"
+          </p>
+          <button
+            type="button"
+            onClick={() => setType('')}
+            className="mt-2 text-sm text-white/45 underline underline-offset-4 hover:text-white transition-colors"
+          >
+            Show all results
+          </button>
+        </div>
+      )}
+
+      {/* ── Empty: no results at all ──────────────────────────────── */}
+      {isEmpty && rawResults.length === 0 && (
         <m.div
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.2 }}
           className="flex flex-col items-center py-20 text-center"
         >
-          <div className="w-16 h-16 rounded-2xl bg-white/[0.04] border border-white/[0.07] flex items-center justify-center mb-4">
+          <div className="w-16 h-16 rounded-2xl flex items-center justify-center mb-4 border border-white/[0.07]"
+            style={{ background: 'rgba(255,255,255,0.04)' }}>
             <Search size={24} className="text-white/20" />
           </div>
           <p className="text-lg font-semibold text-white/75 mb-1.5">No results for "{query}"</p>
@@ -237,7 +269,7 @@ export default function SearchResults() {
             {['Action', 'Drama', 'Sci-Fi', 'Comedy', 'Thriller', 'Horror'].map(g => (
               <button
                 key={g}
-                onClick={() => { setQuery(g); runSearch(g, type); }}
+                onClick={() => { setQuery(g); runSearch(g); }}
                 className="text-xs px-3.5 py-2 rounded-full border border-white/[0.08] text-white/40 hover:border-white/[0.22] hover:text-white/75 transition-[border-color,color]"
               >
                 {g}
@@ -247,7 +279,7 @@ export default function SearchResults() {
         </m.div>
       )}
 
-      {/* ── Idle state (nothing typed yet) ────────────────────────── */}
+      {/* ── Idle state ────────────────────────────────────────────── */}
       {!loading && !searched && !query && (
         <div className="py-10 text-center">
           <p className="text-lg font-semibold text-white/60 mb-2">Search the catalog</p>
@@ -256,7 +288,7 @@ export default function SearchResults() {
             {['Action', 'Drama', 'Sci-Fi', 'Anime', 'Comedy', 'Thriller', 'Horror', 'Romance'].map(g => (
               <button
                 key={g}
-                onClick={() => { setQuery(g); runSearch(g, type); }}
+                onClick={() => { setQuery(g); runSearch(g); }}
                 className="text-xs px-3.5 py-2 rounded-full border border-white/[0.08] text-white/40 hover:border-white/[0.22] hover:text-white/75 transition-[border-color,color]"
               >
                 {g}

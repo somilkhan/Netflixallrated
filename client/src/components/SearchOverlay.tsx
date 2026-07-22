@@ -1,26 +1,84 @@
 /**
- * SearchOverlay — lightweight command palette.
- * Types → 300ms debounce → live results.
- * Enter / "See all" → navigates to /search page.
- * ESC or backdrop click → closes.
+ * SearchOverlay — full-screen search experience.
+ * Features: autocomplete suggestions · All/Movies/Series/Anime tabs ·
+ *           recent searches (localStorage) · trending · highlight matches ·
+ *           150 ms debounce · useMemo filtering · zero setState in render.
  */
-import { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Search, X, ArrowRight } from 'lucide-react';
+import { Search, X, Clock, TrendingUp } from 'lucide-react';
 import { m, AnimatePresence } from 'framer-motion';
 import { api } from '../lib/api';
 import ContentCard from './ui/ContentCard';
 
-const SUGGESTIONS = ['Action', 'Drama', 'Sci-Fi', 'Anime', 'Comedy', 'Thriller'];
+/* ── Constants ─────────────────────────────────────────────────────────── */
+
+const TRENDING_TERMS = [
+  'The Odyssey',
+  'House of the Dragon',
+  'Solo Leveling',
+  'Interstellar',
+  'The Mandalorian',
+];
+
+const TABS = [
+  { label: 'All',    value: 'all'    },
+  { label: 'Movies', value: 'MOVIE'  },
+  { label: 'Series', value: 'SERIES' },
+  { label: 'Anime',  value: 'ANIME'  },
+];
+
+const TYPE_LABEL: Record<string, string> = {
+  MOVIE:  'Movie',
+  SERIES: 'TV Series',
+  ANIME:  'Anime',
+};
+
+const RECENT_KEY = 'allrated_recentSearches';
+const MAX_RECENT = 10;
+
+/* ── Helpers ────────────────────────────────────────────────────────────── */
+
+function getRecent(): string[] {
+  try { return JSON.parse(localStorage.getItem(RECENT_KEY) || '[]'); } catch { return []; }
+}
+
+function saveRecent(term: string) {
+  const prev = getRecent();
+  const next = [term, ...prev.filter(s => s !== term)].slice(0, MAX_RECENT);
+  localStorage.setItem(RECENT_KEY, JSON.stringify(next));
+}
+
+function clearRecentStorage() {
+  localStorage.removeItem(RECENT_KEY);
+}
+
+/** Wrap matching substring in a <mark> element. */
+function HighlightMatch({ text, query }: { text: string; query: string }) {
+  if (!query) return <>{text}</>;
+  const regex = new RegExp(`(${query.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')})`, 'gi');
+  const parts = text.split(regex);
+  return (
+    <>
+      {parts.map((p, i) =>
+        p.toLowerCase() === query.toLowerCase()
+          ? <mark key={i} style={{ background: '#E50914', color: '#fff', padding: '0 2px', borderRadius: 2 }}>{p}</mark>
+          : p
+      )}
+    </>
+  );
+}
+
+/* ── Skeleton card ─────────────────────────────────────────────────────── */
 
 function SkeletonCard() {
   return (
     <div className="w-full" style={{ aspectRatio: '2/3' }}>
-      <div className="w-full h-full rounded-lg bg-white/[0.06] overflow-hidden relative">
+      <div className="w-full h-full rounded-lg overflow-hidden relative" style={{ background: 'rgba(255,255,255,0.06)' }}>
         <div
           className="absolute inset-0"
           style={{
-            background: 'linear-gradient(90deg, transparent, rgba(255,255,255,0.05) 50%, transparent)',
+            background: 'linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.05) 50%, transparent 100%)',
             animation: 'shimmer 1.8s ease-in-out infinite',
           }}
         />
@@ -29,45 +87,72 @@ function SkeletonCard() {
   );
 }
 
-export default function SearchOverlay({ open, onClose }: { open: boolean; onClose: () => void }) {
-  const [query,   setQuery]   = useState('');
-  const [results, setResults] = useState<any[]>([]);
-  const [loading, setLoading] = useState(false);
+/* ── Main component ─────────────────────────────────────────────────────── */
+
+interface Props { open: boolean; onClose: () => void; }
+
+export default function SearchOverlay({ open, onClose }: Props) {
+  const [query,       setQuery]       = useState('');
+  const [activeTab,   setActiveTab]   = useState('all');
+  const [allResults,  setAllResults]  = useState<any[]>([]);
+  const [suggestions, setSuggestions] = useState<any[]>([]);
+  const [loading,     setLoading]     = useState(false);
+  const [showSuggs,   setShowSuggs]   = useState(false);  // suggestions dropdown visible
+  const [recentSearches, setRecentSearches] = useState<string[]>([]);
 
   const inputRef    = useRef<HTMLInputElement>(null);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const abortRef    = useRef<AbortController | null>(null);
-  const nav = useNavigate();
+  const nav         = useNavigate();
 
-  // Focus input when opened
+  /* Focus on open */
   useEffect(() => {
     if (!open) return;
+    setRecentSearches(getRecent());
     const t = setTimeout(() => inputRef.current?.focus(), 80);
     return () => clearTimeout(t);
   }, [open]);
 
-  // Reset on close
+  /* Reset everything on close */
   useEffect(() => {
-    if (!open) { setQuery(''); setResults([]); setLoading(false); }
+    if (open) return;
+    setQuery('');
+    setAllResults([]);
+    setSuggestions([]);
+    setLoading(false);
+    setShowSuggs(false);
+    setActiveTab('all');
+    if (debounceRef.current) clearTimeout(debounceRef.current);
+    if (abortRef.current) abortRef.current.abort();
   }, [open]);
 
-  // ESC to close
+  /* ESC to close */
   useEffect(() => {
     const h = (e: KeyboardEvent) => { if (e.key === 'Escape' && open) onClose(); };
     window.addEventListener('keydown', h);
     return () => window.removeEventListener('keydown', h);
   }, [open, onClose]);
 
+  /* Core search function — calls API, updates suggestions + full results */
   const doSearch = useCallback((q: string) => {
     if (abortRef.current) abortRef.current.abort();
-    if (!q.trim() || q.trim().length < 2) { setResults([]); setLoading(false); return; }
+    if (!q.trim() || q.trim().length < 2) {
+      setAllResults([]);
+      setSuggestions([]);
+      setLoading(false);
+      setShowSuggs(false);
+      return;
+    }
     setLoading(true);
+    setShowSuggs(true);
     const ctrl = new AbortController();
     abortRef.current = ctrl;
     api.titles.liveSearch(q.trim(), ctrl.signal)
       .then((res: any) => {
         if (ctrl.signal.aborted) return;
-        setResults((res.local || []).slice(0, 12));
+        const local: any[] = res.local || [];
+        setAllResults(local);
+        setSuggestions(local.slice(0, 8));
         setLoading(false);
       })
       .catch((err: any) => {
@@ -76,194 +161,358 @@ export default function SearchOverlay({ open, onClose }: { open: boolean; onClos
       });
   }, []);
 
-  const handleChange = (val: string) => {
+  /* Debounced input handler — 150 ms */
+  const handleChange = useCallback((val: string) => {
     setQuery(val);
     if (debounceRef.current) clearTimeout(debounceRef.current);
-    debounceRef.current = setTimeout(() => doSearch(val), 300);
-  };
+    debounceRef.current = setTimeout(() => doSearch(val), 150);
+  }, [doSearch]);
 
-  const goToSearch = useCallback((q: string) => {
-    if (!q.trim()) return;
-    nav(`/search?q=${encodeURIComponent(q.trim())}`);
+  /* Dismiss suggestions and show full results grid */
+  const showResults = useCallback(() => setShowSuggs(false), []);
+
+  /* Save term to recent + update state */
+  const persistRecent = useCallback((term: string) => {
+    saveRecent(term);
+    setRecentSearches(getRecent());
+  }, []);
+
+  /* Click on a suggestion → navigate to title */
+  const handleSuggestionClick = useCallback((item: any) => {
+    persistRecent(item.name);
     onClose();
-  }, [nav, onClose]);
+    nav(`/title/${item.id}`);
+  }, [persistRecent, onClose, nav]);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  /* Click recent/trending chip → fill query and search */
+  const handleChipClick = useCallback((term: string) => {
+    setQuery(term);
+    setShowSuggs(false);
+    persistRecent(term);
+    doSearch(term);
+  }, [doSearch, persistRecent]);
+
+  /* Form submit → navigate to dedicated /search page */
+  const handleSubmit = useCallback((e: React.FormEvent) => {
     e.preventDefault();
-    goToSearch(query);
-  };
+    if (!query.trim()) return;
+    persistRecent(query.trim());
+    nav(`/search?q=${encodeURIComponent(query.trim())}`);
+    onClose();
+  }, [query, persistRecent, nav, onClose]);
 
-  const hasQuery   = query.trim().length > 0;
-  const showResult = hasQuery && (loading || results.length > 0);
-  const showEmpty  = hasQuery && !loading && results.length === 0 && query.trim().length >= 2;
+  /* Clear input */
+  const handleClear = useCallback(() => {
+    setQuery('');
+    setAllResults([]);
+    setSuggestions([]);
+    setShowSuggs(false);
+    if (debounceRef.current) clearTimeout(debounceRef.current);
+    if (abortRef.current) abortRef.current.abort();
+    inputRef.current?.focus();
+  }, []);
+
+  /* Clear recent searches */
+  const handleClearRecent = useCallback(() => {
+    clearRecentStorage();
+    setRecentSearches([]);
+  }, []);
+
+  /* useMemo: tab-filtered results — no recompute on unrelated state */
+  const filteredResults = useMemo(() => {
+    if (activeTab === 'all') return allResults;
+    return allResults.filter(item => item.type === activeTab);
+  }, [allResults, activeTab]);
+
+  /* useMemo: per-tab counts */
+  const tabCounts = useMemo(() => {
+    const counts: Record<string, number> = { all: allResults.length };
+    for (const item of allResults) {
+      counts[item.type] = (counts[item.type] || 0) + 1;
+    }
+    return counts;
+  }, [allResults]);
+
+  const hasQuery  = query.trim().length > 0;
+  const showGrid  = hasQuery && !showSuggs;
+  const showIdle  = !hasQuery;
+
+  if (!open) return null;
 
   return (
-    <AnimatePresence>
-      {open && (
-        <m.div
-          key="overlay"
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          exit={{ opacity: 0 }}
-          transition={{ duration: 0.15 }}
-          className="fixed inset-0 z-[100] flex flex-col overflow-hidden"
-          style={{
-            background: 'rgba(10,10,10,0.97)',
-            backdropFilter: 'blur(20px)',
-            WebkitBackdropFilter: 'blur(20px)',
-          }}
+    <m.div
+      key="search-overlay"
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      transition={{ duration: 0.15 }}
+      className="fixed inset-0 z-[100] overflow-y-auto"
+      style={{
+        background: 'rgba(10,10,10,0.97)',
+        backdropFilter: 'blur(20px)',
+        WebkitBackdropFilter: 'blur(20px)',
+      }}
+      onClick={onClose}
+    >
+      {/* Inner container — stops propagation so clicking content doesn't close */}
+      <div
+        className="max-w-[900px] mx-auto px-4 pt-6 pb-24"
+        onClick={e => e.stopPropagation()}
+      >
+
+        {/* ── Search bar ──────────────────────────────────────────────── */}
+        <form
+          onSubmit={handleSubmit}
+          className="
+            flex items-center gap-3 px-4 py-3.5 rounded-2xl sticky top-4 z-10
+            border border-white/[0.12] bg-white/[0.06]
+            focus-within:border-white/[0.25] focus-within:bg-white/[0.08]
+            transition-[border-color,background-color] duration-200
+            shadow-[0_8px_32px_rgba(0,0,0,0.6)]
+          "
         >
-          {/* ── Search bar ──────────────────────────────────────── */}
-          <m.div
-            initial={{ opacity: 0, y: -10 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -6 }}
-            transition={{ duration: 0.2, ease: [0.16, 1, 0.3, 1] }}
-            className="flex-none px-4 md:px-8 pt-6 md:pt-10 pb-4"
+          <Search size={18} className="shrink-0 text-white/40" />
+          <input
+            ref={inputRef}
+            type="text"
+            value={query}
+            onChange={e => handleChange(e.target.value)}
+            placeholder="Search movies, series, anime..."
+            className="flex-1 bg-transparent border-none outline-none text-white text-[17px] placeholder:text-white/30"
+            autoComplete="off"
+            spellCheck={false}
+          />
+          {hasQuery && (
+            <button
+              type="button"
+              onClick={handleClear}
+              className="text-white/35 hover:text-white/70 transition-colors text-[22px] leading-none"
+              aria-label="Clear"
+            >×</button>
+          )}
+          <button
+            type="button"
+            onClick={onClose}
+            className="
+              shrink-0 px-3 py-1.5 rounded-lg text-sm
+              bg-white/[0.06] border border-white/[0.08] text-white/50
+              hover:bg-white/[0.10] hover:text-white transition-colors
+            "
           >
-            <form onSubmit={handleSubmit} className="flex items-center gap-3">
-              <div className="
-                flex-1 flex items-center gap-3 px-4 py-4 rounded-2xl
-                border border-white/[0.12] bg-white/[0.06]
-                focus-within:border-white/[0.25] focus-within:bg-white/[0.08]
-                transition-[border-color,background-color] duration-200
-                shadow-[0_8px_32px_rgba(0,0,0,0.5)]
-              ">
-                <Search size={18} className="shrink-0 text-white/40" />
-                <input
-                  ref={inputRef}
-                  type="text"
-                  value={query}
-                  onChange={e => handleChange(e.target.value)}
-                  placeholder="Search movies, series, anime..."
-                  className="flex-1 bg-transparent border-none outline-none text-white text-[17px] placeholder:text-white/28"
-                  autoComplete="off"
-                  spellCheck={false}
-                />
-                {hasQuery && (
-                  <button
-                    type="button"
-                    onClick={() => { setQuery(''); setResults([]); inputRef.current?.focus(); }}
-                    className="text-white/35 hover:text-white/70 transition-colors"
-                    aria-label="Clear"
-                  >
-                    <X size={16} />
-                  </button>
-                )}
+            <span className="hidden sm:block">Close</span>
+            <X size={14} className="sm:hidden" />
+          </button>
+        </form>
+
+        {/* ── Suggestions dropdown ─────────────────────────────────────── */}
+        <AnimatePresence>
+          {showSuggs && hasQuery && (
+            <m.div
+              initial={{ opacity: 0, y: -6 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -4 }}
+              transition={{ duration: 0.15 }}
+              className="mt-2 rounded-2xl overflow-hidden border border-white/[0.08]"
+              style={{ background: 'rgba(20,20,20,0.98)' }}
+            >
+              {loading && (
+                <div className="py-4 text-center text-white/35 text-sm">Searching…</div>
+              )}
+
+              {!loading && suggestions.length === 0 && query.trim().length >= 2 && (
+                <div className="py-4 text-center text-white/35 text-sm">No results for "{query}"</div>
+              )}
+
+              {!loading && suggestions.map(item => (
+                <button
+                  key={item.id}
+                  type="button"
+                  onClick={() => handleSuggestionClick(item)}
+                  className="w-full flex items-center gap-3 px-4 py-3 hover:bg-white/[0.05] transition-colors text-left"
+                >
+                  <img
+                    src={item.posterUrl}
+                    alt=""
+                    className="w-10 rounded object-cover shrink-0 bg-white/10"
+                    style={{ height: 56 }}
+                    onError={e => { (e.target as HTMLImageElement).style.visibility = 'hidden'; }}
+                  />
+                  <div className="flex-1 min-w-0">
+                    <div className="text-white text-[15px] font-medium truncate">
+                      <HighlightMatch text={item.name} query={query} />
+                    </div>
+                    <div className="text-white/45 text-[13px] mt-0.5">
+                      {TYPE_LABEL[item.type] ?? item.type}
+                      {item.year ? ` • ${item.year}` : ''}
+                    </div>
+                  </div>
+                </button>
+              ))}
+
+              {!loading && suggestions.length > 0 && (
+                <button
+                  type="button"
+                  onClick={showResults}
+                  className="w-full py-3 text-sm text-white/40 hover:text-white hover:bg-white/[0.04] transition-colors border-t border-white/[0.06] text-center"
+                >
+                  See all results for "<span className="text-white/70">{query}</span>"
+                </button>
+              )}
+            </m.div>
+          )}
+        </AnimatePresence>
+
+        {/* ── Tabs (only when showing results grid) ────────────────────── */}
+        {showGrid && !loading && allResults.length > 0 && (
+          <div className="flex gap-2 mt-5 pb-3 border-b border-white/[0.05] overflow-x-auto"
+            style={{ scrollbarWidth: 'none' }}>
+            {TABS.map(({ label, value }) => {
+              const count = value === 'all' ? tabCounts.all : (tabCounts[value] || 0);
+              return (
+                <button
+                  key={value}
+                  type="button"
+                  onClick={() => setActiveTab(value)}
+                  className={`
+                    px-5 py-2 rounded-full text-sm border whitespace-nowrap
+                    transition-all duration-150 shrink-0
+                    ${activeTab === value
+                      ? 'bg-white text-black border-white font-medium'
+                      : 'bg-transparent text-white/50 border-white/[0.10] hover:border-white/[0.22] hover:text-white'
+                    }
+                  `}
+                >
+                  {label}{count > 0 ? ` (${count})` : ''}
+                </button>
+              );
+            })}
+          </div>
+        )}
+
+        {/* ── Results grid ─────────────────────────────────────────────── */}
+        {showGrid && (
+          <div className="mt-5">
+            {loading ? (
+              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
+                {Array(8).fill(null).map((_, i) => <SkeletonCard key={i} />)}
               </div>
-              <button
-                type="button"
-                onClick={onClose}
-                className="
-                  shrink-0 w-12 h-12 flex items-center justify-center rounded-xl
-                  bg-white/[0.06] border border-white/[0.08] text-white/50
-                  hover:bg-white/[0.10] hover:text-white
-                  transition-[background-color,color] duration-150
-                "
-                aria-label="Close"
-              >
-                <span className="hidden sm:block text-[10px] font-mono">ESC</span>
-                <X size={16} className="sm:hidden" />
-              </button>
-            </form>
-          </m.div>
-
-          {/* ── Body ────────────────────────────────────────────── */}
-          <div className="flex-1 overflow-y-auto overscroll-contain px-4 md:px-8 pb-8">
-
-            {/* Suggestions (idle state) */}
-            {!hasQuery && (
-              <m.div
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                transition={{ delay: 0.05 }}
-              >
-                <p className="text-[11px] uppercase tracking-wider text-white/30 font-mono mb-3">Browse by genre</p>
-                <div className="flex flex-wrap gap-2">
-                  {SUGGESTIONS.map(s => (
-                    <button
-                      key={s}
-                      onClick={() => { setQuery(s); doSearch(s); }}
-                      className="
-                        px-3.5 py-2 rounded-full border border-white/[0.09] bg-white/[0.04]
-                        text-sm text-white/55
-                        hover:border-white/[0.22] hover:bg-white/[0.08] hover:text-white
-                        transition-[border-color,background-color,color] duration-150
-                      "
-                    >
-                      {s}
-                    </button>
-                  ))}
-                </div>
-              </m.div>
-            )}
-
-            {/* Loading */}
-            {loading && (
-              <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 gap-3">
-                {Array.from({ length: 12 }).map((_, i) => <SkeletonCard key={i} />)}
-              </div>
-            )}
-
-            {/* Results */}
-            {showResult && !loading && results.length > 0 && (
+            ) : filteredResults.length > 0 ? (
               <>
-                <div className="flex items-center justify-between mb-4">
-                  <p className="text-sm text-white/35">
-                    <span className="text-white font-medium">{results.length}</span> results
-                  </p>
-                  <button
-                    onClick={() => goToSearch(query)}
-                    className="flex items-center gap-1.5 text-xs text-white/40 hover:text-white/75 transition-colors"
-                  >
-                    See all results <ArrowRight size={12} />
-                  </button>
-                </div>
-                <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 gap-3">
-                  {results.map(t => (
+                <p className="text-sm text-white/35 mb-4">
+                  <span className="text-white font-medium">{filteredResults.length}</span>
+                  {' '}result{filteredResults.length !== 1 ? 's' : ''}
+                  {' '}for "<span className="text-white/55 italic">{query}</span>"
+                </p>
+                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
+                  {filteredResults.map(t => (
                     <div key={t.id} onClick={onClose}>
                       <ContentCard title={t} fluid highlightQuery={query || undefined} />
                     </div>
                   ))}
                 </div>
-                <div className="mt-6 text-center">
-                  <button
-                    onClick={() => goToSearch(query)}
-                    className="
-                      inline-flex items-center gap-2 px-5 py-2.5 rounded-full
-                      border border-white/[0.10] bg-white/[0.04] text-sm text-white/55
-                      hover:border-white/[0.22] hover:bg-white/[0.08] hover:text-white
-                      transition-[border-color,background-color,color] duration-150
-                    "
-                  >
-                    See all results for "{query}" <ArrowRight size={13} />
-                  </button>
-                </div>
               </>
-            )}
-
-            {/* Empty state */}
-            {showEmpty && (
-              <m.div
-                initial={{ opacity: 0, y: 8 }}
-                animate={{ opacity: 1, y: 0 }}
-                className="flex flex-col items-center py-16 text-center"
-              >
-                <div className="w-14 h-14 rounded-2xl bg-white/[0.04] border border-white/[0.07] flex items-center justify-center mb-4">
+            ) : allResults.length > 0 ? (
+              /* Tab has 0 results but other tabs do */
+              <div className="text-center py-16">
+                <p className="text-base font-semibold text-white/60 mb-2">
+                  No {TABS.find(t => t.value === activeTab)?.label} results for "{query}"
+                </p>
+                <button
+                  type="button"
+                  onClick={() => setActiveTab('all')}
+                  className="mt-3 text-sm text-white/45 underline underline-offset-4 hover:text-white transition-colors"
+                >
+                  Show all results
+                </button>
+              </div>
+            ) : (
+              /* No results at all */
+              <div className="flex flex-col items-center py-20 text-center">
+                <div className="w-14 h-14 rounded-2xl flex items-center justify-center mb-4 border border-white/[0.07]"
+                  style={{ background: 'rgba(255,255,255,0.04)' }}>
                   <Search size={22} className="text-white/20" />
                 </div>
                 <p className="text-base font-semibold text-white/70 mb-1.5">No results for "{query}"</p>
-                <p className="text-sm text-white/35">Try different keywords</p>
-              </m.div>
-            )}
-
-            {/* Short query hint */}
-            {hasQuery && query.trim().length === 1 && (
-              <p className="text-center text-sm text-white/28 py-8">Keep typing…</p>
+                <p className="text-sm text-white/35">Try different keywords or check your spelling</p>
+              </div>
             )}
           </div>
-        </m.div>
-      )}
-    </AnimatePresence>
+        )}
+
+        {/* Short query hint */}
+        {hasQuery && query.trim().length === 1 && (
+          <p className="text-center text-sm text-white/30 py-8">Keep typing…</p>
+        )}
+
+        {/* ── Idle state — recent + trending ───────────────────────────── */}
+        {showIdle && (
+          <div className="mt-8 space-y-8">
+
+            {/* Recent searches */}
+            {recentSearches.length > 0 && (
+              <div>
+                <div className="flex items-center justify-between mb-3">
+                  <h3 className="text-white text-[15px] font-semibold flex items-center gap-2">
+                    <Clock size={15} className="text-white/40" /> Recent Searches
+                  </h3>
+                  <button
+                    type="button"
+                    onClick={handleClearRecent}
+                    className="text-[13px] text-red-500 hover:text-red-400 transition-colors"
+                  >
+                    Clear
+                  </button>
+                </div>
+                <div className="flex flex-wrap gap-2">
+                  {recentSearches.map((term, i) => (
+                    <button
+                      key={i}
+                      type="button"
+                      onClick={() => handleChipClick(term)}
+                      className="
+                        flex items-center gap-2 px-4 py-2.5 rounded-full text-sm
+                        border border-white/[0.10] bg-white/[0.03] text-white/55
+                        hover:bg-white/[0.08] hover:text-white hover:border-white/[0.20]
+                        transition-all duration-150
+                      "
+                    >
+                      <Search size={12} className="shrink-0 text-white/30" />
+                      {term}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Trending */}
+            <div>
+              <h3 className="text-white text-[15px] font-semibold flex items-center gap-2 mb-3">
+                <TrendingUp size={15} className="text-white/40" /> Trending Now
+              </h3>
+              <div className="flex flex-wrap gap-2">
+                {TRENDING_TERMS.map((term, i) => (
+                  <button
+                    key={i}
+                    type="button"
+                    onClick={() => handleChipClick(term)}
+                    className="
+                      flex items-center gap-2 px-4 py-2.5 rounded-full text-sm
+                      border border-white/[0.10] bg-white/[0.03] text-white/55
+                      hover:bg-white/[0.08] hover:text-white hover:border-white/[0.20]
+                      transition-all duration-150
+                    "
+                  >
+                    <span className="text-red-500 font-bold text-[11px]">{i + 1}</span>
+                    {term}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+          </div>
+        )}
+
+      </div>
+    </m.div>
   );
 }
