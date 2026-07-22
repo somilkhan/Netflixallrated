@@ -27,3 +27,8 @@ export function createSupabaseClient(supabaseUrl: string, supabaseAnonKey: strin
   }
   return _client;
 }
+
+/** Return the configured singleton for API calls that need the current session. */
+export function getSupabaseClient(): SupabaseClient | null {
+  return _client;
+}

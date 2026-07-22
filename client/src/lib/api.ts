@@ -1,3 +1,5 @@
+import { getSupabaseClient } from './supabase';
+
 const API_URL = (import.meta as any).env?.VITE_API_URL || '/api';
 
 const inflight = new Map<string, Promise<any>>();
@@ -23,7 +25,10 @@ function cachedFetcher(cacheKey: string, ttl: number, fetcher: () => Promise<any
 }
 
 async function fetcher(path: string, options?: RequestInit) {
-  const token = localStorage.getItem('token');
+  // Auth is managed by Supabase. Do not read or write access tokens from
+  // localStorage; the Supabase client owns the persisted session securely.
+  const { data: { session } } = await getSupabaseClient()?.auth.getSession() ?? { data: { session: null } };
+  const token = session?.access_token ?? null;
   const method = (options?.method || 'GET').toUpperCase();
   const dedupeKey = method === 'GET' ? `${token || 'anon'}::${path}` : null;
 

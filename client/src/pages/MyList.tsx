@@ -101,6 +101,8 @@ export default function MyList() {
     try {
       await api.watchlist.delete(item.id);
       setItems(current => current.filter(entry => entry.id !== item.id));
+    } catch {
+      setError(true);
     } finally {
       setRemoving(null);
     }
