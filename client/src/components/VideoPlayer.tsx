@@ -9,7 +9,8 @@ import Hls from 'hls.js';
 import {
   RefreshCw, ExternalLink, X, SkipBack, SkipForward,
   Play, Pause, Volume2, VolumeX, Maximize, Minimize,
-  ChevronLeft, ChevronRight,
+  ChevronLeft, ChevronRight, Settings, Cast, Airplay,
+  PictureInPicture2, Check,
 } from 'lucide-react';
 import { SERVERS } from '../lib/servers';
 export type { Server } from '../lib/servers';
@@ -39,9 +40,15 @@ function fmtTime(s: number): string {
 export function FebBoxPlayer({
   streams,
   iframeKey,
+  titleId,
+  isSeries = false,
+  onNextEpisode,
 }: {
   streams: FebboxStream[];
   iframeKey: number;
+  titleId?: string;
+  isSeries?: boolean;
+  onNextEpisode?: () => void;
 }) {
   const videoRef   = useRef<HTMLVideoElement>(null);
   const hlsRef     = useRef<Hls | null>(null);
@@ -67,7 +74,17 @@ export function FebBoxPlayer({
   const [showCtrl,     setShowCtrl]     = useState(true);
   const [seekFlash,    setSeekFlash]    = useState<'left' | 'right' | null>(null);
   const [showPlayPause, setShowPlayPause] = useState(false);
+  const [showSettings, setShowSettings] = useState(false);
+  const [settingsTab, setSettingsTab] = useState<'playback' | 'audio' | 'subtitles'>('playback');
+  const [playbackRate, setPlaybackRate] = useState(1);
+  const [subtitleSize, setSubtitleSize] = useState(100);
+  const [subtitleColor, setSubtitleColor] = useState('#ffffff');
+  const [subtitleOpacity, setSubtitleOpacity] = useState(70);
+  const [castMessage, setCastMessage] = useState<string | null>(null);
+  const [nextCountdown, setNextCountdown] = useState<number | null>(null);
+  const [stillWatching, setStillWatching] = useState(false);
   const playPauseTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const nextTimer = useRef<ReturnType<typeof setInterval> | null>(null);
 
   // ── Attach HLS / direct source ───────────────────────────────────────────
   useEffect(() => {
@@ -81,6 +98,8 @@ export function FebBoxPlayer({
     setPlaying(false);
     setCurrentTime(0);
     setDuration(0);
+    setNextCountdown(null);
+    setStillWatching(false);
 
     const src = streams[qualityIdx]?.url ?? streams[0].url;
     const isHLS = src.includes('.m3u8') || src.includes('/hls/');
@@ -111,6 +130,68 @@ export function FebBoxPlayer({
       hlsRef.current = null;
     };
   }, [streams, qualityIdx, iframeKey]);
+
+  // When the user scrolls away from an actively playing native video, ask the
+  // browser to keep playback visible in its floating picture-in-picture window.
+  useEffect(() => {
+    const onScroll = () => {
+      const video = videoRef.current as (HTMLVideoElement & {
+        requestPictureInPicture?: () => Promise<PictureInPictureWindow>;
+      }) | null;
+      if (
+        !video ||
+        video.paused ||
+        document.fullscreenElement ||
+        document.pictureInPictureElement ||
+        window.scrollY < 240 ||
+        !video.requestPictureInPicture
+      ) return;
+      video.requestPictureInPicture().catch(() => {});
+    };
+    window.addEventListener('scroll', onScroll, { passive: true });
+    return () => window.removeEventListener('scroll', onScroll);
+  }, []);
+
+  useEffect(() => {
+    const video = videoRef.current;
+    if (!video) return;
+    const onEnded = () => {
+      if (!isSeries || !onNextEpisode) return;
+      const key = `allrated_episode_count_${titleId ?? 'unknown'}`;
+      const count = Number(sessionStorage.getItem(key) ?? '0') + 1;
+      sessionStorage.setItem(key, String(count));
+      if (count > 0 && count % 3 === 0) {
+        setStillWatching(true);
+        return;
+      }
+      setNextCountdown(5);
+    };
+    video.addEventListener('ended', onEnded);
+    return () => video.removeEventListener('ended', onEnded);
+  }, [isSeries, onNextEpisode, titleId]);
+
+  useEffect(() => () => {
+    if (nextTimer.current) clearInterval(nextTimer.current);
+  }, []);
+
+  useEffect(() => {
+    if (nextCountdown === null) return;
+    if (nextTimer.current) clearInterval(nextTimer.current);
+    nextTimer.current = setInterval(() => {
+      setNextCountdown(value => {
+        if (value === null || value <= 1) {
+          if (nextTimer.current) clearInterval(nextTimer.current);
+          if (value !== null && value <= 1) onNextEpisode?.();
+          return null;
+        }
+        return value - 1;
+      });
+    }, 1000);
+    return () => {
+      if (nextTimer.current) clearInterval(nextTimer.current);
+      nextTimer.current = null;
+    };
+  }, [nextCountdown, onNextEpisode]);
 
   // ── Video event listeners ────────────────────────────────────────────────
   useEffect(() => {
@@ -204,6 +285,49 @@ export function FebBoxPlayer({
     else document.exitFullscreen?.();
   }, []);
 
+  const setRate = useCallback((rate: number) => {
+    setPlaybackRate(rate);
+    if (videoRef.current) videoRef.current.playbackRate = rate;
+  }, []);
+
+  const requestPip = useCallback(async () => {
+    const video = videoRef.current as (HTMLVideoElement & {
+      requestPictureInPicture?: () => Promise<PictureInPictureWindow>;
+      webkitSetPresentationMode?: (mode: string) => void;
+    }) | null;
+    if (!video) return;
+    try {
+      if (document.pictureInPictureElement) {
+        await document.exitPictureInPicture();
+      } else if (video.requestPictureInPicture) {
+        await video.requestPictureInPicture();
+      } else if (video.webkitSetPresentationMode) {
+        video.webkitSetPresentationMode('picture-in-picture');
+      } else {
+        setCastMessage('Picture-in-picture is not supported in this browser');
+        return;
+      }
+    } catch {
+      setCastMessage('Picture-in-picture was blocked by the browser');
+    }
+  }, []);
+
+  const requestCast = useCallback(async () => {
+    const video = videoRef.current as HTMLVideoElement & { remote?: { prompt?: () => Promise<void> } };
+    try {
+      if (video?.remote?.prompt) await video.remote.prompt();
+      else setCastMessage('Cast device selection is unavailable in this browser');
+    } catch {
+      setCastMessage('No cast device was selected');
+    }
+  }, []);
+
+  const requestAirplay = useCallback(() => {
+    const video = videoRef.current as HTMLVideoElement & { webkitShowPlaybackTargetPicker?: () => void };
+    if (video?.webkitShowPlaybackTargetPicker) video.webkitShowPlaybackTargetPicker();
+    else setCastMessage('AirPlay is available on supported Apple devices');
+  }, []);
+
   // ── Keyboard shortcuts ───────────────────────────────────────────────────
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
@@ -234,6 +358,9 @@ export function FebBoxPlayer({
           e.preventDefault(); toggleFullscreen(); break;
         case 'm': case 'M':
           e.preventDefault(); toggleMute(); break;
+        case 'Escape':
+          if (document.fullscreenElement) document.exitFullscreen?.();
+          break;
       }
     };
     window.addEventListener('keydown', handler);
@@ -368,6 +495,7 @@ export function FebBoxPlayer({
         ref={videoRef}
         className="w-full h-full object-contain"
         playsInline
+        crossOrigin="anonymous"
       />
 
       {/* ── Center play/pause flash ─────────────────────────────────────── */}
@@ -441,6 +569,36 @@ export function FebBoxPlayer({
         </div>
       )}
 
+      {castMessage && (
+        <button
+          type="button"
+          onClick={() => setCastMessage(null)}
+          className="absolute top-14 left-1/2 z-40 -translate-x-1/2 rounded-lg border border-white/10 bg-black/85 px-3 py-2 text-xs text-white/80 shadow-xl"
+        >
+          {castMessage}
+        </button>
+      )}
+
+      {nextCountdown !== null && (
+        <div className="absolute inset-x-0 bottom-20 z-40 mx-auto flex max-w-sm flex-col items-center gap-3 rounded-2xl border border-white/10 bg-black/90 p-5 text-center shadow-2xl">
+          <p className="text-sm font-semibold text-white">Next episode in {nextCountdown}s</p>
+          <div className="flex gap-2">
+            <button type="button" onClick={() => { setNextCountdown(null); onNextEpisode?.(); }} className="rounded-lg bg-white px-3 py-2 text-xs font-semibold text-black">Play next</button>
+            <button type="button" onClick={() => setNextCountdown(null)} className="rounded-lg border border-white/15 px-3 py-2 text-xs text-white/70">Cancel</button>
+          </div>
+        </div>
+      )}
+
+      {stillWatching && (
+        <div className="absolute inset-0 z-40 flex items-center justify-center bg-black/65 p-6">
+          <div className="w-full max-w-sm rounded-2xl border border-white/10 bg-[#171717] p-6 text-center shadow-2xl">
+            <p className="text-base font-semibold text-white">Are you still watching?</p>
+            <p className="mt-2 text-xs text-white/45">You’ve watched three episodes in a row.</p>
+            <button type="button" onClick={() => { setStillWatching(false); setNextCountdown(5); }} className="mt-5 rounded-lg bg-white px-4 py-2 text-xs font-semibold text-black">Continue watching</button>
+          </div>
+        </div>
+      )}
+
       {/* ── Custom controls overlay ─────────────────────────────────────── */}
       <div
         className="absolute inset-0 z-10 flex flex-col justify-end transition-opacity duration-300"
@@ -451,6 +609,45 @@ export function FebBoxPlayer({
         }}
         onClick={e => e.stopPropagation()}
       >
+          {showSettings && (
+            <div
+              className="absolute bottom-16 right-3 z-50 w-72 rounded-xl border border-white/10 bg-[#171717]/[.98] p-3 shadow-2xl"
+              onClick={e => e.stopPropagation()}
+            >
+              <div className="mb-3 flex items-center justify-between">
+                <p className="text-xs font-semibold text-white">Playback settings</p>
+                <button type="button" onClick={() => setShowSettings(false)} className="text-white/45 hover:text-white"><X size={14} /></button>
+              </div>
+              <div className="mb-3 grid grid-cols-3 gap-1 rounded-lg bg-white/[.04] p-1">
+                {([['playback', 'Speed'], ['audio', 'Audio'], ['subtitles', 'Subtitles']] as const).map(([tab, label]) => (
+                  <button key={tab} type="button" onClick={() => setSettingsTab(tab)} className={`rounded-md px-1 py-1.5 text-[10px] ${settingsTab === tab ? 'bg-white/10 text-white' : 'text-white/45'}`}>{label}</button>
+                ))}
+              </div>
+              {settingsTab === 'playback' && (
+                <div className="grid grid-cols-3 gap-1.5">
+                  {[0.5, 0.75, 1, 1.25, 1.5, 2].map(rate => (
+                    <button key={rate} type="button" onClick={() => setRate(rate)} className={`rounded-md border px-2 py-2 text-xs ${playbackRate === rate ? 'border-white/40 bg-white/10 text-white' : 'border-white/10 text-white/55'}`}>{rate}x {playbackRate === rate && <Check size={11} className="ml-1 inline" />}</button>
+                  ))}
+                </div>
+              )}
+              {settingsTab === 'audio' && (
+                <label className="flex items-center justify-between text-xs text-white/60">
+                  Audio track
+                  <select className="rounded-md border border-white/10 bg-black px-2 py-1 text-xs text-white" defaultValue="auto">
+                    <option value="auto">Auto</option><option value="original">Original</option><option value=" dubbed">Dubbed</option>
+                  </select>
+                </label>
+              )}
+              {settingsTab === 'subtitles' && (
+                <div className="space-y-3 text-xs text-white/60">
+                  <label className="flex items-center justify-between">Size <input aria-label="Subtitle size" type="range" min="75" max="150" value={subtitleSize} onChange={e => setSubtitleSize(Number(e.target.value))} /></label>
+                  <label className="flex items-center justify-between">Color <input aria-label="Subtitle color" type="color" value={subtitleColor} onChange={e => setSubtitleColor(e.target.value)} /></label>
+                  <label className="flex items-center justify-between">Background <input aria-label="Subtitle background opacity" type="range" min="0" max="100" value={subtitleOpacity} onChange={e => setSubtitleOpacity(Number(e.target.value))} /></label>
+                  <p className="rounded-md bg-black/60 p-2 text-center" style={{ color: subtitleColor, opacity: 0.5 + subtitleOpacity / 200, fontSize: `${subtitleSize}%` }}>Subtitle preview</p>
+                </div>
+              )}
+            </div>
+          )}
         {/* Progress bar */}
         <div className="px-4 pb-1">
           <div
@@ -498,6 +695,19 @@ export function FebBoxPlayer({
             className="flex items-center justify-center w-9 h-9 rounded-full hover:bg-white/10 text-white/80 hover:text-white transition-colors"
           >
             <SkipBack size={16} />
+          </button>
+
+          <button type="button" onClick={requestPip} aria-label="Picture in picture" title="Picture in picture" className="flex h-8 w-8 items-center justify-center rounded-full text-white/70 hover:bg-white/10 hover:text-white">
+            <PictureInPicture2 size={15} />
+          </button>
+          <button type="button" onClick={requestCast} aria-label="Cast to device" title="Cast to device" className="flex h-8 w-8 items-center justify-center rounded-full text-white/70 hover:bg-white/10 hover:text-white">
+            <Cast size={15} />
+          </button>
+          <button type="button" onClick={requestAirplay} aria-label="AirPlay" title="AirPlay" className="flex h-8 w-8 items-center justify-center rounded-full text-white/70 hover:bg-white/10 hover:text-white">
+            <Airplay size={15} />
+          </button>
+          <button type="button" onClick={() => setShowSettings(v => !v)} aria-label="Playback settings" title="Playback settings" className={`flex h-8 w-8 items-center justify-center rounded-full hover:bg-white/10 hover:text-white ${showSettings ? 'text-white' : 'text-white/70'}`}>
+            <Settings size={15} />
           </button>
 
           {/* Play/Pause */}
@@ -599,6 +809,7 @@ export default function VideoPlayer({
   onAnimeNext,
 }: VideoPlayerProps) {
   const showFebboxNative = serverId === 'febbox' && febboxStreams.length > 0;
+  const [deviceModal, setDeviceModal] = useState<'cast' | 'airplay' | null>(null);
   if (!playerOpen || (!embedUrl && !showFebboxNative)) return null;
 
   return (
@@ -650,6 +861,24 @@ export default function VideoPlayer({
 
         {/* Action buttons */}
         <div className="flex items-center gap-1.5 shrink-0">
+          <button
+            type="button"
+            onClick={() => setDeviceModal('cast')}
+            aria-label="Cast to device"
+            title="Cast to device"
+            className="flex items-center justify-center w-8 h-8 rounded-lg text-white/40 border border-white/[0.08] hover:text-white hover:bg-white/[0.06] transition-colors"
+          >
+            <Cast size={13} />
+          </button>
+          <button
+            type="button"
+            onClick={() => setDeviceModal('airplay')}
+            aria-label="AirPlay"
+            title="AirPlay"
+            className="flex items-center justify-center w-8 h-8 rounded-lg text-white/40 border border-white/[0.08] hover:text-white hover:bg-white/[0.06] transition-colors"
+          >
+            <Airplay size={13} />
+          </button>
           <button
             type="button"
             onClick={() => setIframeKey(k => k + 1)}
@@ -722,10 +951,37 @@ export default function VideoPlayer({
       </div>
 
       {/* ── Player area ─────────────────────────────────────────────────── */}
+      {deviceModal && (
+        <div className="absolute inset-0 z-[60] flex items-center justify-center bg-black/60 p-4" onClick={() => setDeviceModal(null)}>
+          <div className="w-full max-w-sm rounded-2xl border border-white/10 bg-[#171717] p-5 shadow-2xl" onClick={e => e.stopPropagation()}>
+            <div className="mb-4 flex items-center justify-between">
+              <div>
+                <p className="text-sm font-semibold text-white">{deviceModal === 'cast' ? 'Cast to device' : 'AirPlay'}</p>
+                <p className="mt-1 text-xs text-white/45">Choose a device to continue playback.</p>
+              </div>
+              <button type="button" onClick={() => setDeviceModal(null)} className="text-white/45 hover:text-white"><X size={16} /></button>
+            </div>
+            <button type="button" onClick={() => setDeviceModal(null)} className="flex w-full items-center justify-between rounded-xl border border-white/10 bg-white/[.04] px-3 py-3 text-left text-sm text-white/70 hover:bg-white/[.08]">
+              <span>{deviceModal === 'cast' ? 'No devices found' : 'No AirPlay devices found'}</span>
+              <span className="text-xs text-white/30">Scan again</span>
+            </button>
+            <p className="mt-4 text-center text-[11px] text-white/30">Device discovery depends on your browser and local network.</p>
+          </div>
+        </div>
+      )}
       <div className="flex-1 min-h-0 overflow-hidden bg-black flex items-center justify-center">
         <div className="relative player-ratio w-full overflow-hidden">
           {showFebboxNative ? (
-            <FebBoxPlayer streams={febboxStreams} iframeKey={iframeKey} />
+            <FebBoxPlayer
+              streams={febboxStreams}
+              iframeKey={iframeKey}
+              titleId={title.id}
+              isSeries={title.type === 'SERIES'}
+              onNextEpisode={() => {
+                setSelectedEp(ep => ep + 1);
+                setIframeKey(k => k + 1);
+              }}
+            />
           ) : (
             <iframe
               key={`${serverId}-${selectedSeason}-${selectedEp}-${iframeKey}`}
