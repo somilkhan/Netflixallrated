@@ -7,6 +7,23 @@ import { memo, useState, useCallback } from 'react';
 import { Play, Plus, Info, Film, Star } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
+/** Highlight matching substring in title text */
+function HighlightText({ text, query }: { text: string; query: string }) {
+  if (!query.trim()) return <>{text}</>;
+  const escaped = query.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  const regex = new RegExp(`(${escaped})`, 'gi');
+  const parts = text.split(regex);
+  return (
+    <>
+      {parts.map((part, i) =>
+        regex.test(part)
+          ? <mark key={i} style={{ background: 'rgba(255,255,255,0.22)', color: '#fff', borderRadius: 2, padding: '0 1px' }}>{part}</mark>
+          : <span key={i}>{part}</span>
+      )}
+    </>
+  );
+}
+
 export interface ContentCardProps {
   title: any;
   rank?: number;
@@ -18,6 +35,8 @@ export interface ContentCardProps {
   fluid?: boolean;
   /** Override default /title/:id navigation. Called with play=true for the Play button. */
   onNavigate?: (play?: boolean) => void;
+  /** When set, highlights matching text in the visible card title */
+  highlightQuery?: string;
 }
 
 const TYPE_LABEL: Record<string, string> = {
@@ -27,6 +46,7 @@ const TYPE_LABEL: Record<string, string> = {
 const ContentCard = memo(function ContentCard({
   title,
   rank,
+  highlightQuery = '',
   showProgress = false,
   progressSeconds = 0,
   durationSeconds = 0,
@@ -250,7 +270,11 @@ const ContentCard = memo(function ContentCard({
 
       {/* ── Text below poster ──────────────────────────────────────────── */}
       <div className="mt-2 px-0.5">
-        <p className="text-[13px] font-medium text-white leading-tight truncate">{title.name}</p>
+        <p className="text-[13px] font-medium text-white leading-tight truncate">
+          {highlightQuery
+            ? <HighlightText text={title.name} query={highlightQuery} />
+            : title.name}
+        </p>
         <div className="flex items-center gap-1.5 mt-0.5">
           {rating && (
             <span className="flex items-center gap-0.5">

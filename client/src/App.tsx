@@ -108,8 +108,8 @@ export default function App() {
           {/* Persistent bottom player — sits above mobile bottom nav */}
           <BottomPlayer />
 
-          {/* Mobile bottom navigation — Home | Search | Downloads | Profile */}
-          <MobileBottomNav />
+          {/* Mobile bottom navigation — passes openSearch so Search tab opens overlay */}
+          <MobileBottomNav onOpenSearch={openSearch} />
         </div>
       </PlayerProvider>
     </AuthProvider>
