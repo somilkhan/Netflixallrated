@@ -16,8 +16,8 @@ cmds = [
 
 [phases.build]
 cmds = [
-  "cd ../client && npm run build",
-  "npx prisma generate && npm run build"
+  "cd ../client && npm run build && rm -rf node_modules",
+  "npx prisma generate && npm run build && npm prune --production"
 ]
 
 [start]
