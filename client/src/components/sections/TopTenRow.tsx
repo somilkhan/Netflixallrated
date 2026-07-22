@@ -14,6 +14,13 @@ interface TopTenRowProps {
   renderCard?: (item: any, index: number) => React.ReactNode;
 }
 
+/**
+ * Approximate height of the text area below the poster in ContentCard:
+ *   mt-2 (8px) + title (~16px) + rating row (~14px) = ~38px
+ * We add this to `bottom` so the number aligns with the POSTER bottom, not card bottom.
+ */
+const TEXT_AREA_HEIGHT = 42;
+
 const TopTenRow = memo(function TopTenRow({ title, items, viewAllPath, renderCard }: TopTenRowProps) {
   const nav       = useNavigate();
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -91,24 +98,32 @@ const TopTenRow = memo(function TopTenRow({ title, items, viewAllPath, renderCar
           {items.slice(0, 10).map((item, index) => (
             <div
               key={item.id}
-              className="relative shrink-0 scroll-snap-start flex items-end"
-              /* paddingLeft leaves room for the rank numeral to peek out from the left */
-              style={{ paddingLeft: index === 0 ? '0px' : '50px' }}
+              className="relative shrink-0 scroll-snap-start"
+              /*
+               * paddingLeft creates room for the numeral to peek out on the left.
+               * All items (including 0) get padding so the numeral is always visible.
+               */
+              style={{ paddingLeft: '45px' }}
             >
-              {/* Rank numeral — massive gradient text behind poster */}
+              {/*
+               * Rank numeral — sits at bottom of the POSTER (not full card).
+               * bottom = TEXT_AREA_HEIGHT offsets past the title/rating text below the poster.
+               * left = 0 so it starts at the left edge of paddingLeft space.
+               * The card (z-index 2) covers the right portion; left ~45px peeks out.
+               */}
               <div
                 aria-hidden
                 className="absolute select-none pointer-events-none leading-none"
                 style={{
-                  left: index === 0 ? '-8px' : '0px',
-                  bottom: '-4px',
-                  fontSize: 'clamp(100px, 12vw, 150px)',
-                  fontWeight: 900,
-                  letterSpacing: '-0.05em',
-                  lineHeight: 0.85,
+                  left: 0,
+                  bottom: TEXT_AREA_HEIGHT,
                   zIndex: 1,
                   fontFamily: 'Inter, system-ui, sans-serif',
-                  /* Gradient white-to-grey */
+                  fontWeight: 900,
+                  /* clamp: 100px on mobile (~390px wide), 150px on desktop */
+                  fontSize: 'clamp(100px, 26vw, 150px)',
+                  letterSpacing: '-0.05em',
+                  lineHeight: 0.85,
                   background: 'linear-gradient(to bottom, #FFFFFF 0%, #8B8B8B 100%)',
                   WebkitBackgroundClip: 'text',
                   WebkitTextFillColor: 'transparent',
@@ -117,7 +132,8 @@ const TopTenRow = memo(function TopTenRow({ title, items, viewAllPath, renderCar
               >
                 {index + 1}
               </div>
-              {/* Card at z-index 2 so numeral peeks from behind on left */}
+
+              {/* Card at z-index 2 — covers the right portion of the numeral */}
               <div className="relative" style={{ zIndex: 2 }}>
                 {renderCard ? renderCard(item, index) : <ContentCard title={item} />}
               </div>
