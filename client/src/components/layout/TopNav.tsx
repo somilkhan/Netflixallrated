@@ -20,7 +20,7 @@ const NAV_LINKS = [
   { label: 'Browse',   path: '/browse' },
   { label: 'TV Shows', path: '/tv' },
   { label: 'Anime',    path: '/anime' },
-  { label: 'My List',  path: '/watchlist' },
+  { label: 'My List',  path: '/my-list' },
 ];
 
 const MOBILE_NAV = [
@@ -30,7 +30,7 @@ const MOBILE_NAV = [
   { icon: Trophy,     label: 'Sports',    path: '/sports' },
   { icon: Swords,     label: 'Anime',     path: '/anime' },
   { icon: LayoutGrid, label: 'Categories',path: '/categories' },
-  { icon: Bookmark,   label: 'My List',   path: '/watchlist' },
+   { icon: Bookmark,   label: 'My List',   path: '/my-list' },
   { icon: Clock,      label: 'History',   path: '/history' },
   { icon: Compass,    label: 'Profile',   path: '/profile' },
 ];
@@ -315,7 +315,7 @@ const TopNav = memo(function TopNav({ onOpenSearch }: TopNavProps) {
                         </button>
                         <button
                           type="button"
-                          onClick={() => { setProfileOpen(false); nav('/watchlist'); }}
+            onClick={() => { setProfileOpen(false); nav('/my-list'); }}
                           className="w-full flex items-center gap-2.5 px-4 py-2.5 text-[13px] text-white/75 hover:bg-white/[0.04] hover:text-white transition-colors text-left"
                         >
                           <Bookmark size={13} className="text-white/40 shrink-0" />

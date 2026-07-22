@@ -257,7 +257,7 @@ export default function Profile() {
           </div>
           <button
             type="button"
-            onClick={() => nav('/watchlist')}
+             onClick={() => nav('/my-list')}
             className="flex items-center gap-0.5 text-sm text-white/40 hover:text-white transition-colors"
           >
             View All <ChevronRight size={14} />

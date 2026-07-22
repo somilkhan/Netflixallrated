@@ -5,7 +5,7 @@
  */
 import { memo } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { Home, Search, Download, User } from 'lucide-react';
+import { Home, Search, Bookmark, Download, User } from 'lucide-react';
 
 const MobileBottomNav = memo(function MobileBottomNav() {
   const nav = useNavigate();
@@ -24,6 +24,7 @@ const MobileBottomNav = memo(function MobileBottomNav() {
       // an overlay or immediately focuses an input underneath the nav.
       action: () => nav('/search'),
     },
+    { icon: Bookmark, label: 'My List',   path: '/my-list',   action: () => nav('/my-list') },
     { icon: Download, label: 'Downloads', path: '/downloads', action: () => nav('/downloads') },
     { icon: User,     label: 'Profile',   path: '/profile',  action: () => nav('/profile') },
   ];

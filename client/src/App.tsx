@@ -16,6 +16,8 @@ const Home            = lazy(() => import('./pages/Home'));
 const TitleDetail     = lazy(() => import('./pages/TitleDetail'));
 const SearchResults   = lazy(() => import('./pages/SearchResults'));
 const Watchlist       = lazy(() => import('./pages/Watchlist'));
+const MyList          = lazy(() => import('./pages/MyList'));
+const Downloads       = lazy(() => import('./pages/Downloads'));
 const Login           = lazy(() => import('./pages/Login'));
 const Register        = lazy(() => import('./pages/Register'));
 const Admin           = lazy(() => import('./pages/Admin'));
@@ -48,6 +50,8 @@ function AnimatedRoutes() {
           <Route path="/title/:id"           element={<Wrap><TitleDetail /></Wrap>} />
           <Route path="/search"              element={<Wrap><SearchResults /></Wrap>} />
           <Route path="/watchlist"           element={<Wrap><Watchlist /></Wrap>} />
+          <Route path="/my-list"             element={<Wrap><MyList /></Wrap>} />
+          <Route path="/downloads"           element={<Wrap><Downloads /></Wrap>} />
           <Route path="/login"               element={<Wrap><Login /></Wrap>} />
           <Route path="/register"            element={<Wrap><Register /></Wrap>} />
           <Route path="/admin"               element={<Wrap><Admin /></Wrap>} />
