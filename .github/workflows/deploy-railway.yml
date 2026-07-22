@@ -12,14 +12,18 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Install Railway CLI
-        run: npm install -g @railway/cli
+      - name: Install Railway CLI (native binary)
+        run: |
+          curl -fsSL https://github.com/railwayapp/cli/releases/latest/download/railway-linux-amd64.tar.gz -o railway.tar.gz
+          tar -xzf railway.tar.gz
+          chmod +x railway
+          sudo mv railway /usr/local/bin/railway
+          railway --version
 
       - name: Deploy to Railway
         env:
           RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
         run: |
-          railway login --token "$RAILWAY_TOKEN"
           railway up \
             --service f2cca51b-8087-4250-a6a9-dc54d1837702 \
             --environment 36e13bd1-66b2-4830-b95d-8d8a39cc1c3f \
