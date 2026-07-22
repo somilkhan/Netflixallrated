@@ -5,7 +5,7 @@
  */
 import { useEffect, useState, useRef, useMemo } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
-import { Search, X, Film, Tv, Swords } from 'lucide-react';
+import { Search, X, Film, Tv } from 'lucide-react';
 import { m } from 'framer-motion';
 import { searchMulti, hasTmdbKey } from '../services/tmdb';
 import TmdbContentCard from '../components/TmdbContentCard';
@@ -38,7 +38,6 @@ const TABS = [
   { label: 'All',    value: '',       icon: null   },
   { label: 'Movies', value: 'MOVIE',  icon: Film   },
   { label: 'Series', value: 'SERIES', icon: Tv     },
-  { label: 'Anime',  value: 'ANIME',  icon: Swords },
 ];
 
 export default function SearchResults() {

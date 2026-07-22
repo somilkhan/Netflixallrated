@@ -27,7 +27,6 @@ const TABS = [
   { label: 'All',    value: 'all'    },
   { label: 'Movies', value: 'MOVIE'  },
   { label: 'Series', value: 'SERIES' },
-  { label: 'Anime',  value: 'ANIME'  },
 ];
 
 const TYPE_LABEL: Record<string, string> = {

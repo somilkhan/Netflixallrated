@@ -1,17 +1,13 @@
 /**
  * MobileBottomNav — fixed 64px bottom navigation bar, mobile only.
- * Home | Search | Downloads | Profile
- * Search tab triggers the global search overlay instead of navigating.
+ * Home | Search | History | Profile
+ * Search navigates to the dedicated TMDB-powered search page.
  */
 import { memo } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { Home, Search, Download, User } from 'lucide-react';
+import { Home, Search, History, User } from 'lucide-react';
 
-interface MobileBottomNavProps {
-  onOpenSearch?: () => void;
-}
-
-const MobileBottomNav = memo(function MobileBottomNav({ onOpenSearch }: MobileBottomNavProps) {
+const MobileBottomNav = memo(function MobileBottomNav() {
   const nav = useNavigate();
   const loc = useLocation();
 
@@ -28,7 +24,7 @@ const MobileBottomNav = memo(function MobileBottomNav({ onOpenSearch }: MobileBo
       // an overlay or immediately focuses an input underneath the nav.
       action: () => nav('/search'),
     },
-    { icon: Download, label: 'Downloads', path: '/downloads', action: () => nav('/downloads') },
+    { icon: History,  label: 'History',    path: '/history',  action: () => nav('/history') },
     { icon: User,     label: 'Profile',   path: '/profile',  action: () => nav('/profile') },
   ];
 
@@ -44,9 +40,7 @@ const MobileBottomNav = memo(function MobileBottomNav({ onOpenSearch }: MobileBo
       aria-label="Mobile navigation"
     >
       {NAV_ITEMS.map(({ icon: Icon, label, path, action }) => {
-        const active = path === '/search'
-          ? false  // search is an overlay — never "active" as a route
-          : isActive(path);
+        const active = isActive(path);
         return (
           <button
             key={path}

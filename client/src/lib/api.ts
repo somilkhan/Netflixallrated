@@ -78,8 +78,6 @@ export const api = {
     rate: (id: string, data: { tier: string; reviewText?: string }) =>
       fetcher(`/titles/${id}/ratings`, { method: 'POST', body: JSON.stringify(data) }),
     ratings: (id: string) => fetcher(`/titles/${id}/ratings`),
-    liveSearch: (q: string, signal?: AbortSignal) =>
-      fetcher(`/titles/live-search?q=${encodeURIComponent(q)}`, signal ? { signal } : undefined),
     syncStatus: () => fetcher('/titles/sync-status'),
  
     seasons: (id: string) => fetcher(`/titles/${id}/seasons`),
