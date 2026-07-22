@@ -1,11 +1,11 @@
 /**
  * MobileBottomNav — fixed 64px bottom navigation bar, mobile only.
- * Home | Search | History | Profile
+ * Home | Search | Downloads | Profile
  * Search navigates to the dedicated TMDB-powered search page.
  */
 import { memo } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { Home, Search, History, User } from 'lucide-react';
+import { Home, Search, Download, User } from 'lucide-react';
 
 const MobileBottomNav = memo(function MobileBottomNav() {
   const nav = useNavigate();
@@ -24,7 +24,7 @@ const MobileBottomNav = memo(function MobileBottomNav() {
       // an overlay or immediately focuses an input underneath the nav.
       action: () => nav('/search'),
     },
-    { icon: History,  label: 'History',    path: '/history',  action: () => nav('/history') },
+    { icon: Download, label: 'Downloads', path: '/downloads', action: () => nav('/downloads') },
     { icon: User,     label: 'Profile',   path: '/profile',  action: () => nav('/profile') },
   ];
 
