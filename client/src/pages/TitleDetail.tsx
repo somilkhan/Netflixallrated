@@ -173,6 +173,9 @@ export default function TitleDetail() {
   // "Continue watching" indicator surfaced in the episode browser.
   const [watchProgress, setWatchProgress] = useState<{ seasonNumber: number | null; episodeNumber: number | null; positionSeconds: number; durationSeconds: number | null } | null>(null);
 
+  // Synopsis expand/collapse
+  const [synopsisExpanded, setSynopsisExpanded] = useState(false);
+
   // Loading flags for sections that populate after the initial title fetch,
   // so their skeletons can match the final layout instead of popping in empty.
   const [similarLoading, setSimilarLoading] = useState(true);
@@ -916,17 +919,13 @@ export default function TitleDetail() {
   return (
     <div className="movie-detail-page">
 
-      {/* ── Hero ─────────────────────────────────────────────────── */}
-      {/* Always the static backdrop — no autoplaying embed, so there's never a
-          black box or a broken iframe fighting the browser's autoplay policy.
-          A trailer, when one exists and actually resolves, is opened on demand
-          in a modal (see TrailerModal below). */}
+      {/* ── Hero — backdrop + title/meta/CTAs overlaid at the bottom ─── */}
       <div className="hero">
         <div className="hero-bg" style={heroBgStyle} />
         <div className="hero-gradient" />
         <div className="hero-noise" />
 
-        {/* Back button — top-left of hero */}
+        {/* Back button */}
         <button
           className="hero-back-btn"
           aria-label="Go back"
@@ -937,145 +936,134 @@ export default function TitleDetail() {
           </svg>
         </button>
 
-        {trailerAvailable && (
-          <button className="hero-trailer-btn" onClick={() => setTrailerModalOpen(true)}>
-            <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor"><polygon points="8,5 8,19 19,12" /></svg>
-            Watch Trailer
-          </button>
-        )}
-        {/* Play button on hero only for ANIME (async embed fetch) */}
-        {title.type === 'ANIME' && canPlay && !(animeProvider === 'gogoanime' ? gogoEmbedLoading : (isStaticAnimeProvider ? false : animeEmbedLoading)) && (
-          <button
-            className="play-overlay-btn"
-            aria-label="Play"
-            onClick={() => {
-              if (animeProvider === 'gogoanime') openGogoPlayer();
-              else if (isStaticAnimeProvider) {
-                setIsIframeLoading(true);
-                setIframeError(false);
-                setIsPlaying(true);
-                setTimeout(() => animeVideoRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 50);
-              } else openAnimePlayer();
-            }}
-          >
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="white">
-              <polygon points="8,5 8,19 19,12" />
-            </svg>
-          </button>
-        )}
+        {/* Anime async-loading spinner (centered, subtle) */}
         {title.type === 'ANIME' && !isStaticAnimeProvider && (animeProvider === 'gogoanime' ? gogoEmbedLoading : animeEmbedLoading) && (
-          <div style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%,-50%)' }}>
-            <div style={{ width: 40, height: 40, border: '2px solid rgba(245,240,236,0.12)', borderTopColor: 'rgba(245,240,236,0.7)', borderRadius: '50%', animation: 'spin 0.8s linear infinite' }} />
+          <div style={{ position: 'absolute', top: '40%', left: '50%', transform: 'translate(-50%,-50%)' }}>
+            <div style={{ width: 40, height: 40, border: '2px solid rgba(245,240,236,0.12)', borderTopColor: 'rgba(245,240,236,0.7)', borderRadius: '50%', animation: 'dpSpin 0.8s linear infinite' }} />
           </div>
         )}
+
+        {/* Content overlay — poster thumbnail + title + meta + CTAs */}
+        <div className="hero-content">
+          <div className="hero-content-inner">
+            <div className="hero-poster-title">
+              {/* Poster thumbnail */}
+              <div
+                className="hero-poster"
+                style={{
+                  backgroundImage: posterUrl
+                    ? `url(${posterUrl})`
+                    : `radial-gradient(120% 100% at 30% 0%, ${title.posterColorFrom || '#4a1520'}, ${title.posterColorTo || '#0c0a0a'} 70%)`,
+                }}
+              />
+
+              {/* Title + meta block */}
+              <div className="hero-title-block">
+                <div className="eyebrow">{typeLabel}</div>
+                <h1 className="hero-title">{displayName}</h1>
+                {title.type === 'ANIME' && anilistData?.title.romaji && anilistData.title.english && (
+                  <p className="detail-subtitle">{anilistData.title.romaji}</p>
+                )}
+                <div className="hero-meta">
+                  <span>{title.year || anilistData?.startDate?.year}</span>
+                  <span className="dot">·</span>
+                  <span>{typeLabel}</span>
+                  {title.type === 'ANIME' && anicrushEpCount > 0 && (
+                    <><span className="dot">·</span><span>{anicrushEpCount} eps</span></>
+                  )}
+                  {title.type !== 'ANIME' && title.runtimeMinutes && (
+                    <><span className="dot">·</span>
+                    <span>{Math.floor(title.runtimeMinutes / 60)}h {title.runtimeMinutes % 60}m</span></>
+                  )}
+                  {title.type === 'ANIME' && anilistData?.averageScore && (
+                    <><span className="dot">·</span><span>★ {(anilistData.averageScore / 10).toFixed(1)}</span></>
+                  )}
+                  {genres.slice(0, 3).map(g => (
+                    <span key={g} className="dp-pill">{g}</span>
+                  ))}
+                </div>
+
+                {/* CTA buttons */}
+                <div className="hero-cta">
+                  {canPlay && (
+                    <button
+                      className="dp-btn dp-btn-play"
+                      onClick={() => {
+                        if (title.type !== 'ANIME') { openPlayer(); return; }
+                        if (animeProvider === 'gogoanime') { openGogoPlayer(); return; }
+                        if (isStaticAnimeProvider) {
+                          setIsIframeLoading(true);
+                          setIframeError(false);
+                          setIsPlaying(true);
+                          setTimeout(() => animeVideoRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 50);
+                          return;
+                        }
+                        openAnimePlayer();
+                      }}
+                      disabled={!isStaticAnimeProvider && (animeProvider === 'gogoanime' ? gogoEmbedLoading : animeEmbedLoading)}
+                    >
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
+                        <polygon points="8,5 8,19 19,12" />
+                      </svg>
+                      {!isStaticAnimeProvider && (animeProvider === 'gogoanime' ? gogoEmbedLoading : animeEmbedLoading) ? 'Loading…' : 'Play'}
+                    </button>
+                  )}
+                  {user && (
+                    <button
+                      className={`dp-btn dp-btn-save${watchlistStatus ? ' saved' : ''}`}
+                      onClick={() => addToWatchlist(watchlistStatus ? '' : 'PLAN_TO_WATCH')}
+                    >
+                      {watchlistStatus ? (
+                        <><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><polyline points="20 6 9 17 4 12"/></svg> Saved</>
+                      ) : (
+                        <><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg> My List</>
+                      )}
+                    </button>
+                  )}
+                  {trailerAvailable && (
+                    <button className="dp-btn dp-btn-ghost" onClick={() => setTrailerModalOpen(true)}>
+                      <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor"><polygon points="8,5 8,19 19,12" /></svg>
+                      Trailer
+                    </button>
+                  )}
+                  <button className="dp-btn dp-btn-icon" onClick={handleShare} aria-label="Share">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                      <line x1="22" y1="2" x2="11" y2="13"/>
+                      <polygon points="22 2 15 22 11 13 2 9 22 2"/>
+                    </svg>
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
 
       {/* ── Shell ────────────────────────────────────────────────── */}
       <div className="detail-shell">
 
-        {/* Poster row */}
-        <div className="poster-row">
-          <div
-            className="detail-poster"
-            style={{
-              backgroundImage: posterUrl
-                ? `url(${posterUrl})`
-                : `radial-gradient(120% 100% at 30% 0%, ${title.posterColorFrom || '#4a1520'}, ${title.posterColorTo || '#0c0a0a'} 70%)`,
-            }}
-          />
-          <div className="title-block">
-            <div className="eyebrow">{typeLabel}</div>
+        {/* Synopsis — expandable, 3 lines default */}
+        {synopsis && (
+          <div className="synopsis-wrap">
+            <p className={`synopsis${synopsisExpanded ? '' : ' collapsed'}`}>{synopsis}</p>
+            {synopsis.length > 180 && (
+              <button className="synopsis-toggle" onClick={() => setSynopsisExpanded(v => !v)}>
+                {synopsisExpanded ? (
+                  <><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><polyline points="18 15 12 9 6 15"/></svg> Less</>
+                ) : (
+                  <><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><polyline points="6 9 12 15 18 9"/></svg> More</>
+                )}
+              </button>
+            )}
           </div>
-        </div>
-
-        {/* Title */}
-        <h1 className="detail-title">{displayName}</h1>
-        {title.type === 'ANIME' && anilistData?.title.romaji && anilistData.title.english && (
-          <p className="detail-subtitle">{anilistData.title.romaji}</p>
         )}
-
-        {/* Meta */}
-        <div className="detail-meta">
-          <span>{title.year || anilistData?.startDate?.year}</span>
-          <span className="dot">·</span>
-          <span>{typeLabel}</span>
-          {title.type === 'ANIME' && anicrushEpCount > 0 && (
-            <><span className="dot">·</span><span>{anicrushEpCount} eps</span></>
-          )}
-          {title.type !== 'ANIME' && title.runtimeMinutes && (
-            <><span className="dot">·</span>
-            <span>{Math.floor(title.runtimeMinutes / 60)}h {title.runtimeMinutes % 60}m</span></>
-          )}
-          {title.type === 'ANIME' && anilistData?.averageScore && (
-            <><span className="dot">·</span><span>★ {(anilistData.averageScore / 10).toFixed(1)}</span></>
-          )}
-          {title.type === 'ANIME' && anilistData?.status && (
-            <><span className="dot">·</span><span className="capitalize">{anilistData.status.toLowerCase().replace(/_/g, ' ')}</span></>
-          )}
-          {title.type === 'ANIME' && anilistData?.season && anilistData?.seasonYear && (
-            <><span className="dot">·</span><span className="capitalize">{anilistData.season.toLowerCase()} {anilistData.seasonYear}</span></>
-          )}
-          {genres.slice(0, 3).map(g => (
-            <span key={g} className="dp-pill">{g}</span>
-          ))}
-        </div>
 
         {/* Anime-only: studios */}
         {title.type === 'ANIME' && anilistData?.studios?.nodes?.length > 0 && (
-          <p className="font-mono text-[10px] text-ink-faint uppercase tracking-wider" style={{ marginTop: -4, marginBottom: 10 }}>
+          <p className="font-mono text-[10px] text-ink-faint uppercase tracking-wider" style={{ marginTop: 8 }}>
             {anilistData.studios.nodes.map((s: any) => s.name).join(' · ')}
           </p>
         )}
-
-        {/* Synopsis */}
-        {synopsis && <p className="synopsis">{synopsis}</p>}
-
-        {/* CTA Buttons */}
-        <div className="detail-actions">
-          {canPlay && (
-            <button
-              className="dp-btn dp-btn-play"
-              onClick={() => {
-                if (title.type !== 'ANIME') { openPlayer(); return; }
-                if (animeProvider === 'gogoanime') { openGogoPlayer(); return; }
-                if (isStaticAnimeProvider) {
-                  setIsIframeLoading(true);
-                  setIframeError(false);
-                  setIsPlaying(true);
-                  setTimeout(() => animeVideoRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 50);
-                  return;
-                }
-                openAnimePlayer();
-              }}
-              disabled={!isStaticAnimeProvider && (animeProvider === 'gogoanime' ? gogoEmbedLoading : animeEmbedLoading)}
-              style={{ flex: '0 0 auto', minWidth: 110 }}
-            >
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
-                <polygon points="8,5 8,19 19,12" />
-              </svg>
-              {!isStaticAnimeProvider && (animeProvider === 'gogoanime' ? gogoEmbedLoading : animeEmbedLoading) ? 'Loading…' : 'Play'}
-            </button>
-          )}
-          {user && (
-            <button
-              className={`dp-btn dp-btn-save${watchlistStatus ? ' saved' : ''}`}
-              onClick={() => addToWatchlist(watchlistStatus ? '' : 'PLAN_TO_WATCH')}
-            >
-              {watchlistStatus ? (
-                <><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><polyline points="20 6 9 17 4 12"/></svg> Saved</>
-              ) : (
-                <><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg> Save</>
-              )}
-            </button>
-          )}
-          <button className="dp-btn dp-btn-ghost" onClick={handleShare}>
-            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <line x1="22" y1="2" x2="11" y2="13"/>
-              <polygon points="22 2 15 22 11 13 2 9 22 2"/>
-            </svg>
-            Share
-          </button>
-        </div>
 
         {/* Anime loading / error state */}
         {title.type === 'ANIME' && animeLoading && (
@@ -1089,24 +1077,35 @@ export default function TitleDetail() {
         {title.type !== 'ANIME' && canPlay && (
           <div ref={videoSectionRef} className="watch-section">
 
-            {/* Provider tabs */}
-            <div className="provider-tabs">
-              {SERVERS.map(srv => (
-                <button
-                  key={srv.id}
-                  className={`provider-tab${isPlaying && serverId === srv.id ? ' active' : ''}`}
-                  onClick={() => switchServer(srv.id)}
-                >
-                  <span className="status-dot" />
-                  {srv.label}
-                  {(srv.id === 'flixhq' && flixhqLoading && serverId === 'flixhq') ||
-                   (srv.id === 'febbox' && febboxLoading && serverId === 'febbox') ||
-                   (srv.id === '4khdhub' && hubLoading && serverId === '4khdhub') ||
-                   (srv.id === 'hdhub4u' && hdhubLoading && serverId === 'hdhub4u')
-                    ? <span className="quality-badge">…</span>
-                    : <span className="quality-badge">4K</span>}
-                </button>
-              ))}
+            {/* Provider cards — glass style */}
+            <div className="provider-cards">
+              {SERVERS.map(srv => {
+                const isLoading =
+                  (srv.id === 'flixhq' && flixhqLoading && serverId === 'flixhq') ||
+                  (srv.id === 'febbox' && febboxLoading && serverId === 'febbox') ||
+                  (srv.id === '4khdhub' && hubLoading && serverId === '4khdhub') ||
+                  (srv.id === 'hdhub4u' && hdhubLoading && serverId === 'hdhub4u');
+                const isActive = isPlaying && serverId === srv.id;
+                return (
+                  <button
+                    key={srv.id}
+                    className={`provider-card${isActive ? ' active' : ''}`}
+                    onClick={() => switchServer(srv.id)}
+                  >
+                    <div className="provider-card-name">
+                      <span className="status-dot" />
+                      {srv.label}
+                    </div>
+                    <span className="provider-card-badge">{isLoading ? '…' : '4K'}</span>
+                    <div className="provider-card-play">
+                      <svg width="10" height="10" viewBox="0 0 24 24" fill="currentColor">
+                        <polygon points="8,5 8,19 19,12" />
+                      </svg>
+                      {isActive ? 'Playing' : 'Play'}
+                    </div>
+                  </button>
+                );
+              })}
             </div>
 
             {/* FlixHQ error message */}

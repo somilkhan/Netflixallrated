@@ -47,17 +47,27 @@ export function FebBoxPlayer({
   const hlsRef     = useRef<Hls | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const hideTimer  = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const touchStartRef    = useRef<{ x: number; y: number; time: number } | null>(null);
+  const lastTapRef       = useRef<{ x: number; time: number } | null>(null);
+  const seekFlashRef     = useRef<ReturnType<typeof setTimeout> | null>(null);
+  // Timestamp of last touchend — used to suppress the synthetic click that
+  // mobile browsers fire ~300 ms after touchend (prevents double-toggling play).
+  const lastTouchEndRef  = useRef<number>(0);
+  const singleTapTimer   = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  const [qualityIdx,  setQualityIdx]  = useState(0);
-  const [error,       setError]       = useState<string | null>(null);
-  const [playing,     setPlaying]     = useState(false);
-  const [currentTime, setCurrentTime] = useState(0);
-  const [duration,    setDuration]    = useState(0);
-  const [buffered,    setBuffered]    = useState(0);
-  const [muted,       setMuted]       = useState(false);
-  const [volume,      setVolume]      = useState(1);
-  const [fullscreen,  setFullscreen]  = useState(false);
-  const [showCtrl,    setShowCtrl]    = useState(true);
+  const [qualityIdx,   setQualityIdx]   = useState(0);
+  const [error,        setError]        = useState<string | null>(null);
+  const [playing,      setPlaying]      = useState(false);
+  const [currentTime,  setCurrentTime]  = useState(0);
+  const [duration,     setDuration]     = useState(0);
+  const [buffered,     setBuffered]     = useState(0);
+  const [muted,        setMuted]        = useState(false);
+  const [volume,       setVolume]       = useState(1);
+  const [fullscreen,   setFullscreen]   = useState(false);
+  const [showCtrl,     setShowCtrl]     = useState(true);
+  const [seekFlash,    setSeekFlash]    = useState<'left' | 'right' | null>(null);
+  const [showPlayPause, setShowPlayPause] = useState(false);
+  const playPauseTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // ── Attach HLS / direct source ───────────────────────────────────────────
   useEffect(() => {
@@ -138,13 +148,21 @@ export function FebBoxPlayer({
     hideTimer.current = setTimeout(() => setShowCtrl(false), 3000);
   }, []);
 
+  // ── Flash center play/pause icon briefly ────────────────────────────────
+  const flashPlayPause = useCallback(() => {
+    setShowPlayPause(true);
+    if (playPauseTimer.current) clearTimeout(playPauseTimer.current);
+    playPauseTimer.current = setTimeout(() => setShowPlayPause(false), 600);
+  }, []);
+
   // ── Controls ─────────────────────────────────────────────────────────────
   const togglePlay = useCallback(() => {
     const v = videoRef.current;
     if (!v) return;
     v.paused ? v.play() : v.pause();
+    flashPlayPause();
     resetHideTimer();
-  }, [resetHideTimer]);
+  }, [resetHideTimer, flashPlayPause]);
 
   const seek = useCallback((e: React.MouseEvent<HTMLDivElement>) => {
     const v = videoRef.current;
@@ -172,6 +190,10 @@ export function FebBoxPlayer({
     const v = videoRef.current;
     if (!v) return;
     v.currentTime = Math.max(0, Math.min(duration, v.currentTime + secs));
+    // Show seek flash
+    setSeekFlash(secs < 0 ? 'left' : 'right');
+    if (seekFlashRef.current) clearTimeout(seekFlashRef.current);
+    seekFlashRef.current = setTimeout(() => setSeekFlash(null), 600);
     resetHideTimer();
   }, [duration, resetHideTimer]);
 
@@ -181,6 +203,107 @@ export function FebBoxPlayer({
     if (!document.fullscreenElement) el.requestFullscreen?.();
     else document.exitFullscreen?.();
   }, []);
+
+  // ── Desktop click — only fires from real mouse/pointer clicks, not touch ────
+  // Mobile browsers synthesize a click ~300 ms after touchend. We suppress those
+  // by checking how recently a touchend occurred (lastTouchEndRef).
+  const handleContainerClick = useCallback(() => {
+    if (Date.now() - lastTouchEndRef.current < 500) return; // synthetic click after touch — ignore
+    togglePlay();
+  }, [togglePlay]);
+
+  // ── Mobile touch gestures ─────────────────────────────────────────────────
+  const handleTouchStart = useCallback((e: React.TouchEvent) => {
+    const t = e.touches[0];
+    touchStartRef.current = { x: t.clientX, y: t.clientY, time: Date.now() };
+  }, []);
+
+  const handleTouchEnd = useCallback((e: React.TouchEvent) => {
+    const v = videoRef.current;
+    const container = containerRef.current;
+
+    // Record touchend time so handleContainerClick can suppress the synthetic click.
+    lastTouchEndRef.current = Date.now();
+
+    if (!v || !container || !touchStartRef.current) return;
+
+    const t = e.changedTouches[0];
+    const start = touchStartRef.current;
+    touchStartRef.current = null;
+
+    const dx = t.clientX - start.x;
+    const dy = t.clientY - start.y;
+    const elapsed = Date.now() - start.time;
+    const absDx = Math.abs(dx);
+    const absDy = Math.abs(dy);
+
+    // Swipe left/right to seek (≥50 px horizontal, <40 px vertical drift, <400 ms)
+    if (absDx > 50 && absDy < 40 && elapsed < 400) {
+      e.preventDefault(); // prevent synthetic click
+      const seekSecs = (dx / container.clientWidth) * 60;
+      v.currentTime = Math.max(0, Math.min(duration, v.currentTime + seekSecs));
+      setSeekFlash(dx < 0 ? 'left' : 'right');
+      if (seekFlashRef.current) clearTimeout(seekFlashRef.current);
+      seekFlashRef.current = setTimeout(() => setSeekFlash(null), 600);
+      resetHideTimer();
+      return;
+    }
+
+    // Swipe up/down to adjust volume (≥40 px vertical, <40 px horizontal drift, <400 ms)
+    if (absDy > 40 && absDx < 40 && elapsed < 400) {
+      e.preventDefault(); // prevent synthetic click
+      const delta = -(dy / container.clientHeight) * 0.5;
+      v.volume = Math.max(0, Math.min(1, v.volume + delta));
+      v.muted = false;
+      resetHideTimer();
+      return;
+    }
+
+    // Tap detection (small movement, short press)
+    if (absDx < 20 && absDy < 20 && elapsed < 250) {
+      e.preventDefault(); // prevent synthetic click for all taps
+      const containerRect = container.getBoundingClientRect();
+      const tapX = t.clientX - containerRect.left;
+      const isLeftSide  = tapX < containerRect.width  * 0.35;
+      const isRightSide = tapX > containerRect.width  * 0.65;
+      const now = Date.now();
+
+      // Double-tap on left third → rewind 10 s
+      if (isLeftSide && lastTapRef.current && now - lastTapRef.current.time < 350
+          && lastTapRef.current.x < containerRect.width * 0.35) {
+        if (singleTapTimer.current) { clearTimeout(singleTapTimer.current); singleTapTimer.current = null; }
+        lastTapRef.current = null;
+        skip(-10);
+        return;
+      }
+
+      // Double-tap on right third → forward 10 s
+      if (isRightSide && lastTapRef.current && now - lastTapRef.current.time < 350
+          && lastTapRef.current.x > containerRect.width * 0.65) {
+        if (singleTapTimer.current) { clearTimeout(singleTapTimer.current); singleTapTimer.current = null; }
+        lastTapRef.current = null;
+        skip(10);
+        return;
+      }
+
+      // First tap — arm double-tap window; on expiry treat as single tap (show/hide controls)
+      lastTapRef.current = { x: tapX, time: now };
+      if (singleTapTimer.current) clearTimeout(singleTapTimer.current);
+      singleTapTimer.current = setTimeout(() => {
+        lastTapRef.current = null;
+        singleTapTimer.current = null;
+        // Single tap: toggle control visibility only — no play/pause accidental fires
+        setShowCtrl(prev => {
+          if (!prev) {
+            // Showing controls — reset the auto-hide timer
+            if (hideTimer.current) clearTimeout(hideTimer.current);
+            hideTimer.current = setTimeout(() => setShowCtrl(false), 3000);
+          }
+          return !prev;
+        });
+      }, 350);
+    }
+  }, [duration, skip, resetHideTimer]);
 
   if (!streams.length) {
     return (
@@ -198,8 +321,10 @@ export function FebBoxPlayer({
       ref={containerRef}
       className="absolute inset-0 bg-black select-none"
       onMouseMove={resetHideTimer}
-      onMouseLeave={() => setShowCtrl(false)}
-      onClick={togglePlay}
+      onMouseLeave={() => { if (!('ontouchstart' in window)) setShowCtrl(false); }}
+      onClick={handleContainerClick}
+      onTouchStart={handleTouchStart}
+      onTouchEnd={handleTouchEnd}
       style={{ cursor: showCtrl ? 'default' : 'none' }}
     >
       {/* Video element — no browser controls */}
@@ -208,6 +333,48 @@ export function FebBoxPlayer({
         className="w-full h-full object-contain"
         playsInline
       />
+
+      {/* ── Center play/pause flash ─────────────────────────────────────── */}
+      <div
+        className="absolute inset-0 flex items-center justify-center z-20 pointer-events-none"
+        style={{
+          opacity: showPlayPause ? 1 : 0,
+          transition: 'opacity 0.25s ease',
+        }}
+      >
+        <div
+          className="flex items-center justify-center rounded-full"
+          style={{
+            width: 72, height: 72,
+            background: 'rgba(0,0,0,0.55)',
+            border: '1.5px solid rgba(255,255,255,0.25)',
+            backdropFilter: 'blur(6px)',
+          }}
+        >
+          {playing
+            ? <Pause size={28} className="fill-current text-white" />
+            : <Play  size={28} className="fill-current text-white ml-1" />
+          }
+        </div>
+      </div>
+
+      {/* ── Double-tap seek flash (left / right) ───────────────────────── */}
+      {seekFlash && (
+        <div
+          className="absolute inset-0 flex items-center z-20 pointer-events-none"
+          style={{ justifyContent: seekFlash === 'left' ? 'flex-start' : 'flex-end' }}
+        >
+          <div
+            className="flex flex-col items-center gap-1 text-white px-8"
+            style={{
+              animation: 'dpFadeIn 0.1s ease, dpFadeOut 0.4s ease 0.2s forwards',
+            }}
+          >
+            <div className="text-2xl font-bold">{seekFlash === 'left' ? '«' : '»'}</div>
+            <span className="text-xs font-semibold">10s</span>
+          </div>
+        </div>
+      )}
 
       {/* Quality selector */}
       {streams.length > 1 && showCtrl && (
@@ -244,80 +411,88 @@ export function FebBoxPlayer({
         style={{
           opacity: showCtrl ? 1 : 0,
           pointerEvents: showCtrl ? 'auto' : 'none',
-          background: 'linear-gradient(to top, rgba(0,0,0,0.85) 0%, transparent 35%)',
+          background: 'linear-gradient(to top, rgba(0,0,0,0.90) 0%, rgba(0,0,0,0.3) 20%, transparent 45%)',
         }}
         onClick={e => e.stopPropagation()}
       >
         {/* Progress bar */}
         <div className="px-4 pb-1">
           <div
-            className="relative h-1 hover:h-2 bg-white/20 rounded-full cursor-pointer transition-all duration-150 group"
+            className="relative rounded-full cursor-pointer group"
+            style={{ height: 4, background: 'rgba(255,255,255,0.15)', transition: 'height 0.15s' }}
+            onMouseEnter={e => { (e.currentTarget as HTMLElement).style.height = '8px'; }}
+            onMouseLeave={e => { (e.currentTarget as HTMLElement).style.height = '4px'; }}
             onClick={seek}
           >
             {/* Buffered */}
             <div
-              className="absolute inset-y-0 left-0 bg-white/25 rounded-full"
-              style={{ width: `${bufferedPct}%` }}
+              className="absolute inset-y-0 left-0 rounded-full"
+              style={{ width: `${bufferedPct}%`, background: 'rgba(255,255,255,0.20)' }}
             />
-            {/* Played */}
+            {/* Played — Netflix red */}
             <div
-              className="absolute inset-y-0 left-0 bg-white rounded-full"
-              style={{ width: `${pct}%` }}
+              className="absolute inset-y-0 left-0 rounded-full"
+              style={{ width: `${pct}%`, background: '#E50914' }}
             />
             {/* Scrubber thumb */}
             <div
-              className="absolute top-1/2 -translate-y-1/2 w-3 h-3 rounded-full bg-white shadow-md opacity-0 group-hover:opacity-100 transition-opacity -translate-x-1/2"
-              style={{ left: `${pct}%` }}
+              className="absolute top-1/2 -translate-y-1/2 w-3 h-3 rounded-full shadow-md opacity-0 group-hover:opacity-100 transition-opacity -translate-x-1/2"
+              style={{ left: `${pct}%`, background: '#E50914', boxShadow: '0 0 6px rgba(229,9,20,0.6)' }}
             />
           </div>
         </div>
 
+        {/* Time row */}
+        <div className="flex items-center justify-between px-4 pb-1">
+          <span className="text-[11px] font-mono text-white/50 tabular-nums">
+            {fmtTime(currentTime)}
+          </span>
+          <span className="text-[11px] font-mono text-white/30 tabular-nums">
+            {fmtTime(duration)}
+          </span>
+        </div>
+
         {/* Bottom control row */}
         <div className="flex items-center gap-1 px-3 pb-3">
+          {/* Skip back 10s */}
+          <button
+            type="button"
+            aria-label="Skip back 10s"
+            onClick={() => skip(-10)}
+            className="flex items-center justify-center w-9 h-9 rounded-full hover:bg-white/10 text-white/80 hover:text-white transition-colors"
+          >
+            <SkipBack size={16} />
+          </button>
+
           {/* Play/Pause */}
           <button
             type="button"
             aria-label={playing ? 'Pause' : 'Play'}
             onClick={togglePlay}
-            className="flex items-center justify-center w-9 h-9 rounded-full hover:bg-white/10 text-white transition-colors"
+            className="flex items-center justify-center w-10 h-10 rounded-full hover:bg-white/10 text-white transition-colors"
           >
             {playing
-              ? <Pause size={18} className="fill-current" />
-              : <Play  size={18} className="fill-current ml-0.5" />
+              ? <Pause size={20} className="fill-current" />
+              : <Play  size={20} className="fill-current ml-0.5" />
             }
           </button>
 
-          {/* Skip back */}
-          <button
-            type="button"
-            aria-label="Skip back 10s"
-            onClick={() => skip(-10)}
-            className="flex items-center justify-center w-8 h-8 rounded-full hover:bg-white/10 text-white/70 hover:text-white transition-colors"
-          >
-            <SkipBack size={15} />
-          </button>
-
-          {/* Skip forward */}
+          {/* Skip forward 10s */}
           <button
             type="button"
             aria-label="Skip forward 10s"
             onClick={() => skip(10)}
-            className="flex items-center justify-center w-8 h-8 rounded-full hover:bg-white/10 text-white/70 hover:text-white transition-colors"
+            className="flex items-center justify-center w-9 h-9 rounded-full hover:bg-white/10 text-white/80 hover:text-white transition-colors"
           >
-            <SkipForward size={15} />
+            <SkipForward size={16} />
           </button>
-
-          {/* Time */}
-          <span className="text-[11px] font-mono text-white/60 ml-1 mr-auto tabular-nums">
-            {fmtTime(currentTime)} / {fmtTime(duration)}
-          </span>
 
           {/* Volume */}
           <button
             type="button"
             aria-label={muted ? 'Unmute' : 'Mute'}
             onClick={toggleMute}
-            className="flex items-center justify-center w-8 h-8 rounded-full hover:bg-white/10 text-white/70 hover:text-white transition-colors"
+            className="flex items-center justify-center w-8 h-8 rounded-full hover:bg-white/10 text-white/70 hover:text-white transition-colors ml-1"
           >
             {muted || volume === 0 ? <VolumeX size={15} /> : <Volume2 size={15} />}
           </button>
@@ -328,17 +503,20 @@ export function FebBoxPlayer({
             onClick={changeVolume}
           >
             <div
-              className="h-full bg-white rounded-full"
-              style={{ width: `${muted ? 0 : volume * 100}%` }}
+              className="h-full rounded-full"
+              style={{ width: `${muted ? 0 : volume * 100}%`, background: '#E50914' }}
             />
           </div>
+
+          {/* Spacer */}
+          <div className="flex-1" />
 
           {/* Fullscreen */}
           <button
             type="button"
             aria-label={fullscreen ? 'Exit fullscreen' : 'Fullscreen'}
             onClick={toggleFullscreen}
-            className="flex items-center justify-center w-8 h-8 rounded-full hover:bg-white/10 text-white/70 hover:text-white transition-colors ml-1"
+            className="flex items-center justify-center w-8 h-8 rounded-full hover:bg-white/10 text-white/70 hover:text-white transition-colors"
           >
             {fullscreen ? <Minimize size={15} /> : <Maximize size={15} />}
           </button>
