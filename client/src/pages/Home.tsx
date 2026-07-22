@@ -273,18 +273,18 @@ export default function Home() {
       <div className="relative z-10 mt-0">
 
         {/* Tab filter pills */}
-        <div className="flex gap-2 overflow-x-auto scrollbar-hide px-4 md:px-6 pt-6 pb-2">
+        <div className="flex gap-3 overflow-x-auto scrollbar-hide px-4 md:px-6 pt-6 pb-2">
           {TABS.map(tab => (
             <button
               key={tab}
               type="button"
               onClick={() => setActiveTab(tab)}
               className={`
-                shrink-0 px-4 py-2 rounded-full text-[13px] font-medium
-                transition-all duration-200 touch-manipulation
+                shrink-0 px-5 py-2 h-10 rounded-full text-[13px] font-medium
+                border transition-all duration-200 touch-manipulation
                 ${activeTab === tab
-                  ? 'bg-white text-black'
-                  : 'bg-white/[0.07] text-[#A3A3A3] border border-white/[0.08] hover:bg-white/[0.12] hover:text-white'}
+                  ? 'border-white bg-white/10 text-white'
+                  : 'border-[#525252] bg-transparent text-[#A3A3A3] hover:border-white/40 hover:text-white'}
               `}
             >
               {tab}

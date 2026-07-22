@@ -4,11 +4,11 @@
  * Desktop: 100vh, Ken Burns. Mobile: 70vh, no animation.
  * Gradient fades bottom to page, left for text readability.
  */
-import { useState, useEffect, useCallback, useMemo, memo } from 'react';
+import { useState, useEffect, useCallback, useMemo, useRef, memo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Play, Info, Volume2, VolumeX, ChevronRight, ChevronDown } from 'lucide-react';
 
-const AUTO_MS = 9000;
+const AUTO_MS = 8000;
 
 interface HeroSectionProps {
   titles: any[];
@@ -18,26 +18,44 @@ interface HeroSectionProps {
 
 const HeroSection = memo(function HeroSection({ titles, onAction }: HeroSectionProps) {
   const nav = useNavigate();
-  const [idx,         setIdx]         = useState(0);
-  const [progressKey, setProgressKey] = useState(0);
-  const [muted,       setMuted]       = useState(true);
-  const [imgLoaded,   setImgLoaded]   = useState<Record<number, boolean>>({});
-  // Pre-fire all slides as loaded immediately; the hidden <img> below triggers
-  // proper load events so the background renders without waiting for a div.onLoad.
+  const [idx,       setIdx]     = useState(0);
+  const [muted,     setMuted]   = useState(true);
+  const [paused,    setPaused]  = useState(false);
+  const [imgLoaded, setImgLoaded] = useState<Record<number, boolean>>({});
+  const touchStartX = useRef<number | null>(null);
 
   const current = titles[idx];
 
   const next = useCallback(() => {
     setIdx(i => (i + 1) % titles.length);
-    setProgressKey(k => k + 1);
   }, [titles.length]);
 
-  // Auto-advance
+  const prev = useCallback(() => {
+    setIdx(i => (i - 1 + titles.length) % titles.length);
+  }, [titles.length]);
+
+  // Auto-advance — pauses on hover/touch
   useEffect(() => {
-    if (titles.length <= 1) return;
+    if (titles.length <= 1 || paused) return;
     const t = setTimeout(next, AUTO_MS);
     return () => clearTimeout(t);
-  }, [idx, next, titles.length]);
+  }, [idx, next, titles.length, paused]);
+
+  // Swipe handlers
+  const onTouchStart = useCallback((e: React.TouchEvent) => {
+    touchStartX.current = e.touches[0].clientX;
+    setPaused(true);
+  }, []);
+
+  const onTouchEnd = useCallback((e: React.TouchEvent) => {
+    if (touchStartX.current === null) return;
+    const delta = e.changedTouches[0].clientX - touchStartX.current;
+    touchStartX.current = null;
+    if (delta < -50) next();
+    else if (delta > 50) prev();
+    // resume after swipe
+    setTimeout(() => setPaused(false), 1200);
+  }, [next, prev]);
 
   const rating = current?.rating || current?.imdbRating || current?.voteAverage;
 
@@ -61,11 +79,12 @@ const HeroSection = memo(function HeroSection({ titles, onAction }: HeroSectionP
   return (
     <section
       className="relative w-full overflow-hidden"
-      style={{
-        height: 'clamp(480px, 75svh, 960px)',
-      }}
-      // Desktop override via CSS — 100svh on md+
+      style={{ height: 'clamp(480px, 75svh, 960px)' }}
       aria-label={`Featured: ${current.name}`}
+      onMouseEnter={() => setPaused(true)}
+      onMouseLeave={() => setPaused(false)}
+      onTouchStart={onTouchStart}
+      onTouchEnd={onTouchEnd}
     >
       {/* ── Background slides ────────────────────────────────────────── */}
       <div className="absolute inset-0">
@@ -74,7 +93,7 @@ const HeroSection = memo(function HeroSection({ titles, onAction }: HeroSectionP
           return (
             <div
               key={t.id}
-              className="absolute inset-0 transition-opacity duration-700"
+              className="absolute inset-0 transition-opacity duration-500 ease-out"
               style={{ opacity: i === idx ? 1 : 0, pointerEvents: i === idx ? 'auto' : 'none' }}
               aria-hidden={i !== idx}
             >
@@ -134,7 +153,7 @@ const HeroSection = memo(function HeroSection({ titles, onAction }: HeroSectionP
       {/* Universal scrim — ensures text is always readable over any backdrop */}
       <div
         className="absolute inset-0 z-[2] pointer-events-none"
-        style={{ background: 'linear-gradient(to top, rgba(0,0,0,0.95) 0%, rgba(0,0,0,0.6) 40%, rgba(0,0,0,0.2) 100%)' }}
+        style={{ background: 'linear-gradient(to top, rgba(0,0,0,0.95) 0%, rgba(0,0,0,0.7) 30%, rgba(0,0,0,0.3) 60%, rgba(0,0,0,0.1) 100%)' }}
       />
       {/* Left: extra text-area darkening on desktop */}
       <div
@@ -294,33 +313,30 @@ const HeroSection = memo(function HeroSection({ titles, onAction }: HeroSectionP
           </button>
         )}
 
-        {/* Slide dot indicators */}
+        {/* Slide dot indicators — solid circles */}
         {titles.length > 1 && (
-          <div className="flex items-center gap-2">
+          <div className="flex items-center" style={{ gap: 8 }}>
             {titles.map((_, i) => (
               <button
                 key={i}
                 type="button"
-                onClick={() => { setIdx(i); setProgressKey(k => k + 1); }}
+                onClick={() => setIdx(i)}
                 aria-label={`Slide ${i + 1}`}
                 aria-current={i === idx ? 'true' : undefined}
-                className="touch-manipulation"
+                className="touch-manipulation flex items-center justify-center"
+                style={{ padding: 4 }}
               >
                 <div
-                  className="h-[3px] rounded-full transition-all duration-300 overflow-hidden"
                   style={{
-                    width:      i === idx ? 28 : 8,
-                    background: i === idx ? 'rgba(255,255,255,0.9)' : 'rgba(255,255,255,0.22)',
+                    width:        i === idx ? 8 : 6,
+                    height:       i === idx ? 8 : 6,
+                    borderRadius: '50%',
+                    background:   'white',
+                    opacity:      i === idx ? 1 : 0.4,
+                    transition:   'all 300ms ease',
+                    flexShrink:   0,
                   }}
-                >
-                  {i === idx && (
-                    <div
-                      key={progressKey}
-                      className="h-full bg-white/55 rounded-full"
-                      style={{ animation: `progressFill ${AUTO_MS}ms linear forwards` }}
-                    />
-                  )}
-                </div>
+                />
               </button>
             ))}
           </div>
@@ -345,13 +361,13 @@ const HeroSection = memo(function HeroSection({ titles, onAction }: HeroSectionP
         )}
       </div>
 
-      {/* ── Scroll hint — mobile only ──────────────────────────────────── */}
+      {/* ── Scroll hint — centered, animated bounce ────────────────────── */}
       <div
-        className="absolute bottom-4 left-1/2 -translate-x-1/2 z-[4] md:hidden pointer-events-none"
-        style={{ opacity: 0.5, animation: 'bounce 2s infinite' }}
+        className="absolute bottom-4 left-1/2 -translate-x-1/2 z-[10] md:hidden pointer-events-none"
+        style={{ opacity: 0.6, animation: 'bounce 2s infinite' }}
         aria-hidden
       >
-        <ChevronDown size={22} className="text-white" />
+        <ChevronDown size={24} className="text-white" />
       </div>
     </section>
   );

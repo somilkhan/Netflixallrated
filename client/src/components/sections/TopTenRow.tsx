@@ -95,22 +95,25 @@ const TopTenRow = memo(function TopTenRow({ title, items, viewAllPath, renderCar
               className="relative shrink-0 scroll-snap-start flex items-end"
               style={{ marginLeft: index === 0 ? 0 : '-10px' }}
             >
-              {/* Rank numeral — outlined, behind card */}
+              {/* Rank numeral — solid, partially behind poster */}
               <div
                 aria-hidden
-                className="absolute left-0 bottom-10 z-0 leading-none font-black select-none pointer-events-none"
+                className="absolute leading-none font-black select-none pointer-events-none"
                 style={{
-                  fontSize: 'clamp(72px, 11vw, 104px)',
-                  color: 'transparent',
-                  WebkitTextStroke: '1.5px rgba(255,255,255,0.10)',
+                  fontSize: 100,
+                  fontWeight: 900,
+                  color: 'rgba(255,255,255,0.15)',
                   letterSpacing: '-0.04em',
                   lineHeight: 1,
+                  zIndex: 1,
+                  left: -20,
+                  bottom: 0,
                 }}
               >
                 {index + 1}
               </div>
-              {/* Card positioned so numeral peeks left */}
-              <div className="relative z-10" style={{ marginLeft: index === 0 ? 0 : '40px' }}>
+              {/* Card at z-index 2 so numeral peeks from behind */}
+              <div className="relative" style={{ zIndex: 2, marginLeft: index === 0 ? 0 : '40px' }}>
                 {renderCard ? renderCard(item, index) : <ContentCard title={item} />}
               </div>
             </div>

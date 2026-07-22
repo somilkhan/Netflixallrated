@@ -80,6 +80,12 @@
 .animate-pulse-soft   { animation: pulse 2s ease-in-out infinite; }
 .animate-spin         { animation: spin 1s linear infinite; }
 
+/* Bounce — scroll hint chevron */
+@keyframes bounce {
+  0%, 100% { transform: translateY(0);    animation-timing-function: cubic-bezier(0.8,0,1,1); }
+  50%       { transform: translateY(-6px); animation-timing-function: cubic-bezier(0,0,0.2,1); }
+}
+
 /* Disable all animations if user prefers reduced motion */
 @media (prefers-reduced-motion: reduce) {
   .animate-fade-in,
