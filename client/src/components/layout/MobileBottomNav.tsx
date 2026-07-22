@@ -23,9 +23,10 @@ const MobileBottomNav = memo(function MobileBottomNav() {
 
   return (
     <nav
-      className="md:hidden fixed bottom-0 inset-x-0 z-[46] flex items-center"
+      className="md:hidden fixed bottom-0 inset-x-0 z-[46] flex items-start"
       style={{
-        height: 64,
+        height: 'calc(64px + env(safe-area-inset-bottom))',
+        paddingBottom: 'env(safe-area-inset-bottom)',
         background: '#0A0A0A',
         borderTop: '1px solid rgba(255,255,255,0.05)',
       }}
@@ -43,7 +44,7 @@ const MobileBottomNav = memo(function MobileBottomNav() {
             className="flex-1 flex flex-col items-center justify-center gap-1 touch-manipulation"
             style={{
               minHeight: 56,
-              color: active ? '#FFFFFF' : '#737373',
+              color: active ? '#FFFFFF' : '#666666',
               transition: 'color 0.2s ease',
             }}
           >

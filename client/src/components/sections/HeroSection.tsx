@@ -153,7 +153,7 @@ const HeroSection = memo(function HeroSection({ titles, onAction }: HeroSectionP
       {/* Universal scrim — ensures text is always readable over any backdrop */}
       <div
         className="absolute inset-0 z-[2] pointer-events-none"
-        style={{ background: 'linear-gradient(to top, rgba(0,0,0,0.95) 0%, rgba(0,0,0,0.7) 30%, rgba(0,0,0,0.3) 60%, rgba(0,0,0,0.1) 100%)' }}
+        style={{ background: 'linear-gradient(to top, rgba(15,15,15,1) 0%, rgba(15,15,15,0.85) 25%, rgba(15,15,15,0.4) 60%, rgba(15,15,15,0) 100%)' }}
       />
       {/* Left: extra text-area darkening on desktop */}
       <div
@@ -198,7 +198,7 @@ const HeroSection = memo(function HeroSection({ titles, onAction }: HeroSectionP
             style={{
               fontSize: 'clamp(28px, 5vw, 56px)',
               letterSpacing: '-0.025em',
-              textShadow: '0 2px 32px rgba(0,0,0,0.6)',
+              textShadow: '0 2px 20px rgba(0,0,0,0.8), 0 4px 40px rgba(0,0,0,0.6)',
             }}
           >
             {current.name}
@@ -232,13 +232,15 @@ const HeroSection = memo(function HeroSection({ titles, onAction }: HeroSectionP
           {/* Synopsis */}
           {current.synopsis && (
             <p
-              className="text-[14px] md:text-[15px] text-[#A3A3A3] leading-relaxed mb-6 max-w-[500px] animate-fade-up"
+              className="text-[14px] md:text-[15px] leading-relaxed mb-6 max-w-[500px] animate-fade-up"
               style={{
                 animationDelay: '0.12s',
                 display: '-webkit-box',
-                WebkitLineClamp: 2,
+                WebkitLineClamp: 3,
                 WebkitBoxOrient: 'vertical',
                 overflow: 'hidden',
+                color: 'rgba(255,255,255,0.85)',
+                textShadow: '0 1px 8px rgba(0,0,0,0.6)',
               }}
             >
               {current.synopsis}

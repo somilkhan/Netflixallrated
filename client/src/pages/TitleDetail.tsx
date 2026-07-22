@@ -317,6 +317,9 @@ export default function TitleDetail() {
   const [hdhubLoading, setHdhubLoading] = useState(false);
   const [hdhubError, setHdhubError] = useState<string | null>(null);
 
+  // Cast / credits (movies + series)
+  const [credits, setCredits] = useState<any[]>([]);
+
   // AniList metadata (anime only)
   const [anilistData, setAnilistData] = useState<any>(null);
 
@@ -493,6 +496,18 @@ export default function TitleDetail() {
         if (reqId === hubReqRef.current) setHubLoading(false);
       });
   }, [serverId, title, selectedSeason, selectedEp]);
+
+  // Fetch cast/credits for movies and series
+  useEffect(() => {
+    if (!title || !id || title.type === 'ANIME') return;
+    let cancelled = false;
+    api.titles.credits(id)
+      .then((data: any) => {
+        if (!cancelled) setCredits(data?.cast ?? []);
+      })
+      .catch(() => { if (!cancelled) setCredits([]); });
+    return () => { cancelled = true; };
+  }, [title, id]);
 
   // B: Parallelize watch-providers + similar + recommendations + anilist — all independent
   useEffect(() => {
@@ -1055,6 +1070,34 @@ export default function TitleDetail() {
                 )}
               </button>
             )}
+          </div>
+        )}
+
+        {/* ── Cast section — movies + series ────────────────────── */}
+        {title.type !== 'ANIME' && credits.length > 0 && (
+          <div className="dp-section">
+            <div className="dp-section-head">
+              <span className="dp-section-title">Cast</span>
+            </div>
+            <div className="cast-row">
+              {credits.slice(0, 20).map((member: any) => (
+                <div key={member.id ?? member.name} className="cast-member">
+                  <div className="cast-photo">
+                    {member.profileUrl ? (
+                      <img src={member.profileUrl} alt={member.name} loading="lazy" decoding="async" />
+                    ) : (
+                      <div className="cast-photo-placeholder">
+                        {(member.name || '?')[0].toUpperCase()}
+                      </div>
+                    )}
+                  </div>
+                  <div className="cast-name" title={member.name}>{member.name}</div>
+                  {member.character && (
+                    <div className="cast-character" title={member.character}>{member.character}</div>
+                  )}
+                </div>
+              ))}
+            </div>
           </div>
         )}
 

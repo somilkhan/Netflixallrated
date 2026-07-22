@@ -92,8 +92,17 @@ const TopTenRow = memo(function TopTenRow({ title, items, viewAllPath, renderCar
 
         <div
           ref={scrollRef}
-          className="flex overflow-x-auto overflow-y-visible scrollbar-hide px-4 md:px-6 pb-4 gap-0"
-          style={{ scrollSnapType: 'x mandatory', WebkitOverflowScrolling: 'touch', willChange: 'scroll-position' }}
+          className="flex overflow-x-auto scrollbar-hide gap-0"
+          style={{
+            scrollSnapType: 'x mandatory',
+            WebkitOverflowScrolling: 'touch',
+            willChange: 'scroll-position',
+            paddingLeft: 16,
+            paddingRight: 16,
+            paddingBottom: 24,
+            paddingTop: 8,
+            /* Extra top padding so numbers peeking above poster aren't clipped */
+          }}
         >
           {items.slice(0, 10).map((item, index) => (
             <div

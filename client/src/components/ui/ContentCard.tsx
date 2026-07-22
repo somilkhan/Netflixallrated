@@ -169,10 +169,10 @@ const ContentCard = memo(function ContentCard({
           hidden md:block
           absolute inset-0 z-20
           opacity-0 group-hover:opacity-100
-          transition-opacity duration-250
+          transition-opacity duration-[400ms]
           pointer-events-none group-hover:pointer-events-auto
         ">
-          {/* Center play */}
+          {/* Center play — fades in on hover */}
           <div className="absolute inset-0 flex items-center justify-center">
             <button
               type="button"
@@ -184,16 +184,22 @@ const ContentCard = memo(function ContentCard({
                 bg-white hover:bg-white/90
                 shadow-[0_4px_24px_rgba(0,0,0,0.6)]
                 transition-transform duration-200 active:scale-90
+                scale-90 group-hover:scale-100
               "
-              style={{ touchAction: 'manipulation' }}
+              style={{ touchAction: 'manipulation', transition: 'transform 400ms cubic-bezier(0.4,0,0.2,1)' }}
             >
               <Play size={18} className="fill-black text-black ml-0.5" />
             </button>
           </div>
 
-          {/* Bottom action row */}
-          <div className="absolute bottom-0 inset-x-0 z-30 px-2.5 pb-2.5 pt-8"
-            style={{ background: 'linear-gradient(to top, rgba(0,0,0,0.9), transparent)' }}>
+          {/* Bottom metadata — slides up on hover */}
+          <div
+            className="absolute bottom-0 inset-x-0 z-30 px-2.5 pb-2.5 pt-8 translate-y-2 group-hover:translate-y-0"
+            style={{
+              background: 'linear-gradient(to top, rgba(0,0,0,0.92), rgba(0,0,0,0.4) 70%, transparent)',
+              transition: 'transform 400ms cubic-bezier(0.4,0,0.2,1)',
+            }}
+          >
             <p className="text-[12px] font-semibold text-white leading-tight line-clamp-1 mb-1.5">
               {title.name}
             </p>

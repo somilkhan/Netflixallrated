@@ -204,6 +204,42 @@ export function FebBoxPlayer({
     else document.exitFullscreen?.();
   }, []);
 
+  // ── Keyboard shortcuts ───────────────────────────────────────────────────
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => {
+      if (document.activeElement?.tagName === 'INPUT' || document.activeElement?.tagName === 'TEXTAREA') return;
+      switch (e.key) {
+        case ' ':
+        case 'k':
+          e.preventDefault();
+          togglePlay();
+          break;
+        case 'ArrowLeft':
+          e.preventDefault();
+          skip(-10);
+          break;
+        case 'ArrowRight':
+          e.preventDefault();
+          skip(10);
+          break;
+        case 'ArrowUp':
+          e.preventDefault();
+          if (videoRef.current) { videoRef.current.volume = Math.min(1, videoRef.current.volume + 0.1); videoRef.current.muted = false; }
+          break;
+        case 'ArrowDown':
+          e.preventDefault();
+          if (videoRef.current) videoRef.current.volume = Math.max(0, videoRef.current.volume - 0.1);
+          break;
+        case 'f': case 'F':
+          e.preventDefault(); toggleFullscreen(); break;
+        case 'm': case 'M':
+          e.preventDefault(); toggleMute(); break;
+      }
+    };
+    window.addEventListener('keydown', handler);
+    return () => window.removeEventListener('keydown', handler);
+  }, [togglePlay, skip, toggleFullscreen, toggleMute]);
+
   // ── Desktop click — only fires from real mouse/pointer clicks, not touch ────
   // Mobile browsers synthesize a click ~300 ms after touchend. We suppress those
   // by checking how recently a touchend occurred (lastTouchEndRef).

@@ -27,7 +27,7 @@ export const FilterPill = memo(function FilterPill({
         focus:outline-none focus-visible:ring-2 focus-visible:ring-white/30
         active:scale-[0.97]
         ${active
-          ? 'bg-white/10 text-white border-white h-10'
+          ? 'bg-white text-black border-white h-10'
           : 'bg-transparent text-[#9CA3AF] border-[#4B5563] hover:border-white/40 hover:text-white h-10'
         }
         ${className}
