@@ -64,7 +64,7 @@ const ContentCard = memo(function ContentCard({
       onKeyDown={handleKeyDown}
       className={`
         group relative cursor-pointer select-none touch-manipulation
-        focus:outline-none focus-visible:ring-2 focus-visible:ring-white/25 rounded-xl
+        focus:outline-none focus-visible:ring-2 focus-visible:ring-white/25 rounded-lg
         ${fluid ? 'w-full' : 'shrink-0 w-[120px] sm:w-[140px] md:w-[180px] scroll-snap-start'}
         ${className}
       `}
@@ -73,7 +73,7 @@ const ContentCard = memo(function ContentCard({
       {/* ── Poster container ─────────────────────────────────────────────── */}
       <div
         className="
-          relative w-full rounded-xl overflow-hidden
+          relative w-full rounded-lg overflow-hidden
           bg-[#141414]
           transition-transform duration-[400ms] ease-[cubic-bezier(0.4,0,0.2,1)]
           md:group-hover:scale-[1.08] md:group-hover:-translate-y-1
@@ -114,8 +114,8 @@ const ContentCard = memo(function ContentCard({
               onError={() => setImgError(true)}
               className={`
                 absolute inset-0 w-full h-full object-cover
-                transition-opacity duration-300
-                md:group-hover:scale-[1.04] md:transition-transform md:duration-500
+                transition-all duration-[400ms]
+                md:group-hover:scale-[1.04] md:group-hover:opacity-60
                 ${imgLoaded ? 'opacity-100' : 'opacity-0'}
               `}
             />

@@ -1,6 +1,5 @@
 /**
- * TopTenRow — rebuilt from scratch.
- * Large outlined rank numerals behind poster cards, scroll-snap horizontal row.
+ * TopTenRow — Netflix-style massive gradient rank numerals behind poster cards.
  */
 import { memo, useRef, useCallback } from 'react';
 import { ChevronRight, ChevronLeft } from 'lucide-react';
@@ -30,18 +29,18 @@ const TopTenRow = memo(function TopTenRow({ title, items, viewAllPath, renderCar
   return (
     <section className="py-5">
       {/* Header */}
-      <div className="flex items-center justify-between px-4 md:px-6 mb-3">
-        <h2 className="text-[18px] md:text-[24px] font-semibold text-white tracking-tight leading-none">
+      <div className="flex items-center justify-between px-4 md:px-6 mb-4">
+        <h2 className="text-[18px] md:text-[24px] font-bold text-white tracking-tight leading-none">
           {title}
         </h2>
         {viewAllPath && (
           <button
             type="button"
             onClick={() => nav(viewAllPath)}
-            className="group flex items-center gap-0.5 text-[12px] text-[#737373] hover:text-white transition-colors duration-200 touch-manipulation"
+            className="group flex items-center gap-1 px-3 py-1.5 rounded-full bg-white/[0.08] text-[14px] text-[#A3A3A3] hover:text-white hover:bg-white/[0.14] transition-all duration-200 touch-manipulation"
           >
             View All
-            <ChevronRight size={13} strokeWidth={2} className="transition-transform duration-200 group-hover:translate-x-0.5" />
+            <ChevronRight size={16} strokeWidth={2} className="transition-transform duration-200 group-hover:translate-x-1" />
           </button>
         )}
       </div>
@@ -86,34 +85,40 @@ const TopTenRow = memo(function TopTenRow({ title, items, viewAllPath, renderCar
 
         <div
           ref={scrollRef}
-          className="flex overflow-x-auto overflow-y-visible scrollbar-hide px-4 md:px-6 pb-3 gap-0"
+          className="flex overflow-x-auto overflow-y-visible scrollbar-hide px-4 md:px-6 pb-4 gap-0"
           style={{ scrollSnapType: 'x mandatory', WebkitOverflowScrolling: 'touch', willChange: 'scroll-position' }}
         >
           {items.slice(0, 10).map((item, index) => (
             <div
               key={item.id}
               className="relative shrink-0 scroll-snap-start flex items-end"
-              style={{ marginLeft: index === 0 ? 0 : '-10px' }}
+              /* paddingLeft leaves room for the rank numeral to peek out from the left */
+              style={{ paddingLeft: index === 0 ? '0px' : '50px' }}
             >
-              {/* Rank numeral — solid, partially behind poster */}
+              {/* Rank numeral — massive gradient text behind poster */}
               <div
                 aria-hidden
-                className="absolute leading-none font-black select-none pointer-events-none"
+                className="absolute select-none pointer-events-none leading-none"
                 style={{
-                  fontSize: 100,
+                  left: index === 0 ? '-8px' : '0px',
+                  bottom: '-4px',
+                  fontSize: 'clamp(100px, 12vw, 150px)',
                   fontWeight: 900,
-                  color: 'rgba(255,255,255,0.15)',
-                  letterSpacing: '-0.04em',
-                  lineHeight: 1,
+                  letterSpacing: '-0.05em',
+                  lineHeight: 0.85,
                   zIndex: 1,
-                  left: -20,
-                  bottom: 0,
+                  fontFamily: 'Inter, system-ui, sans-serif',
+                  /* Gradient white-to-grey */
+                  background: 'linear-gradient(to bottom, #FFFFFF 0%, #8B8B8B 100%)',
+                  WebkitBackgroundClip: 'text',
+                  WebkitTextFillColor: 'transparent',
+                  backgroundClip: 'text',
                 }}
               >
                 {index + 1}
               </div>
-              {/* Card at z-index 2 so numeral peeks from behind */}
-              <div className="relative" style={{ zIndex: 2, marginLeft: index === 0 ? 0 : '40px' }}>
+              {/* Card at z-index 2 so numeral peeks from behind on left */}
+              <div className="relative" style={{ zIndex: 2 }}>
                 {renderCard ? renderCard(item, index) : <ContentCard title={item} />}
               </div>
             </div>

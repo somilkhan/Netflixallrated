@@ -1,6 +1,5 @@
 /**
- * ContentRow — rebuilt from scratch.
- * Horizontal scroll section with fade-in-view + navigation arrows on desktop.
+ * ContentRow — horizontal scroll section with View All pill, fade-in-view + nav arrows.
  */
 import { memo, useRef, useCallback } from 'react';
 import { ChevronRight, ChevronLeft } from 'lucide-react';
@@ -31,8 +30,8 @@ const ContentRow = memo(function ContentRow({
   return (
     <section className={`py-5 ${className}`}>
       {/* Row header */}
-      <div className="flex items-center justify-between px-4 md:px-6 mb-3">
-        <h2 className="text-[18px] md:text-[24px] font-semibold text-white tracking-tight leading-none">
+      <div className="flex items-center justify-between px-4 md:px-6 mb-4">
+        <h2 className="text-[18px] md:text-[24px] font-bold text-white tracking-tight leading-none">
           {title}
         </h2>
         {viewAllPath && (
@@ -40,16 +39,18 @@ const ContentRow = memo(function ContentRow({
             type="button"
             onClick={() => nav(viewAllPath)}
             className="
-              group flex items-center gap-0.5
-              text-[12px] text-[#737373] hover:text-white
-              transition-colors duration-200 touch-manipulation
+              group flex items-center gap-1
+              px-3 py-1.5 rounded-full
+              bg-white/[0.08] hover:bg-white/[0.14]
+              text-[14px] text-[#A3A3A3] hover:text-white
+              transition-all duration-200 touch-manipulation
             "
           >
             View All
             <ChevronRight
-              size={13}
+              size={16}
               strokeWidth={2}
-              className="transition-transform duration-200 group-hover:translate-x-0.5"
+              className="transition-transform duration-200 group-hover:translate-x-1"
             />
           </button>
         )}

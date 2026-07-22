@@ -294,7 +294,7 @@ export default function Home() {
 
         {/* ── Continue Watching (backend, hide if empty) ─────────────── */}
         {continueWatching.length > 0 && (
-          <ContentRow title="Continue Watching">
+          <ContentRow title="Continue Watching" viewAllPath="/history">
             {continueWatching.map(item => (
               <ContinueWatchingCard key={item.titleId} item={item} onRemove={handleRemoveCW} />
             ))}
@@ -312,6 +312,7 @@ export default function Home() {
           <TopTenRow
             title="Top 10 Today"
             items={trending.slice(0, 10)}
+            viewAllPath="/browse/trending"
             renderCard={(item, i) => (
               <TmdbContentCard key={item.id} item={item} rank={i + 1} />
             )}
@@ -320,7 +321,7 @@ export default function Home() {
 
         {/* ── Trending Now ──────────────────────────────────────────── */}
         {!loading && trending.length > 0 && (
-          <ContentRow title="Trending Now">
+          <ContentRow title="Trending Now" viewAllPath="/browse/trending">
             {trending.slice(0, 20).map(item => (
               <TmdbContentCard key={item.id} item={item} />
             ))}
@@ -333,7 +334,7 @@ export default function Home() {
           errors.popularMovies ? (
             <ErrorRow label="Popular Movies unavailable" onRetry={fetchAll} />
           ) : popularMovies.length > 0 ? (
-            <ContentRow title="Popular Movies">
+            <ContentRow title="Popular Movies" viewAllPath="/browse/movies">
               {popularMovies.slice(0, 20).map(item => (
                 <TmdbContentCard key={item.id} item={item} />
               ))}
@@ -347,7 +348,7 @@ export default function Home() {
           errors.popularTV ? (
             <ErrorRow label="Popular TV Shows unavailable" onRetry={fetchAll} />
           ) : popularTV.length > 0 ? (
-            <ContentRow title="Popular TV Shows">
+            <ContentRow title="Popular TV Shows" viewAllPath="/browse/series">
               {popularTV.slice(0, 20).map(item => (
                 <TmdbContentCard key={item.id} item={item} />
               ))}
@@ -361,7 +362,7 @@ export default function Home() {
           errors.topRated ? (
             <ErrorRow label="Top Rated unavailable" onRetry={fetchAll} />
           ) : topRated.length > 0 ? (
-            <ContentRow title="Top Rated">
+            <ContentRow title="Top Rated" viewAllPath="/browse/top-rated">
               {topRated.slice(0, 20).map(item => (
                 <TmdbContentCard key={item.id} item={item} />
               ))}
@@ -375,7 +376,7 @@ export default function Home() {
           errors.nowPlaying ? (
             <ErrorRow label="Now Playing unavailable" onRetry={fetchAll} />
           ) : nowPlaying.length > 0 ? (
-            <ContentRow title="Now Playing in Theaters">
+            <ContentRow title="Now Playing in Theaters" viewAllPath="/browse/now-playing">
               {nowPlaying.slice(0, 20).map(item => (
                 <TmdbContentCard key={item.id} item={item} />
               ))}
