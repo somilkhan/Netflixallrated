@@ -69,31 +69,34 @@ const ContentCard = memo(function ContentCard({
   const handlePlay     = useCallback((e: React.MouseEvent) => { e.stopPropagation(); if (onNavigate) { onNavigate(true); } else { nav(`/title/${title.id}?play=1`); } }, [nav, title.id, onNavigate]);
   const handleAddList  = useCallback((e: React.MouseEvent) => { e.stopPropagation(); onAddToList?.(title.id); }, [onAddToList, title.id]);
   const handleInfo     = useCallback((e: React.MouseEvent) => { e.stopPropagation(); if (onNavigate) { onNavigate(false); } else { nav(`/title/${title.id}`); } }, [nav, title.id, onNavigate]);
-  const handleKeyDown  = useCallback((e: React.KeyboardEvent) => {
-    if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); handleClick(); }
-  }, [handleClick]);
 
   if (!title?.id) return null;
 
   return (
-    <div
-      role="button"
-      tabIndex={0}
-      aria-label={title.name}
-      onClick={handleClick}
-      onKeyDown={handleKeyDown}
+    <article
       className={`
-        group relative cursor-pointer select-none touch-manipulation
-        focus:outline-none focus-visible:ring-2 focus-visible:ring-white/25 rounded-lg
+        group relative select-none touch-manipulation
         ${fluid ? 'w-full' : 'shrink-0 w-[92px] md:w-[124px] scroll-snap-start'}
         ${className}
       `}
       style={{ WebkitTapHighlightColor: 'transparent' }}
     >
+      {/* Full-card navigation target. It is a sibling, not a wrapper, so action buttons below remain independent controls. */}
+      <button
+        type="button"
+        aria-label={`Open ${title.name}`}
+        onClick={handleClick}
+        className="
+          absolute inset-0 z-0 block h-full w-full cursor-pointer
+          rounded-lg border-0 bg-transparent p-0
+          focus:outline-none focus-visible:ring-2 focus-visible:ring-white/25
+        "
+      />
+
       {/* ── Poster container ─────────────────────────────────────────────── */}
       <div
         className="
-          relative w-full rounded-lg overflow-hidden
+          pointer-events-none relative z-10 w-full rounded-lg overflow-hidden
           bg-[#141414]
           transition-transform duration-[400ms] ease-[cubic-bezier(0.4,0,0.2,1)]
           md:group-hover:scale-[1.08] md:group-hover:-translate-y-1
@@ -190,7 +193,7 @@ const ContentCard = memo(function ContentCard({
           absolute inset-0 z-20
           opacity-0 group-hover:opacity-100
           transition-opacity duration-[400ms]
-          pointer-events-none group-hover:pointer-events-auto
+          pointer-events-none
         ">
           {/* Center play — fades in on hover */}
           <div className="absolute inset-0 flex items-center justify-center">
@@ -199,6 +202,7 @@ const ContentCard = memo(function ContentCard({
               aria-label={`Play ${title.name}`}
               onClick={handlePlay}
               className="
+                 pointer-events-auto
                 flex items-center justify-center
                 w-12 h-12 rounded-full
                 bg-white hover:bg-white/90
@@ -231,6 +235,7 @@ const ContentCard = memo(function ContentCard({
                     aria-label={`Add ${title.name} to list`}
                     onClick={handleAddList}
                     className="
+                      pointer-events-auto
                       flex items-center gap-1 px-2 py-1 rounded-full
                       bg-white/10 border border-white/10
                       text-white/80 hover:text-white hover:bg-white/20
@@ -247,6 +252,7 @@ const ContentCard = memo(function ContentCard({
                 aria-label={`Info about ${title.name}`}
                 onClick={handleInfo}
                 className="
+                  pointer-events-auto
                   flex items-center justify-center
                   w-7 h-7 rounded-full
                   bg-white/10 border border-white/10
@@ -287,7 +293,7 @@ const ContentCard = memo(function ContentCard({
           {title.year && <span className="text-[12px] text-[#8a8a8a]">{title.year}</span>}
         </div>
       </div>
-    </div>
+    </article>
   );
 });
 
