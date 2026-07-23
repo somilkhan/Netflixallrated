@@ -20,6 +20,7 @@ import { PageSkeleton, RowSkeleton, CharacterRowSkeleton } from '../components/t
 import '@/styles/MovieDetailPage.css';
 import type { Tier } from '../lib/ratings';
 import { analytics } from '../lib/analytics';
+import { setPageMeta } from '../lib/seo';
 
 const TIERS = [
   { id: 'SKIP',       label: 'Skip',       key: 'skip' },
@@ -359,6 +360,16 @@ export default function TitleDetail() {
     }).catch(() => { if (!cancelled) setTitleError(true); });
     return () => { cancelled = true; };
   }, [id]);
+
+  /* Update page metadata when title data arrives */
+  useEffect(() => {
+    if (!title) return;
+    const image = title.backdropUrl || title.posterUrl || undefined;
+    const description = title.synopsis
+      ? title.synopsis.slice(0, 200).replace(/<[^>]+>/g, '')
+      : undefined;
+    setPageMeta(`/title/${id}`, title.name, description, image);
+  }, [title, id]);
 
   useEffect(() => {
     if (!title || title.type !== 'SERIES' || !id) return;
