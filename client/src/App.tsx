@@ -13,6 +13,8 @@ import NotFound from './pages/NotFound';
 import OfflinePage from './components/OfflinePage';
 import { analytics } from './lib/analytics';
 import { setPageMeta } from './lib/seo';
+import { BUILD_INFO } from './lib/version';
+import Footer from './components/layout/Footer';
 
 // Route-level code splitting — each page loads on demand
 const Home            = lazy(() => import('./pages/Home'));
@@ -91,6 +93,10 @@ export default function App() {
   const openSearch  = useCallback(() => setSearchOpen(true), []);
   const closeSearch = useCallback(() => setSearchOpen(false), []);
 
+  useEffect(() => {
+    console.log('[Allrated]', BUILD_INFO.sha, BUILD_INFO.date);
+  }, []);
+
   // Global Ctrl+K / Cmd+K
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
@@ -144,6 +150,8 @@ export default function App() {
               <AnimatedRoutes />
             </Suspense>
           </main>
+
+           <Footer />
 
           {/* Persistent bottom player — sits above mobile bottom nav */}
           <BottomPlayer />
