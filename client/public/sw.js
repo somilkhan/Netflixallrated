@@ -1,30 +1,20 @@
 const CACHE_NAME = 'allrated-v1';
-const SHELL_ASSETS = [
-  '/',
-  '/index.html',
-  '/manifest.json',
-  '/manifest.webmanifest',
-  '/offline.html',
-];
+const SHELL_ASSETS = ['/', '/index.html', '/manifest.json'];
 
+// Install: cache the static shell and activate this worker immediately.
 self.addEventListener('install', event => {
   event.waitUntil(
     caches.open(CACHE_NAME)
-      .then(async cache => {
-        await Promise.all(
-          SHELL_ASSETS.map(async asset => {
-            try {
-              await cache.add(asset);
-            } catch {
-              // Keep installation resilient when an optional shell asset is absent.
-            }
-          }),
-        );
-      })
+      .then(cache =>
+        Promise.all(
+          SHELL_ASSETS.map(asset => cache.add(asset).catch(() => undefined)),
+        ),
+      )
       .then(() => self.skipWaiting()),
   );
 });
 
+// Activate: remove every cache from an older worker, then take control.
 self.addEventListener('activate', event => {
   event.waitUntil(
     caches.keys()
@@ -39,21 +29,21 @@ self.addEventListener('activate', event => {
   );
 });
 
+// Fetch: use network-first for APIs and cache-first for static resources.
 self.addEventListener('fetch', event => {
   if (event.request.method !== 'GET') return;
 
-  const requestUrl = new URL(event.request.url);
-  if (requestUrl.origin !== self.location.origin) return;
+  const url = new URL(event.request.url);
+  if (url.origin !== self.location.origin) return;
 
-  if (requestUrl.pathname.startsWith('/api/')) {
+  if (url.pathname.startsWith('/api/')) {
     event.respondWith(networkFirst(event.request));
-    return;
+  } else {
+    event.respondWith(cacheFirst(event.request));
   }
-
-  // Includes Vite's hashed JS/CSS assets, which are safe to serve cache-first.
-  event.respondWith(cacheFirst(event.request));
 });
 
+// Messages: allow the page to activate a waiting worker immediately.
 self.addEventListener('message', event => {
   if (event.data?.type === 'SKIP_WAITING') {
     self.skipWaiting();
@@ -69,12 +59,10 @@ async function networkFirst(request) {
     }
     return response;
   } catch {
-    const cached = await caches.match(request);
-    return cached || new Response('Network unavailable', {
-      status: 503,
-      statusText: 'Service Unavailable',
-      headers: { 'Content-Type': 'text/plain' },
-    });
+    return (
+      (await caches.match(request)) ||
+      new Response('Network unavailable', { status: 503 })
+    );
   }
 }
 
@@ -90,11 +78,6 @@ async function cacheFirst(request) {
     }
     return response;
   } catch {
-    const offlinePage = await caches.match('/offline.html');
-    return offlinePage || new Response('Offline', {
-      status: 503,
-      statusText: 'Service Unavailable',
-      headers: { 'Content-Type': 'text/plain' },
-    });
+    return new Response('Offline', { status: 503 });
   }
 }
