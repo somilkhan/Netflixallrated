@@ -112,7 +112,7 @@ const ContentRow = memo(function ContentRow({
         <div
           ref={scrollRef}
           className="
-            flex gap-4 overflow-x-auto overflow-y-visible
+            flex gap-3 md:gap-4 overflow-x-auto overflow-y-visible
             px-4 md:px-6 pb-3
             scrollbar-hide
           "

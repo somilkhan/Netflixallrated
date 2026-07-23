@@ -180,9 +180,9 @@ const HeroSection = memo(function HeroSection({ titles, onAction }: HeroSectionP
                 <span
                   key={g}
                   className="
-                    text-[10px] font-medium px-2.5 py-1 rounded-full
-                    border border-white/[0.12] bg-white/[0.06]
-                    text-white/70 backdrop-blur-sm leading-none
+                    text-[11px] font-medium px-3 py-1.5 rounded-full
+                    border border-white/[0.12] bg-black/[0.45]
+                    text-white backdrop-blur-[8px] leading-none
                   "
                 >
                   {g}

@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { List, type RowComponentProps } from 'react-window';
+import { ChevronDown } from 'lucide-react';
 import { EpisodeListSkeleton } from './Skeletons';
 
 export interface EpisodeItem {
@@ -105,7 +106,7 @@ function useDebounced<T>(value: T, delayMs: number): T {
   return debounced;
 }
 
-/** Full episode-browsing experience: season selector, search, a virtualized
+/** Full episode-browsing experience: season selector (dropdown), search, a virtualized
  *  scrollable list (react-window — only visible rows are ever mounted, so
  *  100+ episode series stay smooth), thumbnails, metadata, and a
  *  "continue watching" indicator on the in-progress episode. Shared by both
@@ -149,20 +150,25 @@ export default function EpisodeBrowser({
 
   return (
     <div>
+      {/* Season selector — dropdown for cleaner UX on long season lists */}
       {seasonsLoading ? (
         <div className="anime-status pulse">Loading seasons…</div>
       ) : seasons.length > 0 && onSelectSeason && (
-        <div className="season-tabs">
-          {seasons.map(s => (
-            <button
-              key={s.seasonNumber}
-              className={`season-tab${selectedSeason === s.seasonNumber ? ' active' : ''}`}
-              onClick={() => onSelectSeason(s.seasonNumber)}
-            >
-              {s.name || `S${s.seasonNumber}`}
-              {s.episodeCount != null && <span style={{ marginLeft: 4, opacity: 0.45 }}>({s.episodeCount})</span>}
-            </button>
-          ))}
+        <div className="season-selector">
+          <select
+            className="season-select"
+            value={selectedSeason}
+            onChange={e => onSelectSeason(parseInt(e.target.value, 10))}
+            aria-label="Select season"
+          >
+            {seasons.map(s => (
+              <option key={s.seasonNumber} value={s.seasonNumber}>
+                {s.name || `Season ${s.seasonNumber}`}
+                {s.episodeCount != null ? ` (${s.episodeCount} episodes)` : ''}
+              </option>
+            ))}
+          </select>
+          <ChevronDown className="season-select-arrow" size={18} />
         </div>
       )}
 

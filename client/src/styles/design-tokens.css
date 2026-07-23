@@ -15,6 +15,13 @@
   /* Accents */
   --accent:        #FFFFFF;
   --accent-hover:  rgba(255, 255, 255, 0.1);
+  --accent-maroon: #7B1E1E;
+  --accent-amber:  #F59E0B;
+  --accent-red:    #E50914;
+  --bg-card:       #141414;
+  --bg-elevated:   #1A1A1A;
+  --bg-hover:      rgba(255, 255, 255, 0.05);
+  --text-muted:    #666666;
 
   /* Borders */
   --border-subtle: rgba(255, 255, 255, 0.08);
@@ -43,10 +50,10 @@
   --space-3xl: 64px;
 
   /* Border Radius */
-  --radius-sm: 4px;
-  --radius-md: 8px;
-  --radius-lg: 12px;
-  --radius-xl: 16px;
+  --radius-sm:   6px;
+  --radius-md:   8px;
+  --radius-lg:   12px;
+  --radius-xl:   16px;
   --radius-full: 9999px;
 
   /* Typography */

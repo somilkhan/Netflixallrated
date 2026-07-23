@@ -85,7 +85,7 @@ const ContentCard = memo(function ContentCard({
       className={`
         group relative cursor-pointer select-none touch-manipulation
         focus:outline-none focus-visible:ring-2 focus-visible:ring-white/25 rounded-lg
-        ${fluid ? 'w-full' : 'shrink-0 w-[164px] sm:w-[170px] md:w-[190px] scroll-snap-start'}
+        ${fluid ? 'w-full' : 'shrink-0 w-[140px] md:w-[180px] scroll-snap-start'}
         ${className}
       `}
       style={{ WebkitTapHighlightColor: 'transparent' }}

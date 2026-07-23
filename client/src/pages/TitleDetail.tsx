@@ -178,6 +178,9 @@ export default function TitleDetail() {
   // Synopsis expand/collapse
   const [synopsisExpanded, setSynopsisExpanded] = useState(false);
 
+  // Providers bottom sheet
+  const [showProvidersSheet, setShowProvidersSheet] = useState(false);
+
   // Loading flags for sections that populate after the initial title fetch,
   // so their skeletons can match the final layout instead of popping in empty.
   const [similarLoading, setSimilarLoading] = useState(true);
@@ -1501,53 +1504,65 @@ export default function TitleDetail() {
           </div>
         )}
 
-        {/* ── Where to watch — live TMDB providers with logos ─────── */}
-        {(watchProviders && (watchProviders.flatrate.length || watchProviders.rent.length || watchProviders.buy.length)) ? (
-          <div className="dp-section">
-            <div className="dp-section-head">
-              <span className="dp-section-title">Where to watch</span>
-            </div>
-            <div className="platform-chips">
-              {[...watchProviders.flatrate, ...watchProviders.rent, ...watchProviders.buy]
+        {/* ── Where to watch — single button → bottom sheet ─────── */}
+        {(() => {
+          const allProviders = watchProviders
+            ? [...watchProviders.flatrate, ...watchProviders.rent, ...watchProviders.buy]
                 .filter((p, i, arr) => arr.findIndex(x => x.providerId === p.providerId) === i)
-                .map((p: any) => (
-                  <a
-                    key={p.providerId}
-                    href={watchProviders.link || '#'}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="platform-chip"
-                    title={p.name}
-                    style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}
-                  >
-                    {p.logoUrl && (
-                      <img
-                        src={p.logoUrl}
-                        alt={p.name}
-                        loading="lazy"
-                        style={{ width: 18, height: 18, borderRadius: 4, objectFit: 'cover' }}
-                      />
-                    )}
-                    {p.name}
-                  </a>
-                ))}
+            : [];
+          const officialLinks = title.officialWatchLinks ?? [];
+          if (allProviders.length === 0 && officialLinks.length === 0) return null;
+          return (
+            <div className="dp-section">
+              <div className="dp-section-head">
+                <span className="dp-section-title">Where to watch</span>
+              </div>
+              <button className="btn-where-to-watch" onClick={() => setShowProvidersSheet(true)}>
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><polygon points="8,5 8,19 19,12" /></svg>
+                Where to Watch
+              </button>
+              {showProvidersSheet && (
+                <div className="provider-sheet-overlay" onClick={() => setShowProvidersSheet(false)}>
+                  <div className="provider-sheet" onClick={e => e.stopPropagation()}>
+                    <div className="provider-sheet-handle" />
+                    <h3>Where to Watch</h3>
+                    <div className="provider-sheet-grid">
+                      {allProviders.length > 0
+                        ? allProviders.map((p: any) => (
+                            <a
+                              key={p.providerId}
+                              href={watchProviders?.link || '#'}
+                              target="_blank"
+                              rel="noreferrer"
+                              className="provider-sheet-item"
+                            >
+                              {p.logoUrl
+                                ? <img src={p.logoUrl} alt={p.name} loading="lazy" />
+                                : <div style={{ width: 48, height: 48, borderRadius: 10, background: 'rgba(255,255,255,0.07)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 10, color: '#aaa' }}>{p.name[0]}</div>
+                              }
+                              <span>{p.name}</span>
+                            </a>
+                          ))
+                        : officialLinks.map((link: any) => (
+                            <a
+                              key={link.platform}
+                              href={link.url}
+                              target="_blank"
+                              rel="noreferrer"
+                              className="provider-sheet-item"
+                            >
+                              <div style={{ width: 48, height: 48, borderRadius: 10, background: 'rgba(255,255,255,0.07)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 10, color: '#fff' }}>{link.platform[0]}</div>
+                              <span>{link.platform}</span>
+                            </a>
+                          ))
+                      }
+                    </div>
+                  </div>
+                </div>
+              )}
             </div>
-          </div>
-        ) : title.officialWatchLinks?.length > 0 && (
-          <div className="dp-section">
-            <div className="dp-section-head">
-              <span className="dp-section-title">Where to watch</span>
-            </div>
-            <div className="platform-chips">
-              {title.officialWatchLinks.map((link: any) => (
-                <a key={link.platform} href={link.url} target="_blank" rel="noreferrer"
-                  className="platform-chip">
-                  {link.platform}
-                </a>
-              ))}
-            </div>
-          </div>
-        )}
+          );
+        })()}
 
         {/* ── Anime-only: characters ────────────────────────────── */}
         {title.type === 'ANIME' && anilistLoading && (
@@ -1608,16 +1623,30 @@ export default function TitleDetail() {
         {/* ── Rating card ───────────────────────────────────────── */}
         <div className="dp-section">
           <div className="rating-card">
-            <div className="rating-summary">
-              <div>
-                <div className="rating-summary-label">Community</div>
-                <div className="rating-summary-value">{topTier || '—'}</div>
+            {/* Empty state banner — shown only when no ratings exist yet */}
+            {ratings.length === 0 && (
+              <div className="rating-empty">
+                <svg className="rating-empty-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+                  <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
+                </svg>
+                <p>No ratings yet</p>
+                <p className="rating-empty-sub">Be the first to rate this title!</p>
               </div>
-              <div style={{ textAlign: 'right' }}>
-                <div className="rating-summary-label">Ratings</div>
-                <div className="rating-summary-value small">{ratings.length.toLocaleString()}</div>
+            )}
+
+            {/* Tier bars — always rendered so users can always pick any tier */}
+            {ratings.length > 0 && (
+              <div className="rating-summary">
+                <div>
+                  <div className="rating-summary-label">Community</div>
+                  <div className="rating-summary-value">{topTier || '—'}</div>
+                </div>
+                <div style={{ textAlign: 'right' }}>
+                  <div className="rating-summary-label">Ratings</div>
+                  <div className="rating-summary-value small">{ratings.length.toLocaleString()}</div>
+                </div>
               </div>
-            </div>
+            )}
 
             {TIERS.map(t => {
               const count = ratings.filter(r => r.tier === t.id).length;
@@ -1644,10 +1673,10 @@ export default function TitleDetail() {
                       </span>
                       {t.label}
                     </div>
-                    <div className="tier-pct">{pct}%</div>
+                    <div className="tier-pct">{ratings.length > 0 ? `${pct}%` : ''}</div>
                   </div>
                   <div className="tier-track">
-                    <div className="tier-fill" style={{ width: `${Math.max(pct, 0.5)}%` }} />
+                    <div className="tier-fill" style={{ width: ratings.length > 0 ? `${Math.max(pct, 0.5)}%` : '0%' }} />
                   </div>
                 </div>
               );
