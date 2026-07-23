@@ -10,6 +10,9 @@ import SearchOverlay from './components/SearchOverlay';
 import ErrorBoundary from './components/ErrorBoundary';
 import GlassLoader from './components/GlassLoader';
 import NotFound from './pages/NotFound';
+import OfflinePage from './components/OfflinePage';
+import { analytics } from './lib/analytics';
+import { setPageMeta } from './lib/seo';
 
 // Route-level code splitting — each page loads on demand
 const Home            = lazy(() => import('./pages/Home'));
@@ -42,6 +45,10 @@ function Wrap({ children }: { children: React.ReactNode }) {
 
 function AnimatedRoutes() {
   const location = useLocation();
+  useEffect(() => {
+    analytics.pageView(`${location.pathname}${location.search}`);
+    setPageMeta(location.pathname);
+  }, [location.pathname, location.search]);
   return (
     <LazyMotion features={domAnimation} strict>
       <div key={location.pathname} className="page-enter">
@@ -69,6 +76,7 @@ function AnimatedRoutes() {
           <Route path="/brand"               element={<Wrap><BrandShowcase /></Wrap>} />
           <Route path="/history"             element={<Wrap><WatchHistory /></Wrap>} />
           <Route path="/sports"              element={<Wrap><Sports /></Wrap>} />
+           <Route path="/offline"             element={<Wrap><OfflinePage /></Wrap>} />
           <Route path="*"                    element={<Wrap><NotFound /></Wrap>} />
         </Routes>
       </div>
@@ -78,6 +86,8 @@ function AnimatedRoutes() {
 
 export default function App() {
   const [searchOpen, setSearchOpen] = useState(false);
+  const [online, setOnline] = useState(() => navigator.onLine);
+  const [installEvent, setInstallEvent] = useState<any>(null);
   const openSearch  = useCallback(() => setSearchOpen(true), []);
   const closeSearch = useCallback(() => setSearchOpen(false), []);
 
@@ -93,6 +103,24 @@ export default function App() {
     return () => window.removeEventListener('keydown', handler);
   }, []);
 
+  useEffect(() => {
+    const onOnline = () => setOnline(true);
+    const onOffline = () => setOnline(false);
+    const onInstallable = (event: Event) => {
+      event.preventDefault();
+      setInstallEvent(event);
+    };
+    window.addEventListener('online', onOnline);
+    window.addEventListener('offline', onOffline);
+    window.addEventListener('beforeinstallprompt', onInstallable);
+    if ('serviceWorker' in navigator) navigator.serviceWorker.register('/sw.js').catch(() => {});
+    return () => {
+      window.removeEventListener('online', onOnline);
+      window.removeEventListener('offline', onOffline);
+      window.removeEventListener('beforeinstallprompt', onInstallable);
+    };
+  }, []);
+
   return (
     <AuthProvider>
       <PlayerProvider>
@@ -100,10 +128,18 @@ export default function App() {
           className="min-h-screen overflow-x-hidden max-w-full"
           style={{ background: '#0A0A0A', color: '#FFFFFF' }}
         >
-          <TopNav onOpenSearch={openSearch} />
+           <TopNav onOpenSearch={openSearch} />
           <SearchOverlay open={searchOpen} onClose={closeSearch} />
+           {!online && <OfflinePage />}
+           {online && installEvent && (
+             <div className="fixed bottom-20 left-1/2 z-[80] flex -translate-x-1/2 items-center gap-3 rounded-xl border border-white/10 bg-[#171717] px-4 py-3 text-xs text-white shadow-2xl">
+               <span>Install Allrated for a faster experience.</span>
+               <button type="button" onClick={async () => { await installEvent.prompt(); setInstallEvent(null); }} className="rounded-lg bg-white px-3 py-1.5 font-semibold text-black">Install</button>
+               <button type="button" onClick={() => setInstallEvent(null)} className="text-white/45">Not now</button>
+             </div>
+           )}
 
-          <main>
+           <main aria-hidden={!online}>
             <Suspense fallback={<GlassLoader visible label="Loading…" />}>
               <AnimatedRoutes />
             </Suspense>

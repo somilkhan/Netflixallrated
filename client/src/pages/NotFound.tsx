@@ -1,6 +1,5 @@
 /**
- * NotFound — bingr-style 404 page.
- * "404. Well, fuck." with a meme image and "Take me home, Daddy" button.
+ * Friendly 404 page with a clear recovery path.
  */
 import { useNavigate } from 'react-router-dom';
 
@@ -9,28 +8,19 @@ export default function NotFound() {
 
   return (
     <div className="min-h-[calc(100vh-64px)] md:min-h-screen flex flex-col items-center justify-center px-6 text-center gap-6 page-enter">
-      {/* Meme image */}
       <div
-        className="w-[220px] h-[220px] rounded-2xl overflow-hidden bg-white flex items-center justify-center"
+        className="w-[160px] h-[160px] rounded-3xl overflow-hidden bg-white/[.04] border border-white/10 flex items-center justify-center"
         style={{ boxShadow: '0 8px 40px rgba(0,0,0,0.6)' }}
       >
-        <img
-          src="https://media.giphy.com/media/3oEjI5VtIhHvK37WYo/giphy.gif"
-          alt="404"
-          className="w-full h-full object-cover"
-          onError={e => {
-            (e.target as HTMLImageElement).style.display = 'none';
-          }}
-        />
-        <span className="text-6xl" style={{ display: 'none' }}>💀</span>
+        <span className="text-6xl font-bold tracking-tight text-white/80">404</span>
       </div>
 
       <div className="space-y-3 max-w-[440px]">
         <h1 className="font-sans font-bold text-[32px] leading-tight text-white">
-          404. Well, fuck.
+          Page not found
         </h1>
         <p className="font-sans text-[14px] text-[#888] leading-relaxed">
-          The page you're looking for is either dead, missing, or out banging someone's mom. Don't worry, it happens to a lot of guys.
+          This page doesn’t exist or may have moved. Let’s get you back to something good.
         </p>
       </div>
 
@@ -44,7 +34,7 @@ export default function NotFound() {
           transition-all duration-150
         "
       >
-        Take me home, Daddy
+         Go Home
       </button>
     </div>
   );

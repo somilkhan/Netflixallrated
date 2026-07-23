@@ -1,4 +1,5 @@
 import { Component, ReactNode } from 'react';
+import { RefreshCw, TriangleAlert } from 'lucide-react';
 
 interface Props {
   children: ReactNode;
@@ -25,16 +26,16 @@ export default class ErrorBoundary extends Component<Props, State> {
     if (this.state.crashed) {
       return this.props.fallback ?? (
         <div className="min-h-[60vh] flex flex-col items-center justify-center px-6 text-center">
-          <p className="text-4xl mb-4">⚠️</p>
-          <p className="font-serif text-xl font-semibold mb-2">Kuch toot gaya</p>
-          <p className="text-ink-faint text-sm mb-6 max-w-xs">
-            {this.state.error?.message || 'An unexpected error occurred'}
+          <TriangleAlert className="mb-4 text-amber-300/80" size={36} />
+          <p className="text-xl font-semibold mb-2">Something went wrong</p>
+          <p className="text-white/45 text-sm mb-6 max-w-xs">
+            We couldn’t load this part of Allrated. Try again or return home.
           </p>
           <button
-            onClick={() => this.setState({ crashed: false, error: null })}
-            className="font-mono text-xs px-4 py-2 rounded-full border border-white/[0.15] text-white/60 hover:text-white hover:border-white/[0.25] transition-colors duration-200"
+            onClick={() => window.location.reload()}
+            className="inline-flex items-center gap-2 text-sm px-4 py-2 rounded-xl bg-white text-black font-semibold hover:bg-white/90 transition-colors"
           >
-            Try again
+            <RefreshCw size={14} /> Try again
           </button>
         </div>
       );

@@ -19,6 +19,7 @@ import TrailerModal from '../components/title-detail/TrailerModal';
 import { PageSkeleton, RowSkeleton, CharacterRowSkeleton } from '../components/title-detail/Skeletons';
 import '@/styles/MovieDetailPage.css';
 import type { Tier } from '../lib/ratings';
+import { analytics } from '../lib/analytics';
 
 const TIERS = [
   { id: 'SKIP',       label: 'Skip',       key: 'skip' },
@@ -734,6 +735,7 @@ export default function TitleDetail() {
     if (ep !== undefined) setSelectedEp(ep);
     setIsIframeLoading(true);
     setIsPlaying(true);
+    analytics.play(id);
     setTimeout(() => videoSectionRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 50);
   }, []);
 
@@ -798,6 +800,7 @@ export default function TitleDetail() {
 
   const handleClosePlayer = () => {
     setIsPlaying(false);
+    analytics.pause(id);
     setIsIframeLoading(false);
     setIframeError(false);
   };
@@ -854,6 +857,7 @@ export default function TitleDetail() {
     if (!id) return;
     await api.watchlist.add({ titleId: id, status });
     setWatchlistStatus(status);
+    analytics.addToList(id);
   };
 
   // A: Auto-open player when navigated with ?play=1 (fired once, after title loads)

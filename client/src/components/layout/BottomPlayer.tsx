@@ -12,6 +12,7 @@ import {
   Music2,
 } from 'lucide-react';
 import { usePlayer } from '../../lib/playerContext';
+import { analytics } from '../../lib/analytics';
 import { ProgressBar } from '../ui/ProgressBar';
 import { IconButton } from '../ui/IconButton';
 
@@ -22,7 +23,12 @@ const BottomPlayer = memo(function BottomPlayer() {
   const [volume,   setVolume]   = useState(80);
   const [expanded, setExpanded] = useState(false);
 
-  const handlePlayPause   = useCallback((e: React.MouseEvent) => { e.stopPropagation(); setIsPlaying(!isPlaying); }, [isPlaying, setIsPlaying]);
+  const handlePlayPause   = useCallback((e: React.MouseEvent) => {
+    e.stopPropagation();
+    setIsPlaying(!isPlaying);
+    if (isPlaying) analytics.pause(nowPlaying?.id);
+    else analytics.play(nowPlaying?.id);
+  }, [isPlaying, setIsPlaying, nowPlaying?.id]);
   const handleClose       = useCallback((e: React.MouseEvent) => { e.stopPropagation(); clear(); setExpanded(false); }, [clear]);
   const handleGoToTitle   = useCallback(() => { if (nowPlaying) nav(`/title/${nowPlaying.id}`); }, [nowPlaying, nav]);
   const handleVolumeToggle = useCallback((e: React.MouseEvent) => { e.stopPropagation(); setMuted(m => !m); }, []);

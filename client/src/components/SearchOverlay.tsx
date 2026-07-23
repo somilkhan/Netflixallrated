@@ -12,6 +12,7 @@ import { searchMulti } from '../services/tmdb';
 import TmdbContentCard from './TmdbContentCard';
 import type { TmdbNormalized } from '../services/tmdb';
 import { api } from '../lib/api';
+import { analytics } from '../lib/analytics';
 
 /* ── Constants ─────────────────────────────────────────────────────────── */
 
@@ -147,6 +148,7 @@ export default function SearchOverlay({ open, onClose }: Props) {
       setShowSuggs(false);
       return;
     }
+    analytics.search(q.trim());
     setLoading(true);
     setShowSuggs(true);
     const ctrl = new AbortController();

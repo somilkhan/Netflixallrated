@@ -10,6 +10,8 @@ import { m } from 'framer-motion';
 import { searchMulti, hasTmdbKey } from '../services/tmdb';
 import TmdbContentCard from '../components/TmdbContentCard';
 import type { TmdbNormalized } from '../services/tmdb';
+import { analytics } from '../lib/analytics';
+import { useIntersectionObserver } from '../hooks/useIntersectionObserver';
 
 /* ── Skeleton card ─────────────────────────────────────────────────────── */
 function SkeletonCard() {
@@ -49,10 +51,15 @@ export default function SearchResults() {
   const [rawResults, setRawResults] = useState<TmdbNormalized[]>([]);
   const [loading, setLoading] = useState(false);
   const [searched, setSearched] = useState(false);
+  const [networkError, setNetworkError] = useState(false);
+  const [page, setPage] = useState(1);
+  const [loadingMore, setLoadingMore] = useState(false);
 
   const inputRef    = useRef<HTMLInputElement>(null);
   const abortRef    = useRef<AbortController | null>(null);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const sentinelRef = useRef<HTMLDivElement>(null);
+  const sentinelVisible = useIntersectionObserver(sentinelRef);
 
   /* Tab-filtered results via useMemo — no re-filter on every render */
   const results = useMemo(() => {
@@ -75,13 +82,17 @@ export default function SearchResults() {
       setRawResults([]);
       setLoading(false);
       setSearched(false);
+      setNetworkError(false);
       return;
     }
     setLoading(true);
+    setPage(1);
+    setNetworkError(false);
     setSearched(true);
     const ctrl = new AbortController();
     abortRef.current = ctrl;
-    searchMulti(q.trim())
+    analytics.search(q.trim());
+    searchMulti(q.trim(), 1)
       .then((results) => {
         if (ctrl.signal.aborted) return;
         setRawResults(results);
@@ -91,8 +102,27 @@ export default function SearchResults() {
         if (err?.name === 'AbortError' || ctrl.signal.aborted) return;
         setRawResults([]);
         setLoading(false);
+        setNetworkError(true);
       });
   }
+
+  const canLoadMore = rawResults.length >= 20;
+  useEffect(() => {
+    if (!sentinelVisible || !canLoadMore || loading || loadingMore || !query.trim()) return;
+    let cancelled = false;
+    const nextPage = page + 1;
+    setLoadingMore(true);
+    searchMulti(query.trim(), nextPage)
+      .then(next => {
+        if (!cancelled) {
+          setRawResults(previous => [...previous, ...next]);
+          setPage(nextPage);
+        }
+      })
+      .catch(() => {})
+      .finally(() => { if (!cancelled) setLoadingMore(false); });
+    return () => { cancelled = true; };
+  }, [sentinelVisible, canLoadMore, loading, loadingMore, query, page]);
 
   /* Run search on mount if URL has a query param */
   useEffect(() => {
@@ -115,6 +145,7 @@ export default function SearchResults() {
     setQuery('');
     setRawResults([]);
     setSearched(false);
+    setNetworkError(false);
     if (debounceRef.current) clearTimeout(debounceRef.current);
     if (abortRef.current) abortRef.current.abort();
     inputRef.current?.focus();
@@ -221,6 +252,16 @@ export default function SearchResults() {
         </div>
       )}
 
+      {networkError && !loading && (
+        <div className="flex flex-col items-center py-16 text-center">
+          <p className="text-base font-semibold text-white/70">Search is temporarily unavailable</p>
+          <p className="mt-2 text-sm text-white/35">Check your connection and try again.</p>
+          <button type="button" onClick={() => runSearch(query)} className="mt-5 rounded-xl bg-white px-4 py-2.5 text-sm font-semibold text-black">
+            Try again
+          </button>
+        </div>
+      )}
+
       {/* ── Results ───────────────────────────────────────────────── */}
       {hasResults && (
         <>
@@ -240,6 +281,11 @@ export default function SearchResults() {
             ))}
           </m.div>
         </>
+      )}
+      {hasResults && canLoadMore && (
+        <div ref={sentinelRef} className="flex min-h-20 items-center justify-center text-xs text-white/30" aria-live="polite">
+          {loadingMore ? 'Loading more titles…' : 'Scroll for more'}
+        </div>
       )}
 
       {/* ── Empty: tab has 0 but all has some ─────────────────────── */}
