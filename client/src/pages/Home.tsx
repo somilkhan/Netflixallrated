@@ -312,7 +312,7 @@ export default function Home() {
           <TopTenRow
             title="Top 10 Today"
             items={trending.slice(0, 10)}
-            viewAllPath="/browse/trending"
+            viewAllPath="/browse?collection=trending"
             renderCard={(item, i) => (
               <TmdbContentCard key={item.id} item={item} rank={i + 1} />
             )}
@@ -321,7 +321,7 @@ export default function Home() {
 
         {/* ── Trending Now ──────────────────────────────────────────── */}
         {!loading && trending.length > 0 && (
-          <ContentRow title="Trending Now" viewAllPath="/browse/trending">
+          <ContentRow title="Trending Now" viewAllPath="/browse?collection=trending">
             {trending.slice(0, 20).map(item => (
               <TmdbContentCard key={item.id} item={item} />
             ))}
@@ -334,7 +334,7 @@ export default function Home() {
           errors.popularMovies ? (
             <ErrorRow label="Popular Movies unavailable" onRetry={fetchAll} />
           ) : popularMovies.length > 0 ? (
-            <ContentRow title="Popular Movies" viewAllPath="/browse/movies">
+            <ContentRow title="Popular Movies" viewAllPath="/browse?collection=movies">
               {popularMovies.slice(0, 20).map(item => (
                 <TmdbContentCard key={item.id} item={item} />
               ))}
@@ -348,7 +348,7 @@ export default function Home() {
           errors.popularTV ? (
             <ErrorRow label="Popular TV Shows unavailable" onRetry={fetchAll} />
           ) : popularTV.length > 0 ? (
-            <ContentRow title="Popular TV Shows" viewAllPath="/browse/series">
+            <ContentRow title="Popular TV Shows" viewAllPath="/browse?collection=series">
               {popularTV.slice(0, 20).map(item => (
                 <TmdbContentCard key={item.id} item={item} />
               ))}
@@ -362,7 +362,7 @@ export default function Home() {
           errors.topRated ? (
             <ErrorRow label="Top Rated unavailable" onRetry={fetchAll} />
           ) : topRated.length > 0 ? (
-            <ContentRow title="Top Rated" viewAllPath="/browse/top-rated">
+            <ContentRow title="Top Rated" viewAllPath="/browse?collection=top-rated">
               {topRated.slice(0, 20).map(item => (
                 <TmdbContentCard key={item.id} item={item} />
               ))}
@@ -376,7 +376,7 @@ export default function Home() {
           errors.nowPlaying ? (
             <ErrorRow label="Now Playing unavailable" onRetry={fetchAll} />
           ) : nowPlaying.length > 0 ? (
-            <ContentRow title="Now Playing in Theaters" viewAllPath="/browse/now-playing">
+            <ContentRow title="Now Playing in Theaters" viewAllPath="/browse?collection=now-playing">
               {nowPlaying.slice(0, 20).map(item => (
                 <TmdbContentCard key={item.id} item={item} />
               ))}

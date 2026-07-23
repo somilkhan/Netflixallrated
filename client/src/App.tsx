@@ -30,7 +30,6 @@ const TV              = lazy(() => import('./pages/TV'));
 const Anime           = lazy(() => import('./pages/Anime'));
 const AnimeGenres     = lazy(() => import('./pages/AnimeGenres'));
 const AnimeSectionPage = lazy(() => import('./pages/AnimeSectionPage'));
-const Categories      = lazy(() => import('./pages/Categories'));
 const Browse          = lazy(() => import('./pages/Browse'));
 const Profile         = lazy(() => import('./pages/Profile'));
 const StudioDetail    = lazy(() => import('./pages/DiscoveryPages').then(m => ({ default: m.StudioDetail })));
@@ -68,8 +67,7 @@ function AnimatedRoutes() {
           <Route path="/anime"               element={<Wrap><Anime /></Wrap>} />
           <Route path="/anime/genres"        element={<Wrap><AnimeGenres /></Wrap>} />
           <Route path="/anime/section"       element={<Wrap><AnimeSectionPage /></Wrap>} />
-          <Route path="/categories"          element={<Wrap><Categories /></Wrap>} />
-          <Route path="/browse"              element={<Wrap><Browse /></Wrap>} />
+          <Route path="/browse/*"            element={<Wrap><Browse /></Wrap>} />
           <Route path="/profile"             element={<Wrap><Profile /></Wrap>} />
           <Route path="/studio/:slug"        element={<Wrap><StudioDetail /></Wrap>} />
           <Route path="/language/:slug"      element={<Wrap><LanguageDetail /></Wrap>} />

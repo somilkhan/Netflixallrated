@@ -12,9 +12,10 @@ import type { TmdbNormalized } from '../services/tmdb';
 interface TmdbContentCardProps {
   item: TmdbNormalized;
   rank?: number;
+  className?: string;
 }
 
-const TmdbContentCard = memo(function TmdbContentCard({ item, rank }: TmdbContentCardProps) {
+const TmdbContentCard = memo(function TmdbContentCard({ item, rank, className = '' }: TmdbContentCardProps) {
   const nav = useNavigate();
   const [resolving, setResolving] = useState(false);
 
@@ -36,6 +37,7 @@ const TmdbContentCard = memo(function TmdbContentCard({ item, rank }: TmdbConten
       <ContentCard
         title={item as any}
         rank={rank}
+        className={className}
         onNavigate={go}
       />
     </div>

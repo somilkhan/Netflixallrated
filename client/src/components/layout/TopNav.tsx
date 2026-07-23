@@ -8,7 +8,7 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import {
   Search, X, Menu, LogIn, LogOut, Shield, User,
   Bookmark, Clock, Home, Tv, Trophy, Swords, Compass,
-  ChevronDown, Film, LayoutGrid,
+  ChevronDown, Film,
 } from 'lucide-react';
 import { useAuth } from '../../lib/auth';
 import { useScrollDirection } from '../../hooks/useScrollDirection';
@@ -29,7 +29,6 @@ const MOBILE_NAV = [
   { icon: Tv,         label: 'TV Shows',  path: '/tv' },
   { icon: Trophy,     label: 'Sports',    path: '/sports' },
   { icon: Swords,     label: 'Anime',     path: '/anime' },
-  { icon: LayoutGrid, label: 'Categories',path: '/categories' },
    { icon: Bookmark,   label: 'My List',   path: '/my-list' },
   { icon: Clock,      label: 'History',   path: '/history' },
   { icon: Compass,    label: 'Profile',   path: '/profile' },
