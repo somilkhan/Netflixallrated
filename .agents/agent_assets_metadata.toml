@@ -6,3 +6,9 @@ id = "Gz9NzUszDQBFoleIPskmJ"
 uri = "file://attached_assets/allrated-changelog.zip"
 type = "unspecified"
 title = "Allrated — Changelog & Changed Files"
+
+[[outputs]]
+id = "OZ7HOK3TjHFtobH4odr51"
+uri = "file://reports/allrated-product-audit-and-roadmap.pdf"
+type = "pdf"
+title = "Allrated Product Audit & Roadmap"
