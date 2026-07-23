@@ -19,7 +19,7 @@ interface TopTenRowProps {
  *   mt-2 (8px) + title (~16px) + rating row (~14px) = ~38px
  * We add this to `bottom` so the number aligns with the POSTER bottom, not card bottom.
  */
-const TEXT_AREA_HEIGHT = 42;
+const TEXT_AREA_HEIGHT = 38;
 
 const TopTenRow = memo(function TopTenRow({ title, items, viewAllPath, renderCard }: TopTenRowProps) {
   const nav       = useNavigate();
@@ -112,7 +112,7 @@ const TopTenRow = memo(function TopTenRow({ title, items, viewAllPath, renderCar
                * paddingLeft creates room for the numeral to peek out on the left.
                * All items (including 0) get padding so the numeral is always visible.
                */
-              style={{ paddingLeft: '45px' }}
+              style={{ paddingLeft: '38px' }}
             >
               {/*
                * Rank numeral — sits at bottom of the POSTER (not full card).
@@ -124,13 +124,13 @@ const TopTenRow = memo(function TopTenRow({ title, items, viewAllPath, renderCar
                 aria-hidden
                 className="absolute select-none pointer-events-none leading-none"
                 style={{
-                  left: 0,
+                  left: 5,
                   bottom: TEXT_AREA_HEIGHT,
                   zIndex: 1,
                   fontFamily: 'Inter, system-ui, sans-serif',
                   fontWeight: 900,
                   /* clamp: 100px on mobile (~390px wide), 150px on desktop */
-                  fontSize: 'clamp(100px, 26vw, 150px)',
+                  fontSize: 'clamp(76px, 21vw, 126px)',
                   letterSpacing: '-0.05em',
                   lineHeight: 0.85,
                   background: 'linear-gradient(to bottom, #FFFFFF 0%, #8B8B8B 100%)',

@@ -123,7 +123,7 @@ export default function EpisodeBrowser({
   continueEpisode = null,
   continuePct = 0,
   emptyLabel = 'No episodes found.',
-  rowHeight = 88,
+  rowHeight = 122,
   maxListHeight = 440,
 }: EpisodeBrowserProps) {
   const [search, setSearch] = useState('');

@@ -43,7 +43,7 @@ function ContinueWatchingCard({ item, onRemove }: ContinueWatchingCardProps) {
   }, [navigate, title.id]);
 
   return (
-    <div className="relative group shrink-0 w-[148px] md:w-[190px]">
+    <div className="relative group shrink-0 w-[104px] md:w-[150px]">
       <ContentCard
         title={{
           ...title,

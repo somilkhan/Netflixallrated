@@ -180,6 +180,7 @@ export default function TitleDetail() {
 
   // Providers bottom sheet
   const [showProvidersSheet, setShowProvidersSheet] = useState(false);
+  const [sourceMenuOpen, setSourceMenuOpen] = useState(false);
 
   // Loading flags for sections that populate after the initial title fetch,
   // so their skeletons can match the final layout instead of popping in empty.
@@ -1016,57 +1017,57 @@ export default function TitleDetail() {
                   ))}
                 </div>
 
-                {/* CTA buttons */}
-                <div className="hero-cta">
-                  {canPlay && (
-                    <button
-                      className="dp-btn dp-btn-play"
-                      onClick={() => {
-                        if (title.type !== 'ANIME') { openPlayer(); return; }
-                        if (animeProvider === 'gogoanime') { openGogoPlayer(); return; }
-                        if (isStaticAnimeProvider) {
-                          setIsIframeLoading(true);
-                          setIframeError(false);
-                          setIsPlaying(true);
-                          setTimeout(() => animeVideoRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 50);
-                          return;
-                        }
-                        openAnimePlayer();
-                      }}
-                      disabled={!isStaticAnimeProvider && (animeProvider === 'gogoanime' ? gogoEmbedLoading : animeEmbedLoading)}
-                    >
-                      <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
-                        <polygon points="8,5 8,19 19,12" />
-                      </svg>
-                      {!isStaticAnimeProvider && (animeProvider === 'gogoanime' ? gogoEmbedLoading : animeEmbedLoading) ? 'Loading…' : 'Play'}
-                    </button>
-                  )}
-                  {user && (
-                    <button
-                      className={`dp-btn dp-btn-save${watchlistStatus ? ' saved' : ''}`}
-                      onClick={() => addToWatchlist(watchlistStatus ? '' : 'PLAN_TO_WATCH')}
-                    >
-                      {watchlistStatus ? (
-                        <><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><polyline points="20 6 9 17 4 12"/></svg> Saved</>
-                      ) : (
-                        <><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg> My List</>
-                      )}
-                    </button>
-                  )}
-                  {trailerAvailable && (
-                    <button className="dp-btn dp-btn-ghost" onClick={() => setTrailerModalOpen(true)}>
-                      <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor"><polygon points="8,5 8,19 19,12" /></svg>
-                      Trailer
-                    </button>
-                  )}
-                  <button className="dp-btn dp-btn-icon" onClick={handleShare} aria-label="Share">
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                      <line x1="22" y1="2" x2="11" y2="13"/>
-                      <polygon points="22 2 15 22 11 13 2 9 22 2"/>
-                    </svg>
-                  </button>
-                </div>
               </div>
+            </div>
+            {/* CTAs sit below the poster/title row so they never compete with the poster on mobile. */}
+            <div className="hero-cta">
+              {canPlay && (
+                <button
+                  className="dp-btn dp-btn-play"
+                  onClick={() => {
+                    if (title.type !== 'ANIME') { openPlayer(); return; }
+                    if (animeProvider === 'gogoanime') { openGogoPlayer(); return; }
+                    if (isStaticAnimeProvider) {
+                      setIsIframeLoading(true);
+                      setIframeError(false);
+                      setIsPlaying(true);
+                      setTimeout(() => animeVideoRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 50);
+                      return;
+                    }
+                    openAnimePlayer();
+                  }}
+                  disabled={!isStaticAnimeProvider && (animeProvider === 'gogoanime' ? gogoEmbedLoading : animeEmbedLoading)}
+                >
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
+                    <polygon points="8,5 8,19 19,12" />
+                  </svg>
+                  {!isStaticAnimeProvider && (animeProvider === 'gogoanime' ? gogoEmbedLoading : animeEmbedLoading) ? 'Loading…' : 'Play'}
+                </button>
+              )}
+              {user && (
+                <button
+                  className={`dp-btn dp-btn-save${watchlistStatus ? ' saved' : ''}`}
+                  onClick={() => addToWatchlist(watchlistStatus ? '' : 'PLAN_TO_WATCH')}
+                >
+                  {watchlistStatus ? (
+                    <><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><polyline points="20 6 9 17 4 12"/></svg> Saved</>
+                  ) : (
+                    <><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg> My List</>
+                  )}
+                </button>
+              )}
+              {trailerAvailable && (
+                <button className="dp-btn dp-btn-ghost" onClick={() => setTrailerModalOpen(true)}>
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor"><polygon points="8,5 8,19 19,12" /></svg>
+                  Trailer
+                </button>
+              )}
+              <button className="dp-btn dp-btn-icon" onClick={handleShare} aria-label="Share">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <line x1="22" y1="2" x2="11" y2="13"/>
+                  <polygon points="22 2 15 22 11 13 2 9 22 2"/>
+                </svg>
+              </button>
             </div>
           </div>
         </div>
@@ -1138,35 +1139,45 @@ export default function TitleDetail() {
         {title.type !== 'ANIME' && canPlay && (
           <div ref={videoSectionRef} className="watch-section">
 
-            {/* Provider cards — glass style */}
-            <div className="provider-cards">
-              {SERVERS.map(srv => {
-                const isLoading =
-                  (srv.id === 'flixhq' && flixhqLoading && serverId === 'flixhq') ||
-                  (srv.id === 'febbox' && febboxLoading && serverId === 'febbox') ||
-                  (srv.id === '4khdhub' && hubLoading && serverId === '4khdhub') ||
-                  (srv.id === 'hdhub4u' && hdhubLoading && serverId === 'hdhub4u');
-                const isActive = isPlaying && serverId === srv.id;
-                return (
-                  <button
-                    key={srv.id}
-                    className={`provider-card${isActive ? ' active' : ''}`}
-                    onClick={() => switchServer(srv.id)}
-                  >
-                    <div className="provider-card-name">
-                      <span className="status-dot" />
-                      {srv.label}
-                    </div>
-                    <span className="provider-card-badge">{isLoading ? '…' : '4K'}</span>
-                    <div className="provider-card-play">
-                      <svg width="10" height="10" viewBox="0 0 24 24" fill="currentColor">
-                        <polygon points="8,5 8,19 19,12" />
-                      </svg>
-                      {isActive ? 'Playing' : 'Play'}
-                    </div>
-                  </button>
-                );
-              })}
+            {/* Source selector — keep the provider area compact instead of showing every source at once. */}
+            <div className="source-selector">
+              <button
+                type="button"
+                className="source-toggle"
+                aria-expanded={sourceMenuOpen}
+                onClick={() => setSourceMenuOpen(open => !open)}
+              >
+                <span className="source-toggle-label">
+                  <span className="status-dot active" />
+                  <span>Source</span>
+                  <strong>{SERVERS.find(s => s.id === serverId)?.label ?? 'VidSrc'}</strong>
+                </span>
+                <svg className={sourceMenuOpen ? 'source-toggle-chevron open' : 'source-toggle-chevron'} width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <polyline points="6 9 12 15 18 9" />
+                </svg>
+              </button>
+              {sourceMenuOpen && (
+                <div className="source-options">
+                  {SERVERS.map(srv => {
+                    const isLoading =
+                      (srv.id === 'flixhq' && flixhqLoading && serverId === 'flixhq') ||
+                      (srv.id === 'febbox' && febboxLoading && serverId === 'febbox') ||
+                      (srv.id === '4khdhub' && hubLoading && serverId === '4khdhub') ||
+                      (srv.id === 'hdhub4u' && hdhubLoading && serverId === 'hdhub4u');
+                    return (
+                      <button
+                        type="button"
+                        key={srv.id}
+                        className={`source-option${serverId === srv.id ? ' active' : ''}`}
+                        onClick={() => { setSourceMenuOpen(false); switchServer(srv.id); }}
+                      >
+                        <span>{srv.label}</span>
+                        <span>{isLoading ? 'Loading…' : serverId === srv.id && isPlaying ? 'Playing' : 'Play'}</span>
+                      </button>
+                    );
+                  })}
+                </div>
+              )}
             </div>
 
             {/* FlixHQ error message */}
@@ -1206,7 +1217,6 @@ export default function TitleDetail() {
                       <polygon points="8,5 8,19 19,12" />
                     </svg>
                   </div>
-                  <span className="video-placeholder-hint">Choose a source above or tap to play</span>
                 </button>
               )}
 
