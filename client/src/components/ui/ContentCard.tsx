@@ -114,30 +114,24 @@ const ContentCard = memo(function ContentCard({
       `}
       style={{ WebkitTapHighlightColor: 'transparent' }}
     >
-      {/* Full-card navigation target. It is a sibling, not a wrapper, so action buttons below remain independent controls. */}
-      <button
-        type="button"
+      {/* ── Poster container — the <a> is the navigation target ───────── */}
+      {/* Action buttons inside use e.stopPropagation() so they don't trigger navigation */}
+      <a
+        href={`/title/${title.id}`}
         aria-label={`Open ${title.name}`}
-        onClick={handleClick}
+        onClick={(e) => { e.preventDefault(); handleClick(); }}
         className="
-          absolute inset-0 z-0 block h-full w-full cursor-pointer
-          rounded-lg border-0 bg-transparent p-0
-          focus:outline-none focus-visible:ring-2 focus-visible:ring-white/25
-        "
-      />
-
-      {/* ── Poster container ─────────────────────────────────────────────── */}
-      <div
-        className="
-          pointer-events-none relative z-10 w-full rounded-lg overflow-hidden
-          bg-[#141414]
+          block relative z-10 w-full rounded-lg overflow-hidden
+          bg-[#141414] cursor-pointer
           transition-transform duration-[400ms] ease-[cubic-bezier(0.4,0,0.2,1)]
           md:group-hover:scale-[1.08] md:group-hover:-translate-y-1
           active:scale-[0.97] md:active:scale-100 md:active:translate-y-0
+          focus:outline-none focus-visible:ring-2 focus-visible:ring-white/25
         "
         style={{
           aspectRatio: '2/3',
           boxShadow: '0 4px 16px rgba(0,0,0,0.3)',
+          display: 'block',
         }}
       >
         {/* Glow layer — opacity-only toggle, no repaint */}
@@ -316,7 +310,7 @@ const ContentCard = memo(function ContentCard({
             <div className="h-full rounded-r-full" style={{ width: `${progressPct}%`, background: 'rgba(255,255,255,0.9)' }} />
           </div>
         )}
-      </div>
+      </a>
 
       {/* ── Text below poster ──────────────────────────────────────────── */}
       <div className="mt-2 px-0.5">

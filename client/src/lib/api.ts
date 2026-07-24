@@ -55,7 +55,9 @@ async function fetcher(path: string, options?: RequestInit) {
 
   if (dedupeKey) {
     inflight.set(dedupeKey, request);
-    request.finally(() => inflight.delete(dedupeKey));
+    void request.finally(() => {
+      inflight.delete(dedupeKey);
+    }).catch(() => {});
   }
 
   return request;

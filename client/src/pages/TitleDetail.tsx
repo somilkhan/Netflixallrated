@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback, useRef, useMemo, memo } from 'react';
 import { Play as PlayIcon } from 'lucide-react';
 import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
 import { api } from '../lib/api';
+import { getMovieDetails, getTVDetails, getMovieVideos, getTVVideos } from '../services/tmdb';
 import { useAuth } from '../lib/auth';
 import { getAnimeDetail } from '../lib/anilist';
 import {
@@ -142,7 +143,7 @@ const CharacterAvatar = memo(function CharacterAvatar({ name, imageUrl }: { name
 });
 
 export default function TitleDetail() {
-  const { id } = useParams();
+  const { id, tmdbId: tmdbIdParam } = useParams<{ id?: string; tmdbId?: string }>();
   const { user } = useAuth();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
@@ -347,6 +348,62 @@ export default function TitleDetail() {
   const [episodes, setEpisodes] = useState<any[]>([]);
   const [seasonsLoading, setSeasonsLoading] = useState(false);
   const [epsLoading, setEpsLoading] = useState(false);
+
+  // ── TMDB fallback: /title/tmdb/:tmdbId route ─────────────────────────────
+  // First tries to resolve to a backend ID and redirect. If the title isn't in
+  // the backend yet, builds a synthetic title from TMDB data so the page still
+  // renders with poster/synopsis/player (ratings/watchlist require a backend ID
+  // and are silently skipped when `id` is undefined).
+  useEffect(() => {
+    if (!tmdbIdParam) return;
+    const numericTmdbId = Number(tmdbIdParam);
+    if (Number.isNaN(numericTmdbId)) { setTitleError(true); return; }
+    const tmdbType = (searchParams.get('type') === 'tv' ? 'tv' : 'movie') as 'movie' | 'tv';
+
+    let cancelled = false;
+    setTitle(null);
+    setTitleError(false);
+
+    api.titles.resolveTmdb(numericTmdbId, tmdbType)
+      .then(({ id: backendId }: { id: string }) => {
+        if (cancelled) return;
+        navigate(`/title/${backendId}${autoPlay ? '?play=1' : ''}`, { replace: true });
+      })
+      .catch(async () => {
+        if (cancelled) return;
+        try {
+          const [details, trailerKey] = await Promise.all([
+            tmdbType === 'movie' ? getMovieDetails(numericTmdbId) : getTVDetails(numericTmdbId),
+            tmdbType === 'movie' ? getMovieVideos(numericTmdbId) : getTVVideos(numericTmdbId),
+          ]);
+          if (cancelled) return;
+          const dateStr: string = details.release_date || details.first_air_date || '';
+          const parsedYear = dateStr ? new Date(dateStr).getFullYear() : NaN;
+          setTitle({
+            id: undefined,
+            name: details.title || details.name || '',
+            type: tmdbType === 'movie' ? 'MOVIE' : 'SERIES',
+            posterUrl: details.poster_path
+              ? `https://image.tmdb.org/t/p/w500${details.poster_path}`
+              : null,
+            backdropUrl: details.backdrop_path
+              ? `https://image.tmdb.org/t/p/w1280${details.backdrop_path}`
+              : null,
+            synopsis: details.overview || '',
+            genres: (details.genres as Array<{ name: string }> || []).map(g => g.name),
+            tmdbId: numericTmdbId,
+            year: Number.isNaN(parsedYear) ? null : parsedYear,
+            runtimeMinutes: details.runtime || null,
+            trailerYoutubeId: trailerKey,
+            rating: details.vote_average || null,
+          });
+        } catch {
+          if (!cancelled) setTitleError(true);
+        }
+      });
+
+    return () => { cancelled = true; };
+  }, [tmdbIdParam]); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
     if (!id) return;
