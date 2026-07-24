@@ -186,7 +186,6 @@ function ErrorRow({ label, onRetry }: { label: string; onRetry: () => void }) {
 export default function Home() {
   const { user } = useAuth();
   const navigate = useNavigate();
-  const isRestoring = useRef(false);
   const requestedRows = useRef(new Set<string>());
   const [loadedRows, setLoadedRows] = useState<Record<string, boolean>>({});
 
@@ -291,7 +290,7 @@ export default function Home() {
   );
 
   // ── Immediate TMDB fetch: hero/trending and genres only ────────────────
-  const fetchAll = useCallback(async () => {
+  const fetchAll = useCallback(async (signal?: AbortSignal) => {
     if (!hasTmdbKey()) return;
     setLoading(true);
     setErrors({});
@@ -311,14 +310,15 @@ export default function Home() {
     setGenres([]);
 
     const results = await Promise.allSettled([
-      getTrending('all', 'day', 1),
-      getGenres(),
+      getTrending('all', 'day', 1, signal),
+      getGenres(signal),
     ]);
+    if (signal?.aborted) return;
 
     const set = <T,>(idx: number, setter: (value: T) => void, key: string) => {
       const r = results[idx];
       if (r.status === 'fulfilled') setter(r.value as T);
-      else setErrors(prev => ({ ...prev, [key]: 'Failed to load' }));
+      else if (!signal?.aborted) setErrors(prev => ({ ...prev, [key]: 'Failed to load' }));
     };
 
     set<TmdbNormalized[]>(0, setTrending, 'trending');
@@ -331,7 +331,6 @@ export default function Home() {
     // Use cached data only if it was built for the same region
     const cache = getHomeCache();
     if (cache && cache.regionCode === region.countryCode) {
-      isRestoring.current = true;
       return;
     }
     // Bust stale cache when region differs
@@ -340,7 +339,9 @@ export default function Home() {
     } catch {
       // Ignore storage failures.
     }
-    fetchAll();
+    const controller = new AbortController();
+    fetchAll(controller.signal);
+    return () => controller.abort();
   }, [fetchAll, region]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Populate cache when data arrives (keyed by region)
@@ -364,14 +365,18 @@ export default function Home() {
     if (!base.length) { setHeroTitles([]); return; }
     setHeroTitles(base); // show immediately without trailers
 
+    const controller = new AbortController();
     // Fetch trailers for the first 5 hero slides in background
     const topFive = base.slice(0, 5);
     Promise.all(
       topFive.map(item =>
-        (item.mediaType === 'movie' ? getMovieVideos(item.tmdbId) : getTVVideos(item.tmdbId))
+        (item.mediaType === 'movie'
+          ? getMovieVideos(item.tmdbId, controller.signal)
+          : getTVVideos(item.tmdbId, controller.signal))
           .catch(() => null),
       ),
     ).then(trailerKeys => {
+      if (controller.signal.aborted) return;
       setHeroTitles(prev =>
         prev.map((item, i) =>
           i < trailerKeys.length && trailerKeys[i]
@@ -380,6 +385,7 @@ export default function Home() {
         ),
       );
     });
+    return () => controller.abort();
   }, [trending]);
 
   // ── Continue Watching ──────────────────────────────────────────────────
@@ -395,14 +401,11 @@ export default function Home() {
     api.history.remove(titleId).catch(() => {});
   }, []);
 
-  // ── Hero action (TMDB resolve before navigate) ─────────────────────────
-  const heroAction = useCallback(async (item: TmdbNormalized, play: boolean) => {
-    try {
-      const { id } = await api.titles.resolveTmdb(item.tmdbId, item.mediaType);
-      navigate(`/title/${id}${play ? '?play=1' : ''}`);
-    } catch {
-      navigate(`/search?q=${encodeURIComponent(item.name)}&type=${item.type}`);
-    }
+  // ── Hero action — route immediately; the detail page resolves the local row
+  const heroAction = useCallback((item: TmdbNormalized, play: boolean) => {
+    const query = new URLSearchParams({ type: item.mediaType });
+    if (play) query.set('play', '1');
+    navigate(`/title/tmdb/${item.tmdbId}?${query.toString()}`);
   }, [navigate]);
 
   // ── Genre tile click ───────────────────────────────────────────────────

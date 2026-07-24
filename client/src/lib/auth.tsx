@@ -48,9 +48,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         const { data: { subscription } } = sb.auth.onAuthStateChange(
           async (_event, session) => {
             if (session) {
-              // Do NOT persist the token to localStorage — XSS-readable.
-              // The Supabase client keeps its own session; we only hold it in React state.
               setToken(session.access_token);
+              localStorage.setItem('allrated-token', session.access_token);
 
               // Fetch the Neon user (includes role and displayName)
               try {
@@ -79,6 +78,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             } else {
               setToken(null);
               setUser(null);
+              localStorage.removeItem('allrated-token');
             }
             setIsLoading(false);
           }

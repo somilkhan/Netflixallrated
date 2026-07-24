@@ -16,7 +16,7 @@ function HighlightText({ text, query }: { text: string; query: string }) {
   return (
     <>
       {parts.map((part, i) =>
-        regex.test(part)
+        part.toLowerCase() === query.trim().toLowerCase()
           ? <mark key={i} style={{ background: 'rgba(255,255,255,0.22)', color: '#fff', borderRadius: 2, padding: '0 1px' }}>{part}</mark>
           : <span key={i}>{part}</span>
       )}

@@ -12,8 +12,12 @@ const IMAGE_BASE = 'https://image.tmdb.org/t/p/';
 const _cache = new Map<string, { value: any; expires: number }>();
 const TTL_MS = 5 * 60 * 1000;
 
-async function tmdbFetch<T>(path: string, params: Record<string, string> = {}): Promise<T> {
-  const key = (import.meta as any).env?.VITE_TMDB_API_KEY;
+async function tmdbFetch<T>(
+  path: string,
+  params: Record<string, string> = {},
+  signal?: AbortSignal,
+): Promise<T> {
+  const key = import.meta.env.VITE_TMDB_API_KEY;
   if (!key) throw new Error('VITE_TMDB_API_KEY is not configured');
 
   const url = new URL(`${TMDB_BASE}${path}`);
@@ -24,7 +28,7 @@ async function tmdbFetch<T>(path: string, params: Record<string, string> = {}): 
   const cached = _cache.get(cacheKey);
   if (cached && cached.expires > Date.now()) return cached.value as T;
 
-  const res = await fetch(url.toString());
+  const res = await fetch(url.toString(), { signal });
   if (!res.ok) throw new Error(`TMDB ${res.status}: ${res.statusText}`);
   const data = await res.json();
   _cache.set(cacheKey, { value: data, expires: Date.now() + TTL_MS });
@@ -123,9 +127,10 @@ export async function getTrending(
   type: 'all' | 'movie' | 'tv' = 'all',
   timeWindow: 'day' | 'week' = 'day',
   page = 1,
+  signal?: AbortSignal,
 ): Promise<TmdbNormalized[]> {
   const params: Record<string, string> = { page: String(page) };
-  const data = await tmdbFetch<{ results: any[] }>(`/trending/${type}/${timeWindow}`, params);
+  const data = await tmdbFetch<{ results: any[] }>(`/trending/${type}/${timeWindow}`, params, signal);
   return data.results.map(item => normalize(item));
 }
 
@@ -313,9 +318,9 @@ export async function getTVDetails(id: number): Promise<any> {
 }
 
 /** Returns the YouTube trailer key for a movie, or null if not found. */
-export async function getMovieVideos(id: number): Promise<string | null> {
+export async function getMovieVideos(id: number, signal?: AbortSignal): Promise<string | null> {
   try {
-    const data = await tmdbFetch<{ results: any[] }>(`/movie/${id}/videos`);
+    const data = await tmdbFetch<{ results: any[] }>(`/movie/${id}/videos`, {}, signal);
     const trailer = data.results.find(v => v.type === 'Trailer' && v.site === 'YouTube')
       ?? data.results.find(v => v.site === 'YouTube');
     return trailer?.key ?? null;
@@ -325,9 +330,9 @@ export async function getMovieVideos(id: number): Promise<string | null> {
 }
 
 /** Returns the YouTube trailer key for a TV show, or null if not found. */
-export async function getTVVideos(id: number): Promise<string | null> {
+export async function getTVVideos(id: number, signal?: AbortSignal): Promise<string | null> {
   try {
-    const data = await tmdbFetch<{ results: any[] }>(`/tv/${id}/videos`);
+    const data = await tmdbFetch<{ results: any[] }>(`/tv/${id}/videos`, {}, signal);
     const trailer = data.results.find(v => v.type === 'Trailer' && v.site === 'YouTube')
       ?? data.results.find(v => v.site === 'YouTube');
     return trailer?.key ?? null;
@@ -341,10 +346,10 @@ export async function getMovieCredits(id: number): Promise<any> {
 }
 
 /** Returns deduplicated genre list from both movie and TV genres. */
-export async function getGenres(): Promise<{ id: number; name: string }[]> {
+export async function getGenres(signal?: AbortSignal): Promise<{ id: number; name: string }[]> {
   const [moviesData, tvData] = await Promise.all([
-    tmdbFetch<{ genres: any[] }>('/genre/movie/list'),
-    tmdbFetch<{ genres: any[] }>('/genre/tv/list'),
+    tmdbFetch<{ genres: any[] }>('/genre/movie/list', {}, signal),
+    tmdbFetch<{ genres: any[] }>('/genre/tv/list', {}, signal),
   ]);
   const seen = new Set<number>();
   return [...moviesData.genres, ...tvData.genres].filter(g => {
@@ -355,7 +360,7 @@ export async function getGenres(): Promise<{ id: number; name: string }[]> {
 }
 
 export function hasTmdbKey(): boolean {
-  return !!(import.meta as any).env?.VITE_TMDB_API_KEY;
+  return !!import.meta.env.VITE_TMDB_API_KEY;
 }
 
 /**

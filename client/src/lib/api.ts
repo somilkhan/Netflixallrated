@@ -1,6 +1,6 @@
 import { getSupabaseClient } from './supabase';
 
-const API_URL = (import.meta as any).env?.VITE_API_URL || '/api';
+const API_URL = import.meta.env.VITE_API_URL || '/api';
 
 const inflight = new Map<string, Promise<any>>();
 
@@ -15,20 +15,27 @@ function cachedFetcher(cacheKey: string, ttl: number, fetcher: () => Promise<any
 
   if (inflight.has(cacheKey)) return inflight.get(cacheKey)!;
 
-  const req = fetcher().then((value: any) => {
+  let req: Promise<any>;
+  req = fetcher().then((value: any) => {
     cache.set(cacheKey, { value, expires: Date.now() + ttl });
+    if (inflight.get(cacheKey) === req) inflight.delete(cacheKey);
     return value;
-  }).finally(() => inflight.delete(cacheKey));
+  }, (error: unknown) => {
+    if (inflight.get(cacheKey) === req) inflight.delete(cacheKey);
+    throw error;
+  });
 
   inflight.set(cacheKey, req);
   return req;
 }
 
 async function fetcher(path: string, options?: RequestInit) {
-  // Auth is managed by Supabase. Do not read or write access tokens from
-  // localStorage; the Supabase client owns the persisted session securely.
   const { data: { session } } = await getSupabaseClient()?.auth.getSession() ?? { data: { session: null } };
-  const token = session?.access_token ?? null;
+  // Supabase remains the source of truth. The mirror is only a short-lived
+  // compatibility bridge for requests made while auth state is hydrating.
+  const token = session?.access_token
+    ?? localStorage.getItem('allrated-token')
+    ?? null;
   const method = (options?.method || 'GET').toUpperCase();
   const dedupeKey = method === 'GET' ? `${token || 'anon'}::${path}` : null;
 
@@ -55,9 +62,10 @@ async function fetcher(path: string, options?: RequestInit) {
 
   if (dedupeKey) {
     inflight.set(dedupeKey, request);
-    void request.finally(() => {
-      inflight.delete(dedupeKey);
-    }).catch(() => {});
+    void request.then(
+      () => { if (inflight.get(dedupeKey) === request) inflight.delete(dedupeKey); },
+      () => { if (inflight.get(dedupeKey) === request) inflight.delete(dedupeKey); },
+    );
   }
 
   return request;
