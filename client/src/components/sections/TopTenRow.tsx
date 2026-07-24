@@ -106,7 +106,7 @@ const TopTenRow = memo(function TopTenRow({ title, items, viewAllPath, renderCar
           tabIndex={0}
           role="region"
           aria-label={`${title} row`}
-          className="flex overflow-x-auto scrollbar-hide gap-0 focus:outline-none focus-visible:ring-1 focus-visible:ring-white/25 rounded-lg"
+           className="flex gap-4 overflow-x-auto scrollbar-hide focus:outline-none focus-visible:ring-1 focus-visible:ring-white/25 rounded-lg"
           style={{
             scrollSnapType: 'x mandatory',
             WebkitOverflowScrolling: 'touch',

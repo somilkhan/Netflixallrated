@@ -67,7 +67,7 @@ const REGION_COLLECTION_KEYS = new Set<LiveCollection>(['trending', 'movies', 's
 function getLiveCollectionLabel(collection: LiveCollection, countryName: string): string {
   if (STATIC_COLLECTION_LABELS[collection]) return STATIC_COLLECTION_LABELS[collection]!;
   switch (collection) {
-    case 'trending':    return `Trending in ${countryName}`;
+    case 'trending':    return 'Trending Now';
     case 'movies':      return `Popular Movies in ${countryName}`;
     case 'series':      return `Popular TV Shows in ${countryName}`;
     case 'top-rated':   return `Top Rated in ${countryName}`;
@@ -96,7 +96,7 @@ async function fetchLiveCollection(
   rp: RegionParams = {},
 ): Promise<TmdbNormalized[]> {
   switch (collection) {
-    case 'trending':      return getTrending('all', 'day', page, rp);
+    case 'trending':      return getTrending('all', 'day', page);
     case 'movies':        return getPopularMovies(page, rp);
     case 'series':        return getPopularTVShows(page, rp);
     case 'now-playing':   return getNowPlayingMovies(page, rp);
@@ -359,9 +359,9 @@ export default function Browse() {
       {/* ── Grid ─────────────────────────────────────────────────────────── */}
       <div className={`px-4 md:px-6 ${isLiveCollection ? 'pt-6' : 'pt-[88px]'}`}>
         {visibleLoading ? (
-          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3 md:gap-4">
+          <div className="flex flex-wrap gap-4">
             {Array.from({ length: isLiveCollection ? 20 : PAGE_SIZE }).map((_, i) => (
-              <SkeletonCard key={i} className="w-full" />
+              <SkeletonCard key={i} />
             ))}
           </div>
         ) : liveError || visibleTitles.length === 0 ? (
@@ -390,11 +390,11 @@ export default function Browse() {
             </button>
           </div>
         ) : (
-          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3 md:gap-4">
+          <div className="flex flex-wrap gap-4">
             {visibleTitles.map(t => (
               isLiveCollection
-                ? <TmdbContentCard key={t.id} item={t as TmdbNormalized} className="w-full" />
-                : <ContentCard key={t.id} title={t} className="w-full" />
+                ? <TmdbContentCard key={t.id} item={t as TmdbNormalized} />
+                : <ContentCard key={t.id} title={t} />
             ))}
           </div>
         )}

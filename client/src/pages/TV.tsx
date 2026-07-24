@@ -160,7 +160,7 @@ export default function TVShows() {
     setLoading(true);
     const rp: RegionParams = { region: region.countryCode, language: region.language };
     Promise.allSettled([
-      getTrending('tv', 'day', 1, rp),
+      getTrending('tv', 'day', 1),
       getPopularTVShows(1, rp),
       getTopRatedTVShows(1, rp),
     ]).then(([trendRes, popRes, topRes]) => {

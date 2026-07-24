@@ -9,7 +9,7 @@ export const SkeletonCard = memo(function SkeletonCard({ className = '', fluid =
   return (
     <div
       className={`
-        ${fluid ? 'w-full' : 'shrink-0 w-[148px] md:w-[160px] scroll-snap-start'}
+        ${fluid ? 'w-full' : 'shrink-0 w-[140px] sm:w-[180px] lg:w-[230px] scroll-snap-start'}
         ${className}
       `}
       aria-hidden="true"
@@ -38,7 +38,7 @@ export const SkeletonCard = memo(function SkeletonCard({ className = '', fluid =
 
 export function SkeletonRow({ count = 6 }: { count?: number }) {
   return (
-    <div className="flex gap-3 overflow-hidden px-4 md:px-6">
+    <div className="flex gap-4 overflow-hidden px-4 md:px-6">
       {Array.from({ length: count }).map((_, i) => (
         <SkeletonCard key={i} />
       ))}

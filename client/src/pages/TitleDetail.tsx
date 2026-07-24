@@ -91,11 +91,8 @@ const RelatedPosterCard = memo(function RelatedPosterCard({
  * catalog on click and routes to the SAME unified /title/:id detail page. */
 const RelatedTmdbCard = memo(function RelatedTmdbCard({ item }: { item: any }) {
   const nav = useNavigate();
-  const handleClick = async () => {
-    try {
-      const { id } = await api.titles.resolveTmdb(item.tmdbId, item.mediaType === 'movie' ? 'movie' : 'tv');
-      nav(`/title/${id}`);
-    } catch { /* best-effort — stay put on failure */ }
+  const handleClick = () => {
+    nav(`/title/tmdb/${item.tmdbId}?type=${item.mediaType}`);
   };
   return (
     <RelatedPosterCard
@@ -1652,7 +1649,7 @@ export default function TitleDetail() {
               .filter((e: any) => e.node.format !== 'MANGA' && e.node.format !== 'NOVEL')
               .slice(0, 10)
               .map((e: any) => (
-                <div key={e.node.id} style={{ flex: '0 0 auto', width: 130 }}>
+                <div key={e.node.id} style={{ flex: '0 0 auto' }}>
                   <RelatedAnimeCard node={e.node} />
                 </div>
               ))}
@@ -1666,7 +1663,7 @@ export default function TitleDetail() {
         {!recommendedLoading && recommendedTitles.length > 0 && (
           <RelatedRow title="Recommendations">
             {recommendedTitles.slice(0, 12).map((t: any) => (
-              <div key={t.tmdbId} style={{ flex: '0 0 auto', width: 130 }}>
+              <div key={t.tmdbId} style={{ flex: '0 0 auto' }}>
                 <RelatedTmdbCard item={t} />
               </div>
             ))}
@@ -1680,7 +1677,7 @@ export default function TitleDetail() {
         {!similarLoading && similarTitles.length > 0 && (
           <RelatedRow title="Similar Titles">
             {similarTitles.slice(0, 12).map((t: any) => (
-              <div key={t.tmdbId} style={{ flex: '0 0 auto', width: 130 }}>
+              <div key={t.tmdbId} style={{ flex: '0 0 auto' }}>
                 <RelatedTmdbCard item={t} />
               </div>
             ))}

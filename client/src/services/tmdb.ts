@@ -123,10 +123,8 @@ export async function getTrending(
   type: 'all' | 'movie' | 'tv' = 'all',
   timeWindow: 'day' | 'week' = 'day',
   page = 1,
-  rp: RegionParams = {},
 ): Promise<TmdbNormalized[]> {
   const params: Record<string, string> = { page: String(page) };
-  applyRegion(params, rp);
   const data = await tmdbFetch<{ results: any[] }>(`/trending/${type}/${timeWindow}`, params);
   return data.results.map(item => normalize(item));
 }
