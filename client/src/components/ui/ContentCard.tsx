@@ -95,6 +95,9 @@ const ContentCard = memo(function ContentCard({
     ? Math.min(100, (progressSeconds / durationSeconds) * 100)
     : 0;
 
+  // Ensure event propagation is strictly stopped on all sub-actions to prevent triggering full-card click.
+  // Because overlay buttons are siblings (not descendants) of the full-card navigation target button,
+  // this is fully HTML standards-compliant and has clean interactive keyboard accessibility.
   const handleClick    = useCallback(() => { if (onNavigate) { onNavigate(false); } else { nav(`/title/${title.id}`); } }, [nav, title.id, onNavigate]);
   const handlePlay     = useCallback((e: React.MouseEvent) => { e.stopPropagation(); if (onNavigate) { onNavigate(true); } else { nav(`/title/${title.id}?play=1`); } }, [nav, title.id, onNavigate]);
   const handleAddList  = useCallback((e: React.MouseEvent) => { e.stopPropagation(); onAddToList?.(title.id); }, [onAddToList, title.id]);
