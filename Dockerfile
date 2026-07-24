@@ -30,7 +30,12 @@ RUN cd server && npm install --prefer-offline=false
 
 COPY server ./server
 
+# Generate Prisma client (needs schema file, runs after COPY)
+RUN cd server && npx prisma generate
+
 ENV NODE_ENV=production
 EXPOSE 3000
 
-CMD ["sh", "-c", "cd server && NODE_ENV=production tsx server/server.ts"]
+# Run migrations then start the server.
+# prisma migrate deploy is idempotent — safe to run on every deploy.
+CMD ["sh", "-c", "cd server && npx prisma migrate deploy && tsx src/server.ts"]
