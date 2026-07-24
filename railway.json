@@ -4,7 +4,7 @@
     "builder": "DOCKERFILE"
   },
   "deploy": {
-    "startCommand": "sh -c \"cd server && NODE_ENV=production tsx server/server.ts\"",
+    "startCommand": "sh -c \"cd server && npx prisma migrate deploy && NODE_ENV=production tsx src/server.ts\"",
     "restartPolicyType": "ON_FAILURE",
     "restartPolicyMaxRetries": 5
   }
