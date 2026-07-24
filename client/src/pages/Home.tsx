@@ -325,15 +325,19 @@ export default function Home() {
       <div className="relative z-10 mt-0">
 
         {/* Tab filter pills */}
-        <div className="flex gap-3 overflow-x-auto scrollbar-hide px-4 md:px-6 pt-6 pb-2">
+        <div className="flex gap-3 overflow-x-auto scrollbar-hide px-4 md:px-6 pt-6 pb-2" role="tablist" aria-label="Content filters">
           {TABS.map(tab => (
             <button
               key={tab}
               type="button"
+              role="tab"
+              aria-selected={activeTab === tab}
+              aria-pressed={activeTab === tab}
               onClick={() => setActiveTab(tab)}
               className={`
                 shrink-0 px-5 py-2 h-10 rounded-full text-[13px] font-medium
                 border transition-all duration-200 touch-manipulation
+                focus:outline-none focus-visible:ring-2 focus-visible:ring-white/50
                 ${activeTab === tab
                   ? 'border-white bg-white/10 text-white'
                   : 'border-[#525252] bg-transparent text-[#A3A3A3] hover:border-white/40 hover:text-white'}

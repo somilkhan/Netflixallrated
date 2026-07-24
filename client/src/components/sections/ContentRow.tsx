@@ -27,6 +27,16 @@ const ContentRow = memo(function ContentRow({
     el.scrollBy({ left: dir === 'right' ? el.clientWidth * 0.78 : -el.clientWidth * 0.78, behavior: 'smooth' });
   }, []);
 
+  const handleKeyDown = useCallback((e: React.KeyboardEvent) => {
+    if (e.key === 'ArrowLeft') {
+      e.preventDefault();
+      scroll('left');
+    } else if (e.key === 'ArrowRight') {
+      e.preventDefault();
+      scroll('right');
+    }
+  }, [scroll]);
+
   return (
     <section className={`py-5 ${className}`}>
       {/* Row header */}
@@ -111,10 +121,15 @@ const ContentRow = memo(function ContentRow({
         {/* Scrollable track */}
         <div
           ref={scrollRef}
+          onKeyDown={handleKeyDown}
+          tabIndex={0}
+          role="region"
+          aria-label={`${title} row`}
           className="
             flex gap-3 md:gap-4 overflow-x-auto overflow-y-visible
             px-4 md:px-6 pb-3
             scrollbar-hide
+            focus:outline-none focus-visible:ring-1 focus-visible:ring-white/25 rounded-lg
           "
           style={{
             scrollSnapType: 'x mandatory',

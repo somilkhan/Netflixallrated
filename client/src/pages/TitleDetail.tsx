@@ -17,6 +17,7 @@ import EpisodeBrowser from '../components/title-detail/EpisodeBrowser';
 import RelatedRow from '../components/title-detail/RelatedRow';
 import TrailerModal from '../components/title-detail/TrailerModal';
 import { PageSkeleton, RowSkeleton, CharacterRowSkeleton } from '../components/title-detail/Skeletons';
+import { getMovieDetails, getTVDetails, getMovieVideos, getTVVideos } from '../services/tmdb';
 import '@/styles/MovieDetailPage.css';
 import type { Tier } from '../lib/ratings';
 import { analytics } from '../lib/analytics';
@@ -142,11 +143,12 @@ const CharacterAvatar = memo(function CharacterAvatar({ name, imageUrl }: { name
 });
 
 export default function TitleDetail() {
-  const { id } = useParams();
+  const { id, tmdbId } = useParams();
   const { user } = useAuth();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const autoPlay = searchParams.get('play') === '1';
+  const tmdbType = searchParams.get('type') || 'movie';
 
   const [title, setTitle] = useState<any>(null);
   const [ratings, setRatings] = useState<any[]>([]);
@@ -365,6 +367,62 @@ export default function TitleDetail() {
     return () => { cancelled = true; };
   }, [id]);
 
+  // TMDB fallback loader
+  useEffect(() => {
+    if (!tmdbId) return;
+    let cancelled = false;
+    setTitle(null);
+    setTitleError(false);
+
+    const isMovie = tmdbType === 'movie';
+    const numId = Number(tmdbId);
+
+    Promise.all([
+      isMovie ? getMovieDetails(numId) : getTVDetails(numId),
+      isMovie ? getMovieVideos(numId) : getTVVideos(numId),
+    ]).then(([data, trailerKey]) => {
+      if (cancelled) return;
+      const normalizedTitle = {
+        id: `tmdb-${tmdbId}`,
+        tmdbId: numId,
+        name: isMovie ? data.title : data.name,
+        type: isMovie ? 'MOVIE' : 'SERIES',
+        year: data.release_date ? new Date(data.release_date).getFullYear() : (data.first_air_date ? new Date(data.first_air_date).getFullYear() : null),
+        runtimeMinutes: isMovie ? data.runtime : (data.episode_run_time?.[0] || 45),
+        genres: data.genres?.map((g: any) => g.name) || [],
+        synopsis: data.overview || '',
+        posterUrl: data.poster_path ? `https://image.tmdb.org/t/p/w500${data.poster_path}` : null,
+        backdropUrl: data.backdrop_path ? `https://image.tmdb.org/t/p/w1280${data.backdrop_path}` : null,
+        trailerYoutubeId: trailerKey || undefined,
+        officialWatchLinks: [],
+      };
+      setTitle(normalizedTitle);
+
+      if (normalizedTitle.type === 'SERIES') {
+        const tempSeasons = data.seasons?.map((s: any) => ({
+          id: s.id,
+          seasonNumber: s.season_number,
+          name: s.name || `Season ${s.season_number}`,
+          episodeCount: s.episode_count,
+        })) || [];
+        setSeasons(tempSeasons);
+      }
+
+      // Try to resolve on the backend silently
+      api.titles.resolveTmdb(numId, isMovie ? 'movie' : 'tv')
+        .then(({ id: resolvedId }) => {
+          if (!cancelled) {
+            navigate(`/title/${resolvedId}${window.location.search}`, { replace: true });
+          }
+        })
+        .catch(() => {});
+    }).catch(() => {
+      if (!cancelled) setTitleError(true);
+    });
+
+    return () => { cancelled = true; };
+  }, [tmdbId, tmdbType, navigate]);
+
   /* Update page metadata when title data arrives */
   useEffect(() => {
     if (!title) return;
@@ -372,11 +430,11 @@ export default function TitleDetail() {
     const description = title.synopsis
       ? title.synopsis.slice(0, 200).replace(/<[^>]+>/g, '')
       : undefined;
-    setPageMeta(`/title/${id}`, title.name, description, image);
-  }, [title, id]);
+    setPageMeta(`/title/${id || `tmdb-${tmdbId}`}`, title.name, description, image);
+  }, [title, id, tmdbId]);
 
   useEffect(() => {
-    if (!title || title.type !== 'SERIES' || !id) return;
+    if (!title || title.type !== 'SERIES' || !id || id.startsWith('tmdb-')) return;
     let cancelled = false;
     setSeasonsLoading(true);
     api.titles.seasons(id)
@@ -387,17 +445,34 @@ export default function TitleDetail() {
   }, [title, id]);
 
   useEffect(() => {
-    if (!title || title.type !== 'SERIES' || !id) return;
+    if (!title || title.type !== 'SERIES') return;
     let cancelled = false;
     setEpsLoading(true);
     setEpisodes([]);
     setSelectedEp(1);
-    api.titles.episodes(id, selectedSeason)
-      .then((data) => { if (!cancelled) setEpisodes(data); })
-      .catch(() => { if (!cancelled) setEpisodes([]); })
-      .finally(() => { if (!cancelled) setEpsLoading(false); });
+
+    if (id && !id.startsWith('tmdb-')) {
+      api.titles.episodes(id, selectedSeason)
+        .then((data) => { if (!cancelled) setEpisodes(data); })
+        .catch(() => { if (!cancelled) fallbackEps(); })
+        .finally(() => { if (!cancelled) setEpsLoading(false); });
+    } else {
+      fallbackEps();
+      setEpsLoading(false);
+    }
+
+    function fallbackEps() {
+      const seasonInfo = seasons.find((s: any) => s.seasonNumber === selectedSeason);
+      const count = seasonInfo?.episodeCount || 12;
+      const tempEps = Array.from({ length: count }, (_, i) => ({
+        episodeNumber: i + 1,
+        name: `Episode ${i + 1}`,
+      }));
+      if (!cancelled) setEpisodes(tempEps);
+    }
+
     return () => { cancelled = true; };
-  }, [selectedSeason, title, id]);
+  }, [selectedSeason, title, id, seasons]);
 
   // Keep episodesRef in sync so saveProgress can read the current episode name
   // without episodes appearing in saveProgress's dependency array.

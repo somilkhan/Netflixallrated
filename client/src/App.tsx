@@ -55,6 +55,7 @@ function AnimatedRoutes() {
       <div key={location.pathname} className="page-enter">
         <Routes location={location}>
           <Route path="/"                    element={<Wrap><Home /></Wrap>} />
+          <Route path="/title/tmdb/:tmdbId"  element={<Wrap><TitleDetail /></Wrap>} />
           <Route path="/title/:id"           element={<Wrap><TitleDetail /></Wrap>} />
           <Route path="/search"              element={<Wrap><SearchResults /></Wrap>} />
           <Route path="/watchlist"           element={<Wrap><Watchlist /></Wrap>} />

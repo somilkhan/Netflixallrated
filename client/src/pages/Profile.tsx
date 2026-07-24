@@ -11,6 +11,7 @@ import { api } from '../lib/api';
 import { useAuth } from '../lib/auth';
 import { Avatar } from '../components/ui/Avatar';
 import ContentCard from '../components/ui/ContentCard';
+import { BUILD_INFO } from '../lib/version';
 
 function timeAgo(dateStr: string): string {
   const diff = Date.now() - new Date(dateStr).getTime();
@@ -337,6 +338,16 @@ export default function Profile() {
           </button>
         </div>
       </section>
+
+      {/* ── Version Info ─────────────────────────────────────────────────── */}
+      <div className="mt-12 pt-6 border-t border-white/[0.04] text-center">
+        <p className="text-[10px] font-mono text-white/20">
+          ALLRATED CINEMA · BUILD {BUILD_INFO.sha} ({BUILD_INFO.branch})
+        </p>
+        <p className="text-[9px] font-mono text-white/15 mt-1">
+          Released: {BUILD_INFO.date !== 'dev' ? new Date(BUILD_INFO.date).toLocaleString() : 'Local Development'}
+        </p>
+      </div>
     </div>
   );
 }

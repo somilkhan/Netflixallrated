@@ -26,11 +26,11 @@ const TmdbContentCard = memo(function TmdbContentCard({ item, rank, className = 
       const { id } = await api.titles.resolveTmdb(item.tmdbId, item.mediaType);
       nav(`/title/${id}${play ? '?play=1' : ''}`);
     } catch {
-      nav(`/search?q=${encodeURIComponent(item.name)}&type=${item.type}`);
+      nav(`/title/tmdb/${item.tmdbId}?type=${item.mediaType}${play ? '&play=1' : ''}`);
     } finally {
       setResolving(false);
     }
-  }, [resolving, item.tmdbId, item.mediaType, item.name, item.type, nav]);
+  }, [resolving, item.tmdbId, item.mediaType, item.name, nav]);
 
   return (
     <div className={resolving ? 'pointer-events-none opacity-60 transition-opacity' : ''}>
