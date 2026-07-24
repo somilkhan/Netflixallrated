@@ -4,7 +4,8 @@
  */
 import { memo, forwardRef } from 'react';
 
-interface IconButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
+interface IconButtonProps extends Omit<React.ButtonHTMLAttributes<HTMLButtonElement>, 'aria-label'> {
+  'aria-label': string;
   size?: 'sm' | 'md' | 'lg';
   variant?: 'ghost' | 'glass' | 'solid';
   shape?: 'circle' | 'rounded';

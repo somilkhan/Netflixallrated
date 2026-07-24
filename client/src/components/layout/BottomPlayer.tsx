@@ -98,7 +98,7 @@ const BottomPlayer = memo(function BottomPlayer() {
                   <IconButton aria-label="Next" className="text-white/60"><SkipForward size={20} strokeWidth={1.8} /></IconButton>
                 </div>
                 <div className="flex items-center gap-3">
-                  <IconButton size="sm" onClick={handleVolumeToggle} className="text-white/60">
+                  <IconButton size="sm" onClick={handleVolumeToggle} className="text-white/60" aria-label={muted ? 'Unmute' : 'Mute'}>
                     {muted ? <VolumeX size={16} /> : <Volume2 size={16} />}
                   </IconButton>
                   <ProgressBar value={muted ? 0 : volume} onChange={v => setVolume(v)} className="flex-1" />
