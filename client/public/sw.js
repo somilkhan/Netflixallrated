@@ -1,4 +1,4 @@
-const CACHE_NAME = 'allrated-v1';
+const CACHE_NAME = 'allrated-v2';
 const SHELL_ASSETS = ['/', '/index.html', '/manifest.json'];
 
 // Install: cache the static shell and activate this worker immediately.
