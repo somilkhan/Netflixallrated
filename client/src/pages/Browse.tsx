@@ -17,6 +17,12 @@ import {
   getTopRatedMovies,
   getTopRatedTVShows,
   getNowPlayingMovies,
+  getBollywoodMovies,
+  getSouthIndianMovies,
+  getHindiWebSeries,
+  getMalayalamMovies,
+  getKannadaMovies,
+  getIndianByLanguage,
   type TmdbNormalized,
 } from '../services/tmdb';
 
@@ -36,14 +42,25 @@ const SORT_FILTERS = [
 const PAGE_SIZE = 40;
 const TMDB_MAX_PAGES = 500;
 
-type LiveCollection = 'trending' | 'movies' | 'series' | 'top-rated' | 'now-playing';
+type LiveCollection =
+  | 'trending' | 'movies' | 'series' | 'top-rated' | 'now-playing'
+  | 'bollywood' | 'south-indian' | 'hindi-series' | 'malayalam' | 'kannada'
+  | 'hindi' | 'tamil' | 'telugu';
 
 const LIVE_COLLECTION_LABELS: Record<LiveCollection, string> = {
-  trending: 'Trending Now',
-  movies: 'Popular Movies',
-  series: 'Popular TV Shows',
-  'top-rated': 'Top Rated',
+  trending:      'Trending Now',
+  movies:        'Popular Movies',
+  series:        'Popular TV Shows',
+  'top-rated':   'Top Rated',
   'now-playing': 'Now Playing in Theaters',
+  bollywood:     '🎬 Bollywood Hits',
+  'south-indian':'🌟 South Indian Cinema',
+  'hindi-series':'📺 Hindi Web Series',
+  malayalam:     '🎭 Malayalam Cinema',
+  kannada:       '🎥 Kannada Movies',
+  hindi:         'Hindi Movies',
+  tamil:         'Tamil Movies',
+  telugu:        'Telugu Movies',
 };
 
 function getLiveCollection(pathname: string, searchParams: URLSearchParams): LiveCollection | null {
@@ -60,21 +77,24 @@ function getLiveCollection(pathname: string, searchParams: URLSearchParams): Liv
 
 async function fetchLiveCollection(collection: LiveCollection, page: number): Promise<TmdbNormalized[]> {
   switch (collection) {
-    case 'trending':
-      return getTrending('all', 'day', page);
-    case 'movies':
-      return getPopularMovies(page);
-    case 'series':
-      return getPopularTVShows(page);
-    case 'now-playing':
-      return getNowPlayingMovies(page);
+    case 'trending':      return getTrending('all', 'day', page);
+    case 'movies':        return getPopularMovies(page);
+    case 'series':        return getPopularTVShows(page);
+    case 'now-playing':   return getNowPlayingMovies(page);
+    case 'bollywood':     return getBollywoodMovies(page);
+    case 'south-indian':  return getSouthIndianMovies(page);
+    case 'hindi-series':  return getHindiWebSeries(page);
+    case 'malayalam':     return getMalayalamMovies(page);
+    case 'kannada':       return getKannadaMovies(page);
+    case 'hindi':         return getIndianByLanguage('hi', 'movie', page);
+    case 'tamil':         return getIndianByLanguage('ta', 'movie', page);
+    case 'telugu':        return getIndianByLanguage('te', 'movie', page);
     case 'top-rated': {
       const [movies, series] = await Promise.all([
         getTopRatedMovies(page),
         getTopRatedTVShows(page),
       ]);
-      return [...movies, ...series]
-        .sort((a, b) => (b.rating ?? 0) - (a.rating ?? 0));
+      return [...movies, ...series].sort((a, b) => (b.rating ?? 0) - (a.rating ?? 0));
     }
   }
 }
@@ -226,7 +246,7 @@ export default function Browse() {
       {!isLiveCollection && <div className="sticky top-16 z-30 py-3 px-4 md:px-6 border-b border-white/[0.06]"
         style={{ background: 'rgba(10,10,10,0.92)', backdropFilter: 'blur(12px)', WebkitBackdropFilter: 'blur(12px)' }}>
         
-        {/* Type filters */}
+        {/* Type + Sort filters */}
         <div className="flex gap-2 overflow-x-auto scrollbar-hide pb-2">
           <div className="flex items-center gap-1.5 shrink-0 mr-1">
             <SlidersHorizontal size={14} className="text-white/40" />
@@ -272,6 +292,41 @@ export default function Browse() {
           </div>
         )}
       </div>}
+
+      {/* ── Indian language quick-links (shown on plain /browse) ────────── */}
+      {!isLiveCollection && (
+        <div className="px-4 md:px-6 pt-5 pb-1">
+          <p className="text-[11px] uppercase tracking-[0.14em] text-white/25 mb-2.5">🇮🇳 Indian Languages</p>
+          <div className="flex gap-2 overflow-x-auto scrollbar-hide">
+            {(
+              [
+                { label: 'Bollywood',    path: '/browse?collection=bollywood' },
+                { label: 'South Indian', path: '/browse?collection=south-indian' },
+                { label: 'Tamil',        path: '/browse?collection=tamil' },
+                { label: 'Telugu',       path: '/browse?collection=telugu' },
+                { label: 'Malayalam',    path: '/browse?collection=malayalam' },
+                { label: 'Kannada',      path: '/browse?collection=kannada' },
+                { label: 'Hindi Series', path: '/browse?collection=hindi-series' },
+              ] as const
+            ).map(({ label, path }) => (
+              <button
+                key={label}
+                type="button"
+                onClick={() => nav(path)}
+                className="
+                  shrink-0 px-3.5 py-1.5 rounded-full text-[12px] font-medium
+                  border border-orange-400/20 text-orange-200/70
+                  hover:border-orange-400/50 hover:text-orange-100
+                  transition-colors duration-150
+                "
+                style={{ background: 'rgba(251,146,60,0.06)' }}
+              >
+                {label}
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* ── Grid ─────────────────────────────────────────────────────────── */}
       <div className={`px-4 md:px-6 ${isLiveCollection ? 'pt-6' : 'pt-[88px]'}`}>

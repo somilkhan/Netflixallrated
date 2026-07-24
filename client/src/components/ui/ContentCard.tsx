@@ -43,6 +43,18 @@ const TYPE_LABEL: Record<string, string> = {
   MOVIE: 'Film', SERIES: 'TV', ANIME: 'Anime',
 };
 
+/** Indian language codes → short display label shown on the card */
+const LANG_LABEL: Record<string, string> = {
+  hi: 'Hindi',
+  ta: 'Tamil',
+  te: 'Telugu',
+  ml: 'Malayalam',
+  kn: 'Kannada',
+  mr: 'Marathi',
+  bn: 'Bengali',
+  pa: 'Punjabi',
+};
+
 const ContentCard = memo(function ContentCard({
   title,
   rank,
@@ -178,6 +190,17 @@ const ContentCard = memo(function ContentCard({
             text-white/45 uppercase tracking-wide leading-none
           ">
             {TYPE_LABEL[title.type] ?? title.type}
+          </span>
+        )}
+
+        {/* Indian language badge — bottom-left, above progress bar */}
+        {LANG_LABEL[title.originalLanguage] && (
+          <span className="
+            absolute bottom-2 left-2 z-20
+            text-[8px] font-semibold px-[5px] py-[2.5px] rounded-full leading-none
+            border border-orange-400/30 bg-black/80 text-orange-300/85
+          ">
+            {LANG_LABEL[title.originalLanguage]}
           </span>
         )}
 

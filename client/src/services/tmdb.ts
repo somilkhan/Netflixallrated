@@ -78,6 +78,8 @@ export interface TmdbNormalized {
   genres: string[];
   synopsis: string;
   trailerYoutubeId?: string;
+  /** ISO 639-1 original language code, e.g. "hi", "ta", "te" */
+  originalLanguage?: string;
 }
 
 function normalize(item: any, overrideMediaType?: 'movie' | 'tv'): TmdbNormalized {
@@ -97,6 +99,7 @@ function normalize(item: any, overrideMediaType?: 'movie' | 'tv'): TmdbNormalize
     rating: item.vote_average ?? null,
     genres: resolveGenreIds(item.genre_ids ?? [], mediaType),
     synopsis: item.overview || '',
+    originalLanguage: item.original_language ?? undefined,
   };
 }
 
@@ -157,6 +160,87 @@ export async function getTVByGenre(genreId: number, page = 1): Promise<TmdbNorma
     page: String(page),
   });
   return data.results.map(item => normalize(item, 'tv'));
+}
+
+// ── Indian regional content ────────────────────────────────────────────────
+
+/** Bollywood — Hindi movies sorted by popularity */
+export async function getBollywoodMovies(page = 1): Promise<TmdbNormalized[]> {
+  const data = await tmdbFetch<{ results: any[] }>('/discover/movie', {
+    with_original_language: 'hi',
+    sort_by: 'popularity.desc',
+    'vote_count.gte': '50',
+    page: String(page),
+  });
+  return data.results.map(item => normalize(item, 'movie'));
+}
+
+/** South Indian cinema — Tamil + Telugu combined, sorted by popularity */
+export async function getSouthIndianMovies(page = 1): Promise<TmdbNormalized[]> {
+  const [tamilData, teluguData] = await Promise.all([
+    tmdbFetch<{ results: any[] }>('/discover/movie', {
+      with_original_language: 'ta',
+      sort_by: 'popularity.desc',
+      page: String(page),
+    }),
+    tmdbFetch<{ results: any[] }>('/discover/movie', {
+      with_original_language: 'te',
+      sort_by: 'popularity.desc',
+      page: String(page),
+    }),
+  ]);
+  const seen = new Set<number>();
+  const merged: TmdbNormalized[] = [];
+  for (const item of [...tamilData.results, ...teluguData.results]) {
+    if (seen.has(item.id)) continue;
+    seen.add(item.id);
+    merged.push(normalize(item, 'movie'));
+  }
+  return merged.sort((a, b) => (b.rating ?? 0) - (a.rating ?? 0));
+}
+
+/** Hindi web series / OTT shows */
+export async function getHindiWebSeries(page = 1): Promise<TmdbNormalized[]> {
+  const data = await tmdbFetch<{ results: any[] }>('/discover/tv', {
+    with_original_language: 'hi',
+    sort_by: 'popularity.desc',
+    page: String(page),
+  });
+  return data.results.map(item => normalize(item, 'tv'));
+}
+
+/** Malayalam movies */
+export async function getMalayalamMovies(page = 1): Promise<TmdbNormalized[]> {
+  const data = await tmdbFetch<{ results: any[] }>('/discover/movie', {
+    with_original_language: 'ml',
+    sort_by: 'popularity.desc',
+    page: String(page),
+  });
+  return data.results.map(item => normalize(item, 'movie'));
+}
+
+/** Kannada movies */
+export async function getKannadaMovies(page = 1): Promise<TmdbNormalized[]> {
+  const data = await tmdbFetch<{ results: any[] }>('/discover/movie', {
+    with_original_language: 'kn',
+    sort_by: 'popularity.desc',
+    page: String(page),
+  });
+  return data.results.map(item => normalize(item, 'movie'));
+}
+
+/** Generic Indian-language discover — used by Browse language filter */
+export async function getIndianByLanguage(
+  langCode: string,
+  mediaType: 'movie' | 'tv' = 'movie',
+  page = 1,
+): Promise<TmdbNormalized[]> {
+  const data = await tmdbFetch<{ results: any[] }>(`/discover/${mediaType}`, {
+    with_original_language: langCode,
+    sort_by: 'popularity.desc',
+    page: String(page),
+  });
+  return data.results.map(item => normalize(item, mediaType));
 }
 
 export async function searchMulti(query: string, page = 1): Promise<TmdbNormalized[]> {

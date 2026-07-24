@@ -13,6 +13,10 @@ import {
   getTopRatedMovies,
   getTopRatedTVShows,
   getNowPlayingMovies,
+  getBollywoodMovies,
+  getSouthIndianMovies,
+  getHindiWebSeries,
+  getMalayalamMovies,
   getGenres,
   getMovieVideos,
   getTVVideos,
@@ -49,6 +53,10 @@ interface HomeCache {
   popularTV: TmdbNormalized[];
   topRated: TmdbNormalized[];
   nowPlaying: TmdbNormalized[];
+  bollywood: TmdbNormalized[];
+  southIndian: TmdbNormalized[];
+  hindiSeries: TmdbNormalized[];
+  malayalam: TmdbNormalized[];
   genres: GenreInfo[];
   scrollY: number;
 }
@@ -128,6 +136,10 @@ export default function Home() {
   const [popularTV,     setPopularTV]     = useState<TmdbNormalized[]>(_cache?.popularTV     ?? []);
   const [topRated,      setTopRated]      = useState<TmdbNormalized[]>(_cache?.topRated      ?? []);
   const [nowPlaying,    setNowPlaying]    = useState<TmdbNormalized[]>(_cache?.nowPlaying    ?? []);
+  const [bollywood,     setBollywood]     = useState<TmdbNormalized[]>(_cache?.bollywood     ?? []);
+  const [southIndian,   setSouthIndian]   = useState<TmdbNormalized[]>(_cache?.southIndian   ?? []);
+  const [hindiSeries,   setHindiSeries]   = useState<TmdbNormalized[]>(_cache?.hindiSeries   ?? []);
+  const [malayalam,     setMalayalam]     = useState<TmdbNormalized[]>(_cache?.malayalam     ?? []);
   const [genres,        setGenres]        = useState<GenreInfo[]>(_cache?.genres             ?? []);
 
   // ── Loading / error flags ──────────────────────────────────────────────
@@ -157,17 +169,21 @@ export default function Home() {
     setErrors({});
 
     const results = await Promise.allSettled([
-      getTrending('all', 'day', 1),       // 0
-      getPopularMovies(1),                // 1
-      getPopularTVShows(1),               // 2
+      getTrending('all', 'day', 1),                                         // 0
+      getPopularMovies(1),                                                  // 1
+      getPopularTVShows(1),                                                 // 2
       Promise.all([getTopRatedMovies(1), getTopRatedTVShows(1)]).then(
         ([movies, tv]) =>
           [...movies, ...tv]
             .sort((a, b) => (b.rating ?? 0) - (a.rating ?? 0))
             .slice(0, 20),
-      ),                                  // 3
-      getNowPlayingMovies(1),             // 4
-      getGenres(),                        // 5
+      ),                                                                    // 3
+      getNowPlayingMovies(1),                                               // 4
+      getGenres(),                                                          // 5
+      getBollywoodMovies(1),                                                // 6
+      getSouthIndianMovies(1),                                              // 7
+      getHindiWebSeries(1),                                                 // 8
+      getMalayalamMovies(1),                                                // 9
     ]);
 
     const set = <T,>(idx: number, setter: (v: T) => void, key: string) => {
@@ -182,6 +198,10 @@ export default function Home() {
     set<TmdbNormalized[]>(3, setTopRated,      'topRated');
     set<TmdbNormalized[]>(4, setNowPlaying,    'nowPlaying');
     set<GenreInfo[]>     (5, setGenres,        'genres');
+    set<TmdbNormalized[]>(6, setBollywood,     'bollywood');
+    set<TmdbNormalized[]>(7, setSouthIndian,   'southIndian');
+    set<TmdbNormalized[]>(8, setHindiSeries,   'hindiSeries');
+    set<TmdbNormalized[]>(9, setMalayalam,     'malayalam');
 
     setLoading(false);
   }, []);
@@ -195,11 +215,12 @@ export default function Home() {
   useEffect(() => {
     if (trending.length || popularMovies.length) {
       _cache = {
-        trending, popularMovies, popularTV, topRated, nowPlaying, genres,
+        trending, popularMovies, popularTV, topRated, nowPlaying,
+        bollywood, southIndian, hindiSeries, malayalam, genres,
         scrollY: _cache?.scrollY ?? 0,
       };
     }
-  }, [trending, popularMovies, popularTV, topRated, nowPlaying, genres]);
+  }, [trending, popularMovies, popularTV, topRated, nowPlaying, bollywood, southIndian, hindiSeries, malayalam, genres]);
 
   // ── Hero trailer injection ─────────────────────────────────────────────
   // Fetch trailers for up to 5 hero items after initial data loads.
@@ -378,6 +399,70 @@ export default function Home() {
           ) : nowPlaying.length > 0 ? (
             <ContentRow title="Now Playing in Theaters" viewAllPath="/browse?collection=now-playing">
               {nowPlaying.slice(0, 20).map(item => (
+                <TmdbContentCard key={item.id} item={item} />
+              ))}
+            </ContentRow>
+          ) : null
+        )}
+
+        {/* ── Bollywood Hits ────────────────────────────────────────── */}
+        {showMovies && (
+          loading ? <SectionSkeleton /> :
+          errors.bollywood ? null :
+          bollywood.length > 0 ? (
+            <ContentRow
+              title="🎬 Bollywood Hits"
+              viewAllPath="/browse?collection=bollywood"
+            >
+              {bollywood.slice(0, 20).map(item => (
+                <TmdbContentCard key={item.id} item={item} />
+              ))}
+            </ContentRow>
+          ) : null
+        )}
+
+        {/* ── South Indian Cinema ───────────────────────────────────── */}
+        {showMovies && (
+          loading ? <SectionSkeleton /> :
+          errors.southIndian ? null :
+          southIndian.length > 0 ? (
+            <ContentRow
+              title="🌟 South Indian Cinema"
+              viewAllPath="/browse?collection=south-indian"
+            >
+              {southIndian.slice(0, 20).map(item => (
+                <TmdbContentCard key={item.id} item={item} />
+              ))}
+            </ContentRow>
+          ) : null
+        )}
+
+        {/* ── Hindi Web Series ──────────────────────────────────────── */}
+        {showSeries && (
+          loading ? <SectionSkeleton /> :
+          errors.hindiSeries ? null :
+          hindiSeries.length > 0 ? (
+            <ContentRow
+              title="📺 Hindi Web Series"
+              viewAllPath="/browse?collection=hindi-series"
+            >
+              {hindiSeries.slice(0, 20).map(item => (
+                <TmdbContentCard key={item.id} item={item} />
+              ))}
+            </ContentRow>
+          ) : null
+        )}
+
+        {/* ── Malayalam Cinema ──────────────────────────────────────── */}
+        {showMovies && (
+          loading ? null :
+          errors.malayalam ? null :
+          malayalam.length > 0 ? (
+            <ContentRow
+              title="🎭 Malayalam Cinema"
+              viewAllPath="/browse?collection=malayalam"
+            >
+              {malayalam.slice(0, 20).map(item => (
                 <TmdbContentCard key={item.id} item={item} />
               ))}
             </ContentRow>
