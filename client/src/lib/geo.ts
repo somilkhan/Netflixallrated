@@ -106,12 +106,37 @@ function fromNavigatorLanguage(): RegionInfo {
 
 /**
  * Detect the user's region.
- * Order: localStorage cache → ipapi.co → navigator.language → default (US).
+ * Order:
+ *  1. localStorage cache (7-day TTL)
+ *  2. Backend /api/geo/detect — server reads the real client IP from
+ *     x-forwarded-for, so this works correctly even through proxies/CDNs
+ *  3. ipapi.co directly from the browser (fallback; unreliable through proxies)
+ *  4. navigator.language → default (US)
  */
 export async function detectRegion(): Promise<RegionInfo> {
   const cached = readCache();
   if (cached) return cached;
 
+  // ── 1. Server-side detection (real client IP) ────────────────────────
+  try {
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 4000);
+    const res = await fetch('/api/geo/detect', { signal: controller.signal });
+    clearTimeout(timeout);
+    if (res.ok) {
+      const json = await res.json();
+      const code: string = (json.region || json.country || '').toUpperCase();
+      if (code && REGION_MAP[code]) {
+        writeCache(REGION_MAP[code]);
+        return REGION_MAP[code];
+      }
+    }
+  } catch {
+    // backend unavailable — fall through to client-side detection
+  }
+
+  // ── 2. Direct browser call to ipapi.co ──────────────────────────────
+  // Note: unreliable in proxied/iframe environments (returns proxy IP).
   try {
     const controller = new AbortController();
     const timeout = setTimeout(() => controller.abort(), 4000);
@@ -128,6 +153,7 @@ export async function detectRegion(): Promise<RegionInfo> {
     // network error or timeout — fall through
   }
 
+  // ── 3. navigator.language fallback ──────────────────────────────────
   const region = fromNavigatorLanguage();
   writeCache(region);
   return region;
