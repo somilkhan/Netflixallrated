@@ -34,6 +34,11 @@ export default defineConfig({
     'import.meta.env.VITE_GIT_SHA': JSON.stringify(gitInfo.sha),
     'import.meta.env.VITE_BUILD_DATE': JSON.stringify(buildDate),
     'import.meta.env.VITE_GIT_BRANCH': JSON.stringify(gitInfo.branch),
+    // Accept TMDB_API_KEY (no VITE_ prefix) as a fallback so Replit secrets
+    // work regardless of whether the user prefixed the key or not.
+    'import.meta.env.VITE_TMDB_API_KEY': JSON.stringify(
+      process.env.VITE_TMDB_API_KEY || process.env.TMDB_API_KEY || '',
+    ),
   },
   resolve: {
     dedupe: ['react', 'react-dom'],
