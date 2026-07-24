@@ -7,7 +7,6 @@
   },
   "scripts": {
     "dev": "tsx server/server.ts",
-    "build": "echo 'Server uses dynamic import - no build needed'",
     "start": "NODE_ENV=production tsx server/server.ts"
   },
   "dependencies": {
