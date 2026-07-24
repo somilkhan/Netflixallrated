@@ -16,9 +16,8 @@ cmds = [
 
 [phases.build]
 cmds = [
-  "cd ../client && npm run build && rm -rf node_modules",
-  "npx prisma generate && npm run build && npm prune --production"
+  "cd ../client && npm run build && rm -rf node_modules"
 ]
 
 [start]
-cmd = "npx prisma generate && npx prisma migrate deploy && NODE_ENV=production node dist/server.js"
+cmd = "NODE_ENV=production tsx server/server.ts"

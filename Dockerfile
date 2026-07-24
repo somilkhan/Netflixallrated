@@ -10,7 +10,7 @@ RUN npm install -g npm@10.8.0
 
 WORKDIR /app
 
-# ── Client build ─────────────────────────────────────────────────────────────
+# ── Client build ──────────────────────────────────────────────────────────
 COPY client/package.json client/package-lock.json ./client/
 RUN cd client && npm install --prefer-offline=false
 
@@ -24,15 +24,13 @@ ENV VITE_API_URL=$VITE_API_URL
 COPY client ./client
 RUN cd client && npm run build
 
-# ── Server build ─────────────────────────────────────────────────────────────
+# ── Server setup ──────────────────────────────────────────────────────────
 COPY server/package.json server/package-lock.json ./server/
-COPY server/prisma ./server/prisma/
 RUN cd server && npm install --prefer-offline=false
 
 COPY server ./server
-RUN cd server && npx prisma generate && npm run build
 
 ENV NODE_ENV=production
 EXPOSE 3000
 
-CMD ["sh", "-c", "cd server && node_modules/.bin/prisma migrate deploy && node dist/server.js"]
+CMD ["sh", "-c", "cd server && NODE_ENV=production tsx server/server.ts"]
