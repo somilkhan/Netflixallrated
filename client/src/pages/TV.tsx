@@ -12,7 +12,9 @@ import {
   getTVByGenre,
   getTVVideos,
   type TmdbNormalized,
+  type RegionParams,
 } from '../services/tmdb';
+import { detectRegion, getCachedRegion, DEFAULT_REGION, type RegionInfo } from '../lib/geo';
 import { api } from '../lib/api';
 import HeroSection from '../components/sections/HeroSection';
 import ContentRow from '../components/sections/ContentRow';
@@ -133,6 +135,15 @@ export default function TVShows() {
 
   const [selectedGenre, setSelectedGenre] = useState<{ id: number; name: string } | null>(null);
 
+  // ── Region detection (same pattern as Home.tsx) ──────────────────────────
+  const [region, setRegion] = useState<RegionInfo>(() => getCachedRegion() ?? DEFAULT_REGION);
+
+  useEffect(() => {
+    detectRegion()
+      .then(detected => setRegion(detected))
+      .catch(() => {});
+  }, []);
+
   // Row data
   const [trending,  setTrending]  = useState<TmdbNormalized[]>([]);
   const [popular,   setPopular]   = useState<TmdbNormalized[]>([]);
@@ -144,12 +155,14 @@ export default function TVShows() {
   const { items: genreItems, loading: genreLoading, sentinelRef } =
     useGenreScroll(selectedGenre?.id ?? null);
 
-  // Fetch all rows on mount
+  // Fetch all rows — re-run when region changes
   useEffect(() => {
+    setLoading(true);
+    const rp: RegionParams = { region: region.countryCode, language: region.language };
     Promise.allSettled([
-      getTrending('tv', 'day'),
-      getPopularTVShows(),
-      getTopRatedTVShows(),
+      getTrending('tv', 'day', 1, rp),
+      getPopularTVShows(1, rp),
+      getTopRatedTVShows(1, rp),
     ]).then(([trendRes, popRes, topRes]) => {
       const trend = trendRes.status === 'fulfilled' ? trendRes.value : [];
       const pop   = popRes.status   === 'fulfilled' ? popRes.value   : [];
@@ -160,7 +173,7 @@ export default function TVShows() {
       setHeroItems(trend.slice(0, 6));
       setLoading(false);
     });
-  }, []);
+  }, [region]);
 
   // Fetch trailers for hero items in background
   useEffect(() => {
@@ -191,7 +204,11 @@ export default function TVShows() {
 
       {/* ── Hero ─────────────────────────────────────────────────────── */}
       {heroItems.length > 0 ? (
-        <HeroSection titles={heroItems} onAction={heroAction} />
+        <HeroSection
+          titles={heroItems}
+          onAction={heroAction}
+          regionLabel={`Popular TV in ${region.countryName}`}
+        />
       ) : loading ? (
         <div className="w-full bg-[#0f0f0f] animate-pulse"
           style={{ height: 'clamp(320px, 55svh, 640px)' }} />
@@ -279,21 +296,21 @@ export default function TVShows() {
           ) : (
             <>
               {trending.length > 0 && (
-                <ContentRow title="Trending TV Shows">
+                <ContentRow title={`Trending TV in ${region.countryName}`}>
                   {trending.slice(0, 20).map(item => (
                     <TmdbContentCard key={item.id} item={item} />
                   ))}
                 </ContentRow>
               )}
               {popular.length > 0 && (
-                <ContentRow title="Popular TV Shows">
+                <ContentRow title={`Popular TV Shows in ${region.countryName}`}>
                   {popular.slice(0, 20).map(item => (
                     <TmdbContentCard key={item.id} item={item} />
                   ))}
                 </ContentRow>
               )}
               {topRated.length > 0 && (
-                <ContentRow title="Top Rated TV Shows">
+                <ContentRow title={`Top Rated TV in ${region.countryName}`}>
                   {topRated.slice(0, 20).map(item => (
                     <TmdbContentCard key={item.id} item={item} />
                   ))}

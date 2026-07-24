@@ -42,6 +42,11 @@ export default defineConfig({
   server: {
     port: 5000,
     allowedHosts: true as const,
+    headers: {
+      // Prevent browsers from caching dev modules — required when HMR WebSocket
+      // is blocked by a proxy (e.g. Replit preview), so stale modules don't persist.
+      'Cache-Control': 'no-store',
+    },
     proxy: {
       // Sports: proxy directly to api.bingr.one with the required Origin header.
       // This rule must come BEFORE the generic /api rule (Vite matches first-wins).
@@ -60,7 +65,7 @@ export default defineConfig({
   },
   preview: {
     host: '0.0.0.0',
-    port: Number(process.env.PORT) || 4173,
+    port: 5000,
     allowedHosts: true as const,
   },
   build: {

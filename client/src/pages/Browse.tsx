@@ -24,7 +24,9 @@ import {
   getKannadaMovies,
   getIndianByLanguage,
   type TmdbNormalized,
+  type RegionParams,
 } from '../services/tmdb';
+import { detectRegion, getCachedRegion, DEFAULT_REGION, type RegionInfo } from '../lib/geo';
 
 const TYPE_FILTERS = [
   { label: 'All', value: '' },
@@ -47,12 +49,8 @@ type LiveCollection =
   | 'bollywood' | 'south-indian' | 'hindi-series' | 'malayalam' | 'kannada'
   | 'hindi' | 'tamil' | 'telugu';
 
-const LIVE_COLLECTION_LABELS: Record<LiveCollection, string> = {
-  trending:      'Trending Now',
-  movies:        'Popular Movies',
-  series:        'Popular TV Shows',
-  'top-rated':   'Top Rated',
-  'now-playing': 'Now Playing in Theaters',
+/** Labels for collections that are NOT region-aware (language/genre specific). */
+const STATIC_COLLECTION_LABELS: Partial<Record<LiveCollection, string>> = {
   bollywood:     '🎬 Bollywood Hits',
   'south-indian':'🌟 South Indian Cinema',
   'hindi-series':'📺 Hindi Web Series',
@@ -63,6 +61,21 @@ const LIVE_COLLECTION_LABELS: Record<LiveCollection, string> = {
   telugu:        'Telugu Movies',
 };
 
+/** Region-aware collections — their labels include the country name. */
+const REGION_COLLECTION_KEYS = new Set<LiveCollection>(['trending', 'movies', 'series', 'top-rated', 'now-playing']);
+
+function getLiveCollectionLabel(collection: LiveCollection, countryName: string): string {
+  if (STATIC_COLLECTION_LABELS[collection]) return STATIC_COLLECTION_LABELS[collection]!;
+  switch (collection) {
+    case 'trending':    return `Trending in ${countryName}`;
+    case 'movies':      return `Popular Movies in ${countryName}`;
+    case 'series':      return `Popular TV Shows in ${countryName}`;
+    case 'top-rated':   return `Top Rated in ${countryName}`;
+    case 'now-playing': return `Now Playing in ${countryName}`;
+    default:            return collection;
+  }
+}
+
 function getLiveCollection(pathname: string, searchParams: URLSearchParams): LiveCollection | null {
   const queryCollection = searchParams.get('collection');
   const pathCollection = pathname.startsWith('/browse/')
@@ -70,17 +83,23 @@ function getLiveCollection(pathname: string, searchParams: URLSearchParams): Liv
     : '';
   const value = queryCollection || pathCollection;
 
-  return value in LIVE_COLLECTION_LABELS
-    ? value as LiveCollection
-    : null;
+  const allKeys = new Set<string>([
+    ...Object.keys(STATIC_COLLECTION_LABELS),
+    ...Array.from(REGION_COLLECTION_KEYS),
+  ]);
+  return allKeys.has(value) ? value as LiveCollection : null;
 }
 
-async function fetchLiveCollection(collection: LiveCollection, page: number): Promise<TmdbNormalized[]> {
+async function fetchLiveCollection(
+  collection: LiveCollection,
+  page: number,
+  rp: RegionParams = {},
+): Promise<TmdbNormalized[]> {
   switch (collection) {
-    case 'trending':      return getTrending('all', 'day', page);
-    case 'movies':        return getPopularMovies(page);
-    case 'series':        return getPopularTVShows(page);
-    case 'now-playing':   return getNowPlayingMovies(page);
+    case 'trending':      return getTrending('all', 'day', page, rp);
+    case 'movies':        return getPopularMovies(page, rp);
+    case 'series':        return getPopularTVShows(page, rp);
+    case 'now-playing':   return getNowPlayingMovies(page, rp);
     case 'bollywood':     return getBollywoodMovies(page);
     case 'south-indian':  return getSouthIndianMovies(page);
     case 'hindi-series':  return getHindiWebSeries(page);
@@ -91,8 +110,8 @@ async function fetchLiveCollection(collection: LiveCollection, page: number): Pr
     case 'telugu':        return getIndianByLanguage('te', 'movie', page);
     case 'top-rated': {
       const [movies, series] = await Promise.all([
-        getTopRatedMovies(page),
-        getTopRatedTVShows(page),
+        getTopRatedMovies(page, rp),
+        getTopRatedTVShows(page, rp),
       ]);
       return [...movies, ...series].sort((a, b) => (b.rating ?? 0) - (a.rating ?? 0));
     }
@@ -110,6 +129,12 @@ export default function Browse() {
   const sortParam  = searchParams.get('sort')  ?? 'popular';
   const genreParam = searchParams.get('genre') ?? '';
   const pageParam  = parseInt(searchParams.get('page') ?? '1', 10);
+
+  // ── Region (same pattern as Home.tsx) ────────────────────────────────────
+  const [region, setRegion] = useState<RegionInfo>(() => getCachedRegion() ?? DEFAULT_REGION);
+  useEffect(() => {
+    detectRegion().then(setRegion).catch(() => {});
+  }, []);
 
   const [titles,   setTitles]   = useState<any[]>([]);
   const [total,    setTotal]    = useState(0);
@@ -165,7 +190,10 @@ export default function Browse() {
     setLiveError(null);
     setLiveTitles([]);
 
-    fetchLiveCollection(liveCollection, pageParam)
+    const rp: RegionParams = REGION_COLLECTION_KEYS.has(liveCollection)
+      ? { region: region.countryCode, language: region.language }
+      : {};
+    fetchLiveCollection(liveCollection, pageParam, rp)
       .then(items => {
         if (!cancelled) setLiveTitles(items);
       })
@@ -182,7 +210,7 @@ export default function Browse() {
     return () => {
       cancelled = true;
     };
-  }, [liveCollection, pageParam, liveRetry]);
+  }, [liveCollection, pageParam, liveRetry, region]);
 
   const setFilter = useCallback((key: string, value: string) => {
     setSearchParams(prev => {
@@ -221,7 +249,7 @@ export default function Browse() {
   }, [totalPages, pageParam]);
 
   const heading = liveCollection
-    ? LIVE_COLLECTION_LABELS[liveCollection]
+    ? getLiveCollectionLabel(liveCollection, region.countryName)
     : [
     genreParam || '',
     typeParam === 'MOVIE' ? 'Movies' : typeParam === 'SERIES' ? 'TV Shows' : typeParam === 'ANIME' ? 'Anime' : '',
@@ -293,8 +321,8 @@ export default function Browse() {
         )}
       </div>}
 
-      {/* ── Indian language quick-links (shown on plain /browse) ────────── */}
-      {!isLiveCollection && (
+      {/* ── Indian language quick-links (only for IN region on plain /browse) ── */}
+      {!isLiveCollection && region.countryCode === 'IN' && (
         <div className="px-4 md:px-6 pt-5 pb-1">
           <p className="text-[11px] uppercase tracking-[0.14em] text-white/25 mb-2.5">🇮🇳 Indian Languages</p>
           <div className="flex gap-2 overflow-x-auto scrollbar-hide">

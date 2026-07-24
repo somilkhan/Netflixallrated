@@ -43,8 +43,10 @@ const TYPE_LABEL: Record<string, string> = {
   MOVIE: 'Film', SERIES: 'TV', ANIME: 'Anime',
 };
 
-/** Indian language codes → short display label shown on the card */
+/** ISO 639-1 language codes → short display label shown on the card.
+ *  Covers all 20 regions supported by geo.ts plus common Indian languages. */
 const LANG_LABEL: Record<string, string> = {
+  // Indian languages
   hi: 'Hindi',
   ta: 'Tamil',
   te: 'Telugu',
@@ -53,6 +55,22 @@ const LANG_LABEL: Record<string, string> = {
   mr: 'Marathi',
   bn: 'Bengali',
   pa: 'Punjabi',
+  // Global region languages (only show badge for non-English to avoid cluttering EN cards)
+  ko: 'Korean',
+  ja: 'Japanese',
+  pt: 'Portuguese',
+  fr: 'French',
+  de: 'German',
+  es: 'Spanish',
+  it: 'Italian',
+  tr: 'Turkish',
+  ru: 'Russian',
+  id: 'Indonesian',
+  th: 'Thai',
+  tl: 'Filipino',
+  pl: 'Polish',
+  nl: 'Dutch',
+  sv: 'Swedish',
 };
 
 const ContentCard = memo(function ContentCard({
