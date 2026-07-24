@@ -14,6 +14,7 @@ import {
   countryCodeToFlag,
   getCachedRegion,
   setRegion,
+  detectRegion,
   DEFAULT_REGION,
   type RegionInfo,
 } from '../lib/geo';
@@ -30,6 +31,17 @@ function getActiveRegion(): RegionInfo {
 const RegionSwitcher = memo(function RegionSwitcher() {
   const { user, token } = useAuth();
   const [current, setCurrent] = useState<RegionInfo>(getActiveRegion);
+
+  // Keep the switcher in sync with async region detection.
+  // If there was no cache at mount time, detectRegion() will resolve the real
+  // country and write it to cache — update the displayed flag to match.
+  useEffect(() => {
+    const cached = getCachedRegion();
+    if (cached) return; // already have a value — nothing to do
+    detectRegion().then(detected => {
+      setCurrent(detected);
+    }).catch(() => { /* keep default */ });
+  }, []);
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState('');
   const [saving, setSaving] = useState(false);

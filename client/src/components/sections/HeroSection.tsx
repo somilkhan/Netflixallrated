@@ -14,9 +14,11 @@ interface HeroSectionProps {
   titles: any[];
   /** Override default /title/:id navigation. Receives the current item and whether Play was clicked. */
   onAction?: (item: any, play: boolean) => void;
+  /** Optional label shown as a small chip above genre pills, e.g. "Popular in India" */
+  regionLabel?: string;
 }
 
-const HeroSection = memo(function HeroSection({ titles, onAction }: HeroSectionProps) {
+const HeroSection = memo(function HeroSection({ titles, onAction, regionLabel }: HeroSectionProps) {
   const nav = useNavigate();
   const [idx,       setIdx]     = useState(0);
   const [muted,     setMuted]   = useState(true);
@@ -169,6 +171,16 @@ const HeroSection = memo(function HeroSection({ titles, onAction }: HeroSectionP
       {/* ── Content — bottom-left ─────────────────────────────────────── */}
       <div className="absolute inset-0 z-[3] flex items-end">
         <div className="w-full max-w-[620px] px-4 sm:px-8 md:px-12 pb-24 md:pb-28">
+
+          {/* Region label */}
+          {regionLabel && (
+            <div className="mb-3 animate-fade-up" style={{ animationDelay: '0s' }}>
+              <span className="inline-flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-widest text-white/60 border border-white/[0.12] bg-black/[0.35] backdrop-blur-sm px-3 py-1 rounded-full">
+                <span className="w-1.5 h-1.5 rounded-full bg-white/50 shrink-0" />
+                {regionLabel}
+              </span>
+            </div>
+          )}
 
           {/* Genre pills */}
           {current.genres?.length > 0 && (

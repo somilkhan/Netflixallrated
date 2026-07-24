@@ -315,7 +315,11 @@ export default function Home() {
     <div className="pb-32 md:pb-24">
 
       {/* ── Hero ──────────────────────────────────────────────────────── */}
-      <HeroSection titles={heroTitles} onAction={heroAction} />
+      <HeroSection
+        titles={heroTitles}
+        onAction={heroAction}
+        regionLabel={`Popular in ${region.countryName}`}
+      />
 
       {/* ── Content area ─────────────────────────────────────────────── */}
       <div className="relative z-10 mt-0">
