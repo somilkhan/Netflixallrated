@@ -160,10 +160,37 @@ export async function getTVByGenre(genreId: number, page = 1): Promise<TmdbNorma
 }
 
 export async function searchMulti(query: string, page = 1): Promise<TmdbNormalized[]> {
-  const data = await tmdbFetch<{ results: any[] }>('/search/multi', { query, page: String(page) });
-  return data.results
-    .filter(item => item.media_type === 'movie' || item.media_type === 'tv')
-    .map(item => normalize(item));
+  // Fan out to all three endpoints in parallel so regional / less-popular titles
+  // (e.g. Tamil "Master" tmdbId 626392) that rank low in /search/multi still surface.
+  const [multiData, movieData, tvData] = await Promise.allSettled([
+    tmdbFetch<{ results: any[] }>('/search/multi', { query, page: String(page) }),
+    tmdbFetch<{ results: any[] }>('/search/movie', { query, page: String(page) }),
+    tmdbFetch<{ results: any[] }>('/search/tv',    { query, page: String(page) }),
+  ]);
+
+  const seen = new Set<string>();
+  const merged: TmdbNormalized[] = [];
+
+  // Helper: push unique items (deduplicated by mediaType+tmdbId)
+  const push = (items: any[], overrideMediaType?: 'movie' | 'tv') => {
+    for (const item of items) {
+      const mt: 'movie' | 'tv' =
+        overrideMediaType ?? item.media_type ?? (item.title ? 'movie' : 'tv');
+      if (mt !== 'movie' && mt !== 'tv') continue; // skip 'person' etc.
+      const key = `${mt}-${item.id}`;
+      if (seen.has(key)) continue;
+      seen.add(key);
+      merged.push(normalize({ ...item, media_type: mt }));
+    }
+  };
+
+  // /search/multi results first (ranked by TMDB relevance)
+  if (multiData.status === 'fulfilled') push(multiData.value.results ?? []);
+  // Then fill in from /search/movie and /search/tv (catches regional titles)
+  if (movieData.status === 'fulfilled') push(movieData.value.results ?? [], 'movie');
+  if (tvData.status   === 'fulfilled') push(tvData.value.results   ?? [], 'tv');
+
+  return merged;
 }
 
 export async function getMovieDetails(id: number): Promise<any> {
