@@ -19,3 +19,4 @@
 
 - [Replit lockfile proxy URLs](replit-lockfile-proxy-urls.md) — npm install on Replit embeds package-firewall.replit.local URLs; must sed-replace before Railway deploys
 - [Player provider boundaries](player-provider-boundaries.md) — native HLS supports advanced controls; cross-origin iframe providers remain provider-controlled
+- [PWA deployment updates](pwa-deployment-updates.md) — app-shell navigation must be network-first; cache-first HTML can hide successful Railway releases indefinitely
