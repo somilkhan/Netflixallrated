@@ -1,6 +1,6 @@
 import { useEffect, useState, type RefObject } from 'react';
 
-export function useIntersectionObserver(
+export function useHasIntersected(
   ref: RefObject<Element>,
   options: IntersectionObserverInit = {},
 ) {

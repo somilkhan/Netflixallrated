@@ -77,7 +77,6 @@ function writeCache(data: RegionInfo): void {
     const entry: CacheEntry = { data, expires: Date.now() + CACHE_TTL };
     localStorage.setItem(CACHE_KEY, JSON.stringify(entry));
   } catch {
-    // localStorage unavailable — silent
   }
 }
 
@@ -131,8 +130,8 @@ export async function detectRegion(): Promise<RegionInfo> {
         return REGION_MAP[code];
       }
     }
-  } catch {
-    // backend unavailable — fall through to client-side detection
+  } catch (err) {
+    console.error('[geo] detection failed', err);
   }
 
   // ── 2. Direct browser call to ipapi.co ──────────────────────────────
@@ -149,8 +148,8 @@ export async function detectRegion(): Promise<RegionInfo> {
       writeCache(region);
       return region;
     }
-  } catch {
-    // network error or timeout — fall through
+  } catch (err) {
+    console.error('[geo] detection failed', err);
   }
 
   // ── 3. navigator.language fallback ──────────────────────────────────

@@ -3,6 +3,7 @@ import { Play as PlayIcon } from 'lucide-react';
 import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
 import { api } from '../lib/api';
 import { getMovieDetails, getTVDetails, getMovieVideos, getTVVideos } from '../services/tmdb';
+import { tmdbSrcSet } from '../services/tmdb';
 import { useAuth } from '../lib/auth';
 import { getAnimeDetail } from '../lib/anilist';
 import {
@@ -118,7 +119,8 @@ const RelatedPosterCard = memo(function RelatedPosterCard({
         <div className="absolute inset-0 pointer-events-none z-10" style={{ background: 'linear-gradient(to top, rgba(0,0,0,0.85) 0%, rgba(0,0,0,0.3) 30%, transparent 60%)' }} />
         {posterUrl && !imgError ? (
           <img
-            src={posterUrl} alt={name} loading="lazy" decoding="async"
+            {...tmdbSrcSet(posterUrl)} alt={name} loading="lazy" decoding="async"
+            sizes="140px"
             onError={() => setImgError(true)}
             className="absolute inset-0 w-full h-full object-cover"
           />

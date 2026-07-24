@@ -41,7 +41,7 @@ import {
   GENRE_TILE_IMG,
 } from '../lib/categoryVisuals';
 import { slugify } from '../lib/slug';
-import { useIntersectionObserver } from '../hooks/useIntersectionObserver';
+import { useHasIntersected } from '../hooks/useIntersectionObserver';
 
 // ── Types ─────────────────────────────────────────────────────────────────
 interface GenreInfo {
@@ -87,8 +87,8 @@ function getHomeCache(): HomeCache | null {
 function setHomeCache(cache: HomeCache): void {
   try {
     sessionStorage.setItem(HOME_CACHE_KEY, JSON.stringify(cache));
-  } catch {
-    // Ignore quota/private-mode storage failures; the page still works without caching.
+  } catch (err) {
+    console.warn('[home-cache] storage write failed', err);
   }
 }
 
@@ -156,7 +156,7 @@ function RowWrapper({
   onVisible: () => void;
 }) {
   const ref = useRef<HTMLDivElement>(null);
-  const isVisible = useIntersectionObserver(ref, { threshold: 0.1 });
+  const isVisible = useHasIntersected(ref, { threshold: 0.1 });
 
   useEffect(() => {
     if (isVisible) onVisible();

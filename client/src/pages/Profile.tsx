@@ -12,6 +12,7 @@ import { useAuth } from '../lib/auth';
 import { Avatar } from '../components/ui/Avatar';
 import ContentCard from '../components/ui/ContentCard';
 import { BUILD_INFO } from '../lib/version';
+import { tmdbSrcSet } from '../services/tmdb';
 
 function timeAgo(dateStr: string): string {
   const diff = Date.now() - new Date(dateStr).getTime();
@@ -210,10 +211,12 @@ export default function Profile() {
                   <div className="relative aspect-[2/3] rounded-xl overflow-hidden bg-white/[0.05] mb-2">
                     {item.title.posterUrl && (
                       <img
-                        src={item.title.posterUrl}
+                        {...tmdbSrcSet(item.title.posterUrl)}
                         alt={item.title.name}
                         className="absolute inset-0 w-full h-full object-cover"
                         loading="lazy"
+                        decoding="async"
+                        sizes="130px"
                       />
                     )}
                     {/* Play overlay */}

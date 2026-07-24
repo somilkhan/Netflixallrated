@@ -11,6 +11,7 @@ import { m, AnimatePresence } from 'framer-motion';
 import { searchMulti } from '../services/tmdb';
 import TmdbContentCard from './TmdbContentCard';
 import type { TmdbNormalized } from '../services/tmdb';
+import { tmdbSrcSet } from '../services/tmdb';
 import { api } from '../lib/api';
 import { analytics } from '../lib/analytics';
 
@@ -342,10 +343,13 @@ export default function SearchOverlay({ open, onClose }: Props) {
                   className="w-full flex items-center gap-3 px-4 py-3 hover:bg-white/[0.05] transition-colors text-left"
                 >
                   <img
-                    src={item.posterUrl ?? ''}
+                    {...tmdbSrcSet(item.posterUrl)}
                     alt=""
                     className="w-10 rounded object-cover shrink-0 bg-white/10"
                     style={{ height: 56 }}
+                    loading="lazy"
+                    decoding="async"
+                    sizes="40px"
                     onError={e => { (e.target as HTMLImageElement).style.visibility = 'hidden'; }}
                   />
                   <div className="flex-1 min-w-0">

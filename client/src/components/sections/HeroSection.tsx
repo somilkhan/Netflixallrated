@@ -7,6 +7,7 @@
 import { useState, useEffect, useCallback, useMemo, useRef, memo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Play, Info, Volume2, VolumeX, ChevronRight, ChevronDown } from 'lucide-react';
+import { tmdbSrcSet } from '../../services/tmdb';
 
 const AUTO_MS = 8000;
 
@@ -27,6 +28,9 @@ const HeroSection = memo(function HeroSection({ titles, onAction, regionLabel }:
   const touchStartX = useRef<number | null>(null);
 
   const current = titles[idx];
+  const prefersReducedMotion = typeof window !== 'undefined'
+    ? window.matchMedia('(prefers-reduced-motion: reduce)').matches
+    : false;
 
   const next = useCallback(() => {
     setIdx(i => (i + 1) % titles.length);
@@ -38,10 +42,10 @@ const HeroSection = memo(function HeroSection({ titles, onAction, regionLabel }:
 
   // Auto-advance — pauses on hover/touch
   useEffect(() => {
-    if (titles.length <= 1 || paused) return;
+    if (titles.length <= 1 || paused || prefersReducedMotion) return;
     const t = setTimeout(next, AUTO_MS);
     return () => clearTimeout(t);
-  }, [idx, next, titles.length, paused]);
+  }, [idx, next, titles.length, paused, prefersReducedMotion]);
 
   // Swipe handlers
   const onTouchStart = useCallback((e: React.TouchEvent) => {
@@ -103,10 +107,13 @@ const HeroSection = memo(function HeroSection({ titles, onAction, regionLabel }:
                 <>
                   {/* Hidden <img> fires onLoad — div background-image never does */}
                   <img
-                    src={imgUrl}
+                     {...tmdbSrcSet(imgUrl)}
                     alt=""
                     aria-hidden
                     className="sr-only"
+                     sizes="100vw"
+                     loading="eager"
+                     decoding="async"
                     onLoad={() => setImgLoaded(prev => ({ ...prev, [i]: true }))}
                   />
                   <div
@@ -114,7 +121,7 @@ const HeroSection = memo(function HeroSection({ titles, onAction, regionLabel }:
                     style={{
                       backgroundImage: `url(${imgUrl})`,
                       backgroundPosition: t.backdropUrl ? 'center 20%' : 'top center',
-                      animation: i === idx ? 'kenBurns 28s ease-in-out infinite' : 'none',
+                       animation: (i === idx && !prefersReducedMotion) ? 'kenBurns 28s ease-in-out infinite' : 'none',
                       opacity: imgLoaded[i] ? 1 : 0,
                     }}
                   />

@@ -6,6 +6,7 @@
 import { memo, useState, useCallback, type KeyboardEvent, type MouseEvent } from 'react';
 import { Play, Plus, Info, Film, Star } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import { tmdbSrcSet } from '../../services/tmdb';
 
 /** Highlight matching substring in title text */
 function HighlightText({ text, query }: { text: string; query: string }) {
@@ -192,10 +193,11 @@ const ContentCard = memo(function ContentCard({
               </div>
             )}
             <img
-              src={title.posterUrl ?? undefined}
+              {...tmdbSrcSet(title.posterUrl)}
               alt={title.name}
               loading="lazy"
               decoding="async"
+              sizes="(max-width: 640px) 45vw, (max-width: 1024px) 30vw, 20vw"
               onLoad={() => setImgLoaded(true)}
               onError={() => setImgError(true)}
               className={`

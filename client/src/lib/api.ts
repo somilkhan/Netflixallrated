@@ -5,6 +5,7 @@ const API_URL = import.meta.env.VITE_API_URL || '/api';
 const inflight = new Map<string, Promise<any>>();
 
 // Simple TTL cache for hot read-only endpoints (genres, top10, trending, recent, geo)
+const MAX_CACHE_SIZE = 100;
 const cache = new Map<string, { value: any; expires: number }>();
 const TTL_MS = 60_000; // 1 minute
 
@@ -18,6 +19,10 @@ function cachedFetcher(cacheKey: string, ttl: number, fetcher: () => Promise<any
   let req: Promise<any>;
   req = fetcher().then((value: any) => {
     cache.set(cacheKey, { value, expires: Date.now() + ttl });
+    if (cache.size > MAX_CACHE_SIZE) {
+      const firstKey = cache.keys().next().value;
+      if (firstKey !== undefined) cache.delete(firstKey);
+    }
     if (inflight.get(cacheKey) === req) inflight.delete(cacheKey);
     return value;
   }, (error: unknown) => {
@@ -33,9 +38,7 @@ async function fetcher(path: string, options?: RequestInit) {
   const { data: { session } } = await getSupabaseClient()?.auth.getSession() ?? { data: { session: null } };
   // Supabase remains the source of truth. The mirror is only a short-lived
   // compatibility bridge for requests made while auth state is hydrating.
-  const token = session?.access_token
-    ?? localStorage.getItem('allrated-token')
-    ?? null;
+  const token = session?.access_token ?? null;
   const method = (options?.method || 'GET').toUpperCase();
   const dedupeKey = method === 'GET' ? `${token || 'anon'}::${path}` : null;
 

@@ -5,6 +5,7 @@
  */
 import { useState, useRef, memo, useCallback, useEffect } from 'react';
 import { Play, Film } from 'lucide-react';
+import { tmdbSrcSet } from '../services/tmdb';
 
 export interface GlassCardProvider {
   name: string;
@@ -126,10 +127,11 @@ const GlassCard = memo(function GlassCard({
               </div>
             )}
             <img
-              src={posterUrl!}
+              {...tmdbSrcSet(posterUrl)}
               alt={title}
               loading={priority ? 'eager' : 'lazy'}
               decoding="async"
+              sizes="(max-width: 640px) 45vw, (max-width: 1024px) 30vw, 20vw"
               {...{ fetchpriority: priority ? 'high' : 'low' }}
               onLoad={() => setLoaded(true)}
               onError={() => setErrored(true)}
