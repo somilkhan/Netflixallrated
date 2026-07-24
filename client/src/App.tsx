@@ -15,6 +15,7 @@ import { analytics } from './lib/analytics';
 import { setPageMeta } from './lib/seo';
 import { BUILD_INFO } from './lib/version';
 import Footer from './components/layout/Footer';
+import { ToastProvider } from './components/ui/Toast';
 
 // Route-level code splitting — each page loads on demand
 const Home            = lazy(() => import('./pages/Home'));
@@ -127,6 +128,7 @@ export default function App() {
   }, []);
 
   return (
+    <ToastProvider>
     <AuthProvider>
       <PlayerProvider>
         <div
@@ -159,5 +161,6 @@ export default function App() {
         </div>
       </PlayerProvider>
     </AuthProvider>
+    </ToastProvider>
   );
 }

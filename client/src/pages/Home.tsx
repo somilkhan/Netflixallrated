@@ -17,6 +17,7 @@ import {
   getSouthIndianMovies,
   getHindiWebSeries,
   getMalayalamMovies,
+  getRegionalContent,
   getGenres,
   getMovieVideos,
   getTVVideos,
@@ -60,9 +61,25 @@ interface HomeCache {
   hindiSeries: TmdbNormalized[];
   malayalam: TmdbNormalized[];
   genres: GenreInfo[];
+  /** Region-specific bonus row (K-Dramas, Hollywood Hits, etc.) */
+  regionalContent: TmdbNormalized[];
   scrollY: number;
   /** Region code the cache was built for — bust if user switches region. */
   regionCode: string;
+}
+
+/** Row title for the region-specific bonus row. Returns '' for India (has its own rows). */
+function getRegionalRowLabel(countryCode: string, countryName: string): string {
+  switch (countryCode) {
+    case 'IN': return '';
+    case 'KR': return '🎭 K-Dramas';
+    case 'JP': return '🎌 Anime & Japanese Cinema';
+    case 'US':
+    case 'GB':
+    case 'CA':
+    case 'AU': return '🎬 Hollywood Hits';
+    default:   return `🌍 Popular in ${countryName}`;
+  }
 }
 let _cache: HomeCache | null = null;
 
@@ -156,8 +173,9 @@ export default function Home() {
   const [bollywood,     setBollywood]     = useState<TmdbNormalized[]>(_cache?.bollywood     ?? []);
   const [southIndian,   setSouthIndian]   = useState<TmdbNormalized[]>(_cache?.southIndian   ?? []);
   const [hindiSeries,   setHindiSeries]   = useState<TmdbNormalized[]>(_cache?.hindiSeries   ?? []);
-  const [malayalam,     setMalayalam]     = useState<TmdbNormalized[]>(_cache?.malayalam     ?? []);
-  const [genres,        setGenres]        = useState<GenreInfo[]>(_cache?.genres             ?? []);
+  const [malayalam,       setMalayalam]       = useState<TmdbNormalized[]>(_cache?.malayalam       ?? []);
+  const [regionalContent, setRegionalContent] = useState<TmdbNormalized[]>(_cache?.regionalContent ?? []);
+  const [genres,          setGenres]          = useState<GenreInfo[]>(_cache?.genres               ?? []);
 
   // ── Loading / error flags ──────────────────────────────────────────────
   const [loading,       setLoading]       = useState(!_cache);
@@ -189,7 +207,7 @@ export default function Home() {
     const isIndia = region.countryCode === 'IN';
 
     const results = await Promise.allSettled([
-      getTrending('all', 'day', 1),                                         // 0 — global
+      getTrending('all', 'day', 1, rp),                                     // 0 — region-aware
       getPopularMovies(1, rp),                                              // 1
       getPopularTVShows(1, rp),                                             // 2
       Promise.all([getTopRatedMovies(1, rp), getTopRatedTVShows(1, rp)]).then(
@@ -204,6 +222,7 @@ export default function Home() {
       isIndia ? getSouthIndianMovies(1) : Promise.resolve([]),              // 7
       isIndia ? getHindiWebSeries(1)    : Promise.resolve([]),              // 8
       isIndia ? getMalayalamMovies(1)   : Promise.resolve([]),              // 9
+      getRegionalContent(region.countryCode, 1),                           // 10
     ]);
 
     const set = <T,>(idx: number, setter: (v: T) => void, key: string) => {
@@ -221,7 +240,8 @@ export default function Home() {
     set<TmdbNormalized[]>(6, setBollywood,     'bollywood');
     set<TmdbNormalized[]>(7, setSouthIndian,   'southIndian');
     set<TmdbNormalized[]>(8, setHindiSeries,   'hindiSeries');
-    set<TmdbNormalized[]>(9, setMalayalam,     'malayalam');
+    set<TmdbNormalized[]>(9, setMalayalam,        'malayalam');
+    set<TmdbNormalized[]>(10, setRegionalContent, 'regionalContent');
 
     setLoading(false);
   }, [region]); // re-fetch when region changes
@@ -242,12 +262,12 @@ export default function Home() {
     if (trending.length || popularMovies.length) {
       _cache = {
         trending, popularMovies, popularTV, topRated, nowPlaying,
-        bollywood, southIndian, hindiSeries, malayalam, genres,
+        bollywood, southIndian, hindiSeries, malayalam, regionalContent, genres,
         scrollY: _cache?.scrollY ?? 0,
         regionCode: region.countryCode,
       };
     }
-  }, [trending, popularMovies, popularTV, topRated, nowPlaying, bollywood, southIndian, hindiSeries, malayalam, genres, region.countryCode]);
+  }, [trending, popularMovies, popularTV, topRated, nowPlaying, bollywood, southIndian, hindiSeries, malayalam, regionalContent, genres, region.countryCode]);
 
   // ── Hero trailer injection ─────────────────────────────────────────────
   // Fetch trailers for up to 5 hero items after initial data loads.
@@ -516,6 +536,18 @@ export default function Home() {
               ))}
             </ContentRow>
           ) : null
+        )}
+
+        {/* ── Regional bonus row (KR / JP / US / GB / CA / AU / others) ── */}
+        {showAll && !loading && regionalContent.length > 0 && (
+          <ContentRow
+            title={getRegionalRowLabel(region.countryCode, region.countryName)}
+            viewAllPath="/browse?collection=trending"
+          >
+            {regionalContent.slice(0, 20).map(item => (
+              <TmdbContentCard key={item.id} item={item} />
+            ))}
+          </ContentRow>
         )}
 
         {/* ── Browse by Genre ───────────────────────────────────────── */}

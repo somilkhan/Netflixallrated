@@ -126,7 +126,7 @@ const ContentRow = memo(function ContentRow({
           role="region"
           aria-label={`${title} row`}
           className="
-            flex gap-3 md:gap-4 overflow-x-auto overflow-y-visible
+            flex gap-4 overflow-x-auto overflow-y-visible
             px-4 md:px-6 pb-3
             scrollbar-hide
             focus:outline-none focus-visible:ring-1 focus-visible:ring-white/25 rounded-lg

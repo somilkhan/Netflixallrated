@@ -126,7 +126,7 @@ const TopTenRow = memo(function TopTenRow({ title, items, viewAllPath, renderCar
                * paddingLeft creates room for the numeral to peek out on the left.
                * All items (including 0) get padding so the numeral is always visible.
                */
-              style={{ paddingLeft: '38px' }}
+              style={{ paddingLeft: '56px' }}
             >
               {/*
                * Rank numeral — sits at bottom of the POSTER (not full card).

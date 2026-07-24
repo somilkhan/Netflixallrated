@@ -359,3 +359,66 @@ export async function getGenres(): Promise<{ id: number; name: string }[]> {
 export function hasTmdbKey(): boolean {
   return !!(import.meta as any).env?.VITE_TMDB_API_KEY;
 }
+
+/**
+ * Returns region-specific content for the Home page "bonus" row.
+ *
+ * - KR → Korean TV (K-Dramas)
+ * - JP → Japanese movies + TV (anime / cinema)
+ * - IN → empty (India has its own dedicated rows)
+ * - US / GB / CA / AU → English-language popular movies ("Hollywood Hits")
+ * - All others → popular movies scoped to that region's release market
+ */
+export async function getRegionalContent(
+  countryCode: string,
+  page = 1,
+): Promise<TmdbNormalized[]> {
+  switch (countryCode) {
+    case 'IN':
+      // India has bollywood / south-indian / hindi-series / malayalam rows already
+      return [];
+
+    case 'KR': {
+      const data = await tmdbFetch<{ results: any[] }>('/discover/tv', {
+        with_original_language: 'ko',
+        sort_by: 'popularity.desc',
+        'vote_count.gte': '50',
+        page: String(page),
+      });
+      return data.results.map(item => normalize(item, 'tv'));
+    }
+
+    case 'JP': {
+      const [movies, tv] = await Promise.all([
+        tmdbFetch<{ results: any[] }>('/discover/movie', {
+          with_original_language: 'ja',
+          sort_by: 'popularity.desc',
+          page: String(page),
+        }),
+        tmdbFetch<{ results: any[] }>('/discover/tv', {
+          with_original_language: 'ja',
+          sort_by: 'popularity.desc',
+          page: String(page),
+        }),
+      ]);
+      const combined = [
+        ...movies.results.map(i => normalize(i, 'movie')),
+        ...tv.results.map(i => normalize(i, 'tv')),
+      ];
+      return combined
+        .sort((a, b) => (b.rating ?? 0) - (a.rating ?? 0))
+        .slice(0, 20);
+    }
+
+    default: {
+      // US, GB, CA, AU and every other country: discover movies released/popular in that region
+      const data = await tmdbFetch<{ results: any[] }>('/discover/movie', {
+        sort_by:             'popularity.desc',
+        region:              countryCode,
+        'vote_count.gte':    '100',
+        page:                String(page),
+      });
+      return data.results.map(item => normalize(item, 'movie'));
+    }
+  }
+}
