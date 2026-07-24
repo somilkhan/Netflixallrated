@@ -64,7 +64,7 @@ async function fetcher(path: string, options?: RequestInit) {
 export const api = {
   auth: {
     me: () => fetcher('/auth/me'),
-    updateMe: (data: { displayName?: string; avatarUrl?: string }) =>
+    updateMe: (data: { displayName?: string; avatarUrl?: string; region?: string; language?: string }) =>
       fetcher('/auth/me', { method: 'PATCH', body: JSON.stringify(data) }),
     promote: (email: string, adminPassword: string) =>
       fetcher('/auth/promote', { method: 'POST', body: JSON.stringify({ email, adminPassword }) }),

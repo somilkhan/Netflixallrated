@@ -31,6 +31,20 @@ async function tmdbFetch<T>(path: string, params: Record<string, string> = {}): 
   return data as T;
 }
 
+// ── Region params ──────────────────────────────────────────────────────────
+export interface RegionParams {
+  /** ISO 3166-1 alpha-2 country code, e.g. 'IN', 'US', 'KR' */
+  region?: string;
+  /** BCP 47 language tag, e.g. 'hi-IN', 'en-US', 'ko-KR' */
+  language?: string;
+}
+
+function applyRegion(params: Record<string, string>, rp: RegionParams): void {
+  if (rp.region)   params['region']   = rp.region;
+  if (rp.language) params['language'] = rp.language;
+  params['include_adult'] = 'false';
+}
+
 // ── Genre maps ────────────────────────────────────────────────────────────
 const MOVIE_GENRE_MAP: Record<number, string> = {
   28: 'Action', 12: 'Adventure', 16: 'Animation', 35: 'Comedy',
@@ -109,38 +123,53 @@ export async function getTrending(
   type: 'all' | 'movie' | 'tv' = 'all',
   timeWindow: 'day' | 'week' = 'day',
   page = 1,
+  rp: RegionParams = {},
 ): Promise<TmdbNormalized[]> {
-  const data = await tmdbFetch<{ results: any[] }>(`/trending/${type}/${timeWindow}`, { page: String(page) });
+  const params: Record<string, string> = { page: String(page) };
+  applyRegion(params, rp);
+  const data = await tmdbFetch<{ results: any[] }>(`/trending/${type}/${timeWindow}`, params);
   return data.results.map(item => normalize(item));
 }
 
-export async function getPopularMovies(page = 1): Promise<TmdbNormalized[]> {
-  const data = await tmdbFetch<{ results: any[] }>('/movie/popular', { page: String(page) });
+export async function getPopularMovies(page = 1, rp: RegionParams = {}): Promise<TmdbNormalized[]> {
+  const params: Record<string, string> = { page: String(page) };
+  applyRegion(params, rp);
+  const data = await tmdbFetch<{ results: any[] }>('/movie/popular', params);
   return data.results.map(item => normalize(item, 'movie'));
 }
 
-export async function getPopularTVShows(page = 1): Promise<TmdbNormalized[]> {
-  const data = await tmdbFetch<{ results: any[] }>('/tv/popular', { page: String(page) });
+export async function getPopularTVShows(page = 1, rp: RegionParams = {}): Promise<TmdbNormalized[]> {
+  const params: Record<string, string> = { page: String(page) };
+  applyRegion(params, rp);
+  const data = await tmdbFetch<{ results: any[] }>('/tv/popular', params);
   return data.results.map(item => normalize(item, 'tv'));
 }
 
-export async function getTopRatedMovies(page = 1): Promise<TmdbNormalized[]> {
-  const data = await tmdbFetch<{ results: any[] }>('/movie/top_rated', { page: String(page) });
+export async function getTopRatedMovies(page = 1, rp: RegionParams = {}): Promise<TmdbNormalized[]> {
+  const params: Record<string, string> = { page: String(page) };
+  applyRegion(params, rp);
+  const data = await tmdbFetch<{ results: any[] }>('/movie/top_rated', params);
   return data.results.map(item => normalize(item, 'movie'));
 }
 
-export async function getTopRatedTVShows(page = 1): Promise<TmdbNormalized[]> {
-  const data = await tmdbFetch<{ results: any[] }>('/tv/top_rated', { page: String(page) });
+export async function getTopRatedTVShows(page = 1, rp: RegionParams = {}): Promise<TmdbNormalized[]> {
+  const params: Record<string, string> = { page: String(page) };
+  applyRegion(params, rp);
+  const data = await tmdbFetch<{ results: any[] }>('/tv/top_rated', params);
   return data.results.map(item => normalize(item, 'tv'));
 }
 
-export async function getNowPlayingMovies(page = 1): Promise<TmdbNormalized[]> {
-  const data = await tmdbFetch<{ results: any[] }>('/movie/now_playing', { page: String(page) });
+export async function getNowPlayingMovies(page = 1, rp: RegionParams = {}): Promise<TmdbNormalized[]> {
+  const params: Record<string, string> = { page: String(page) };
+  applyRegion(params, rp);
+  const data = await tmdbFetch<{ results: any[] }>('/movie/now_playing', params);
   return data.results.map(item => normalize(item, 'movie'));
 }
 
-export async function getUpcomingMovies(page = 1): Promise<TmdbNormalized[]> {
-  const data = await tmdbFetch<{ results: any[] }>('/movie/upcoming', { page: String(page) });
+export async function getUpcomingMovies(page = 1, rp: RegionParams = {}): Promise<TmdbNormalized[]> {
+  const params: Record<string, string> = { page: String(page) };
+  applyRegion(params, rp);
+  const data = await tmdbFetch<{ results: any[] }>('/movie/upcoming', params);
   return data.results.map(item => normalize(item, 'movie'));
 }
 

@@ -14,6 +14,7 @@ import { useAuth } from '../../lib/auth';
 import { useScrollDirection } from '../../hooks/useScrollDirection';
 import { useClickOutside } from '../../hooks/useClickOutside';
 import { Avatar } from '../ui/Avatar';
+import RegionSwitcher from '../RegionSwitcher';
 
 const NAV_LINKS = [
   { label: 'Home',     path: '/' },
@@ -174,8 +175,11 @@ const TopNav = memo(function TopNav({ onOpenSearch }: TopNavProps) {
           })}
         </div>
 
-        {/* Right side: search + profile */}
+        {/* Right side: region + search + profile */}
         <div className="ml-auto flex items-center gap-1.5">
+
+          {/* Region switcher */}
+          <RegionSwitcher />
 
           {/* Expandable search — desktop */}
           <div ref={searchRef} className="relative">

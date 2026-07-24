@@ -22,7 +22,9 @@ import {
   getTVVideos,
   hasTmdbKey,
   type TmdbNormalized,
+  type RegionParams,
 } from '../services/tmdb';
+import { detectRegion, getCachedRegion, DEFAULT_REGION, type RegionInfo } from '../lib/geo';
 import { api } from '../lib/api';
 import { useAuth } from '../lib/auth';
 
@@ -59,6 +61,8 @@ interface HomeCache {
   malayalam: TmdbNormalized[];
   genres: GenreInfo[];
   scrollY: number;
+  /** Region code the cache was built for — bust if user switches region. */
+  regionCode: string;
 }
 let _cache: HomeCache | null = null;
 
@@ -130,6 +134,19 @@ export default function Home() {
 
   const [activeTab, setActiveTab] = useState<Tab>('All');
 
+  // ── Region detection ───────────────────────────────────────────────────
+  // Initialise synchronously from localStorage cache so first render already
+  // knows the region, then confirm / update with the async IP lookup.
+  const [region, setRegion] = useState<RegionInfo>(() => getCachedRegion() ?? DEFAULT_REGION);
+
+  useEffect(() => {
+    detectRegion()
+      .then(detected => {
+        setRegion(detected);
+      })
+      .catch(() => { /* keep current value */ });
+  }, []);
+
   // ── TMDB sections ──────────────────────────────────────────────────────
   const [trending,      setTrending]      = useState<TmdbNormalized[]>(_cache?.trending      ?? []);
   const [popularMovies, setPopularMovies] = useState<TmdbNormalized[]>(_cache?.popularMovies ?? []);
@@ -168,22 +185,25 @@ export default function Home() {
     setLoading(true);
     setErrors({});
 
+    const rp: RegionParams = { region: region.countryCode, language: region.language };
+    const isIndia = region.countryCode === 'IN';
+
     const results = await Promise.allSettled([
-      getTrending('all', 'day', 1),                                         // 0
-      getPopularMovies(1),                                                  // 1
-      getPopularTVShows(1),                                                 // 2
-      Promise.all([getTopRatedMovies(1), getTopRatedTVShows(1)]).then(
+      getTrending('all', 'day', 1),                                         // 0 — global
+      getPopularMovies(1, rp),                                              // 1
+      getPopularTVShows(1, rp),                                             // 2
+      Promise.all([getTopRatedMovies(1, rp), getTopRatedTVShows(1, rp)]).then(
         ([movies, tv]) =>
           [...movies, ...tv]
             .sort((a, b) => (b.rating ?? 0) - (a.rating ?? 0))
             .slice(0, 20),
       ),                                                                    // 3
-      getNowPlayingMovies(1),                                               // 4
+      getNowPlayingMovies(1, rp),                                           // 4
       getGenres(),                                                          // 5
-      getBollywoodMovies(1),                                                // 6
-      getSouthIndianMovies(1),                                              // 7
-      getHindiWebSeries(1),                                                 // 8
-      getMalayalamMovies(1),                                                // 9
+      isIndia ? getBollywoodMovies(1)   : Promise.resolve([]),              // 6
+      isIndia ? getSouthIndianMovies(1) : Promise.resolve([]),              // 7
+      isIndia ? getHindiWebSeries(1)    : Promise.resolve([]),              // 8
+      isIndia ? getMalayalamMovies(1)   : Promise.resolve([]),              // 9
     ]);
 
     const set = <T,>(idx: number, setter: (v: T) => void, key: string) => {
@@ -204,23 +224,30 @@ export default function Home() {
     set<TmdbNormalized[]>(9, setMalayalam,     'malayalam');
 
     setLoading(false);
-  }, []);
+  }, [region]); // re-fetch when region changes
 
   useEffect(() => {
-    if (_cache) { isRestoring.current = true; return; }
+    // Use cached data only if it was built for the same region
+    if (_cache && _cache.regionCode === region.countryCode) {
+      isRestoring.current = true;
+      return;
+    }
+    // Bust stale cache when region differs
+    _cache = null;
     fetchAll();
-  }, [fetchAll]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [fetchAll, region]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Populate cache when data arrives
+  // Populate cache when data arrives (keyed by region)
   useEffect(() => {
     if (trending.length || popularMovies.length) {
       _cache = {
         trending, popularMovies, popularTV, topRated, nowPlaying,
         bollywood, southIndian, hindiSeries, malayalam, genres,
         scrollY: _cache?.scrollY ?? 0,
+        regionCode: region.countryCode,
       };
     }
-  }, [trending, popularMovies, popularTV, topRated, nowPlaying, bollywood, southIndian, hindiSeries, malayalam, genres]);
+  }, [trending, popularMovies, popularTV, topRated, nowPlaying, bollywood, southIndian, hindiSeries, malayalam, genres, region.countryCode]);
 
   // ── Hero trailer injection ─────────────────────────────────────────────
   // Fetch trailers for up to 5 hero items after initial data loads.
@@ -355,7 +382,10 @@ export default function Home() {
           errors.popularMovies ? (
             <ErrorRow label="Popular Movies unavailable" onRetry={fetchAll} />
           ) : popularMovies.length > 0 ? (
-            <ContentRow title="Popular Movies" viewAllPath="/browse?collection=movies">
+            <ContentRow
+              title={`Popular in ${region.countryName}`}
+              viewAllPath="/browse?collection=movies"
+            >
               {popularMovies.slice(0, 20).map(item => (
                 <TmdbContentCard key={item.id} item={item} />
               ))}
@@ -369,7 +399,10 @@ export default function Home() {
           errors.popularTV ? (
             <ErrorRow label="Popular TV Shows unavailable" onRetry={fetchAll} />
           ) : popularTV.length > 0 ? (
-            <ContentRow title="Popular TV Shows" viewAllPath="/browse?collection=series">
+            <ContentRow
+              title={`Popular TV Shows in ${region.countryName}`}
+              viewAllPath="/browse?collection=series"
+            >
               {popularTV.slice(0, 20).map(item => (
                 <TmdbContentCard key={item.id} item={item} />
               ))}
@@ -383,7 +416,10 @@ export default function Home() {
           errors.topRated ? (
             <ErrorRow label="Top Rated unavailable" onRetry={fetchAll} />
           ) : topRated.length > 0 ? (
-            <ContentRow title="Top Rated" viewAllPath="/browse?collection=top-rated">
+            <ContentRow
+              title={`Top Rated in ${region.countryName}`}
+              viewAllPath="/browse?collection=top-rated"
+            >
               {topRated.slice(0, 20).map(item => (
                 <TmdbContentCard key={item.id} item={item} />
               ))}
@@ -397,7 +433,10 @@ export default function Home() {
           errors.nowPlaying ? (
             <ErrorRow label="Now Playing unavailable" onRetry={fetchAll} />
           ) : nowPlaying.length > 0 ? (
-            <ContentRow title="Now Playing in Theaters" viewAllPath="/browse?collection=now-playing">
+            <ContentRow
+              title={`Now Playing in ${region.countryName}`}
+              viewAllPath="/browse?collection=now-playing"
+            >
               {nowPlaying.slice(0, 20).map(item => (
                 <TmdbContentCard key={item.id} item={item} />
               ))}
@@ -405,8 +444,10 @@ export default function Home() {
           ) : null
         )}
 
+        {/* ── India-specific rows — only shown for IN region ────────── */}
+
         {/* ── Bollywood Hits ────────────────────────────────────────── */}
-        {showMovies && (
+        {region.countryCode === 'IN' && showMovies && (
           loading ? <SectionSkeleton /> :
           errors.bollywood ? null :
           bollywood.length > 0 ? (
@@ -422,7 +463,7 @@ export default function Home() {
         )}
 
         {/* ── South Indian Cinema ───────────────────────────────────── */}
-        {showMovies && (
+        {region.countryCode === 'IN' && showMovies && (
           loading ? <SectionSkeleton /> :
           errors.southIndian ? null :
           southIndian.length > 0 ? (
@@ -438,7 +479,7 @@ export default function Home() {
         )}
 
         {/* ── Hindi Web Series ──────────────────────────────────────── */}
-        {showSeries && (
+        {region.countryCode === 'IN' && showSeries && (
           loading ? <SectionSkeleton /> :
           errors.hindiSeries ? null :
           hindiSeries.length > 0 ? (
@@ -454,7 +495,7 @@ export default function Home() {
         )}
 
         {/* ── Malayalam Cinema ──────────────────────────────────────── */}
-        {showMovies && (
+        {region.countryCode === 'IN' && showMovies && (
           loading ? null :
           errors.malayalam ? null :
           malayalam.length > 0 ? (

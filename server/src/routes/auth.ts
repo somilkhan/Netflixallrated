@@ -12,9 +12,18 @@ router.get('/me', authenticate, async (req: AuthRequest, res) => {
 });
 
 router.patch('/me', authenticate, async (req: AuthRequest, res) => {
-  const parsed = z.object({ displayName: z.string().min(1).max(60).optional(), avatarUrl: z.string().url().optional() }).safeParse(req.body);
+  const parsed = z.object({
+    displayName: z.string().min(1).max(60).optional(),
+    avatarUrl: z.string().url().optional(),
+    region: z.string().max(10).optional(),
+    language: z.string().max(20).optional(),
+  }).safeParse(req.body);
   if (!parsed.success) return res.status(400).json({ error: parsed.error.flatten() });
-  const user = await prisma.user.update({ where: { id: req.user!.id }, data: parsed.data, select: { id: true, email: true, displayName: true, avatarUrl: true, role: true } });
+  const user = await prisma.user.update({
+    where: { id: req.user!.id },
+    data: parsed.data,
+    select: { id: true, email: true, displayName: true, avatarUrl: true, role: true, region: true, language: true },
+  });
   res.json({ user: { ...user, isAdmin: user.role === 'ADMIN' } });
 });
 
