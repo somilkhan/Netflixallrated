@@ -19,33 +19,47 @@ import consumetRoutes from './routes/consumet.js';
 import screenscapeRoutes from './routes/screenscape.js';
 import historyRoutes from './routes/history.js';
 import sportsRoutes from './routes/sports.js';
-import tmdbRoutes from './routes/tmdb.js';
 import { prisma } from './lib/prisma.js';
 import { syncTmdbCatalog } from './lib/sync.js';
 
 dotenv.config();
 
 const app = express();
-app.set('trust proxy', 'loopback, linklocal, uniquelocal');
+app.set('trust proxy', 1);
 const PORT = process.env.PORT || 3000;
 
-app.use(helmet());
-
-const allowedOrigins = [
-  process.env.CLIENT_URL,
-  'http://localhost:5173',
-].filter((o): o is string => !!o);
-
-app.use(cors({
-  origin: (origin, callback) => {
-    if (!origin || allowedOrigins.includes(origin)) {
-      callback(null, true);
-    } else {
-      callback(new Error('Not allowed by CORS'));
-    }
+app.use(helmet({
+  contentSecurityPolicy: {
+    directives: {
+      defaultSrc: ["'self'"],
+      imgSrc: ["'self'", "data:", "https://image.tmdb.org", "https://img.youtube.com", "https://i.ytimg.com"],
+      scriptSrc: ["'self'", "'unsafe-inline'", "https://www.youtube-nocookie.com"],
+      styleSrc: ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com"],
+      fontSrc: ["'self'", "https:", "data:", "https://fonts.gstatic.com"],
+      frameSrc: ["'self'", "https://www.youtube-nocookie.com", "https://www.youtube.com"],
+      connectSrc: ["'self'", "https://api.themoviedb.org", "https://ipapi.co"],
+      mediaSrc: ["'self'", "https:", "blob:"],
+    },
   },
-  credentials: false,
+  crossOriginResourcePolicy: { policy: "cross-origin" },
 }));
+
+// This API is public and stateless (Bearer-token auth, no session cookies),
+// so there is no cross-site credential to protect — reflecting the caller's
+// origin is safe and avoids CLIENT_URL/allowlist drift breaking legitimate
+// clients (Replit's dev proxy, ephemeral *.replit.dev preview domains, the
+// deployed frontend, etc.) whenever the allowlist falls out of sync.
+//
+// Previously this only allowed origins in CLIENT_URL when NODE_ENV was
+// 'production' — which Railway always sets — so ANY browser POST request
+// (resolve-anilist, resolve-tmdb, watchlist, ratings, history, …) was
+// rejected with a 500 "Not allowed by CORS" unless the request had no
+// Origin header at all (e.g. server-to-server curl). That silently broke
+// every card whose navigation depends on a POST "resolve" call — anime
+// cards, related/recommendation cards, and similar-titles cards — while
+// plain client-side navigation (Home/TV cards with an id already in hand)
+// kept working, making it look like an isolated regression.
+app.use(cors({ origin: true, credentials: true }));
 app.use(express.json());
 
 const limiter = rateLimit({ windowMs: 15 * 60 * 1000, max: 200, standardHeaders: true, legacyHeaders: false });
@@ -64,9 +78,29 @@ app.use('/api/consumet', consumetRoutes);
 app.use('/api/screenscape', screenscapeRoutes);
 app.use('/api/history', historyRoutes);
 app.use('/api/sports', sportsRoutes);
-app.use('/api/tmdb', tmdbRoutes);
 
 app.get('/api/health', (_req, res) => res.json({ status: 'ok' }));
+
+// ── Auto junk cleanup ──────────────────────────────────────────────────────
+// On every startup: delete unrated future-dated or posterless titles that
+// slipped in before the discover filters were tightened. Rated titles are
+// never touched. Runs silently in the background — non-blocking.
+async function autoCleanupJunk() {
+  try {
+    const currentYear = new Date().getFullYear();
+    const result = await prisma.title.deleteMany({
+      where: {
+        OR: [{ posterUrl: null }, { year: { gt: currentYear } }],
+        ratings: { none: {} },
+      },
+    });
+    if (result.count > 0) {
+      console.log(`[auto-cleanup] Removed ${result.count} unreleased/posterless titles with no ratings.`);
+    }
+  } catch (err) {
+    console.warn('[auto-cleanup] Failed (non-fatal):', (err as Error).message);
+  }
+}
 
 // ── Auto TMDB sync ─────────────────────────────────────────────────────────
 // On startup: if catalog is empty, seed with 5 pages (~100 movies) so the
@@ -111,10 +145,14 @@ if (process.env.NODE_ENV === 'production' && existsSync(clientDist)) {
 // Centralized error handler — catches anything passed to next(err)
 app.use((err: Error, _req: express.Request, res: express.Response, _next: express.NextFunction) => {
   console.error('[unhandled]', err);
-  res.status(500).json({ error: 'Internal server error' });
+  res.status(500).json({ error: err.message || 'Internal server error' });
 });
 
 export default app;
+
+// Run cleanup on every startup — purges unreleased junk from the production
+// DB that pre-dates the discover filters. Non-blocking.
+autoCleanupJunk();
 
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
