@@ -106,16 +106,18 @@ const HeroSection = memo(function HeroSection({ titles, onAction, regionLabel }:
               {imgUrl ? (
                 <>
                   {/* Hidden <img> fires onLoad — div background-image never does */}
-                  <img
-                     {...tmdbSrcSet(imgUrl)}
-                    alt=""
-                    aria-hidden
-                    className="sr-only"
-                     sizes="100vw"
-                     loading="eager"
-                     decoding="async"
-                    onLoad={() => setImgLoaded(prev => ({ ...prev, [i]: true }))}
-                  />
+                  {tmdbSrcSet(imgUrl) && (
+                    <img
+                      {...tmdbSrcSet(imgUrl)!}
+                      sizes="100vw"
+                      alt=""
+                      aria-hidden
+                      className="sr-only"
+                      loading="eager"
+                      decoding="async"
+                      onLoad={() => setImgLoaded(prev => ({ ...prev, [i]: true }))}
+                    />
+                  )}
                   <div
                     className="absolute inset-[-5%] bg-cover bg-center transition-opacity duration-500"
                     style={{

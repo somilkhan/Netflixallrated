@@ -192,21 +192,23 @@ const ContentCard = memo(function ContentCard({
                 }} />
               </div>
             )}
-            <img
-              {...tmdbSrcSet(title.posterUrl)}
-              alt={title.name}
-              loading="lazy"
-              decoding="async"
-              sizes="(max-width: 640px) 45vw, (max-width: 1024px) 30vw, 20vw"
-              onLoad={() => setImgLoaded(true)}
-              onError={() => setImgError(true)}
-              className={`
-                absolute inset-0 w-full h-full object-cover
-                transition-all duration-[400ms]
-                md:group-hover:scale-[1.04] md:group-hover:opacity-60
-                ${imgLoaded ? 'opacity-100' : 'opacity-0'}
-              `}
-            />
+            {tmdbSrcSet(title.posterUrl) && (
+              <img
+                {...tmdbSrcSet(title.posterUrl)!}
+                sizes="(max-width: 640px) 45vw, (max-width: 1024px) 30vw, 230px"
+                alt={title.name}
+                loading="lazy"
+                decoding="async"
+                onLoad={() => setImgLoaded(true)}
+                onError={() => setImgError(true)}
+                className={`
+                  absolute inset-0 w-full h-full object-cover
+                  transition-all duration-[400ms]
+                  md:group-hover:scale-[1.04] md:group-hover:opacity-60
+                  ${imgLoaded ? 'opacity-100' : 'opacity-0'}
+                `}
+              />
+            )}
           </>
         ) : (
           <div

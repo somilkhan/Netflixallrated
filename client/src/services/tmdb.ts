@@ -83,8 +83,8 @@ export function getBackdropUrl(path: string | null | undefined, size = 'w1280'):
 export function tmdbSrcSet(path: string | null | undefined): {
   src: string;
   srcSet: string;
-} {
-  if (!path) return { src: '', srcSet: '' };
+} | null {
+  if (!path) return null;
 
   let tmdbPath = path;
   if (/^https?:\/\//.test(path)) {
