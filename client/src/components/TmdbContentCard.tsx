@@ -14,7 +14,7 @@ interface TmdbContentCardProps {
   className?: string;
 }
 
-const TmdbContentCard = memo(function TmdbContentCard({ item, rank, className = '' }: TmdbContentCardProps) {
+const TmdbContentCard = memo(function TmdbContentCard({ item, rank, className = '', fluid = false }: TmdbContentCardProps & { fluid?: boolean }) {
   const nav = useNavigate();
   const go = useCallback((play = false) => {
     nav(`/title/tmdb/${item.tmdbId}?type=${item.mediaType}${play ? '&play=1' : ''}`);
@@ -24,6 +24,7 @@ const TmdbContentCard = memo(function TmdbContentCard({ item, rank, className = 
     <ContentCard
       title={item}
       rank={rank}
+      fluid={fluid}
       className={className}
       onNavigate={go}
     />

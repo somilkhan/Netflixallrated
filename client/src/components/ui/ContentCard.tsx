@@ -166,7 +166,6 @@ const ContentCard = memo(function ContentCard({
           focus:outline-none focus-visible:ring-2 focus-visible:ring-white/25
         "
         style={{
-          aspectRatio: '2/3',
           boxShadow: '0 4px 16px rgba(0,0,0,0.3)',
           display: 'block',
         }}
@@ -214,7 +213,7 @@ const ContentCard = memo(function ContentCard({
           <div
             className="absolute inset-0 flex flex-col items-center justify-center gap-2 px-3"
             style={{
-              background: `radial-gradient(140% 120% at 30% 0%, ${title.posterColorFrom || '#1e1e2e'}, ${title.posterColorTo || '#0A0A0A'} 75%)`,
+              background: 'radial-gradient(140% 120% at 30% 0%, #1e1e2e, #0A0A0A 75%)',
             }}
           >
             <Film size={22} className="text-white/20" />

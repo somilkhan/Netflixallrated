@@ -51,6 +51,7 @@ function ContinueWatchingCard({ item, onRemove }: ContinueWatchingCardProps) {
           rating: undefined,
           synopsis: subLabel ? `${subLabel}${item.episodeTitle ? ` · ${item.episodeTitle}` : ''}` : '',
         }}
+        fluid
         showProgress={!completed}
         progressSeconds={positionSeconds}
         durationSeconds={durationSeconds ?? 0}
