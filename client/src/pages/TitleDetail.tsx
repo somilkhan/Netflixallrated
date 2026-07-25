@@ -1558,6 +1558,7 @@ export default function TitleDetail() {
                     src={embedUrl}
                     allowFullScreen
                     allow="autoplay; fullscreen; picture-in-picture; encrypted-media"
+                    referrerPolicy="no-referrer"
                     title={title.name}
                     onLoad={() => setIsIframeLoading(false)}
                     onError={() => { setIsIframeLoading(false); setIframeError(true); }}

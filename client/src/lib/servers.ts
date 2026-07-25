@@ -8,15 +8,13 @@ export interface Server {
 
 export const SERVERS: Server[] = [
   {
-    // Screenscape is the default player — correct params are s= and e= (not season= / episode=)
-    id: 'screenscape-embed',
-    label: 'Screenscape',
+    // VidSrc is the default — reliable, no login, works for movies + TV
+    id: 'vidsrc',
+    label: 'VidSrc',
     getUrl: (id, type, s, e) =>
       type === 'MOVIE'
-        ? `https://screenscape.me/embed?tmdb=${id}&type=movie&lan=eng`
-        : type === 'ANIME'
-        ? `https://screenscape.me/embed?tmdb=${id}&type=tv&s=1&e=${e}&lan=eng`
-        : `https://screenscape.me/embed?tmdb=${id}&type=tv&s=${s}&e=${e}&lan=eng`,
+        ? `https://vidsrc.to/embed/movie/${id}`
+        : `https://vidsrc.to/embed/tv/${id}/${s}/${e}`,
   },
   {
     id: 'vidrock',
@@ -35,30 +33,6 @@ export const SERVERS: Server[] = [
         : `https://vidnest.fun/tv/${id}/${s}/${e}`,
   },
   {
-    id: 'nebulaflix',
-    label: 'NebulaFlix',
-    getUrl: (id, type, s, e) =>
-      type === 'MOVIE'
-        ? `https://embedmaster.link/ve98e4r1wov87o5k/movie/${id}`
-        : `https://embedmaster.link/ve98e4r1wov87o5k/tv/${id}/${s}/${e}`,
-  },
-  {
-    id: 'vidsrc',
-    label: 'VidSrc',
-    getUrl: (id, type, s, e) =>
-      type === 'MOVIE'
-        ? `https://vidsrc.to/embed/movie/${id}`
-        : `https://vidsrc.to/embed/tv/${id}/${s}/${e}`,
-  },
-  {
-    id: 'vidsrc2',
-    label: 'VidSrc2',
-    getUrl: (id, type, s, e) =>
-      type === 'MOVIE'
-        ? `https://vidsrc.xyz/embed/movie?tmdb=${id}`
-        : `https://vidsrc.xyz/embed/tv?tmdb=${id}&season=${s}&episode=${e}`,
-  },
-  {
     id: '2embed',
     label: '2Embed',
     getUrl: (id, type, s, e) =>
@@ -75,6 +49,32 @@ export const SERVERS: Server[] = [
         : type === 'ANIME'
         ? `https://embed.filmu.in/tv/${id}/1/${e}`
         : `https://embed.filmu.in/tv/${id}/${s}/${e}`,
+  },
+  {
+    id: 'vidsrc2',
+    label: 'VidSrc2',
+    getUrl: (id, type, s, e) =>
+      type === 'MOVIE'
+        ? `https://vidsrc.xyz/embed/movie?tmdb=${id}`
+        : `https://vidsrc.xyz/embed/tv?tmdb=${id}&season=${s}&episode=${e}`,
+  },
+  {
+    id: 'screenscape-embed',
+    label: 'Screenscape',
+    getUrl: (id, type, s, e) =>
+      type === 'MOVIE'
+        ? `https://screenscape.me/embed?tmdb=${id}&type=movie&lan=eng`
+        : type === 'ANIME'
+        ? `https://screenscape.me/embed?tmdb=${id}&type=tv&s=1&e=${e}&lan=eng`
+        : `https://screenscape.me/embed?tmdb=${id}&type=tv&s=${s}&e=${e}&lan=eng`,
+  },
+  {
+    id: 'nebulaflix',
+    label: 'NebulaFlix',
+    getUrl: (id, type, s, e) =>
+      type === 'MOVIE'
+        ? `https://embedmaster.link/ve98e4r1wov87o5k/movie/${id}`
+        : `https://embedmaster.link/ve98e4r1wov87o5k/tv/${id}/${s}/${e}`,
   },
   {
     id: 'flixhq',

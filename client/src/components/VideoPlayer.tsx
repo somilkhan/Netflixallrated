@@ -989,6 +989,7 @@ export default function VideoPlayer({
               className="absolute inset-0 w-full h-full border-0"
               allowFullScreen
               allow="autoplay; fullscreen; picture-in-picture; encrypted-media"
+              referrerPolicy="no-referrer"
               title={title.name}
             />
           )}
