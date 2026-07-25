@@ -4,20 +4,27 @@ export function useIntersectionObserver(
   ref: RefObject<Element>,
   options: IntersectionObserverInit = {},
 ) {
-  const [isIntersecting, setIsIntersecting] = useState(false);
+  return useHasIntersected(ref, options);
+}
+
+export function useHasIntersected(
+  ref: RefObject<Element>,
+  options: IntersectionObserverInit = {},
+) {
+  const [hasIntersected, setHasIntersected] = useState(false);
 
   useEffect(() => {
     const element = ref.current;
     if (!element || typeof IntersectionObserver === 'undefined') {
-      setIsIntersecting(true);
+      setHasIntersected(true);
       return;
     }
     const observer = new IntersectionObserver(([entry]) => {
-      if (entry?.isIntersecting) setIsIntersecting(true);
+      if (entry?.isIntersecting) setHasIntersected(true);
     }, { rootMargin: '240px', ...options });
     observer.observe(element);
     return () => observer.disconnect();
   }, [ref, options.root, options.rootMargin, options.threshold]);
 
-  return isIntersecting;
+  return hasIntersected;
 }

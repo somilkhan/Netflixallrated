@@ -7,6 +7,7 @@
 import { useState, useEffect, useCallback, useMemo, useRef, memo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Play, Info, Volume2, VolumeX, ChevronRight, ChevronDown } from 'lucide-react';
+import { tmdbSrcSet } from '../../services/tmdb';
 
 const AUTO_MS = 8000;
 
@@ -102,13 +103,16 @@ const HeroSection = memo(function HeroSection({ titles, onAction, regionLabel }:
               {imgUrl ? (
                 <>
                   {/* Hidden <img> fires onLoad — div background-image never does */}
-                  <img
-                    src={imgUrl}
-                    alt=""
-                    aria-hidden
-                    className="sr-only"
-                    onLoad={() => setImgLoaded(prev => ({ ...prev, [i]: true }))}
-                  />
+                  {tmdbSrcSet(imgUrl) && (
+                    <img
+                      {...tmdbSrcSet(imgUrl)!}
+                      sizes="100vw"
+                      alt=""
+                      aria-hidden
+                      className="sr-only"
+                      onLoad={() => setImgLoaded(prev => ({ ...prev, [i]: true }))}
+                    />
+                  )}
                   <div
                     className="absolute inset-[-5%] bg-cover bg-center transition-opacity duration-500"
                     style={{

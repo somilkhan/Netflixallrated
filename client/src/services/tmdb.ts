@@ -75,6 +75,29 @@ export function getBackdropUrl(path: string | null | undefined, size = 'w1280'):
   return path ? `${IMAGE_BASE}${size}${path}` : null;
 }
 
+export function tmdbSrcSet(path: string | null | undefined): {
+  src: string;
+  srcSet: string;
+} | null {
+  if (!path) return null;
+  if (path.startsWith('http')) {
+    return { src: path, srcSet: path };
+  }
+  const cleanPath = path.startsWith('/') ? path : `/${path}`;
+  const sizes = [
+    { size: 'w185', width: 185 },
+    { size: 'w342', width: 342 },
+    { size: 'w500', width: 500 },
+    { size: 'w780', width: 780 },
+    { size: 'w1280', width: 1280 }
+  ];
+  const srcSet = sizes.map(s => `${IMAGE_BASE}${s.size}${cleanPath} ${s.width}w`).join(', ');
+  return {
+    src: `${IMAGE_BASE}w500${cleanPath}`,
+    srcSet
+  };
+}
+
 // ── Normalized item shape ─────────────────────────────────────────────────
 // Shaped to be compatible with ContentCard's expected props.
 export interface TmdbNormalized {
