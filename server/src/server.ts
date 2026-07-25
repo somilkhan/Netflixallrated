@@ -38,7 +38,7 @@ app.use(helmet({
       styleSrc: ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com"],
       fontSrc: ["'self'", "https:", "data:", "https://fonts.gstatic.com"],
       frameSrc: ["'self'", "https://www.youtube-nocookie.com", "https://www.youtube.com"],
-      connectSrc: ["'self'", "https://api.themoviedb.org", "https://ipapi.co"],
+      connectSrc: ["'self'", "https://api.themoviedb.org", "https://ipapi.co", "https://*.supabase.co"],
       mediaSrc: ["'self'", "https:", "blob:"],
     },
   },

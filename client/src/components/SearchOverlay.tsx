@@ -342,16 +342,20 @@ export default function SearchOverlay({ open, onClose }: Props) {
                   onClick={() => handleSuggestionClick(item)}
                   className="w-full flex items-center gap-3 px-4 py-3 hover:bg-white/[0.05] transition-colors text-left"
                 >
-                  <img
-                    {...tmdbSrcSet(item.posterUrl)}
-                    alt=""
-                    className="w-10 rounded object-cover shrink-0 bg-white/10"
-                    style={{ height: 56 }}
-                    loading="lazy"
-                    decoding="async"
-                    sizes="40px"
-                    onError={e => { (e.target as HTMLImageElement).style.visibility = 'hidden'; }}
-                  />
+                  {tmdbSrcSet(item.posterUrl) ? (
+                    <img
+                      {...tmdbSrcSet(item.posterUrl)!}
+                      alt=""
+                      className="w-10 rounded object-cover shrink-0 bg-white/10"
+                      style={{ height: 56 }}
+                      loading="lazy"
+                      decoding="async"
+                      sizes="40px"
+                      onError={e => { (e.target as HTMLImageElement).style.visibility = 'hidden'; }}
+                    />
+                  ) : (
+                    <div className="w-10 shrink-0 rounded bg-white/10" style={{ height: 56 }} />
+                  )}
                   <div className="flex-1 min-w-0">
                     <div className="text-white text-[15px] font-medium truncate">
                       <HighlightMatch text={item.name} query={query} />

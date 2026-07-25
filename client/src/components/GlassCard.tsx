@@ -131,7 +131,7 @@ const GlassCard = memo(function GlassCard({
               alt={title}
               loading={priority ? 'eager' : 'lazy'}
               decoding="async"
-              sizes="(max-width: 640px) 45vw, (max-width: 1024px) 30vw, 20vw"
+              sizes="(max-width: 640px) 45vw, (max-width: 1024px) 30vw, 230px"
               {...{ fetchpriority: priority ? 'high' : 'low' }}
               onLoad={() => setLoaded(true)}
               onError={() => setErrored(true)}
