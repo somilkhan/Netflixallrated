@@ -1,0 +1,5 @@
+# Bolt's Performance Journal
+
+## 2025-02-18 - Latched useIntersectionObserver Caused Eager Infinite Scroll Bloat
+**Learning:** The custom `useIntersectionObserver` hook only ever updated its state to `true` on intersection, but never reset to `false` when elements left the viewport. For standard components (like `LazyImage` and home content rows), this was acceptable but kept observers running in memory forever. However, for the infinite scroll sentinel in `SearchResults.tsx`, keeping `sentinelVisible` permanently `true` caused the pagination effect to run sequentially and immediately for all pages in the background, making infinite scroll completely eager and defeating the entire lazy-loading purpose.
+**Action:** Added a `triggerOnce` option to the observer. If `triggerOnce` is enabled (true), disconnect the observer immediately upon first intersection (perfect for static assets like `LazyImage` and `RowWrapper` to free CPU/DOM resources). If `triggerOnce` is disabled (false), reset `isIntersecting` to `false` when leaving the viewport. This cleanly fixed infinite scroll network thrashing while optimizing memory and render overhead.

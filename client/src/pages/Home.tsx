@@ -156,7 +156,7 @@ function RowWrapper({
   onVisible: () => void;
 }) {
   const ref = useRef<HTMLDivElement>(null);
-  const isVisible = useIntersectionObserver(ref, { threshold: 0.1 });
+  const isVisible = useIntersectionObserver(ref, { threshold: 0.1, triggerOnce: true });
 
   useEffect(() => {
     if (isVisible) onVisible();
