@@ -920,6 +920,12 @@ export default function TitleDetail() {
   }, [gogoAnimeId, gogoEpisodes, selectedEp]);
 
   const switchServer = (sid: string) => {
+    const srv = SERVERS.find(s => s.id === sid);
+    // Servers marked newTab (e.g. Screenscape) can't be iframe-embedded — open directly.
+    if (srv?.newTab && title?.tmdbId) {
+      const url = srv.getUrl(title.tmdbId, title.type, selectedSeason, selectedEp);
+      if (url) { window.open(url, '_blank', 'noopener,noreferrer'); return; }
+    }
     setServerId(sid);
     setIframeKey(k => k + 1);
     setIframeError(false);
@@ -1289,8 +1295,8 @@ export default function TitleDetail() {
                         className={`source-option${serverId === srv.id ? ' active' : ''}`}
                         onClick={() => { setSourceMenuOpen(false); switchServer(srv.id); }}
                       >
-                        <span>{srv.label}</span>
-                        <span>{isLoading ? 'Loading…' : serverId === srv.id && isPlaying ? 'Playing' : 'Play'}</span>
+                        <span>{srv.label}{srv.newTab ? ' ↗' : ''}</span>
+                        <span>{isLoading ? 'Loading…' : srv.newTab ? 'Open' : serverId === srv.id && isPlaying ? 'Playing' : 'Play'}</span>
                       </button>
                     );
                   })}

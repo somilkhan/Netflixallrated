@@ -3,6 +3,9 @@
 export interface Server {
   id: string;
   label: string;
+  /** If true, clicking this server opens its URL in a new tab instead of embedding an iframe.
+   *  Use for providers that set X-Frame-Options: SAMEORIGIN (e.g. Screenscape). */
+  newTab?: boolean;
   getUrl: (tmdbId: number, type: string, season: number, ep: number) => string;
 }
 
@@ -59,8 +62,11 @@ export const SERVERS: Server[] = [
         : `https://vidsrc.xyz/embed/tv?tmdb=${id}&season=${s}&episode=${e}`,
   },
   {
+    // Screenscape sets X-Frame-Options: SAMEORIGIN — cannot be iframe-embedded.
+    // newTab: true tells the UI to open it in a new browser tab instead.
     id: 'screenscape-embed',
     label: 'Screenscape',
+    newTab: true,
     getUrl: (id, type, s, e) =>
       type === 'MOVIE'
         ? `https://screenscape.me/embed?tmdb=${id}&type=movie&lan=eng`
