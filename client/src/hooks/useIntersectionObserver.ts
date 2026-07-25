@@ -1,10 +1,15 @@
 import { useEffect, useState, type RefObject } from 'react';
 
+export interface UseIntersectionObserverOptions extends IntersectionObserverInit {
+  triggerOnce?: boolean;
+}
+
 export function useIntersectionObserver(
   ref: RefObject<Element>,
-  options: IntersectionObserverInit = {},
+  options: UseIntersectionObserverOptions = {},
 ) {
   const [isIntersecting, setIsIntersecting] = useState(false);
+  const { triggerOnce = false, root, rootMargin, threshold } = options;
 
   useEffect(() => {
     const element = ref.current;
@@ -13,11 +18,26 @@ export function useIntersectionObserver(
       return;
     }
     const observer = new IntersectionObserver(([entry]) => {
-      if (entry?.isIntersecting) setIsIntersecting(true);
-    }, { rootMargin: '240px', ...options });
+      const intersecting = entry?.isIntersecting ?? false;
+      if (intersecting) {
+        setIsIntersecting(true);
+        if (triggerOnce) {
+          observer.disconnect();
+        }
+      } else {
+        if (!triggerOnce) {
+          setIsIntersecting(false);
+        }
+      }
+    }, {
+      root,
+      rootMargin: rootMargin ?? '240px',
+      threshold,
+    });
+
     observer.observe(element);
     return () => observer.disconnect();
-  }, [ref, options.root, options.rootMargin, options.threshold]);
+  }, [ref, triggerOnce, root, rootMargin, threshold]);
 
   return isIntersecting;
 }
