@@ -19,6 +19,7 @@ import consumetRoutes from './routes/consumet.js';
 import screenscapeRoutes from './routes/screenscape.js';
 import historyRoutes from './routes/history.js';
 import sportsRoutes from './routes/sports.js';
+import tmdbRoutes from './routes/tmdb.js';
 import { prisma } from './lib/prisma.js';
 import { syncTmdbCatalog } from './lib/sync.js';
 
@@ -63,6 +64,7 @@ app.use('/api/consumet', consumetRoutes);
 app.use('/api/screenscape', screenscapeRoutes);
 app.use('/api/history', historyRoutes);
 app.use('/api/sports', sportsRoutes);
+app.use('/api/tmdb', tmdbRoutes);
 
 app.get('/api/health', (_req, res) => res.json({ status: 'ok' }));
 

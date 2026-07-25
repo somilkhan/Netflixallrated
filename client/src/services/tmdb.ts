@@ -6,6 +6,7 @@
  */
 
 const TMDB_BASE = 'https://api.themoviedb.org/3';
+const TMDB_PROXY_BASE = '/api/tmdb';
 const IMAGE_BASE = 'https://image.tmdb.org/t/p/';
 
 // 5-minute TTL cache
@@ -18,10 +19,13 @@ async function tmdbFetch<T>(
   signal?: AbortSignal,
 ): Promise<T> {
   const key = import.meta.env.VITE_TMDB_API_KEY;
-  if (!key) throw new Error('VITE_TMDB_API_KEY is not configured');
-
-  const url = new URL(`${TMDB_BASE}${path}`);
-  url.searchParams.set('api_key', key);
+  // Railway builds the client and server together, so a frontend build-time
+  // secret is optional. Use the server-side proxy when the client key is
+  // absent; it reads TMDB_API_KEY only on the server.
+  const url = key
+    ? new URL(`${TMDB_BASE}${path}`)
+    : new URL(`${TMDB_PROXY_BASE}${path}`, window.location.origin);
+  if (key) url.searchParams.set('api_key', key);
   Object.entries(params).forEach(([k, v]) => url.searchParams.set(k, v));
 
   const cacheKey = url.toString();
@@ -387,7 +391,10 @@ export async function getGenres(signal?: AbortSignal): Promise<{ id: number; nam
 }
 
 export function hasTmdbKey(): boolean {
-  return !!import.meta.env.VITE_TMDB_API_KEY;
+  // TMDB is available either directly with VITE_TMDB_API_KEY or through the
+  // Railway server proxy. The request itself reports a useful error if the
+  // server-side TMDB_API_KEY is missing.
+  return true;
 }
 
 /**
