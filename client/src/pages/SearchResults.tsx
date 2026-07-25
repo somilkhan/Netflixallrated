@@ -11,7 +11,7 @@ import { searchMulti, hasTmdbKey } from '../services/tmdb';
 import TmdbContentCard from '../components/TmdbContentCard';
 import type { TmdbNormalized } from '../services/tmdb';
 import { analytics } from '../lib/analytics';
-import { useIntersectionObserver } from '../hooks/useIntersectionObserver';
+import { useHasIntersected } from '../hooks/useIntersectionObserver';
 
 /* ── Skeleton card ─────────────────────────────────────────────────────── */
 function SkeletonCard() {
@@ -59,7 +59,7 @@ export default function SearchResults() {
   const abortRef    = useRef<AbortController | null>(null);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const sentinelRef = useRef<HTMLDivElement>(null);
-  const sentinelVisible = useIntersectionObserver(sentinelRef);
+  const sentinelVisible = useHasIntersected(sentinelRef);
 
   /* Tab-filtered results via useMemo — no re-filter on every render */
   const results = useMemo(() => {

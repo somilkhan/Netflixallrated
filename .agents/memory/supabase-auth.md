@@ -11,8 +11,8 @@ Client authenticates via Supabase JS (`signInWithPassword`/`signUp`). Server ver
 ## How to apply
 - `server/src/lib/supabase.ts` — singleton Supabase client (anon key, no session persistence)
 - `server/src/middleware/auth.ts` — `_authenticate` calls `auth.getUser`, upserts Neon user, sets `req.user`
-- `client/src/lib/auth.tsx` — `AuthProvider` fetches config from `/api/config`, inits Supabase, listens on `onAuthStateChange`, syncs token to `localStorage.token` for the api fetcher
-- `client/src/lib/api.ts` — reads `localStorage.token`; Supabase auth listener keeps it fresh
+- `client/src/lib/auth.tsx` — `AuthProvider` fetches config from `/api/config`, inits Supabase, listens on `onAuthStateChange`, mirrors the current access token to `localStorage.allrated-token` for the API fetcher
+- `client/src/lib/api.ts` — prefers the live Supabase session token and falls back to `localStorage.allrated-token` during auth hydration; Supabase remains the source of truth
 
 ## SUPABASE_URL quirk
 The stored `SUPABASE_URL` secret may have `/rest/v1/` appended. Both server (`lib/supabase.ts`) and client (`lib/supabase.ts`) normalize by stripping `/rest|auth|storage|realtime` path prefixes before passing to `createClient`.

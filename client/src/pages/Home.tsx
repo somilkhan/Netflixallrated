@@ -17,12 +17,12 @@ import {
   getSouthIndianMovies,
   getHindiWebSeries,
   getMalayalamMovies,
+  getRegionalContent,
   getGenres,
   getMovieVideos,
   getTVVideos,
   hasTmdbKey,
   type TmdbNormalized,
-  type RegionParams,
 } from '../services/tmdb';
 import { detectRegion, getCachedRegion, DEFAULT_REGION, type RegionInfo } from '../lib/geo';
 import { api } from '../lib/api';
@@ -41,6 +41,7 @@ import {
   GENRE_TILE_IMG,
 } from '../lib/categoryVisuals';
 import { slugify } from '../lib/slug';
+import { useHasIntersected } from '../hooks/useIntersectionObserver';
 
 // ── Types ─────────────────────────────────────────────────────────────────
 interface GenreInfo {
@@ -48,7 +49,6 @@ interface GenreInfo {
   name: string;
 }
 
-// ── Module-level cache (survives React unmount/remount during navigation) ──
 interface HomeCache {
   trending: TmdbNormalized[];
   popularMovies: TmdbNormalized[];
@@ -60,12 +60,51 @@ interface HomeCache {
   hindiSeries: TmdbNormalized[];
   malayalam: TmdbNormalized[];
   genres: GenreInfo[];
+  /** Region-specific bonus row (K-Dramas, Hollywood Hits, etc.) */
+  regionalContent: TmdbNormalized[];
   scrollY: number;
   /** Region code the cache was built for — bust if user switches region. */
   regionCode: string;
+  cachedAt: number;
 }
-let _cache: HomeCache | null = null;
 
+const HOME_CACHE_KEY = 'allrated-home';
+const HOME_CACHE_TTL = 5 * 60 * 1000;
+
+function getHomeCache(): HomeCache | null {
+  try {
+    const parsed = JSON.parse(sessionStorage.getItem(HOME_CACHE_KEY) || 'null') as HomeCache | null;
+    if (!parsed || typeof parsed.cachedAt !== 'number' || Date.now() - parsed.cachedAt > HOME_CACHE_TTL) {
+      if (parsed) sessionStorage.removeItem(HOME_CACHE_KEY);
+      return null;
+    }
+    return parsed;
+  } catch {
+    return null;
+  }
+}
+
+function setHomeCache(cache: HomeCache): void {
+  try {
+    sessionStorage.setItem(HOME_CACHE_KEY, JSON.stringify(cache));
+  } catch (err) {
+    console.warn('[home-cache] storage write failed', err);
+  }
+}
+
+/** Row title for the region-specific bonus row. Returns '' for India (has its own rows). */
+function getRegionalRowLabel(countryCode: string, countryName: string): string {
+  switch (countryCode) {
+    case 'IN': return '';
+    case 'KR': return '🎭 K-Dramas';
+    case 'JP': return '🎌 Anime & Japanese Cinema';
+    case 'US':
+    case 'GB':
+    case 'CA':
+    case 'AU': return '🎬 Hollywood Hits';
+    default:   return `🌍 Popular in ${countryName}`;
+  }
+}
 const TABS = ['All', 'Movies', 'Series'] as const;
 type Tab = typeof TABS[number];
 
@@ -109,6 +148,23 @@ function SectionSkeleton() {
   );
 }
 
+function RowWrapper({
+  children,
+  onVisible,
+}: {
+  children: React.ReactNode;
+  onVisible: () => void;
+}) {
+  const ref = useRef<HTMLDivElement>(null);
+  const isVisible = useHasIntersected(ref, { threshold: 0.1 });
+
+  useEffect(() => {
+    if (isVisible) onVisible();
+  }, [isVisible, onVisible]);
+
+  return <div ref={ref}>{children}</div>;
+}
+
 // ── Error row ──────────────────────────────────────────────────────────────
 function ErrorRow({ label, onRetry }: { label: string; onRetry: () => void }) {
   return (
@@ -130,7 +186,8 @@ function ErrorRow({ label, onRetry }: { label: string; onRetry: () => void }) {
 export default function Home() {
   const { user } = useAuth();
   const navigate = useNavigate();
-  const isRestoring = useRef(false);
+  const requestedRows = useRef(new Set<string>());
+  const [loadedRows, setLoadedRows] = useState<Record<string, boolean>>({});
 
   const [activeTab, setActiveTab] = useState<Tab>('All');
 
@@ -148,106 +205,157 @@ export default function Home() {
   }, []);
 
   // ── TMDB sections ──────────────────────────────────────────────────────
-  const [trending,      setTrending]      = useState<TmdbNormalized[]>(_cache?.trending      ?? []);
-  const [popularMovies, setPopularMovies] = useState<TmdbNormalized[]>(_cache?.popularMovies ?? []);
-  const [popularTV,     setPopularTV]     = useState<TmdbNormalized[]>(_cache?.popularTV     ?? []);
-  const [topRated,      setTopRated]      = useState<TmdbNormalized[]>(_cache?.topRated      ?? []);
-  const [nowPlaying,    setNowPlaying]    = useState<TmdbNormalized[]>(_cache?.nowPlaying    ?? []);
-  const [bollywood,     setBollywood]     = useState<TmdbNormalized[]>(_cache?.bollywood     ?? []);
-  const [southIndian,   setSouthIndian]   = useState<TmdbNormalized[]>(_cache?.southIndian   ?? []);
-  const [hindiSeries,   setHindiSeries]   = useState<TmdbNormalized[]>(_cache?.hindiSeries   ?? []);
-  const [malayalam,     setMalayalam]     = useState<TmdbNormalized[]>(_cache?.malayalam     ?? []);
-  const [genres,        setGenres]        = useState<GenreInfo[]>(_cache?.genres             ?? []);
+  const [trending,      setTrending]      = useState<TmdbNormalized[]>(() => getHomeCache()?.trending      ?? []);
+  const [popularMovies, setPopularMovies] = useState<TmdbNormalized[]>(() => getHomeCache()?.popularMovies ?? []);
+  const [popularTV,     setPopularTV]     = useState<TmdbNormalized[]>(() => getHomeCache()?.popularTV     ?? []);
+  const [topRated,      setTopRated]      = useState<TmdbNormalized[]>(() => getHomeCache()?.topRated      ?? []);
+  const [nowPlaying,    setNowPlaying]    = useState<TmdbNormalized[]>(() => getHomeCache()?.nowPlaying    ?? []);
+  const [bollywood,     setBollywood]     = useState<TmdbNormalized[]>(() => getHomeCache()?.bollywood   ?? []);
+  const [southIndian,   setSouthIndian]   = useState<TmdbNormalized[]>(() => getHomeCache()?.southIndian ?? []);
+  const [hindiSeries,   setHindiSeries]   = useState<TmdbNormalized[]>(() => getHomeCache()?.hindiSeries ?? []);
+  const [malayalam,     setMalayalam]     = useState<TmdbNormalized[]>(() => getHomeCache()?.malayalam  ?? []);
+  const [regionalContent, setRegionalContent] = useState<TmdbNormalized[]>(() => getHomeCache()?.regionalContent ?? []);
+  const [genres,        setGenres]        = useState<GenreInfo[]>(() => getHomeCache()?.genres ?? []);
 
   // ── Loading / error flags ──────────────────────────────────────────────
-  const [loading,       setLoading]       = useState(!_cache);
+  const [loading,       setLoading]       = useState(() => !getHomeCache());
   const [errors,        setErrors]        = useState<Record<string, string>>({});
+  const [rowLoading,    setRowLoading]    = useState<Record<string, boolean>>({});
 
   // ── Continue Watching (backend) ────────────────────────────────────────
   const [continueWatching, setContinueWatching] = useState<any[]>([]);
 
   // ── Scroll restore ─────────────────────────────────────────────────────
   useEffect(() => {
-    if (_cache && _cache.scrollY > 0) {
-      requestAnimationFrame(() => window.scrollTo({ top: _cache!.scrollY, behavior: 'instant' as ScrollBehavior }));
+    const cache = getHomeCache();
+    if (cache && cache.scrollY > 0) {
+      requestAnimationFrame(() => window.scrollTo({ top: cache.scrollY, behavior: 'instant' as ScrollBehavior }));
     }
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
-    const onScroll = () => { if (_cache) _cache.scrollY = window.scrollY; };
+    const onScroll = () => {
+      const cache = getHomeCache();
+      if (cache) setHomeCache({ ...cache, scrollY: window.scrollY });
+    };
     window.addEventListener('scroll', onScroll, { passive: true });
     return () => window.removeEventListener('scroll', onScroll);
   }, []);
 
-  // ── Main TMDB fetch ────────────────────────────────────────────────────
-  const fetchAll = useCallback(async () => {
+  const loadContentRow = useCallback((
+    key: string,
+    fetcher: () => Promise<TmdbNormalized[]>,
+    setter: (items: TmdbNormalized[]) => void,
+    hasCachedData: boolean,
+  ) => {
+    if (requestedRows.current.has(key) || hasCachedData) {
+      requestedRows.current.add(key);
+      if (hasCachedData) setLoadedRows(prev => ({ ...prev, [key]: true }));
+      return;
+    }
+    requestedRows.current.add(key);
+    setRowLoading(prev => ({ ...prev, [key]: true }));
+    fetcher()
+      .then(setter)
+      .catch(() => setErrors(prev => ({ ...prev, [key]: 'Failed to load' })))
+      .finally(() => {
+        setLoadedRows(prev => ({ ...prev, [key]: true }));
+        setRowLoading(prev => ({ ...prev, [key]: false }));
+      });
+  }, []);
+
+  const renderDeferredRow = (
+    key: string,
+    fetcher: () => Promise<TmdbNormalized[]>,
+    setter: (items: TmdbNormalized[]) => void,
+    items: TmdbNormalized[],
+    label: string,
+    row: React.ReactNode,
+  ) => (
+    <RowWrapper
+      onVisible={() => loadContentRow(key, fetcher, setter, items.length > 0)}
+    >
+      {!loadedRows[key] || rowLoading[key] ? (
+        <SectionSkeleton />
+      ) : errors[key] ? (
+        <ErrorRow
+          label={`${label} unavailable`}
+          onRetry={() => {
+            requestedRows.current.delete(key);
+            setLoadedRows(prev => ({ ...prev, [key]: false }));
+          }}
+        />
+      ) : items.length > 0 ? row : null}
+    </RowWrapper>
+  );
+
+  // ── Immediate TMDB fetch: hero/trending and genres only ────────────────
+  const fetchAll = useCallback(async (signal?: AbortSignal) => {
     if (!hasTmdbKey()) return;
     setLoading(true);
     setErrors({});
-
-    const rp: RegionParams = { region: region.countryCode, language: region.language };
-    const isIndia = region.countryCode === 'IN';
+    requestedRows.current.clear();
+    setRowLoading({});
+    setLoadedRows({});
+    setTrending([]);
+    setPopularMovies([]);
+    setPopularTV([]);
+    setTopRated([]);
+    setNowPlaying([]);
+    setBollywood([]);
+    setSouthIndian([]);
+    setHindiSeries([]);
+    setMalayalam([]);
+    setRegionalContent([]);
+    setGenres([]);
 
     const results = await Promise.allSettled([
-      getTrending('all', 'day', 1),                                         // 0 — global
-      getPopularMovies(1, rp),                                              // 1
-      getPopularTVShows(1, rp),                                             // 2
-      Promise.all([getTopRatedMovies(1, rp), getTopRatedTVShows(1, rp)]).then(
-        ([movies, tv]) =>
-          [...movies, ...tv]
-            .sort((a, b) => (b.rating ?? 0) - (a.rating ?? 0))
-            .slice(0, 20),
-      ),                                                                    // 3
-      getNowPlayingMovies(1, rp),                                           // 4
-      getGenres(),                                                          // 5
-      isIndia ? getBollywoodMovies(1)   : Promise.resolve([]),              // 6
-      isIndia ? getSouthIndianMovies(1) : Promise.resolve([]),              // 7
-      isIndia ? getHindiWebSeries(1)    : Promise.resolve([]),              // 8
-      isIndia ? getMalayalamMovies(1)   : Promise.resolve([]),              // 9
+      getTrending('all', 'day', 1, signal),
+      getGenres(signal),
     ]);
+    if (signal?.aborted) return;
 
-    const set = <T,>(idx: number, setter: (v: T) => void, key: string) => {
+    const set = <T,>(idx: number, setter: (value: T) => void, key: string) => {
       const r = results[idx];
       if (r.status === 'fulfilled') setter(r.value as T);
-      else setErrors(prev => ({ ...prev, [key]: 'Failed to load' }));
+      else if (!signal?.aborted) setErrors(prev => ({ ...prev, [key]: 'Failed to load' }));
     };
 
-    set<TmdbNormalized[]>(0, setTrending,      'trending');
-    set<TmdbNormalized[]>(1, setPopularMovies, 'popularMovies');
-    set<TmdbNormalized[]>(2, setPopularTV,     'popularTV');
-    set<TmdbNormalized[]>(3, setTopRated,      'topRated');
-    set<TmdbNormalized[]>(4, setNowPlaying,    'nowPlaying');
-    set<GenreInfo[]>     (5, setGenres,        'genres');
-    set<TmdbNormalized[]>(6, setBollywood,     'bollywood');
-    set<TmdbNormalized[]>(7, setSouthIndian,   'southIndian');
-    set<TmdbNormalized[]>(8, setHindiSeries,   'hindiSeries');
-    set<TmdbNormalized[]>(9, setMalayalam,     'malayalam');
+    set<TmdbNormalized[]>(0, setTrending, 'trending');
+    set<GenreInfo[]>(1, setGenres, 'genres');
 
     setLoading(false);
   }, [region]); // re-fetch when region changes
 
   useEffect(() => {
     // Use cached data only if it was built for the same region
-    if (_cache && _cache.regionCode === region.countryCode) {
-      isRestoring.current = true;
+    const cache = getHomeCache();
+    if (cache && cache.regionCode === region.countryCode) {
       return;
     }
     // Bust stale cache when region differs
-    _cache = null;
-    fetchAll();
+    try {
+      sessionStorage.removeItem(HOME_CACHE_KEY);
+    } catch {
+      // Ignore storage failures.
+    }
+    const controller = new AbortController();
+    fetchAll(controller.signal);
+    return () => controller.abort();
   }, [fetchAll, region]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Populate cache when data arrives (keyed by region)
   useEffect(() => {
     if (trending.length || popularMovies.length) {
-      _cache = {
+      setHomeCache({
         trending, popularMovies, popularTV, topRated, nowPlaying,
-        bollywood, southIndian, hindiSeries, malayalam, genres,
-        scrollY: _cache?.scrollY ?? 0,
+        bollywood, southIndian, hindiSeries, malayalam, regionalContent, genres,
+        scrollY: getHomeCache()?.scrollY ?? 0,
         regionCode: region.countryCode,
-      };
+        cachedAt: Date.now(),
+      });
     }
-  }, [trending, popularMovies, popularTV, topRated, nowPlaying, bollywood, southIndian, hindiSeries, malayalam, genres, region.countryCode]);
+  }, [trending, popularMovies, popularTV, topRated, nowPlaying, bollywood, southIndian, hindiSeries, malayalam, regionalContent, genres, region.countryCode]);
 
   // ── Hero trailer injection ─────────────────────────────────────────────
   // Fetch trailers for up to 5 hero items after initial data loads.
@@ -257,14 +365,18 @@ export default function Home() {
     if (!base.length) { setHeroTitles([]); return; }
     setHeroTitles(base); // show immediately without trailers
 
+    const controller = new AbortController();
     // Fetch trailers for the first 5 hero slides in background
     const topFive = base.slice(0, 5);
     Promise.all(
       topFive.map(item =>
-        (item.mediaType === 'movie' ? getMovieVideos(item.tmdbId) : getTVVideos(item.tmdbId))
+        (item.mediaType === 'movie'
+          ? getMovieVideos(item.tmdbId, controller.signal)
+          : getTVVideos(item.tmdbId, controller.signal))
           .catch(() => null),
       ),
     ).then(trailerKeys => {
+      if (controller.signal.aborted) return;
       setHeroTitles(prev =>
         prev.map((item, i) =>
           i < trailerKeys.length && trailerKeys[i]
@@ -273,6 +385,7 @@ export default function Home() {
         ),
       );
     });
+    return () => controller.abort();
   }, [trending]);
 
   // ── Continue Watching ──────────────────────────────────────────────────
@@ -288,14 +401,11 @@ export default function Home() {
     api.history.remove(titleId).catch(() => {});
   }, []);
 
-  // ── Hero action (TMDB resolve before navigate) ─────────────────────────
-  const heroAction = useCallback(async (item: TmdbNormalized, play: boolean) => {
-    try {
-      const { id } = await api.titles.resolveTmdb(item.tmdbId, item.mediaType);
-      navigate(`/title/${id}${play ? '?play=1' : ''}`);
-    } catch {
-      navigate(`/search?q=${encodeURIComponent(item.name)}&type=${item.type}`);
-    }
+  // ── Hero action — route immediately; the detail page resolves the local row
+  const heroAction = useCallback((item: TmdbNormalized, play: boolean) => {
+    const query = new URLSearchParams({ type: item.mediaType });
+    if (play) query.set('play', '1');
+    navigate(`/title/tmdb/${item.tmdbId}?${query.toString()}`);
   }, [navigate]);
 
   // ── Genre tile click ───────────────────────────────────────────────────
@@ -325,15 +435,19 @@ export default function Home() {
       <div className="relative z-10 mt-0">
 
         {/* Tab filter pills */}
-        <div className="flex gap-3 overflow-x-auto scrollbar-hide px-4 md:px-6 pt-6 pb-2">
+        <div className="flex gap-3 overflow-x-auto scrollbar-hide px-4 md:px-6 pt-6 pb-2" role="tablist" aria-label="Content filters">
           {TABS.map(tab => (
             <button
               key={tab}
               type="button"
+              role="tab"
+              aria-selected={activeTab === tab}
+              aria-pressed={activeTab === tab}
               onClick={() => setActiveTab(tab)}
               className={`
                 shrink-0 px-5 py-2 h-10 rounded-full text-[13px] font-medium
                 border transition-all duration-200 touch-manipulation
+                focus:outline-none focus-visible:ring-2 focus-visible:ring-white/50
                 ${activeTab === tab
                   ? 'border-white bg-white/10 text-white'
                   : 'border-[#525252] bg-transparent text-[#A3A3A3] hover:border-white/40 hover:text-white'}
@@ -381,137 +495,114 @@ export default function Home() {
         )}
 
         {/* ── Popular Movies ────────────────────────────────────────── */}
-        {showMovies && (
-          loading ? <SectionSkeleton /> :
-          errors.popularMovies ? (
-            <ErrorRow label="Popular Movies unavailable" onRetry={fetchAll} />
-          ) : popularMovies.length > 0 ? (
-            <ContentRow
-              title={`Popular in ${region.countryName}`}
-              viewAllPath="/browse?collection=movies"
-            >
-              {popularMovies.slice(0, 20).map(item => (
-                <TmdbContentCard key={item.id} item={item} />
-              ))}
-            </ContentRow>
-          ) : null
+        {showMovies && renderDeferredRow(
+          'popularMovies',
+          () => getPopularMovies(1, { region: region.countryCode, language: region.language }),
+          setPopularMovies,
+          popularMovies,
+          'Popular Movies',
+          <ContentRow title={`Popular in ${region.countryName}`} viewAllPath="/browse?collection=movies">
+            {popularMovies.slice(0, 20).map(item => <TmdbContentCard key={item.id} item={item} />)}
+          </ContentRow>,
         )}
 
         {/* ── Popular TV Shows ──────────────────────────────────────── */}
-        {showSeries && (
-          loading ? <SectionSkeleton /> :
-          errors.popularTV ? (
-            <ErrorRow label="Popular TV Shows unavailable" onRetry={fetchAll} />
-          ) : popularTV.length > 0 ? (
-            <ContentRow
-              title={`Popular TV Shows in ${region.countryName}`}
-              viewAllPath="/browse?collection=series"
-            >
-              {popularTV.slice(0, 20).map(item => (
-                <TmdbContentCard key={item.id} item={item} />
-              ))}
-            </ContentRow>
-          ) : null
+        {showSeries && renderDeferredRow(
+          'popularTV',
+          () => getPopularTVShows(1, { region: region.countryCode, language: region.language }),
+          setPopularTV,
+          popularTV,
+          'Popular TV Shows',
+          <ContentRow title={`Popular TV Shows in ${region.countryName}`} viewAllPath="/browse?collection=series">
+            {popularTV.slice(0, 20).map(item => <TmdbContentCard key={item.id} item={item} />)}
+          </ContentRow>,
         )}
 
         {/* ── Top Rated ─────────────────────────────────────────────── */}
-        {showAll && (
-          loading ? <SectionSkeleton /> :
-          errors.topRated ? (
-            <ErrorRow label="Top Rated unavailable" onRetry={fetchAll} />
-          ) : topRated.length > 0 ? (
-            <ContentRow
-              title={`Top Rated in ${region.countryName}`}
-              viewAllPath="/browse?collection=top-rated"
-            >
-              {topRated.slice(0, 20).map(item => (
-                <TmdbContentCard key={item.id} item={item} />
-              ))}
-            </ContentRow>
-          ) : null
+        {showAll && renderDeferredRow(
+          'topRated',
+          () => Promise.all([getTopRatedMovies(1, { region: region.countryCode, language: region.language }), getTopRatedTVShows(1, { region: region.countryCode, language: region.language })])
+            .then(([movies, tv]) => [...movies, ...tv].sort((a, b) => (b.rating ?? 0) - (a.rating ?? 0)).slice(0, 20)),
+          setTopRated,
+          topRated,
+          'Top Rated',
+          <ContentRow title={`Top Rated in ${region.countryName}`} viewAllPath="/browse?collection=top-rated">
+            {topRated.slice(0, 20).map(item => <TmdbContentCard key={item.id} item={item} />)}
+          </ContentRow>,
         )}
 
         {/* ── Now Playing ───────────────────────────────────────────── */}
-        {showMovies && (
-          loading ? <SectionSkeleton /> :
-          errors.nowPlaying ? (
-            <ErrorRow label="Now Playing unavailable" onRetry={fetchAll} />
-          ) : nowPlaying.length > 0 ? (
-            <ContentRow
-              title={`Now Playing in ${region.countryName}`}
-              viewAllPath="/browse?collection=now-playing"
-            >
-              {nowPlaying.slice(0, 20).map(item => (
-                <TmdbContentCard key={item.id} item={item} />
-              ))}
-            </ContentRow>
-          ) : null
+        {showMovies && renderDeferredRow(
+          'nowPlaying',
+          () => getNowPlayingMovies(1, { region: region.countryCode, language: region.language }),
+          setNowPlaying,
+          nowPlaying,
+          'Now Playing',
+          <ContentRow title={`Now Playing in ${region.countryName}`} viewAllPath="/browse?collection=now-playing">
+            {nowPlaying.slice(0, 20).map(item => <TmdbContentCard key={item.id} item={item} />)}
+          </ContentRow>,
         )}
 
         {/* ── India-specific rows — only shown for IN region ────────── */}
 
         {/* ── Bollywood Hits ────────────────────────────────────────── */}
-        {region.countryCode === 'IN' && showMovies && (
-          loading ? <SectionSkeleton /> :
-          errors.bollywood ? null :
-          bollywood.length > 0 ? (
-            <ContentRow
-              title="🎬 Bollywood Hits"
-              viewAllPath="/browse?collection=bollywood"
-            >
-              {bollywood.slice(0, 20).map(item => (
-                <TmdbContentCard key={item.id} item={item} />
-              ))}
-            </ContentRow>
-          ) : null
+        {region.countryCode === 'IN' && showMovies && renderDeferredRow(
+          'bollywood',
+          () => getBollywoodMovies(1),
+          setBollywood,
+          bollywood,
+          'Bollywood',
+          <ContentRow title="🎬 Bollywood Hits" viewAllPath="/browse?collection=bollywood">
+            {bollywood.slice(0, 20).map(item => <TmdbContentCard key={item.id} item={item} />)}
+          </ContentRow>,
         )}
 
         {/* ── South Indian Cinema ───────────────────────────────────── */}
-        {region.countryCode === 'IN' && showMovies && (
-          loading ? <SectionSkeleton /> :
-          errors.southIndian ? null :
-          southIndian.length > 0 ? (
-            <ContentRow
-              title="🌟 South Indian Cinema"
-              viewAllPath="/browse?collection=south-indian"
-            >
-              {southIndian.slice(0, 20).map(item => (
-                <TmdbContentCard key={item.id} item={item} />
-              ))}
-            </ContentRow>
-          ) : null
+        {region.countryCode === 'IN' && showMovies && renderDeferredRow(
+          'southIndian',
+          () => getSouthIndianMovies(1),
+          setSouthIndian,
+          southIndian,
+          'South Indian Cinema',
+          <ContentRow title="🌟 South Indian Cinema" viewAllPath="/browse?collection=south-indian">
+            {southIndian.slice(0, 20).map(item => <TmdbContentCard key={item.id} item={item} />)}
+          </ContentRow>,
         )}
 
         {/* ── Hindi Web Series ──────────────────────────────────────── */}
-        {region.countryCode === 'IN' && showSeries && (
-          loading ? <SectionSkeleton /> :
-          errors.hindiSeries ? null :
-          hindiSeries.length > 0 ? (
-            <ContentRow
-              title="📺 Hindi Web Series"
-              viewAllPath="/browse?collection=hindi-series"
-            >
-              {hindiSeries.slice(0, 20).map(item => (
-                <TmdbContentCard key={item.id} item={item} />
-              ))}
-            </ContentRow>
-          ) : null
+        {region.countryCode === 'IN' && showSeries && renderDeferredRow(
+          'hindiSeries',
+          () => getHindiWebSeries(1),
+          setHindiSeries,
+          hindiSeries,
+          'Hindi Web Series',
+          <ContentRow title="📺 Hindi Web Series" viewAllPath="/browse?collection=hindi-series">
+            {hindiSeries.slice(0, 20).map(item => <TmdbContentCard key={item.id} item={item} />)}
+          </ContentRow>,
         )}
 
         {/* ── Malayalam Cinema ──────────────────────────────────────── */}
-        {region.countryCode === 'IN' && showMovies && (
-          loading ? null :
-          errors.malayalam ? null :
-          malayalam.length > 0 ? (
-            <ContentRow
-              title="🎭 Malayalam Cinema"
-              viewAllPath="/browse?collection=malayalam"
-            >
-              {malayalam.slice(0, 20).map(item => (
-                <TmdbContentCard key={item.id} item={item} />
-              ))}
-            </ContentRow>
-          ) : null
+        {region.countryCode === 'IN' && showMovies && renderDeferredRow(
+          'malayalam',
+          () => getMalayalamMovies(1),
+          setMalayalam,
+          malayalam,
+          'Malayalam Cinema',
+          <ContentRow title="🎭 Malayalam Cinema" viewAllPath="/browse?collection=malayalam">
+            {malayalam.slice(0, 20).map(item => <TmdbContentCard key={item.id} item={item} />)}
+          </ContentRow>,
+        )}
+
+        {/* ── Regional bonus row (KR / JP / US / GB / CA / AU / others) ── */}
+        {showAll && renderDeferredRow(
+          'regionalContent',
+          () => getRegionalContent(region.countryCode, 1),
+          setRegionalContent,
+          regionalContent,
+          'Regional content',
+          <ContentRow title={getRegionalRowLabel(region.countryCode, region.countryName)} viewAllPath="/browse?collection=trending">
+            {regionalContent.slice(0, 20).map(item => <TmdbContentCard key={item.id} item={item} />)}
+          </ContentRow>,
         )}
 
         {/* ── Browse by Genre ───────────────────────────────────────── */}

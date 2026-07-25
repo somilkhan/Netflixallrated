@@ -1,4 +1,5 @@
 import { Router } from 'express';
+import { createHash, timingSafeEqual } from 'crypto';
 import { z } from 'zod';
 import { prisma } from '../lib/prisma.js';
 import { authenticate, AuthRequest } from '../middleware/auth.js';
@@ -29,7 +30,11 @@ router.patch('/me', authenticate, async (req: AuthRequest, res) => {
 
 router.post('/promote', authenticate, async (req: AuthRequest, res) => {
   const { email, adminPassword } = req.body;
-  if (!adminPassword || adminPassword !== process.env.ADMIN_PASSWORD) return res.status(403).json({ error: 'Forbidden' });
+  const expectedHash = createHash('sha256').update(process.env.ADMIN_PASSWORD || '').digest();
+  const providedHash = createHash('sha256').update(adminPassword || '').digest();
+  if (!adminPassword || !timingSafeEqual(providedHash, expectedHash)) {
+    return res.status(403).json({ error: 'Forbidden' });
+  }
   const user = await prisma.user.update({ where: { email }, data: { role: 'ADMIN' }, select: { id: true, email: true, role: true } });
   res.json({ user });
 });

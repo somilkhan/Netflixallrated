@@ -1,5 +1,5 @@
 import { useRef, useState } from 'react';
-import { useIntersectionObserver } from '../../hooks/useIntersectionObserver';
+import { useHasIntersected } from '../../hooks/useIntersectionObserver';
 
 interface LazyImageProps extends React.ImgHTMLAttributes<HTMLImageElement> {
   placeholder?: string;
@@ -7,7 +7,7 @@ interface LazyImageProps extends React.ImgHTMLAttributes<HTMLImageElement> {
 
 export default function LazyImage({ src, alt, className = '', placeholder = '#171717', ...props }: LazyImageProps) {
   const ref = useRef<HTMLImageElement>(null);
-  const visible = useIntersectionObserver(ref);
+  const visible = useHasIntersected(ref);
   const [loaded, setLoaded] = useState(false);
   const [failed, setFailed] = useState(false);
 

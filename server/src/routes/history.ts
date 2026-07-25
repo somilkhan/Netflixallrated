@@ -25,7 +25,8 @@ router.get('/me', authenticate, async (req: AuthRequest, res) => {
     });
     res.json(items);
   } catch (err) {
-    res.status(500).json({ error: (err as Error).message });
+    console.error('[history]', err);
+    res.status(500).json({ error: 'Internal server error' });
   }
 });
 
@@ -42,7 +43,8 @@ router.get('/me/:titleId', authenticate, async (req: AuthRequest, res) => {
     // Return null (not 404) when no record exists — the client treats null as "no progress yet"
     res.json(item ?? null);
   } catch (err) {
-    res.status(500).json({ error: (err as Error).message });
+    console.error('[history]', err);
+    res.status(500).json({ error: 'Internal server error' });
   }
 });
 
@@ -98,7 +100,8 @@ router.post('/', authenticate, async (req: AuthRequest, res) => {
     });
     res.json(item);
   } catch (err) {
-    res.status(500).json({ error: (err as Error).message });
+    console.error('[history]', err);
+    res.status(500).json({ error: 'Internal server error' });
   }
 });
 
@@ -113,7 +116,8 @@ router.delete('/:titleId', authenticate, async (req: AuthRequest, res) => {
     });
     res.status(204).send();
   } catch (err) {
-    res.status(500).json({ error: (err as Error).message });
+    console.error('[history]', err);
+    res.status(500).json({ error: 'Internal server error' });
   }
 });
 
@@ -126,7 +130,8 @@ router.delete('/', authenticate, async (req: AuthRequest, res) => {
     await prisma.watchProgress.deleteMany({ where: { userId: req.user!.id } });
     res.status(204).send();
   } catch (err) {
-    res.status(500).json({ error: (err as Error).message });
+    console.error('[history]', err);
+    res.status(500).json({ error: 'Internal server error' });
   }
 });
 

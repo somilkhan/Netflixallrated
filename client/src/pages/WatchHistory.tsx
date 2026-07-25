@@ -4,6 +4,7 @@ import { api } from '../lib/api';
 import { useAuth } from '../lib/auth';
 import { InlineLoader } from '../components/GlassLoader';
 import { Clock, Play, Trash2, X } from 'lucide-react';
+import { tmdbSrcSet } from '../services/tmdb';
 
 interface ProgressItem {
   titleId: string;
@@ -79,10 +80,12 @@ function HistoryRow({
       >
         {item.title.posterUrl ? (
           <img
-            src={item.title.posterUrl}
+            {...tmdbSrcSet(item.title.posterUrl)}
             alt={item.title.name}
             className="w-full h-full object-cover"
             loading="lazy"
+            decoding="async"
+            sizes="96px"
           />
         ) : (
           <div className="w-full h-full flex items-center justify-center text-white/20">

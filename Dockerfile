@@ -38,4 +38,4 @@ EXPOSE 3000
 
 # Run migrations then start the server.
 # prisma migrate deploy is idempotent — safe to run on every deploy.
-CMD ["sh", "-c", "cd server && npx prisma migrate deploy && tsx src/server.ts"]
+CMD ["sh", "-c", "cd server && npx prisma migrate deploy && npx tsx src/server.ts"]

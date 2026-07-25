@@ -15,9 +15,6 @@
   },
   "include": [
     "middleware.ts",
-    "lib/geo.ts",
-    "lib/tmdb.ts",
-    "lib/regionConfig.ts",
     "types/next-server.d.ts"
   ]
 }

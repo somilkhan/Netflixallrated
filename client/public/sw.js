@@ -1,5 +1,7 @@
-const CACHE_NAME = 'allrated-v1';
-const SHELL_ASSETS = ['/', '/index.html', '/manifest.json'];
+// Keep the cache versioned so a deployed service-worker update can retire
+// assets from an older release instead of pinning the app shell forever.
+const CACHE_NAME = 'allrated-v3';
+const SHELL_ASSETS = ['/', '/index.html', '/manifest.webmanifest'];
 
 // Install: cache the static shell and activate this worker immediately.
 self.addEventListener('install', event => {
@@ -29,14 +31,17 @@ self.addEventListener('activate', event => {
   );
 });
 
-// Fetch: use network-first for APIs and cache-first for static resources.
+// Fetch: always prefer the network for navigations and API responses. The
+// document contains the current hashed asset filenames, so serving an old
+// cached document is enough to make an otherwise successful deployment look
+// like it never updated.
 self.addEventListener('fetch', event => {
   if (event.request.method !== 'GET') return;
 
   const url = new URL(event.request.url);
   if (url.origin !== self.location.origin) return;
 
-  if (url.pathname.startsWith('/api/')) {
+  if (event.request.mode === 'navigate' || url.pathname === '/index.html' || url.pathname.startsWith('/api/')) {
     event.respondWith(networkFirst(event.request));
   } else {
     event.respondWith(cacheFirst(event.request));

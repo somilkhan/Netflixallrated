@@ -5,26 +5,30 @@
  * Images: https://image.tmdb.org/t/p/
  */
 
-const TMDB_BASE = 'https://api.themoviedb.org/3';
+const TMDB_PROXY_BASE = '/api/tmdb';
 const IMAGE_BASE = 'https://image.tmdb.org/t/p/';
 
 // 5-minute TTL cache
 const _cache = new Map<string, { value: any; expires: number }>();
 const TTL_MS = 5 * 60 * 1000;
 
-async function tmdbFetch<T>(path: string, params: Record<string, string> = {}): Promise<T> {
-  const key = (import.meta as any).env?.VITE_TMDB_API_KEY;
-  if (!key) throw new Error('VITE_TMDB_API_KEY is not configured');
-
-  const url = new URL(`${TMDB_BASE}${path}`);
-  url.searchParams.set('api_key', key);
+async function tmdbFetch<T>(
+  path: string,
+  params: Record<string, string> = {},
+  signal?: AbortSignal,
+): Promise<T> {
+  // Keep the TMDB credential on the server. This works for both the Railway
+  // production bundle and the Replit preview (whose /api proxy targets
+  // Railway), and avoids stale or invalid VITE_TMDB_API_KEY values being
+  // embedded into a deployed browser bundle.
+  const url = new URL(`${TMDB_PROXY_BASE}${path}`, window.location.origin);
   Object.entries(params).forEach(([k, v]) => url.searchParams.set(k, v));
 
   const cacheKey = url.toString();
   const cached = _cache.get(cacheKey);
   if (cached && cached.expires > Date.now()) return cached.value as T;
 
-  const res = await fetch(url.toString());
+  const res = await fetch(url.toString(), { signal });
   if (!res.ok) throw new Error(`TMDB ${res.status}: ${res.statusText}`);
   const data = await res.json();
   _cache.set(cacheKey, { value: data, expires: Date.now() + TTL_MS });
@@ -75,26 +79,30 @@ export function getBackdropUrl(path: string | null | undefined, size = 'w1280'):
   return path ? `${IMAGE_BASE}${size}${path}` : null;
 }
 
+/** Return responsive TMDB image sources for raw paths or existing TMDB URLs. */
 export function tmdbSrcSet(path: string | null | undefined): {
   src: string;
   srcSet: string;
 } | null {
   if (!path) return null;
-  if (path.startsWith('http')) {
-    return { src: path, srcSet: path };
+
+  let tmdbPath = path;
+  if (/^https?:\/\//.test(path)) {
+    try {
+      const parsed = new URL(path);
+      const match = parsed.pathname.match(/\/t\/p\/(?:w\d+|original)(\/.*)$/);
+      if (!match) return { src: path, srcSet: '' };
+      tmdbPath = match[1];
+    } catch {
+      return { src: path, srcSet: '' };
+    }
   }
-  const cleanPath = path.startsWith('/') ? path : `/${path}`;
-  const sizes = [
-    { size: 'w185', width: 185 },
-    { size: 'w342', width: 342 },
-    { size: 'w500', width: 500 },
-    { size: 'w780', width: 780 },
-    { size: 'w1280', width: 1280 }
-  ];
-  const srcSet = sizes.map(s => `${IMAGE_BASE}${s.size}${cleanPath} ${s.width}w`).join(', ');
+
+  if (!tmdbPath.startsWith('/')) return { src: path, srcSet: '' };
+
   return {
-    src: `${IMAGE_BASE}w500${cleanPath}`,
-    srcSet
+    src: `${IMAGE_BASE}w300${tmdbPath}`,
+    srcSet: `${IMAGE_BASE}w300${tmdbPath} 300w, ${IMAGE_BASE}w780${tmdbPath} 780w, ${IMAGE_BASE}w1280${tmdbPath} 1280w`,
   };
 }
 
@@ -146,11 +154,10 @@ export async function getTrending(
   type: 'all' | 'movie' | 'tv' = 'all',
   timeWindow: 'day' | 'week' = 'day',
   page = 1,
-  rp: RegionParams = {},
+  signal?: AbortSignal,
 ): Promise<TmdbNormalized[]> {
   const params: Record<string, string> = { page: String(page) };
-  applyRegion(params, rp);
-  const data = await tmdbFetch<{ results: any[] }>(`/trending/${type}/${timeWindow}`, params);
+  const data = await tmdbFetch<{ results: any[] }>(`/trending/${type}/${timeWindow}`, params, signal);
   return data.results.map(item => normalize(item));
 }
 
@@ -338,9 +345,9 @@ export async function getTVDetails(id: number): Promise<any> {
 }
 
 /** Returns the YouTube trailer key for a movie, or null if not found. */
-export async function getMovieVideos(id: number): Promise<string | null> {
+export async function getMovieVideos(id: number, signal?: AbortSignal): Promise<string | null> {
   try {
-    const data = await tmdbFetch<{ results: any[] }>(`/movie/${id}/videos`);
+    const data = await tmdbFetch<{ results: any[] }>(`/movie/${id}/videos`, {}, signal);
     const trailer = data.results.find(v => v.type === 'Trailer' && v.site === 'YouTube')
       ?? data.results.find(v => v.site === 'YouTube');
     return trailer?.key ?? null;
@@ -350,9 +357,9 @@ export async function getMovieVideos(id: number): Promise<string | null> {
 }
 
 /** Returns the YouTube trailer key for a TV show, or null if not found. */
-export async function getTVVideos(id: number): Promise<string | null> {
+export async function getTVVideos(id: number, signal?: AbortSignal): Promise<string | null> {
   try {
-    const data = await tmdbFetch<{ results: any[] }>(`/tv/${id}/videos`);
+    const data = await tmdbFetch<{ results: any[] }>(`/tv/${id}/videos`, {}, signal);
     const trailer = data.results.find(v => v.type === 'Trailer' && v.site === 'YouTube')
       ?? data.results.find(v => v.site === 'YouTube');
     return trailer?.key ?? null;
@@ -366,10 +373,10 @@ export async function getMovieCredits(id: number): Promise<any> {
 }
 
 /** Returns deduplicated genre list from both movie and TV genres. */
-export async function getGenres(): Promise<{ id: number; name: string }[]> {
+export async function getGenres(signal?: AbortSignal): Promise<{ id: number; name: string }[]> {
   const [moviesData, tvData] = await Promise.all([
-    tmdbFetch<{ genres: any[] }>('/genre/movie/list'),
-    tmdbFetch<{ genres: any[] }>('/genre/tv/list'),
+    tmdbFetch<{ genres: any[] }>('/genre/movie/list', {}, signal),
+    tmdbFetch<{ genres: any[] }>('/genre/tv/list', {}, signal),
   ]);
   const seen = new Set<number>();
   return [...moviesData.genres, ...tvData.genres].filter(g => {
@@ -380,5 +387,70 @@ export async function getGenres(): Promise<{ id: number; name: string }[]> {
 }
 
 export function hasTmdbKey(): boolean {
-  return !!(import.meta as any).env?.VITE_TMDB_API_KEY;
+  // The server-side proxy owns the credential and reports a useful error if
+  // Railway's TMDB_API_KEY is missing.
+  return true;
+}
+
+/**
+ * Returns region-specific content for the Home page "bonus" row.
+ *
+ * - KR → Korean TV (K-Dramas)
+ * - JP → Japanese movies + TV (anime / cinema)
+ * - IN → empty (India has its own dedicated rows)
+ * - US / GB / CA / AU → English-language popular movies ("Hollywood Hits")
+ * - All others → popular movies scoped to that region's release market
+ */
+export async function getRegionalContent(
+  countryCode: string,
+  page = 1,
+): Promise<TmdbNormalized[]> {
+  switch (countryCode) {
+    case 'IN':
+      // India has bollywood / south-indian / hindi-series / malayalam rows already
+      return [];
+
+    case 'KR': {
+      const data = await tmdbFetch<{ results: any[] }>('/discover/tv', {
+        with_original_language: 'ko',
+        sort_by: 'popularity.desc',
+        'vote_count.gte': '50',
+        page: String(page),
+      });
+      return data.results.map(item => normalize(item, 'tv'));
+    }
+
+    case 'JP': {
+      const [movies, tv] = await Promise.all([
+        tmdbFetch<{ results: any[] }>('/discover/movie', {
+          with_original_language: 'ja',
+          sort_by: 'popularity.desc',
+          page: String(page),
+        }),
+        tmdbFetch<{ results: any[] }>('/discover/tv', {
+          with_original_language: 'ja',
+          sort_by: 'popularity.desc',
+          page: String(page),
+        }),
+      ]);
+      const combined = [
+        ...movies.results.map(i => normalize(i, 'movie')),
+        ...tv.results.map(i => normalize(i, 'tv')),
+      ];
+      return combined
+        .sort((a, b) => (b.rating ?? 0) - (a.rating ?? 0))
+        .slice(0, 20);
+    }
+
+    default: {
+      // US, GB, CA, AU and every other country: discover movies released/popular in that region
+      const data = await tmdbFetch<{ results: any[] }>('/discover/movie', {
+        sort_by:             'popularity.desc',
+        region:              countryCode,
+        'vote_count.gte':    '100',
+        page:                String(page),
+      });
+      return data.results.map(item => normalize(item, 'movie'));
+    }
+  }
 }

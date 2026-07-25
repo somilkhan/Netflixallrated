@@ -31,6 +31,16 @@ const TopTenRow = memo(function TopTenRow({ title, items, viewAllPath, renderCar
     el.scrollBy({ left: dir === 'right' ? el.clientWidth * 0.78 : -el.clientWidth * 0.78, behavior: 'smooth' });
   }, []);
 
+  const handleKeyDown = useCallback((e: React.KeyboardEvent) => {
+    if (e.key === 'ArrowLeft') {
+      e.preventDefault();
+      scroll('left');
+    } else if (e.key === 'ArrowRight') {
+      e.preventDefault();
+      scroll('right');
+    }
+  }, [scroll]);
+
   if (!items.length) return null;
 
   return (
@@ -92,7 +102,11 @@ const TopTenRow = memo(function TopTenRow({ title, items, viewAllPath, renderCar
 
         <div
           ref={scrollRef}
-          className="flex overflow-x-auto scrollbar-hide gap-0"
+          onKeyDown={handleKeyDown}
+          tabIndex={0}
+          role="region"
+          aria-label={`${title} row`}
+           className="flex gap-4 overflow-x-auto scrollbar-hide focus:outline-none focus-visible:ring-1 focus-visible:ring-white/25 rounded-lg"
           style={{
             scrollSnapType: 'x mandatory',
             WebkitOverflowScrolling: 'touch',
@@ -112,7 +126,7 @@ const TopTenRow = memo(function TopTenRow({ title, items, viewAllPath, renderCar
                * paddingLeft creates room for the numeral to peek out on the left.
                * All items (including 0) get padding so the numeral is always visible.
                */
-              style={{ paddingLeft: '38px' }}
+              style={{ paddingLeft: '56px' }}
             >
               {/*
                * Rank numeral — sits at bottom of the POSTER (not full card).

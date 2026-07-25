@@ -19,13 +19,14 @@ import consumetRoutes from './routes/consumet.js';
 import screenscapeRoutes from './routes/screenscape.js';
 import historyRoutes from './routes/history.js';
 import sportsRoutes from './routes/sports.js';
+import tmdbRoutes from './routes/tmdb.js';
 import { prisma } from './lib/prisma.js';
 import { syncTmdbCatalog } from './lib/sync.js';
 
 dotenv.config();
 
 const app = express();
-app.set('trust proxy', 1);
+app.set('trust proxy', 'loopback, linklocal, uniquelocal');
 const PORT = process.env.PORT || 3000;
 
 app.use(helmet({
@@ -78,29 +79,9 @@ app.use('/api/consumet', consumetRoutes);
 app.use('/api/screenscape', screenscapeRoutes);
 app.use('/api/history', historyRoutes);
 app.use('/api/sports', sportsRoutes);
+app.use('/api/tmdb', tmdbRoutes);
 
 app.get('/api/health', (_req, res) => res.json({ status: 'ok' }));
-
-// ── Auto junk cleanup ──────────────────────────────────────────────────────
-// On every startup: delete unrated future-dated or posterless titles that
-// slipped in before the discover filters were tightened. Rated titles are
-// never touched. Runs silently in the background — non-blocking.
-async function autoCleanupJunk() {
-  try {
-    const currentYear = new Date().getFullYear();
-    const result = await prisma.title.deleteMany({
-      where: {
-        OR: [{ posterUrl: null }, { year: { gt: currentYear } }],
-        ratings: { none: {} },
-      },
-    });
-    if (result.count > 0) {
-      console.log(`[auto-cleanup] Removed ${result.count} unreleased/posterless titles with no ratings.`);
-    }
-  } catch (err) {
-    console.warn('[auto-cleanup] Failed (non-fatal):', (err as Error).message);
-  }
-}
 
 // ── Auto TMDB sync ─────────────────────────────────────────────────────────
 // On startup: if catalog is empty, seed with 5 pages (~100 movies) so the
@@ -145,14 +126,10 @@ if (process.env.NODE_ENV === 'production' && existsSync(clientDist)) {
 // Centralized error handler — catches anything passed to next(err)
 app.use((err: Error, _req: express.Request, res: express.Response, _next: express.NextFunction) => {
   console.error('[unhandled]', err);
-  res.status(500).json({ error: err.message || 'Internal server error' });
+  res.status(500).json({ error: 'Internal server error' });
 });
 
 export default app;
-
-// Run cleanup on every startup — purges unreleased junk from the production
-// DB that pre-dates the discover filters. Non-blocking.
-autoCleanupJunk();
 
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);

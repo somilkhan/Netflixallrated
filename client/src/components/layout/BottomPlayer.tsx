@@ -15,6 +15,7 @@ import { usePlayer } from '../../lib/playerContext';
 import { analytics } from '../../lib/analytics';
 import { ProgressBar } from '../ui/ProgressBar';
 import { IconButton } from '../ui/IconButton';
+import { tmdbSrcSet } from '../../services/tmdb';
 
 const BottomPlayer = memo(function BottomPlayer() {
   const { nowPlaying, isPlaying, setIsPlaying, clear } = usePlayer();
@@ -74,7 +75,7 @@ const BottomPlayer = memo(function BottomPlayer() {
                 onClick={handleGoToTitle}
               >
                 {nowPlaying.posterUrl && (
-                  <img src={nowPlaying.posterUrl} alt={nowPlaying.name} className="w-full h-full object-cover" loading="lazy" />
+                  <img {...tmdbSrcSet(nowPlaying.posterUrl)} alt={nowPlaying.name} className="w-full h-full object-cover" loading="lazy" decoding="async" sizes="180px" />
                 )}
               </div>
 
@@ -152,7 +153,7 @@ const BottomPlayer = memo(function BottomPlayer() {
             >
               <div className="shrink-0 w-10 h-14 md:w-12 md:h-[60px] rounded-md overflow-hidden bg-[#1A1A1A]">
                 {nowPlaying.posterUrl && (
-                  <img src={nowPlaying.posterUrl} alt={nowPlaying.name} className="w-full h-full object-cover" loading="lazy" />
+                  <img {...tmdbSrcSet(nowPlaying.posterUrl)} alt={nowPlaying.name} className="w-full h-full object-cover" loading="lazy" decoding="async" sizes="48px" />
                 )}
               </div>
               <div className="min-w-0">

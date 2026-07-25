@@ -15,6 +15,7 @@ import { analytics } from './lib/analytics';
 import { setPageMeta } from './lib/seo';
 import { BUILD_INFO } from './lib/version';
 import Footer from './components/layout/Footer';
+import { ToastProvider } from './components/ui/Toast';
 
 // Route-level code splitting — each page loads on demand
 const Home            = lazy(() => import('./pages/Home'));
@@ -55,6 +56,7 @@ function AnimatedRoutes() {
       <div key={location.pathname} className="page-enter">
         <Routes location={location}>
           <Route path="/"                    element={<Wrap><Home /></Wrap>} />
+          <Route path="/title/tmdb/:tmdbId"   element={<Wrap><TitleDetail /></Wrap>} />
           <Route path="/title/:id"           element={<Wrap><TitleDetail /></Wrap>} />
           <Route path="/search"              element={<Wrap><SearchResults /></Wrap>} />
           <Route path="/watchlist"           element={<Wrap><Watchlist /></Wrap>} />
@@ -126,6 +128,7 @@ export default function App() {
   }, []);
 
   return (
+    <ToastProvider>
     <AuthProvider>
       <PlayerProvider>
         <div
@@ -158,5 +161,6 @@ export default function App() {
         </div>
       </PlayerProvider>
     </AuthProvider>
+    </ToastProvider>
   );
 }

@@ -3,7 +3,7 @@
  * Poster (2:3) with hover info overlay on desktop, tap-to-navigate on mobile.
  * New design: elevated glass info panel, animated reveal, clean action row.
  */
-import { memo, useState, useCallback } from 'react';
+import { memo, useState, useCallback, type KeyboardEvent, type MouseEvent } from 'react';
 import { Play, Plus, Info, Film, Star } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { tmdbSrcSet } from '../../services/tmdb';
@@ -17,7 +17,7 @@ function HighlightText({ text, query }: { text: string; query: string }) {
   return (
     <>
       {parts.map((part, i) =>
-        regex.test(part)
+        part.toLowerCase() === query.trim().toLowerCase()
           ? <mark key={i} style={{ background: 'rgba(255,255,255,0.22)', color: '#fff', borderRadius: 2, padding: '0 1px' }}>{part}</mark>
           : <span key={i}>{part}</span>
       )}
@@ -26,7 +26,7 @@ function HighlightText({ text, query }: { text: string; query: string }) {
 }
 
 export interface ContentCardProps {
-  title: any;
+  title: ContentCardTitle;
   rank?: number;
   showProgress?: boolean;
   progressSeconds?: number;
@@ -38,6 +38,22 @@ export interface ContentCardProps {
   onNavigate?: (play?: boolean) => void;
   /** When set, highlights matching text in the visible card title */
   highlightQuery?: string;
+}
+
+export interface ContentCardTitle {
+  id: string;
+  name: string;
+  posterUrl?: string | null;
+  posterColorFrom?: string;
+  posterColorTo?: string;
+  synopsis?: string;
+  genres?: string[];
+  rating?: number | string | null;
+  imdbRating?: number | string | null;
+  voteAverage?: number | string | null;
+  year?: number | string | null;
+  type?: string;
+  originalLanguage?: string;
 }
 
 const TYPE_LABEL: Record<string, string> = {
@@ -96,10 +112,32 @@ const ContentCard = memo(function ContentCard({
     ? Math.min(100, (progressSeconds / durationSeconds) * 100)
     : 0;
 
-  const handleClick    = useCallback(() => { if (onNavigate) { onNavigate(false); } else { nav(`/title/${title.id}`); } }, [nav, title.id, onNavigate]);
-  const handlePlay     = useCallback((e: React.MouseEvent) => { e.stopPropagation(); if (onNavigate) { onNavigate(true); } else { nav(`/title/${title.id}?play=1`); } }, [nav, title.id, onNavigate]);
-  const handleAddList  = useCallback((e: React.MouseEvent) => { e.stopPropagation(); onAddToList?.(title.id); }, [onAddToList, title.id]);
-  const handleInfo     = useCallback((e: React.MouseEvent) => { e.stopPropagation(); if (onNavigate) { onNavigate(false); } else { nav(`/title/${title.id}`); } }, [nav, title.id, onNavigate]);
+  // Keep the navigation target and its action buttons as sibling elements.
+  // This avoids the invalid interactive-element nesting that breaks touch and keyboard input.
+  const handleClick = useCallback(() => {
+    if (onNavigate) onNavigate(false);
+    else nav(`/title/${title.id}`);
+  }, [nav, title.id, onNavigate]);
+  const handleKeyDown = useCallback((e: KeyboardEvent<HTMLDivElement>) => {
+    if (e.key === 'Enter' || e.key === ' ') {
+      e.preventDefault();
+      handleClick();
+    }
+  }, [handleClick]);
+  const handlePlay = useCallback((e: MouseEvent<HTMLButtonElement>) => {
+    e.stopPropagation();
+    if (onNavigate) onNavigate(true);
+    else nav(`/title/${title.id}?play=1`);
+  }, [nav, title.id, onNavigate]);
+  const handleAddList = useCallback((e: MouseEvent<HTMLButtonElement>) => {
+    e.stopPropagation();
+    onAddToList?.(title.id);
+  }, [onAddToList, title.id]);
+  const handleInfo = useCallback((e: MouseEvent<HTMLButtonElement>) => {
+    e.stopPropagation();
+    if (onNavigate) onNavigate(false);
+    else nav(`/title/${title.id}`);
+  }, [nav, title.id, onNavigate]);
 
   if (!title?.id) return null;
 
@@ -107,35 +145,30 @@ const ContentCard = memo(function ContentCard({
     <article
       className={`
         group relative select-none touch-manipulation
-        ${fluid ? 'w-full' : 'shrink-0 w-[92px] md:w-[124px] scroll-snap-start'}
+        ${fluid ? 'w-full' : 'shrink-0 w-[140px] sm:w-[180px] lg:w-[230px] scroll-snap-start'}
         ${className}
       `}
       style={{ WebkitTapHighlightColor: 'transparent' }}
     >
-      {/* Full-card navigation target. It is a sibling, not a wrapper, so action buttons below remain independent controls. */}
-      <button
-        type="button"
-        aria-label={`Open ${title.name}`}
-        onClick={handleClick}
-        className="
-          absolute inset-0 z-0 block h-full w-full cursor-pointer
-          rounded-lg border-0 bg-transparent p-0
-          focus:outline-none focus-visible:ring-2 focus-visible:ring-white/25
-        "
-      />
-
-      {/* ── Poster container ─────────────────────────────────────────────── */}
+      {/* ── Poster container — navigation target ───────────────────────── */}
       <div
+        role="link"
+        tabIndex={0}
+        aria-label={`View ${title.name}`}
+        onClick={handleClick}
+        onKeyDown={handleKeyDown}
         className="
-          pointer-events-none relative z-10 w-full rounded-lg overflow-hidden
-          bg-[#141414]
+          block relative z-10 w-full rounded-lg overflow-hidden aspect-[2/3]
+          bg-[#141414] cursor-pointer
           transition-transform duration-[400ms] ease-[cubic-bezier(0.4,0,0.2,1)]
           md:group-hover:scale-[1.08] md:group-hover:-translate-y-1
           active:scale-[0.97] md:active:scale-100 md:active:translate-y-0
+          focus:outline-none focus-visible:ring-2 focus-visible:ring-white/25
         "
         style={{
           aspectRatio: '2/3',
           boxShadow: '0 4px 16px rgba(0,0,0,0.3)',
+          display: 'block',
         }}
       >
         {/* Glow layer — opacity-only toggle, no repaint */}
@@ -216,7 +249,7 @@ const ContentCard = memo(function ContentCard({
         )}
 
         {/* Indian language badge — bottom-left, above progress bar */}
-        {LANG_LABEL[title.originalLanguage] && (
+        {title.originalLanguage && LANG_LABEL[title.originalLanguage] && (
           <span className="
             absolute bottom-2 left-2 z-20
             text-[8px] font-semibold px-[5px] py-[2.5px] rounded-full leading-none
@@ -232,91 +265,55 @@ const ContentCard = memo(function ContentCard({
           style={{ background: 'linear-gradient(to top, rgba(0,0,0,0.9) 0%, rgba(0,0,0,0.25) 35%, transparent 65%)' }}
         />
 
-        {/* ── Desktop hover overlay ─────────────────────────────────────── */}
-        <div className="
-          hidden md:block
-          absolute inset-0 z-20
-          opacity-0 group-hover:opacity-100
-          transition-opacity duration-[400ms]
-          pointer-events-none
-        ">
-          {/* Center play — fades in on hover */}
-          <div className="absolute inset-0 flex items-center justify-center">
-            <button
-              type="button"
-              aria-label={`Play ${title.name}`}
-              onClick={handlePlay}
-              className="
-                 pointer-events-auto
-                flex items-center justify-center
-                w-12 h-12 rounded-full
-                bg-white hover:bg-white/90
-                shadow-[0_4px_24px_rgba(0,0,0,0.6)]
-                transition-transform duration-200 active:scale-90
-                scale-90 group-hover:scale-100
-              "
-              style={{ touchAction: 'manipulation', transition: 'transform 400ms cubic-bezier(0.4,0,0.2,1)' }}
-            >
-              <Play size={18} className="fill-black text-black ml-0.5" />
-            </button>
-          </div>
-
-          {/* Bottom metadata — slides up on hover */}
-          <div
-            className="absolute bottom-0 inset-x-0 z-30 px-2.5 pb-2.5 pt-8 translate-y-2 group-hover:translate-y-0"
-            style={{
-              background: 'linear-gradient(to top, rgba(0,0,0,0.92), rgba(0,0,0,0.4) 70%, transparent)',
-              transition: 'transform 400ms cubic-bezier(0.4,0,0.2,1)',
-            }}
-          >
-            <p className="text-[12px] font-semibold text-white leading-tight line-clamp-1 mb-1.5">
-              {title.name}
-            </p>
-            <div className="flex items-center justify-between gap-1">
-              <div className="flex items-center gap-1">
-                {onAddToList && (
-                  <button
-                    type="button"
-                    aria-label={`Add ${title.name} to list`}
-                    onClick={handleAddList}
-                    className="
-                      pointer-events-auto
-                      flex items-center gap-1 px-2 py-1 rounded-full
-                      bg-white/10 border border-white/10
-                      text-white/80 hover:text-white hover:bg-white/20
-                      text-[10px] font-medium
-                      transition-colors duration-150
-                    "
-                  >
-                    <Plus size={10} /> Add
-                  </button>
-                )}
-              </div>
-              <button
-                type="button"
-                aria-label={`Info about ${title.name}`}
-                onClick={handleInfo}
-                className="
-                  pointer-events-auto
-                  flex items-center justify-center
-                  w-7 h-7 rounded-full
-                  bg-white/10 border border-white/10
-                  text-white/80 hover:text-white hover:bg-white/20
-                  transition-colors duration-150
-                "
-              >
-                <Info size={12} />
-              </button>
-            </div>
-          </div>
-        </div>
-
         {/* Progress bar (continue watching) */}
         {showProgress && progressPct > 0 && (
           <div className="absolute bottom-0 inset-x-0 z-30 h-[4px] bg-white/10">
             <div className="h-full rounded-r-full" style={{ width: `${progressPct}%`, background: 'rgba(255,255,255,0.9)' }} />
           </div>
         )}
+      </div>
+
+      {/* Actions are siblings of the navigation target, never nested inside it. */}
+      <div className="hidden md:block absolute inset-0 z-20 opacity-0 md:group-hover:opacity-100 transition-opacity duration-[400ms] pointer-events-none">
+        <button
+          type="button"
+          aria-label={`Play ${title.name}`}
+          onClick={handlePlay}
+          className="pointer-events-auto absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 flex items-center justify-center w-12 h-12 rounded-full bg-white hover:bg-white/90 shadow-[0_4px_24px_rgba(0,0,0,0.6)] transition-transform duration-200 active:scale-90 scale-90 group-hover:scale-100"
+          style={{ touchAction: 'manipulation', transition: 'transform 400ms cubic-bezier(0.4,0,0.2,1)' }}
+        >
+          <Play size={18} className="fill-black text-black ml-0.5" />
+        </button>
+
+        <div
+          className="absolute bottom-[38px] inset-x-0 z-30 px-2.5 pb-2.5 pt-8 translate-y-2 group-hover:translate-y-0"
+          style={{
+            background: 'linear-gradient(to top, rgba(0,0,0,0.92), rgba(0,0,0,0.4) 70%, transparent)',
+            transition: 'transform 400ms cubic-bezier(0.4,0,0.2,1)',
+          }}
+        >
+          <p className="text-[12px] font-semibold text-white leading-tight line-clamp-1 mb-1.5">{title.name}</p>
+          <div className="flex items-center justify-between gap-1">
+            {onAddToList ? (
+              <button
+                type="button"
+                aria-label={`Add ${title.name} to list`}
+                onClick={handleAddList}
+                className="pointer-events-auto flex items-center gap-1 px-2 py-1 rounded-full bg-white/10 border border-white/10 text-white/80 hover:text-white hover:bg-white/20 text-[10px] font-medium transition-colors duration-150"
+              >
+                <Plus size={10} /> Add
+              </button>
+            ) : <span />}
+            <button
+              type="button"
+              aria-label={`Info about ${title.name}`}
+              onClick={handleInfo}
+              className="pointer-events-auto flex items-center justify-center w-7 h-7 rounded-full bg-white/10 border border-white/10 text-white/80 hover:text-white hover:bg-white/20 transition-colors duration-150"
+            >
+              <Info size={12} />
+            </button>
+          </div>
+        </div>
       </div>
 
       {/* ── Text below poster ──────────────────────────────────────────── */}

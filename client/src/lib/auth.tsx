@@ -33,11 +33,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
+    let mounted = true;
     let unsubscribe: (() => void) | null = null;
 
     fetch('/api/config')
       .then(r => r.json())
       .then(({ supabaseUrl, supabaseAnonKey }) => {
+        if (!mounted) return;
         if (!supabaseUrl || !supabaseAnonKey) { setIsLoading(false); return; }
 
         const sb = createSupabaseClient(supabaseUrl, supabaseAnonKey);
@@ -47,9 +49,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         // so this single listener handles both startup hydration and subsequent changes.
         const { data: { subscription } } = sb.auth.onAuthStateChange(
           async (_event, session) => {
+            if (!mounted) return;
             if (session) {
-              // Do NOT persist the token to localStorage — XSS-readable.
-              // The Supabase client keeps its own session; we only hold it in React state.
               setToken(session.access_token);
 
               // Fetch the Neon user (includes role and displayName)
@@ -57,6 +58,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                 const res = await fetch('/api/auth/me', {
                   headers: { Authorization: `Bearer ${session.access_token}` },
                 });
+                if (!mounted) return;
                 if (res.ok) {
                   const { user: neonUser } = await res.json();
                   setUser(neonUser);
@@ -69,7 +71,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                       session.user.email!.split('@')[0],
                   });
                 }
-              } catch {
+              } catch (err) {
+                console.error('[auth] /api/auth/me failed', err);
+                if (!mounted) return;
                 setUser({
                   id: session.user.id,
                   email: session.user.email!,
@@ -80,15 +84,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
               setToken(null);
               setUser(null);
             }
-            setIsLoading(false);
+            if (mounted) setIsLoading(false);
           }
         );
 
         unsubscribe = () => subscription.unsubscribe();
       })
-      .catch(() => setIsLoading(false));
+      .catch(() => { if (mounted) setIsLoading(false); });
 
-    return () => unsubscribe?.();
+    return () => { mounted = false; unsubscribe?.(); };
   }, []);
 
   const signIn = async (email: string, password: string) => {

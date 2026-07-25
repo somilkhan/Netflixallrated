@@ -2,6 +2,8 @@ import { useState, useEffect, useCallback, useRef, useMemo, memo } from 'react';
 import { Play as PlayIcon } from 'lucide-react';
 import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
 import { api } from '../lib/api';
+import { getMovieDetails, getTVDetails, getMovieVideos, getTVVideos } from '../services/tmdb';
+import { tmdbSrcSet } from '../services/tmdb';
 import { useAuth } from '../lib/auth';
 import { getAnimeDetail } from '../lib/anilist';
 import {
@@ -21,6 +23,55 @@ import '@/styles/MovieDetailPage.css';
 import type { Tier } from '../lib/ratings';
 import { analytics } from '../lib/analytics';
 import { setPageMeta } from '../lib/seo';
+import type { AniListMediaDetail } from '../lib/anilist';
+import type { Title, Rating, TmdbSearchResult } from '../types';
+import type { EpisodeItem, SeasonItem } from '../components/title-detail/EpisodeBrowser';
+
+interface DetailTitle extends Omit<Title, 'id' | 'year' | 'runtimeMinutes' | 'trailerYoutubeId' | 'officialWatchLinks' | 'tmdbId' | 'posterUrl' | 'backdropUrl' | 'createdAt'> {
+  id?: string;
+  year: number | null;
+  runtimeMinutes: number | null;
+  trailerYoutubeId?: string | null;
+  officialWatchLinks?: { platform: string; url: string }[];
+  tmdbId?: number;
+  anilistId?: number;
+  posterUrl?: string | null;
+  backdropUrl?: string | null;
+  createdAt?: string;
+  rating?: number | null;
+}
+
+type DetailRating = Omit<Rating, 'user'> & {
+  user?: { displayName?: string | null };
+};
+
+interface WatchProvider {
+  providerId: number;
+  name: string;
+  logoUrl: string | null;
+}
+
+interface WatchProviders {
+  flatrate: WatchProvider[];
+  rent: WatchProvider[];
+  buy: WatchProvider[];
+  link: string | null;
+}
+
+interface GogoEpisode {
+  id: string;
+  number?: number;
+  episode?: number;
+  title?: string;
+  image?: string | null;
+}
+
+interface CastMember {
+  id: number;
+  name: string;
+  character?: string;
+  profileUrl?: string | null;
+}
 
 const TIERS = [
   { id: 'SKIP',       label: 'Skip',       key: 'skip' },
@@ -53,7 +104,7 @@ const RelatedPosterCard = memo(function RelatedPosterCard({
       aria-label={name}
       onClick={onClick}
       onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onClick(); } }}
-      className="group relative shrink-0 w-[130px] scroll-snap-start cursor-pointer touch-manipulation select-none focus:outline-none focus-visible:ring-2 focus-visible:ring-white/30 rounded-xl"
+      className="group relative shrink-0 w-[140px] sm:w-[180px] lg:w-[230px] scroll-snap-start cursor-pointer touch-manipulation select-none focus:outline-none focus-visible:ring-2 focus-visible:ring-white/30 rounded-xl"
       style={{ WebkitTapHighlightColor: 'transparent' }}
     >
       <div
@@ -68,7 +119,8 @@ const RelatedPosterCard = memo(function RelatedPosterCard({
         <div className="absolute inset-0 pointer-events-none z-10" style={{ background: 'linear-gradient(to top, rgba(0,0,0,0.85) 0%, rgba(0,0,0,0.3) 30%, transparent 60%)' }} />
         {posterUrl && !imgError ? (
           <img
-            src={posterUrl} alt={name} loading="lazy" decoding="async"
+            {...tmdbSrcSet(posterUrl)} alt={name} loading="lazy" decoding="async"
+            sizes="140px"
             onError={() => setImgError(true)}
             className="absolute inset-0 w-full h-full object-cover"
           />
@@ -88,13 +140,10 @@ const RelatedPosterCard = memo(function RelatedPosterCard({
 
 /** Similar/Recommended TMDB card — resolves the TMDB item into the local
  * catalog on click and routes to the SAME unified /title/:id detail page. */
-const RelatedTmdbCard = memo(function RelatedTmdbCard({ item }: { item: any }) {
+const RelatedTmdbCard = memo(function RelatedTmdbCard({ item }: { item: TmdbSearchResult }) {
   const nav = useNavigate();
-  const handleClick = async () => {
-    try {
-      const { id } = await api.titles.resolveTmdb(item.tmdbId, item.mediaType === 'movie' ? 'movie' : 'tv');
-      nav(`/title/${id}`);
-    } catch { /* best-effort — stay put on failure */ }
+  const handleClick = () => {
+    nav(`/title/tmdb/${item.tmdbId}?type=${item.mediaType}`);
   };
   return (
     <RelatedPosterCard
@@ -109,7 +158,9 @@ const RelatedTmdbCard = memo(function RelatedTmdbCard({ item }: { item: any }) {
 
 /** AniList relation card — resolves the related anime into the local catalog
  * on click and routes to the SAME unified /title/:id detail page. */
-const RelatedAnimeCard = memo(function RelatedAnimeCard({ node }: { node: any }) {
+type AniListRelationNode = AniListMediaDetail['relations']['edges'][number]['node'];
+
+const RelatedAnimeCard = memo(function RelatedAnimeCard({ node }: { node: AniListRelationNode }) {
   const nav = useNavigate();
   const handleClick = async () => {
     try {
@@ -130,7 +181,7 @@ const RelatedAnimeCard = memo(function RelatedAnimeCard({ node }: { node: any })
 });
 
 /** Memoized character avatar — the AniList characters row can have 20+ entries. */
-const CharacterAvatar = memo(function CharacterAvatar({ name, imageUrl }: { name: string; imageUrl?: string }) {
+const CharacterAvatar = memo(function CharacterAvatar({ name, imageUrl }: { name: string; imageUrl?: string | null }) {
   return (
     <div className="character-avatar-wrap">
       <div className="character-avatar">
@@ -142,14 +193,14 @@ const CharacterAvatar = memo(function CharacterAvatar({ name, imageUrl }: { name
 });
 
 export default function TitleDetail() {
-  const { id } = useParams();
+  const { id, tmdbId: tmdbIdParam } = useParams<{ id?: string; tmdbId?: string }>();
   const { user } = useAuth();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const autoPlay = searchParams.get('play') === '1';
 
-  const [title, setTitle] = useState<any>(null);
-  const [ratings, setRatings] = useState<any[]>([]);
+  const [title, setTitle] = useState<DetailTitle | null>(null);
+  const [ratings, setRatings] = useState<DetailRating[]>([]);
   const [myTier, setMyTier] = useState<Tier | ''>('');
   const [review, setReview] = useState('');
   const [titleError, setTitleError] = useState(false);
@@ -196,7 +247,7 @@ export default function TitleDetail() {
   const progressTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   // Mirror of the episodes state in a ref so saveProgress can read it without
   // needing episodes in its dep array (which would cause unnecessary re-creation).
-  const episodesRef = useRef<any[]>([]);
+  const episodesRef = useRef<EpisodeItem[]>([]);
 
   /** Returns total seconds watched so far (saved base + current session elapsed). */
   const currentPositionSeconds = useCallback(() => {
@@ -214,7 +265,7 @@ export default function TitleDetail() {
     const isSeries = title.type === 'SERIES';
     const isAnimeType = title.type === 'ANIME';
     const epTitle = (isSeries || isAnimeType)
-      ? (episodesRef.current.find((e: any) => e.episodeNumber === selectedEp)?.name ?? null)
+      ? (episodesRef.current.find(e => e.episodeNumber === selectedEp)?.name ?? null)
       : null;
     api.history.save({
       titleId: id,
@@ -226,6 +277,11 @@ export default function TitleDetail() {
       completed: opts?.completed,
     }).catch(() => {/* non-fatal */});
   }, [user, id, title, selectedSeason, selectedEp, currentPositionSeconds]);
+
+  const saveProgressRef = useRef(saveProgress);
+  useEffect(() => {
+    saveProgressRef.current = saveProgress;
+  }, [saveProgress]);
 
   // Fetch saved progress when title + user are ready; restore season/ep for series.
   // Backend now returns null (not 404) when no record exists — handle both safely.
@@ -259,7 +315,7 @@ export default function TitleDetail() {
         // Accumulate elapsed into base so next session starts from here
         progressBaseRef.current = currentPositionSeconds();
         playStartRef.current = null;
-        saveProgress();
+        saveProgressRef.current();
       }
       if (progressTimerRef.current) {
         clearInterval(progressTimerRef.current);
@@ -280,17 +336,17 @@ export default function TitleDetail() {
       if (playStartRef.current != null) {
         progressBaseRef.current = currentPositionSeconds();
         playStartRef.current = null;
-        saveProgress();
+        saveProgressRef.current();
       }
     };
-  }, [saveProgress, currentPositionSeconds]);
+  }, [currentPositionSeconds]);
 
   // GogoAnime (consumet) — alternative anime source
   // 'anicrush' | 'gogoanime' = async providers; 'filmu' | 'screenscape-embed' = static TMDB-based
   const [animeProvider, setAnimeProvider] = useState<'anicrush' | 'gogoanime' | 'filmu' | 'screenscape-embed'>('anicrush');
   const [gogoAnimeId, setGogoAnimeId] = useState<string | null>(null);
   const [gogoEpCount, setGogoEpCount] = useState(0);
-  const [gogoEpisodes, setGogoEpisodes] = useState<any[]>([]);
+  const [gogoEpisodes, setGogoEpisodes] = useState<GogoEpisode[]>([]);
   const [gogoEmbedUrl, setGogoEmbedUrl] = useState<string | null>(null);
   const [gogoEmbedLoading, setGogoEmbedLoading] = useState(false);
   const [gogoError, setGogoError] = useState<string | null>(null);
@@ -324,10 +380,10 @@ export default function TitleDetail() {
   const [hdhubError, setHdhubError] = useState<string | null>(null);
 
   // Cast / credits (movies + series)
-  const [credits, setCredits] = useState<any[]>([]);
+  const [credits, setCredits] = useState<CastMember[]>([]);
 
   // AniList metadata (anime only)
-  const [anilistData, setAnilistData] = useState<any>(null);
+  const [anilistData, setAnilistData] = useState<AniListMediaDetail | null>(null);
 
   // Anicrush state (anime only)
   const [anicrushMovieId, setAnicrushMovieId] = useState<string | null>(null);
@@ -340,13 +396,72 @@ export default function TitleDetail() {
   const gogoSearchReqRef = useRef(0);
 
   // TMDB Watch Providers (Netflix, Prime Video, Disney+, etc. — movie/TV only)
-  const [watchProviders, setWatchProviders] = useState<{ flatrate: any[]; rent: any[]; buy: any[]; link: string | null } | null>(null);
+  const [watchProviders, setWatchProviders] = useState<WatchProviders | null>(null);
 
   // Season / episode (SERIES only)
-  const [seasons, setSeasons] = useState<any[]>([]);
-  const [episodes, setEpisodes] = useState<any[]>([]);
+  const [seasons, setSeasons] = useState<SeasonItem[]>([]);
+  const [episodes, setEpisodes] = useState<EpisodeItem[]>([]);
   const [seasonsLoading, setSeasonsLoading] = useState(false);
   const [epsLoading, setEpsLoading] = useState(false);
+
+  // ── TMDB fallback: /title/tmdb/:tmdbId route ─────────────────────────────
+  // First tries to resolve to a backend ID and redirect. If the title isn't in
+  // the backend yet, builds a synthetic title from TMDB data so the page still
+  // renders with poster/synopsis/player (ratings/watchlist require a backend ID
+  // and are silently skipped when `id` is undefined).
+  useEffect(() => {
+    if (!tmdbIdParam) return;
+    const numericTmdbId = Number(tmdbIdParam);
+    if (Number.isNaN(numericTmdbId)) { setTitleError(true); return; }
+    const tmdbType = (searchParams.get('type') === 'tv' ? 'tv' : 'movie') as 'movie' | 'tv';
+
+    let cancelled = false;
+    setTitle(null);
+    setTitleError(false);
+
+    api.titles.resolveTmdb(numericTmdbId, tmdbType)
+      .then(({ id: backendId }: { id: string }) => {
+        if (cancelled) return;
+        navigate(`/title/${backendId}${autoPlay ? '?play=1' : ''}`, { replace: true });
+      })
+      .catch(async () => {
+        if (cancelled) return;
+        try {
+          const [details, trailerKey] = await Promise.all([
+            tmdbType === 'movie' ? getMovieDetails(numericTmdbId) : getTVDetails(numericTmdbId),
+            tmdbType === 'movie' ? getMovieVideos(numericTmdbId) : getTVVideos(numericTmdbId),
+          ]);
+          if (cancelled) return;
+          const dateStr: string = details.release_date || details.first_air_date || '';
+          const parsedYear = dateStr ? new Date(dateStr).getFullYear() : NaN;
+          setTitle({
+            id: undefined,
+            name: details.title || details.name || '',
+            type: tmdbType === 'movie' ? 'MOVIE' : 'SERIES',
+            posterColorFrom: '#1a1510',
+            posterColorTo: '#0a0908',
+            platforms: [],
+            posterUrl: details.poster_path
+              ? `https://image.tmdb.org/t/p/w500${details.poster_path}`
+              : null,
+            backdropUrl: details.backdrop_path
+              ? `https://image.tmdb.org/t/p/w1280${details.backdrop_path}`
+              : null,
+            synopsis: details.overview || '',
+            genres: (details.genres as Array<{ name: string }> || []).map(g => g.name),
+            tmdbId: numericTmdbId,
+            year: Number.isNaN(parsedYear) ? null : parsedYear,
+            runtimeMinutes: details.runtime || null,
+            trailerYoutubeId: trailerKey,
+            rating: details.vote_average || null,
+          });
+        } catch {
+          if (!cancelled) setTitleError(true);
+        }
+      });
+
+    return () => { cancelled = true; };
+  }, [tmdbIdParam]); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
     if (!id) return;
@@ -584,8 +699,8 @@ export default function TitleDetail() {
   }, [title, id]);
 
   // Recommendations / Similar titles state (declared here for use below)
-  const [similarTitles, setSimilarTitles] = useState<any[]>([]);
-  const [recommendedTitles, setRecommendedTitles] = useState<any[]>([]);
+  const [similarTitles, setSimilarTitles] = useState<TmdbSearchResult[]>([]);
+  const [recommendedTitles, setRecommendedTitles] = useState<TmdbSearchResult[]>([]);
 
   useEffect(() => {
     if (!title || title.type !== 'ANIME') return;
@@ -931,6 +1046,9 @@ export default function TitleDetail() {
   const typeLabel = title.type === 'ANIME' ? 'Anime'
     : title.type === 'SERIES' ? 'TV Series'
     : 'Movie';
+  const studioNodes = anilistData?.studios?.nodes ?? [];
+  const characterEdges = anilistData?.characters?.edges ?? [];
+  const relationEdges = anilistData?.relations?.edges ?? [];
 
   const topTier = ratings.length > 0
     ? TIERS.reduce((best, t) => {
@@ -1121,9 +1239,9 @@ export default function TitleDetail() {
         )}
 
         {/* Anime-only: studios */}
-        {title.type === 'ANIME' && anilistData?.studios?.nodes?.length > 0 && (
+        {title.type === 'ANIME' && studioNodes.length > 0 && (
           <p className="font-mono text-[10px] text-ink-faint uppercase tracking-wider" style={{ marginTop: 8 }}>
-            {anilistData.studios.nodes.map((s: any) => s.name).join(' · ')}
+            {studioNodes.map(s => s.name).join(' · ')}
           </p>
         )}
 
@@ -1578,9 +1696,9 @@ export default function TitleDetail() {
         {title.type === 'ANIME' && anilistLoading && (
           <RelatedRow title="Characters"><CharacterRowSkeleton /></RelatedRow>
         )}
-        {title.type === 'ANIME' && !anilistLoading && anilistData?.characters?.edges?.length > 0 && (
+        {title.type === 'ANIME' && !anilistLoading && characterEdges.length > 0 && (
           <RelatedRow title="Characters">
-            {anilistData.characters.edges.map((e: any) => (
+            {characterEdges.map(e => (
               <div key={e.node.id} style={{ flex: '0 0 auto', width: 72 }}>
                 <CharacterAvatar name={e.node.name.full} imageUrl={e.node.image?.large} />
               </div>
@@ -1589,13 +1707,13 @@ export default function TitleDetail() {
         )}
 
         {/* ── Anime-only: relations ─────────────────────────────── */}
-        {title.type === 'ANIME' && !anilistLoading && anilistData?.relations?.edges?.length > 0 && (
+        {title.type === 'ANIME' && !anilistLoading && relationEdges.length > 0 && (
           <RelatedRow title="Related">
-            {anilistData.relations.edges
-              .filter((e: any) => e.node.format !== 'MANGA' && e.node.format !== 'NOVEL')
+            {relationEdges
+              .filter(e => e.node.format !== 'MANGA' && e.node.format !== 'NOVEL')
               .slice(0, 10)
-              .map((e: any) => (
-                <div key={e.node.id} style={{ flex: '0 0 auto', width: 130 }}>
+              .map(e => (
+                <div key={e.node.id} style={{ flex: '0 0 auto' }}>
                   <RelatedAnimeCard node={e.node} />
                 </div>
               ))}
@@ -1609,7 +1727,7 @@ export default function TitleDetail() {
         {!recommendedLoading && recommendedTitles.length > 0 && (
           <RelatedRow title="Recommendations">
             {recommendedTitles.slice(0, 12).map((t: any) => (
-              <div key={t.tmdbId} style={{ flex: '0 0 auto', width: 130 }}>
+              <div key={t.tmdbId} style={{ flex: '0 0 auto' }}>
                 <RelatedTmdbCard item={t} />
               </div>
             ))}
@@ -1623,7 +1741,7 @@ export default function TitleDetail() {
         {!similarLoading && similarTitles.length > 0 && (
           <RelatedRow title="Similar Titles">
             {similarTitles.slice(0, 12).map((t: any) => (
-              <div key={t.tmdbId} style={{ flex: '0 0 auto', width: 130 }}>
+              <div key={t.tmdbId} style={{ flex: '0 0 auto' }}>
                 <RelatedTmdbCard item={t} />
               </div>
             ))}
