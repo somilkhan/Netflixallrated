@@ -4,13 +4,6 @@ export function useHasIntersected(
   ref: RefObject<Element>,
   options: IntersectionObserverInit = {},
 ) {
-  return useHasIntersected(ref, options);
-}
-
-export function useHasIntersected(
-  ref: RefObject<Element>,
-  options: IntersectionObserverInit = {},
-) {
   const [hasIntersected, setHasIntersected] = useState(false);
 
   useEffect(() => {
