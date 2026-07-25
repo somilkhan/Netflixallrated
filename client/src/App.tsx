@@ -50,10 +50,11 @@ function AnimatedRoutes() {
   useEffect(() => {
     analytics.pageView(`${location.pathname}${location.search}`);
     setPageMeta(location.pathname);
+    window.scrollTo(0, 0);
   }, [location.pathname, location.search]);
   return (
     <LazyMotion features={domAnimation} strict>
-      <div key={location.pathname} className="page-enter">
+      <div className="page-enter">
         <Routes location={location}>
           <Route path="/"                    element={<Wrap><Home /></Wrap>} />
           <Route path="/title/tmdb/:tmdbId"   element={<Wrap><TitleDetail /></Wrap>} />

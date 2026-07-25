@@ -229,6 +229,7 @@ export async function getBollywoodMovies(page = 1): Promise<TmdbNormalized[]> {
     with_original_language: 'hi',
     sort_by: 'popularity.desc',
     'vote_count.gte': '50',
+    language: 'en-US',
     page: String(page),
   });
   return data.results.map(item => normalize(item, 'movie'));
@@ -240,11 +241,13 @@ export async function getSouthIndianMovies(page = 1): Promise<TmdbNormalized[]> 
     tmdbFetch<{ results: any[] }>('/discover/movie', {
       with_original_language: 'ta',
       sort_by: 'popularity.desc',
+      language: 'en-US',
       page: String(page),
     }),
     tmdbFetch<{ results: any[] }>('/discover/movie', {
       with_original_language: 'te',
       sort_by: 'popularity.desc',
+      language: 'en-US',
       page: String(page),
     }),
   ]);
@@ -263,6 +266,7 @@ export async function getHindiWebSeries(page = 1): Promise<TmdbNormalized[]> {
   const data = await tmdbFetch<{ results: any[] }>('/discover/tv', {
     with_original_language: 'hi',
     sort_by: 'popularity.desc',
+    language: 'en-US',
     page: String(page),
   });
   return data.results.map(item => normalize(item, 'tv'));
@@ -273,6 +277,7 @@ export async function getMalayalamMovies(page = 1): Promise<TmdbNormalized[]> {
   const data = await tmdbFetch<{ results: any[] }>('/discover/movie', {
     with_original_language: 'ml',
     sort_by: 'popularity.desc',
+    language: 'en-US',
     page: String(page),
   });
   return data.results.map(item => normalize(item, 'movie'));
@@ -283,6 +288,7 @@ export async function getKannadaMovies(page = 1): Promise<TmdbNormalized[]> {
   const data = await tmdbFetch<{ results: any[] }>('/discover/movie', {
     with_original_language: 'kn',
     sort_by: 'popularity.desc',
+    language: 'en-US',
     page: String(page),
   });
   return data.results.map(item => normalize(item, 'movie'));
@@ -297,6 +303,7 @@ export async function getIndianByLanguage(
   const data = await tmdbFetch<{ results: any[] }>(`/discover/${mediaType}`, {
     with_original_language: langCode,
     sort_by: 'popularity.desc',
+    language: 'en-US',
     page: String(page),
   });
   return data.results.map(item => normalize(item, mediaType));
