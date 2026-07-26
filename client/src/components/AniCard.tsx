@@ -11,13 +11,15 @@ import { navigateToAnime } from '../lib/animeResolve';
 // Re-exported so animeResolve.ts can continue importing it
 export interface AniListMediaLike {
   id: number;
-  title: { romaji: string; english: string | null };
+  title: { romaji: string; english: string | null; native?: string | null };
   description?: string | null;
   episodes?: number | null;
   genres?: string[];
   averageScore?: number | null;
   coverImage?: { large?: string; extraLarge?: string } | null;
   startDate?: { year?: number | null } | null;
+  format?: string | null;
+  seasonYear?: number | null;
 }
 
 interface AniCardProps {
@@ -33,11 +35,11 @@ const AniCard = memo(function AniCard({ anime, rank, fluid = false, className = 
   const [imgError, setImgError] = useState(false);
   const [resolving, setResolving] = useState(false);
 
-  const title = anime.title.english || anime.title.romaji;
+  const title = anime.title.english || anime.title.romaji || anime.title.native || 'Unknown';
   const posterUrl = anime.coverImage?.extraLarge || anime.coverImage?.large;
   const hasImage = !!posterUrl && !imgError;
   const rating = anime.averageScore ? (anime.averageScore / 10).toFixed(1) : null;
-  const year = anime.startDate?.year;
+  const year = anime.seasonYear || anime.startDate?.year;
 
   const handleNav = useCallback((play = false) => {
     if (resolving) return;
@@ -136,7 +138,7 @@ const AniCard = memo(function AniCard({ anime, rank, fluid = false, className = 
 
         {/* Type badge */}
         <span className="absolute top-2 right-2 z-20 text-[8px] font-medium px-[5px] py-[2.5px] rounded-full border border-white/[0.08] bg-black/70 text-white/45 uppercase tracking-wide leading-none">
-          Anime
+          {anime.format?.replace(/_/g, ' ') || 'Anime'}
         </span>
 
         {/* Bottom gradient */}

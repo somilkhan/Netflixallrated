@@ -39,7 +39,10 @@ const AnimeRankRow = memo(function AnimeRankRow({ title, badge, perPage = 10, on
         onLoadedRef.current?.(media.map((m: any) => m.id));
         setLoadState('done');
       })
-      .catch(() => setLoadState('error'));
+      .catch((err) => {
+        console.error(`[anime] failed to load "${title}"`, err);
+        setLoadState('error');
+      });
   }, [perPage]);
 
   useEffect(() => {

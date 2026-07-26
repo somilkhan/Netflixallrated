@@ -47,19 +47,20 @@ const AnimeHeroBanner = memo(function AnimeHeroBanner() {
     setTimeout(() => setPaused(false), 1200);
   }, [next, prev]);
 
-  if (!titles.length) return null;
-
-  const current = titles[idx];
-  const titleStr = current.title?.english || current.title?.romaji || 'Unknown';
-  const synopsis = current.description ? current.description.replace(/<[^>]+>/g, '') : '';
-  const rating = current.averageScore ? (current.averageScore / 10).toFixed(1) : null;
-
   const handleNavigate = useCallback((play = false) => {
-    if (resolving) return;
+    const current = titles[idx];
+    if (!current || resolving) return;
     setResolving(true);
     navigateToAnime(current, (path) => nav(play ? `${path}?play=1` : path))
       .finally(() => setResolving(false));
-  }, [current, nav, resolving]);
+  }, [idx, nav, resolving, titles]);
+
+  if (!titles.length) return null;
+
+  const current = titles[idx];
+  const titleStr = current.title?.english || current.title?.romaji || current.title?.native || 'Unknown';
+  const synopsis = current.description ? current.description.replace(/<[^>]+>/g, '') : '';
+  const rating = current.averageScore ? (current.averageScore / 10).toFixed(1) : null;
 
   return (
     <section

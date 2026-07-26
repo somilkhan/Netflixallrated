@@ -2,7 +2,7 @@ const ANILIST_API = 'https://graphql.anilist.co';
 
 export interface AniListMedia {
   id: number;
-  title: { romaji: string; english: string | null };
+  title: { romaji: string; english: string | null; native?: string | null };
   description: string | null;
   episodes: number | null;
   duration: number | null;
@@ -12,6 +12,8 @@ export interface AniListMedia {
   popularity: number;
   coverImage: { large: string; extraLarge: string };
   bannerImage: string | null;
+  format?: string | null;
+  seasonYear?: number | null;
   startDate: { year: number | null; month: number | null; day: number | null };
   studios: { nodes: { name: string }[] };
 }
@@ -46,7 +48,7 @@ export interface AnimePage {
 
 const PAGE_MEDIA_FIELDS = `
   id
-  title { romaji english }
+  title { romaji english native }
   description(asHtml: false)
   episodes
   duration
@@ -56,6 +58,8 @@ const PAGE_MEDIA_FIELDS = `
   popularity
   coverImage { large extraLarge }
   bannerImage
+  format
+  seasonYear
   startDate { year month day }
   studios { nodes { name } }
 `;

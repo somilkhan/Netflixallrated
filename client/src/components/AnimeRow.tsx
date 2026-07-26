@@ -54,7 +54,10 @@ const AnimeRow = memo(function AnimeRow({
         onLoadedRef.current?.(media.map((m: any) => m.id));
         setLoadState('done');
       })
-      .catch(() => setLoadState('error'));
+      .catch((err) => {
+        console.error(`[anime] failed to load "${title}"`, err);
+        setLoadState('error');
+      });
   }, [sort, genre, tag, status, season, seasonYear, format, perPage]);
 
   useEffect(() => {

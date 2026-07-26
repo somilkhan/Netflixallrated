@@ -21,3 +21,4 @@
 - [Player provider boundaries](player-provider-boundaries.md) — native HLS supports advanced controls; cross-origin iframe providers remain provider-controlled
 - [PWA deployment updates](pwa-deployment-updates.md) — app-shell navigation must be network-first; cache-first HTML can hide successful Railway releases indefinitely
 - [Railway TMDB fallback](railway-tmdb-fallback.md) — Railway builds may not inherit Replit Vite secrets; use the server TMDB proxy when the client bundle lacks a build-time key
+- [Async route hook ordering](async-route-hook-ordering.md) — lazy route components must declare hooks before loading-state returns to avoid production React hook-order crashes
