@@ -1,15 +1,14 @@
 /**
  * AnimeSectionPage — "View all" destination for any Anime page row.
- * Reads its fetch parameters from the query string (see lib/animeSection.ts),
- * and infinitely paginates live AniList results into a responsive grid.
+ * Netflix-style grid with infinite scroll. Reads fetch params from URL.
  */
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { ChevronLeft } from 'lucide-react';
+import { ChevronLeft, Film } from 'lucide-react';
 import { getAnimePageWithInfo } from '../lib/anilist';
 import { parseAnimeSectionSearch } from '../lib/animeSection';
 import AniCard from '../components/AniCard';
-import { GlassCardSkeleton } from '../components/GlassCard';
+import { SkeletonCard } from '../components/ui/SkeletonCard';
 
 const PER_PAGE = 24;
 
@@ -24,15 +23,10 @@ export default function AnimeSectionPage() {
   const [loadState, setLoadState] = useState<'idle' | 'loading' | 'more' | 'done' | 'error'>('idle');
   const sentinelRef = useRef<HTMLDivElement>(null);
   const seenIds = useRef<Set<number>>(new Set());
-
-  // Guards against stale-response races: bumped every time the section
-  // changes, and every in-flight request is tagged with the version it was
-  // fired under. A response is only applied if its version is still current.
   const requestVersion = useRef(0);
-  // Prevents duplicate concurrent page fetches from multiple intersection fires.
   const inFlight = useRef(false);
 
-  // Reset when the query string (i.e. which section) changes.
+  // Reset when section changes
   useEffect(() => {
     requestVersion.current += 1;
     inFlight.current = false;
@@ -54,7 +48,7 @@ export default function AnimeSectionPage() {
       page: pageNum, perPage: PER_PAGE,
     })
       .then(({ media, hasNextPage }) => {
-        if (version !== requestVersion.current) return; // stale — a newer section superseded this request
+        if (version !== requestVersion.current) return;
         const fresh = media.filter(m => !seenIds.current.has(m.id));
         fresh.forEach(m => seenIds.current.add(m.id));
         setItems(prev => (replace ? fresh : [...prev, ...fresh]));
@@ -94,64 +88,67 @@ export default function AnimeSectionPage() {
   }, [hasNext, loadState, page, loadPage]);
 
   return (
-    <div className="min-h-screen bg-void">
-      <div className="relative overflow-hidden">
-        <div className="pointer-events-none absolute inset-0
-          bg-[radial-gradient(ellipse_80%_100%_at_10%_0%,rgba(122,37,48,0.22),transparent_65%)]" />
+    <div className="min-h-screen pb-32 pt-20" style={{ background: '#0A0A0A' }}>
+      {/* Page header */}
+      <div className="px-4 md:px-6 pt-4 pb-8">
+        <button
+          onClick={() => nav('/anime')}
+          className="flex items-center gap-1.5 text-[12px] text-white/40 hover:text-white transition-colors mb-5"
+        >
+          <ChevronLeft size={14} strokeWidth={2.2} />
+          Back to Anime
+        </button>
 
-        <div className="relative px-5 pt-10 pb-8">
-          <button
-            onClick={() => nav('/anime')}
-            className="flex items-center gap-1.5 font-mono text-[11px] text-ink-faint
-              hover:text-ink transition-colors mb-6"
-          >
-            <ChevronLeft size={13} strokeWidth={2.2} />
-            Back to Anime
-          </button>
-
-          <span className="font-mono text-[10px] uppercase tracking-[0.22em] text-ink-faint/60
-            flex items-center gap-1.5 mb-3">
-            <span className="inline-block w-1.5 h-1.5 rounded-full bg-white/40 animate-pulse" />
+        <div className="flex items-center gap-2 mb-3">
+          <span className="inline-block w-1.5 h-1.5 rounded-full bg-white/50 animate-pulse" />
+          <span className="text-[10px] uppercase tracking-[0.22em] text-white/35 font-medium">
             Live from AniList
           </span>
-          <h1 className="font-serif text-[38px] md:text-[52px] font-semibold tracking-tight leading-none text-ink mb-2">
-            {params.title}
-          </h1>
         </div>
 
-        <div className="absolute inset-x-0 bottom-0 h-6 bg-gradient-to-t from-void to-transparent pointer-events-none" />
+        <h1 className="text-3xl md:text-5xl font-bold text-white tracking-tight leading-none">
+          {params.title}
+        </h1>
       </div>
 
-      <div className="px-5 pb-24">
+      {/* Grid */}
+      <div className="px-4 md:px-6">
         {loadState === 'error' && items.length === 0 && (
-          <div className="py-16 text-center">
-            <p className="font-mono text-sm text-ink-faint">
-              Failed to load —{' '}
-              <button onClick={() => loadPage(1, true)} className="text-maroon-bright hover:underline">retry</button>
-            </p>
+          <div className="flex flex-col items-center justify-center gap-4 py-32 text-center">
+            <Film size={40} className="text-white/15" />
+            <p className="text-xl font-semibold text-white">Failed to load</p>
+            <button
+              onClick={() => loadPage(1, true)}
+              className="mt-2 px-5 py-2 rounded-full bg-white/[0.08] border border-white/[0.12] text-sm text-white/70 hover:text-white hover:bg-white/[0.12] transition-colors"
+            >
+              Retry
+            </button>
           </div>
         )}
 
-        <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 gap-3.5">
+        <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6">
           {items.map(anime => (
-            <AniCard key={anime.id} anime={anime} />
+            <AniCard key={anime.id} anime={anime} fluid className="w-full" />
           ))}
           {(loadState === 'loading' || loadState === 'more') &&
             Array.from({ length: loadState === 'loading' ? 12 : 6 }).map((_, i) => (
-              <GlassCardSkeleton key={`sk-${i}`} fluid />
+              <SkeletonCard key={`sk-${i}`} />
             ))
           }
         </div>
 
         {loadState === 'done' && items.length === 0 && (
-          <p className="font-mono text-sm text-ink-faint py-16 text-center">No anime found for this section.</p>
+          <div className="flex flex-col items-center justify-center gap-3 py-32 text-center">
+            <Film size={40} className="text-white/15" />
+            <p className="text-white/40 text-sm">No anime found for this section.</p>
+          </div>
         )}
 
         {/* Infinite-scroll sentinel */}
         <div ref={sentinelRef} className="h-8" />
 
         {loadState === 'done' && !hasNext && items.length > 0 && (
-          <p className="font-mono text-[11px] text-ink-faint/50 text-center py-6">You've reached the end.</p>
+          <p className="text-[11px] text-white/25 text-center py-6">You've reached the end.</p>
         )}
       </div>
     </div>

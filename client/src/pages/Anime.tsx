@@ -1,12 +1,9 @@
 /**
- * Anime — premium discovery page.
- *
- * Each row is a self-contained <AnimeRow> that lazy-fetches from AniList
- * only when it scrolls into view, so the initial paint is fast.
- * A shared seenIds ref is threaded through the top rows to reduce duplicates
- * between Trending / Popular / Top Rated.
+ * Anime — Netflix-style discovery page.
+ * AnimeHeroBanner is self-contained (fetches its own data).
+ * Each AnimeRow / AnimeRankRow lazy-loads via IntersectionObserver.
  */
-import { useState, useRef, useCallback, useEffect } from 'react';
+import { useState, useRef, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Search, X, ArrowRight } from 'lucide-react';
 import { getAnimePage, getCurrentSeason, formatSeason } from '../lib/anilist';
@@ -14,13 +11,12 @@ import AnimeRow from '../components/AnimeRow';
 import AnimeRankRow from '../components/AnimeRankRow';
 import AnimeHeroBanner from '../components/AnimeHeroBanner';
 import AniCard from '../components/AniCard';
-import { GlassCardSkeleton } from '../components/GlassCard';
+import { SkeletonCard } from '../components/ui/SkeletonCard';
 
 const SEASON      = getCurrentSeason() as string;
 const SEASON_YEAR = new Date().getFullYear();
 const SEASON_LABEL = `${formatSeason(SEASON)} ${SEASON_YEAR}`;
 
-// Order & set match the reference layout's genre rail exactly.
 const GENRE_ROWS: { title: string; genre?: string; tag?: string }[] = [
   { title: 'Romance',       genre: 'Romance' },
   { title: 'Action',        genre: 'Action' },
@@ -44,17 +40,6 @@ export default function Anime() {
   const seenIds = useRef<number[]>([]);
   const [trendingIds, setTrendingIds] = useState<number[]>([]);
   const [popularIds,  setPopularIds]  = useState<number[]>([]);
-
-  // Hero pool — auto-changing featured anime, sourced from live trending data.
-  const [heroTitles, setHeroTitles] = useState<any[]>([]);
-  useEffect(() => {
-    getAnimePage({ sort: 'TRENDING_DESC', perPage: 6 })
-      .then(setHeroTitles)
-      .catch((err) => {
-        console.error('[anime] hero fetch failed:', err);
-        setHeroTitles([]);
-      });
-  }, []);
 
   const onTrendingLoaded = useCallback((ids: number[]) => {
     seenIds.current = [...seenIds.current, ...ids];
@@ -88,51 +73,49 @@ export default function Anime() {
     setSearchState('idle');
   };
 
-  useEffect(() => {
-    if (query === '') clearSearch();
-  }, [query]); // eslint-disable-line react-hooks/exhaustive-deps
-
   return (
-    /* pb-28 = 112px — clears the floating BottomNav on mobile */
-    <div className="min-h-screen bg-void pb-28 md:pb-0">
+    <div className="min-h-screen pb-28 md:pb-0" style={{ background: '#0A0A0A' }}>
 
-      {/* Cinematic auto-changing hero */}
-      <AnimeHeroBanner titles={heroTitles} />
+      {/* Cinematic hero — self-contained */}
+      <AnimeHeroBanner />
 
-      {/* Search bar strip — kept below the hero so the banner reads uninterrupted */}
-      <div className="relative px-5 pt-6 pb-2">
+      {/* Search bar */}
+      <div className="px-4 md:px-6 pt-8 pb-2">
         <div className="flex items-center justify-between mb-4">
-          <span className="font-mono text-[10px] uppercase tracking-[0.22em] text-white/35 flex items-center gap-1.5">
+          <span className="text-[10px] uppercase tracking-[0.22em] text-white/35 flex items-center gap-1.5 font-medium">
             <span className="inline-block w-1.5 h-1.5 rounded-full bg-white/50 animate-pulse" />
             Live from AniList
           </span>
           <button
             onClick={() => nav('/anime/genres')}
-            className="font-mono text-[11px] text-ink-dim hover:text-ink transition-colors flex items-center gap-1"
+            className="text-[13px] text-white/40 hover:text-white transition-colors flex items-center gap-1"
           >
             Browse all genres &amp; tags
-            <ArrowRight size={11} strokeWidth={2.2} />
+            <ArrowRight size={12} strokeWidth={2.2} />
           </button>
         </div>
 
         <form onSubmit={handleSearch} className="flex gap-2 max-w-md">
           <div className="flex-1 relative">
-            <Search size={14} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-ink-faint pointer-events-none" />
+            <Search size={14} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-white/30 pointer-events-none" />
             <input
               type="text"
               value={query}
-              onChange={e => setQuery(e.target.value)}
+              onChange={e => { setQuery(e.target.value); if (e.target.value === '') clearSearch(); }}
               placeholder="Search any anime…"
-              className="w-full bg-surface/80 border border-line rounded-full pl-10 pr-4 py-2.5
-                text-sm text-ink placeholder:text-ink-faint outline-none
-                focus:border-white/[0.22] focus:bg-white/[0.07] transition-colors"
+              className="
+                w-full rounded-full pl-10 pr-4 py-2.5
+                text-sm text-white placeholder:text-white/30
+                border border-white/[0.10] bg-white/[0.06]
+                outline-none focus:border-white/[0.22] focus:bg-white/[0.08]
+                transition-colors
+              "
             />
           </div>
           <button
             type="submit"
             disabled={!query.trim() || searchState === 'loading'}
-            className="bg-white hover:bg-white/88 disabled:opacity-40 text-black font-mono
-              text-xs px-5 py-2.5 rounded-full transition-colors shrink-0 font-semibold"
+            className="bg-white hover:bg-white/88 disabled:opacity-40 text-black text-xs px-5 py-2.5 rounded-full transition-colors shrink-0 font-semibold"
           >
             {searchState === 'loading' ? '…' : 'Search'}
           </button>
@@ -141,7 +124,7 @@ export default function Anime() {
               type="button"
               aria-label="Clear search"
               onClick={clearSearch}
-              className="text-ink-faint hover:text-ink transition-colors px-1"
+              className="text-white/40 hover:text-white transition-colors px-1"
             >
               <X size={14} />
             </button>
@@ -151,24 +134,26 @@ export default function Anime() {
 
       {/* Search results */}
       {searchState !== 'idle' && (
-        <div className="px-5 pt-6 pb-2 border-b border-line">
+        <div className="px-4 md:px-6 pt-6 pb-4 border-b border-white/[0.06]">
           <div className="flex items-center gap-2 mb-4">
-            <span className="font-serif text-xl font-semibold tracking-tight">
+            <h2 className="text-xl font-bold text-white tracking-tight">
               {searchState === 'loading' ? 'Searching…' : `Results for "${query}"`}
-            </span>
+            </h2>
             {searchState === 'done' && (
-              <span className="font-mono text-[11px] text-ink-faint">{searchItems.length} found</span>
+              <span className="text-[11px] text-white/40">{searchItems.length} found</span>
             )}
           </div>
 
           {searchState === 'loading' && (
-            <div className="flex gap-3.5 overflow-x-auto scrollbar-hide pb-3">
-              {Array.from({ length: 6 }).map((_, i) => <GlassCardSkeleton key={i} />)}
+            <div className="flex gap-3 overflow-x-auto scrollbar-hide pb-3">
+              {Array.from({ length: 6 }).map((_, i) => (
+                <div key={i} className="shrink-0 w-[140px] sm:w-[180px]"><SkeletonCard /></div>
+              ))}
             </div>
           )}
 
           {searchState === 'error' && (
-            <p className="font-mono text-sm text-ink-faint py-4">
+            <p className="text-sm text-white/40 py-4">
               Search failed —{' '}
               <button onClick={() => setSearchState('idle')} className="text-white/60 hover:text-white underline underline-offset-2">
                 dismiss
@@ -177,54 +162,58 @@ export default function Anime() {
           )}
 
           {searchState === 'done' && searchItems.length === 0 && (
-            <p className="font-mono text-sm text-ink-faint py-4">No results found for "{query}".</p>
+            <p className="text-sm text-white/40 py-4">No results found for "{query}".</p>
           )}
 
           {searchState === 'done' && searchItems.length > 0 && (
-            <div className="flex gap-3.5 overflow-x-auto pb-3 scrollbar-hide" style={{ scrollSnapType: 'x mandatory' }}>
+            <div
+              className="flex gap-3 md:gap-4 overflow-x-auto pb-3 scrollbar-hide"
+              style={{ scrollSnapType: 'x mandatory' }}
+            >
               {searchItems.map(anime => <AniCard key={anime.id} anime={anime} />)}
             </div>
           )}
         </div>
       )}
 
+      {/* Content rows */}
       <AnimeRankRow title="Trending Anime" badge="LIVE" perPage={10} onLoaded={onTrendingLoaded} />
       <AnimeRow title="Popular Anime" badge="LIVE" sort="POPULARITY_DESC" perPage={20} notIds={trendingIds} onLoaded={onPopularLoaded} />
-      <AnimeRow title="Top Rated Anime" sort="SCORE_DESC" perPage={20} notIds={[...trendingIds, ...popularIds]} />
-      <AnimeRow title="Top Rated Anime Movies" sort="SCORE_DESC" format="MOVIE" perPage={20} />
+      <AnimeRow title="Top Rated" sort="SCORE_DESC" perPage={20} notIds={[...trendingIds, ...popularIds]} />
+      <AnimeRow title="Top Rated Movies" sort="SCORE_DESC" format="MOVIE" perPage={20} />
       <AnimeRow title="Airing Now" badge="NOW" sort="TRENDING_DESC" status="RELEASING" perPage={20} />
-      <AnimeRow title={`Seasonal Anime — ${SEASON_LABEL}`} sort="POPULARITY_DESC" season={SEASON} seasonYear={SEASON_YEAR} perPage={20} />
+      <AnimeRow title={`Seasonal — ${SEASON_LABEL}`} sort="POPULARITY_DESC" season={SEASON} seasonYear={SEASON_YEAR} perPage={20} />
 
       {GENRE_ROWS.map(row => (
         <AnimeRow key={row.title} title={row.title} genre={row.genre} tag={row.tag} sort="POPULARITY_DESC" perPage={16} />
       ))}
 
       {/* Browse All Genres CTA */}
-      <div className="px-5 pt-12 pb-8">
+      <div className="px-4 md:px-6 pt-12 pb-8">
         <button
           onClick={() => nav('/anime/genres')}
-          className="relative w-full overflow-hidden rounded-2xl border border-white/[0.07] group
-            bg-[radial-gradient(ellipse_120%_100%_at_20%_40%,rgba(255,255,255,0.04),rgba(15,16,20,0.9)_60%)]
+          className="
+            relative w-full overflow-hidden rounded-2xl
+            border border-white/[0.07] group
+            bg-[radial-gradient(ellipse_120%_100%_at_20%_40%,rgba(255,255,255,0.04),rgba(10,10,10,0.9)_60%)]
             hover:border-white/[0.14] transition-[border-color,box-shadow] duration-300
-            hover:shadow-[0_0_40px_-8px_rgba(255,255,255,0.08)]"
+            hover:shadow-[0_0_40px_-8px_rgba(255,255,255,0.08)]
+          "
         >
-          <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500
-            bg-[radial-gradient(ellipse_80%_60%_at_50%_50%,rgba(255,255,255,0.04),transparent_70%)]" />
-
+          <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500 bg-[radial-gradient(ellipse_80%_60%_at_50%_50%,rgba(255,255,255,0.04),transparent_70%)]" />
           <div className="relative flex flex-col md:flex-row items-start md:items-center justify-between gap-4 px-7 py-7">
             <div>
-              <div className="font-mono text-[10px] uppercase tracking-[0.2em] text-white/35 mb-2">
+              <div className="text-[10px] uppercase tracking-[0.2em] text-white/35 mb-2 font-medium">
                 AniList · Live data
               </div>
-              <h2 className="font-serif text-2xl md:text-3xl font-semibold text-ink leading-tight mb-1">
+              <h2 className="text-2xl md:text-3xl font-bold text-white leading-tight mb-1">
                 Browse All Genres &amp; Tags
               </h2>
-              <p className="font-mono text-sm text-ink-faint max-w-sm">
+              <p className="text-sm text-white/40 max-w-sm">
                 Every genre and media tag from AniList — searchable, filterable, with live previews.
               </p>
             </div>
-            <div className="shrink-0 flex items-center gap-2 font-mono text-sm text-white/50
-              group-hover:translate-x-1 group-hover:text-white/80 transition-[transform,color] duration-300">
+            <div className="shrink-0 flex items-center gap-2 text-sm text-white/50 group-hover:translate-x-1 group-hover:text-white/80 transition-[transform,color] duration-300">
               Explore <ArrowRight size={16} strokeWidth={2.2} />
             </div>
           </div>
