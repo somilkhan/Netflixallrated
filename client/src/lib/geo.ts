@@ -76,7 +76,8 @@ function writeCache(data: RegionInfo): void {
   try {
     const entry: CacheEntry = { data, expires: Date.now() + CACHE_TTL };
     localStorage.setItem(CACHE_KEY, JSON.stringify(entry));
-  } catch {
+  } catch (err) {
+    console.error('[geo] failed to write region cache', err);
   }
 }
 

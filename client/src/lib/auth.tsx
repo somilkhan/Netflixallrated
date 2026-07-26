@@ -90,7 +90,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
         unsubscribe = () => subscription.unsubscribe();
       })
-      .catch(() => { if (mounted) setIsLoading(false); });
+      .catch((err) => {
+        console.error('[auth] config lookup failed', err);
+        if (mounted) setIsLoading(false);
+      });
 
     return () => { mounted = false; unsubscribe?.(); };
   }, []);

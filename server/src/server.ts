@@ -82,27 +82,6 @@ app.use('/api/tmdb', tmdbRoutes);
 
 app.get('/api/health', (_req, res) => res.json({ status: 'ok' }));
 
-// ── Auto junk cleanup ──────────────────────────────────────────────────────
-// On every startup: delete unrated future-dated or posterless titles that
-// slipped in before the discover filters were tightened. Rated titles are
-// never touched. Runs silently in the background — non-blocking.
-async function autoCleanupJunk() {
-  try {
-    const currentYear = new Date().getFullYear();
-    const result = await prisma.title.deleteMany({
-      where: {
-        OR: [{ posterUrl: null }, { year: { gt: currentYear } }],
-        ratings: { none: {} },
-      },
-    });
-    if (result.count > 0) {
-      console.log(`[auto-cleanup] Removed ${result.count} unreleased/posterless titles with no ratings.`);
-    }
-  } catch (err) {
-    console.warn('[auto-cleanup] Failed (non-fatal):', (err as Error).message);
-  }
-}
-
 // ── Auto TMDB sync ─────────────────────────────────────────────────────────
 // On startup: if catalog is empty, seed with 5 pages (~100 movies) so the
 // UI isn't blank. The full catalog is populated incrementally via
