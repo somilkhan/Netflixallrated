@@ -359,7 +359,7 @@ export default function Browse() {
       {/* ── Grid ─────────────────────────────────────────────────────────── */}
       <div className={`px-4 md:px-6 ${isLiveCollection ? 'pt-6' : 'pt-[88px]'}`}>
         {visibleLoading ? (
-          <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5">
+          <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6">
             {Array.from({ length: isLiveCollection ? 20 : PAGE_SIZE }).map((_, i) => (
               <SkeletonCard key={i} />
             ))}
@@ -390,11 +390,11 @@ export default function Browse() {
             </button>
           </div>
         ) : (
-          <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5">
+          <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6">
             {visibleTitles.map(t => (
               isLiveCollection
-                ? <TmdbContentCard key={t.id} item={t as TmdbNormalized} fluid />
-                : <ContentCard key={t.id} title={t} fluid />
+                ? <TmdbContentCard key={t.id} item={t as TmdbNormalized} fluid className="w-full" />
+                : <ContentCard key={t.id} title={t} fluid className="w-full" />
             ))}
           </div>
         )}

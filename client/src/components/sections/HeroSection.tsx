@@ -153,9 +153,10 @@ const HeroSection = memo(function HeroSection({ titles, onAction, regionLabel }:
           <iframe
             key={`${current.trailerYoutubeId}-u`}
             className="absolute w-[177.78vh] min-w-full h-[56.25vw] min-h-full top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 pointer-events-none"
-            src={`https://www.youtube-nocookie.com/embed/${current.trailerYoutubeId}?autoplay=1&mute=0&loop=1&playlist=${current.trailerYoutubeId}&controls=0&showinfo=0&rel=0&iv_load_policy=3&disablekb=1&fs=0&modestbranding=1&playsinline=1`}
-            allow="autoplay; encrypted-media"
+            src={`https://www.youtube-nocookie.com/embed/${current.trailerYoutubeId}?autoplay=1&mute=1&loop=1&playlist=${current.trailerYoutubeId}&controls=0&showinfo=0&rel=0&iv_load_policy=3&disablekb=1&fs=0&modestbranding=1&playsinline=1&enablejsapi=0`}
             title="trailer background"
+            allow="autoplay; encrypted-media; fullscreen"
+            style={{ border: 'none' }}
           />
         </div>
       )}

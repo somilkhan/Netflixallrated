@@ -72,17 +72,17 @@ const MemoEpisodeRow = React.memo(function EpisodeRowInner({ index, style, items
             </div>
           )}
         </div>
-        <div className="ep-info">
-          <div className="ep-info-top">
-            <span className="ep-num">{ep.episodeNumber}.</span>
-            <span className="ep-name">{ep.name}</span>
+        <div className="ep-info" style={{ minWidth: 0 }}>
+          <div className="ep-info-top" style={{ display: 'flex', alignItems: 'baseline', gap: 4 }}>
+            <span className="ep-num" style={{ flexShrink: 0 }}>{ep.episodeNumber}.</span>
+            <span className="ep-name" style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{ep.name}</span>
           </div>
-          <div className="ep-info-meta">
+          <div className="ep-info-meta" style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
             {isContinue && <span className="ep-continue-badge">Continue · {continuePct}%</span>}
             {ep.runtimeMinutes ? <span>{ep.runtimeMinutes}m</span> : null}
             {ep.airDate ? <span>{ep.airDate}</span> : null}
           </div>
-          {ep.overview && <p className="ep-overview">{ep.overview}</p>}
+          {ep.overview && <p className="ep-overview" style={{ overflow: 'hidden', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical' }}>{ep.overview}</p>}
         </div>
       </div>
     </div>
@@ -146,7 +146,7 @@ export default function EpisodeBrowser({
     onSelectEpisode,
   }), [filtered, selectedEp, continueEpisode, continuePct, onSelectEpisode]);
 
-  const listHeight = Math.min(maxListHeight, Math.max(filtered.length, 1) * rowHeight);
+  const listHeight = Math.min(maxListHeight, Math.max(filtered.length, 1) * (rowHeight + 8));
 
   return (
     <div>
@@ -203,7 +203,7 @@ export default function EpisodeBrowser({
           <List
             rowComponent={EpisodeRow}
             rowCount={filtered.length}
-            rowHeight={rowHeight}
+            rowHeight={rowHeight + 8}
             rowProps={rowProps}
             style={{ height: listHeight }}
             overscanCount={4}

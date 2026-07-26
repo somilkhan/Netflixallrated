@@ -12,6 +12,7 @@
 
 import { prisma } from './prisma.js';
 
+const CACHE_TTL_MS = 30 * 60 * 1000;       // 30 min — force refresh after this
 const STALE_WARN_MS = 24 * 60 * 60 * 1000; // warn in logs if cache is >24 h old
 
 export async function withTmdbCache<T>(
@@ -50,6 +51,13 @@ export async function withTmdbCache<T>(
 
     if (!cached) {
       // Nothing in cache either — surface the original TMDB error
+      throw liveErr;
+    }
+
+    // If cache is older than TTL, treat it as a miss and rethrow
+    const cacheAge = Date.now() - cached.updatedAt.getTime();
+    if (cacheAge > CACHE_TTL_MS) {
+      console.warn(`[tmdb-cache] Cache expired for "${key}" (${Math.round(cacheAge / 60000)}m old), rethrowing`);
       throw liveErr;
     }
 

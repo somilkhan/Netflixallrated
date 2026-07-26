@@ -50,7 +50,10 @@ export default function Anime() {
   useEffect(() => {
     getAnimePage({ sort: 'TRENDING_DESC', perPage: 6 })
       .then(setHeroTitles)
-      .catch(() => setHeroTitles([]));
+      .catch((err) => {
+        console.error('[anime] hero fetch failed:', err);
+        setHeroTitles([]);
+      });
   }, []);
 
   const onTrendingLoaded = useCallback((ids: number[]) => {
@@ -73,7 +76,8 @@ export default function Anime() {
       const results = await getAnimePage({ search: q, sort: 'SEARCH_MATCH', perPage: 15 });
       setSearchItems(results);
       setSearchState('done');
-    } catch {
+    } catch (err) {
+      console.error('[anime] search failed:', err);
       setSearchState('error');
     }
   }, [query]);

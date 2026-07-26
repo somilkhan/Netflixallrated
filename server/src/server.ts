@@ -33,12 +33,12 @@ app.use(helmet({
   contentSecurityPolicy: {
     directives: {
       defaultSrc: ["'self'"],
-      imgSrc: ["'self'", "data:", "https://image.tmdb.org", "https://img.youtube.com", "https://i.ytimg.com"],
+      imgSrc: ["'self'", "data:", "https://image.tmdb.org", "https://img.youtube.com", "https://i.ytimg.com", "https://cdn.myanimelist.net"],
       scriptSrc: ["'self'", "'unsafe-inline'", "https://www.youtube-nocookie.com"],
       styleSrc: ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com"],
       fontSrc: ["'self'", "https:", "data:", "https://fonts.gstatic.com"],
-      frameSrc: ["'self'", "https:", "https://www.youtube-nocookie.com", "https://www.youtube.com"],
-      connectSrc: ["'self'", "https://api.themoviedb.org", "https://ipapi.co", "https://*.supabase.co"],
+      frameSrc: ["'self'", "https://www.youtube-nocookie.com", "https://www.youtube.com", "https://player.vimeo.com"],
+      connectSrc: ["'self'", "https://api.themoviedb.org", "https://ipapi.co", "https://graphql.anilist.co"],
       mediaSrc: ["'self'", "https:", "blob:"],
     },
   },
