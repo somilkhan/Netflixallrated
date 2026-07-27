@@ -3,7 +3,7 @@
  * Self-contained: fetches its own trending data. Matches HeroSection design exactly.
  */
 import { useState, useEffect, useCallback, useRef, memo } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { Play, Info, ChevronRight, ChevronLeft, ChevronDown } from 'lucide-react';
 import { getAnimePage } from '../lib/anilist';
 import { navigateToAnime } from '../lib/animeResolve';
@@ -12,6 +12,7 @@ const AUTO_MS = 8000;
 
 const AnimeHeroBanner = memo(function AnimeHeroBanner() {
   const nav = useNavigate();
+  const location = useLocation();
   const [titles, setTitles] = useState<any[]>([]);
   const [idx, setIdx] = useState(0);
   const [imgLoaded, setImgLoaded] = useState<Record<number, boolean>>({});
@@ -51,9 +52,11 @@ const AnimeHeroBanner = memo(function AnimeHeroBanner() {
     const current = titles[idx];
     if (!current || resolving) return;
     setResolving(true);
-    navigateToAnime(current, (path) => nav(play ? `${path}?play=1` : path))
+    navigateToAnime(current, (path) => nav(play ? `${path}?play=1` : path, {
+      state: { from: `${location.pathname}${location.search}` },
+    }))
       .finally(() => setResolving(false));
-  }, [idx, nav, resolving, titles]);
+  }, [idx, nav, resolving, titles, location.pathname, location.search]);
 
   if (!titles.length) return null;
 

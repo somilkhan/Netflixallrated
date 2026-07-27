@@ -5,7 +5,7 @@
  */
 import { memo, useState, useCallback, type KeyboardEvent, type MouseEvent } from 'react';
 import { Play, Plus, Info, Film, Star } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { tmdbSrcSet } from '../../services/tmdb';
 
 /** Highlight matching substring in title text */
@@ -103,6 +103,7 @@ const ContentCard = memo(function ContentCard({
   onNavigate,
 }: ContentCardProps) {
   const nav = useNavigate();
+  const location = useLocation();
   const [imgLoaded, setImgLoaded] = useState(false);
   const [imgError,  setImgError]  = useState(false);
 
@@ -116,8 +117,8 @@ const ContentCard = memo(function ContentCard({
   // This avoids the invalid interactive-element nesting that breaks touch and keyboard input.
   const handleClick = useCallback(() => {
     if (onNavigate) onNavigate(false);
-    else nav(`/title/${title.id}`);
-  }, [nav, title.id, onNavigate]);
+    else nav(`/title/${title.id}`, { state: { from: `${location.pathname}${location.search}` } });
+  }, [nav, title.id, onNavigate, location.pathname, location.search]);
   const handleKeyDown = useCallback((e: KeyboardEvent<HTMLDivElement>) => {
     if (e.key === 'Enter' || e.key === ' ') {
       e.preventDefault();
@@ -127,8 +128,8 @@ const ContentCard = memo(function ContentCard({
   const handlePlay = useCallback((e: MouseEvent<HTMLButtonElement>) => {
     e.stopPropagation();
     if (onNavigate) onNavigate(true);
-    else nav(`/title/${title.id}?play=1`);
-  }, [nav, title.id, onNavigate]);
+    else nav(`/title/${title.id}?play=1`, { state: { from: `${location.pathname}${location.search}` } });
+  }, [nav, title.id, onNavigate, location.pathname, location.search]);
   const handleAddList = useCallback((e: MouseEvent<HTMLButtonElement>) => {
     e.stopPropagation();
     onAddToList?.(title.id);
@@ -136,8 +137,8 @@ const ContentCard = memo(function ContentCard({
   const handleInfo = useCallback((e: MouseEvent<HTMLButtonElement>) => {
     e.stopPropagation();
     if (onNavigate) onNavigate(false);
-    else nav(`/title/${title.id}`);
-  }, [nav, title.id, onNavigate]);
+    else nav(`/title/${title.id}`, { state: { from: `${location.pathname}${location.search}` } });
+  }, [nav, title.id, onNavigate, location.pathname, location.search]);
 
   if (!title?.id) return null;
 

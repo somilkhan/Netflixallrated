@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback, useRef, useMemo, memo } from 'react';
 import { Play as PlayIcon } from 'lucide-react';
-import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
+import { useParams, useNavigate, useSearchParams, useLocation } from 'react-router-dom';
 import { api } from '../lib/api';
 import { getMovieDetails, getTVDetails, getMovieVideos, getTVVideos } from '../services/tmdb';
 import { tmdbSrcSet } from '../services/tmdb';
@@ -196,6 +196,7 @@ export default function TitleDetail() {
   const { id, tmdbId: tmdbIdParam } = useParams<{ id?: string; tmdbId?: string }>();
   const { user } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
   const [searchParams] = useSearchParams();
   const autoPlay = searchParams.get('play') === '1';
 
@@ -422,7 +423,10 @@ export default function TitleDetail() {
     api.titles.resolveTmdb(numericTmdbId, tmdbType)
       .then(({ id: backendId }: { id: string }) => {
         if (cancelled) return;
-        navigate(`/title/${backendId}${autoPlay ? '?play=1' : ''}`, { replace: true });
+        navigate(`/title/${backendId}${autoPlay ? '?play=1' : ''}`, {
+          replace: true,
+          state: location.state,
+        });
       })
       .catch(async () => {
         if (cancelled) return;
@@ -1087,7 +1091,11 @@ export default function TitleDetail() {
         <button
           className="hero-back-btn"
           aria-label="Go back"
-          onClick={() => navigate(-1)}
+          onClick={() => {
+            const from = (location.state as { from?: string } | null)?.from;
+            if (from) navigate(from);
+            else navigate(-1);
+          }}
         >
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2">
             <polyline points="15 18 9 12 15 6" />

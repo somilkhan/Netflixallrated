@@ -4,7 +4,7 @@
  * AniList ID to a local DB title via the backend (same flow as before).
  */
 import { memo, useState, useCallback } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { Play, Film, Star } from 'lucide-react';
 import { navigateToAnime } from '../lib/animeResolve';
 
@@ -31,6 +31,7 @@ interface AniCardProps {
 
 const AniCard = memo(function AniCard({ anime, rank, fluid = false, className = '' }: AniCardProps) {
   const nav = useNavigate();
+  const location = useLocation();
   const [imgLoaded, setImgLoaded] = useState(false);
   const [imgError, setImgError] = useState(false);
   const [resolving, setResolving] = useState(false);
@@ -44,9 +45,11 @@ const AniCard = memo(function AniCard({ anime, rank, fluid = false, className = 
   const handleNav = useCallback((play = false) => {
     if (resolving) return;
     setResolving(true);
-    navigateToAnime(anime, (path) => nav(play ? `${path}?play=1` : path))
+    navigateToAnime(anime, (path) => nav(play ? `${path}?play=1` : path, {
+      state: { from: `${location.pathname}${location.search}` },
+    }))
       .finally(() => setResolving(false));
-  }, [anime, nav, resolving]);
+  }, [anime, nav, resolving, location.pathname, location.search]);
 
   return (
     <article

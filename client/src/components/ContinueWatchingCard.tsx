@@ -1,5 +1,5 @@
 import React, { useCallback } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 import ContentCard from './ui/ContentCard';
 import { X } from 'lucide-react';
 
@@ -25,6 +25,7 @@ interface ContinueWatchingCardProps {
 
 function ContinueWatchingCard({ item, onRemove }: ContinueWatchingCardProps) {
   const navigate = useNavigate();
+  const location = useLocation();
   const { title, positionSeconds, durationSeconds, seasonNumber, episodeNumber, completed } = item;
 
   const pct = durationSeconds && durationSeconds > 0
@@ -39,8 +40,10 @@ function ContinueWatchingCard({ item, onRemove }: ContinueWatchingCardProps) {
       : null;
 
   const handleClick = useCallback(() => {
-    navigate(`/title/${title.id}?play=1`);
-  }, [navigate, title.id]);
+    navigate(`/title/${title.id}?play=1`, {
+      state: { from: `${location.pathname}${location.search}` },
+    });
+  }, [navigate, title.id, location.pathname, location.search]);
 
   return (
     <div className="relative group shrink-0 w-[92px] md:w-[124px]">
