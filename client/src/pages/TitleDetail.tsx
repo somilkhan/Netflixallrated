@@ -1075,7 +1075,7 @@ export default function TitleDetail() {
         backgroundPosition: 'center 25%',
       }
     : {
-        background: `radial-gradient(90% 70% at 30% 0%, ${title.posterColorFrom || '#1a1a2e'}, ${title.posterColorTo || '#0c0a0a'} 80%)`,
+        background: 'radial-gradient(90% 70% at 30% 0%, #1e1e2e, #0A0A0A 80%)',
       };
 
   return (
@@ -1119,7 +1119,7 @@ export default function TitleDetail() {
                 style={{
                   backgroundImage: posterUrl
                     ? `url(${posterUrl})`
-                    : `radial-gradient(120% 100% at 30% 0%, ${title.posterColorFrom || '#4a1520'}, ${title.posterColorTo || '#0c0a0a'} 70%)`,
+                    : 'radial-gradient(120% 100% at 30% 0%, #1e1e2e, #0A0A0A 70%)',
                 }}
               />
 

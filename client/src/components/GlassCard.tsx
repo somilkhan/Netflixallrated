@@ -47,7 +47,7 @@ const TIER_LABEL: Record<string, string> = {
 };
 
 const GlassCard = memo(function GlassCard({
-  posterUrl, posterColorFrom, posterColorTo, title, typeLabel, year, runtimeMinutes,
+  posterUrl, posterColorFrom: _posterColorFrom, posterColorTo: _posterColorTo, title, typeLabel, year, runtimeMinutes,
   genres = [], overview, ratingLabel, providers = [], rank, onClick, onPlay,
   className = '', overlay, fluid = false, priority = false,
 }: GlassCardProps) {
@@ -148,8 +148,8 @@ const GlassCard = memo(function GlassCard({
             className="absolute inset-0 flex flex-col items-center justify-center gap-2 px-3"
             style={{
               background: `radial-gradient(130% 110% at 30% 0%,
-                ${posterColorFrom || '#221416'},
-                ${posterColorTo  || '#090909'} 72%)`,
+                #1e1e2e,
+                #0A0A0A 75%)`,
             }}
           >
             <Film size={22} className="text-ink-faint/30" />
