@@ -22,8 +22,9 @@ async function tmdbFetch<T>(
   // Railway), and avoids stale or invalid VITE_TMDB_API_KEY values being
   // embedded into a deployed browser bundle.
   const url = new URL(`${TMDB_PROXY_BASE}${path}`, window.location.origin);
-  url.searchParams.set('language', 'en-US');
   Object.entries(params).forEach(([k, v]) => url.searchParams.set(k, v));
+  // Always force English metadata regardless of region — set AFTER params so it wins over applyRegion's language
+  url.searchParams.set('language', 'en-US');
 
   const cacheKey = url.toString();
   const cached = _cache.get(cacheKey);
