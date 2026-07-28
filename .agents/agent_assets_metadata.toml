@@ -12,3 +12,9 @@ id = "OZ7HOK3TjHFtobH4odr51"
 uri = "file://reports/allrated-product-audit-and-roadmap.pdf"
 type = "pdf"
 title = "Allrated Product Audit & Roadmap"
+
+[[outputs]]
+id = "VBK45L-0y1iMLmzcRbZvF"
+uri = "file://Allrated_Streaming_Integration_Brief.pdf"
+type = "pdf"
+title = "Streaming Integration Agent Brief — Allrated"
