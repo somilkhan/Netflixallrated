@@ -1394,7 +1394,7 @@ export default function TitleDetail() {
                   key={`${serverId}-${selectedSeason}-${selectedEp}-${iframeKey}`}
                   src={embedUrl || ''}
                   allowFullScreen
-                  allow="autoplay; fullscreen; picture-in-picture; encrypted-media"
+                  allow="autoplay; fullscreen; picture-in-picture; encrypted-media; clipboard-write; web-share"
                   title={title.name}
                   onLoad={() => setIsIframeLoading(false)}
                   onError={() => { setIsIframeLoading(false); setIframeError(true); }}
@@ -1571,8 +1571,7 @@ export default function TitleDetail() {
                     key={`anime-${animeProvider}-${selectedEp}-${iframeKey}`}
                     src={embedUrl}
                     allowFullScreen
-                    allow="autoplay; fullscreen; picture-in-picture; encrypted-media"
-                    referrerPolicy="no-referrer"
+                    allow="autoplay; fullscreen; picture-in-picture; encrypted-media; clipboard-write; web-share"
                     title={title.name}
                     onLoad={() => setIsIframeLoading(false)}
                     onError={() => { setIsIframeLoading(false); setIframeError(true); }}

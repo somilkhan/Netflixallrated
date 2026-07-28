@@ -37,8 +37,11 @@ app.use(helmet({
       scriptSrc: ["'self'", "'unsafe-inline'", "https://www.youtube-nocookie.com"],
       styleSrc: ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com"],
       fontSrc: ["'self'", "https:", "data:", "https://fonts.gstatic.com"],
-      frameSrc: ["'self'", "https://www.youtube-nocookie.com", "https://www.youtube.com", "https://player.vimeo.com"],
-      connectSrc: ["'self'", "https://api.themoviedb.org", "https://ipapi.co", "https://graphql.anilist.co"],
+      // Allow all HTTPS iframes — embed players (VidSrc, Filmu, 2Embed, NebulaFlix,
+      // Screenscape, Anicrush, etc.) come from many different domains that rotate
+      // frequently. Locking to specific domains breaks players silently.
+      frameSrc: ["'self'", "https:"],
+      connectSrc: ["'self'", "https://api.themoviedb.org", "https://ipapi.co", "https://graphql.anilist.co", "https:"],
       mediaSrc: ["'self'", "https:", "blob:"],
     },
   },

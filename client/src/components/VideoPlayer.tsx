@@ -988,8 +988,7 @@ export default function VideoPlayer({
               src={embedUrl ?? ''}
               className="absolute inset-0 w-full h-full border-0"
               allowFullScreen
-              allow="autoplay; fullscreen; picture-in-picture; encrypted-media"
-              referrerPolicy="no-referrer"
+              allow="autoplay; fullscreen; picture-in-picture; encrypted-media; clipboard-write; web-share"
               title={title.name}
             />
           )}
