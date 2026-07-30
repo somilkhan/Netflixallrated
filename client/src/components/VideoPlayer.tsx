@@ -822,7 +822,7 @@ export default function VideoPlayer({
         {/* Title + episode info */}
         <div className="shrink-0">
           <p className="text-[13px] font-semibold text-white leading-tight truncate max-w-[200px] md:max-w-none">
-            {title.name}
+            {title?.name ?? 'Untitled'}
           </p>
           <p className="text-[10px] text-white/40 font-mono mt-0.5">
             {title.type === 'SERIES'
@@ -989,7 +989,7 @@ export default function VideoPlayer({
               className="absolute inset-0 w-full h-full border-0"
               allowFullScreen
               allow="autoplay; fullscreen; picture-in-picture; encrypted-media; clipboard-write; web-share"
-              title={title.name}
+              title={title?.name ?? 'Untitled'}
             />
           )}
         </div>

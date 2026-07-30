@@ -46,7 +46,7 @@ function SwipeCard({
       <button
         type="button"
         onClick={() => onRemove(item)}
-        aria-label={`Remove ${item.title.name} from My List`}
+        aria-label={`Remove ${item.title?.name ?? 'Untitled'} from My List`}
         className="absolute right-0 top-0 bottom-8 z-0 flex w-[76px] items-center justify-center rounded-xl bg-red-500/80 text-white md:hidden"
       >
         <X size={18} />
@@ -62,7 +62,7 @@ function SwipeCard({
             event.stopPropagation();
             onRemove(item);
           }}
-          aria-label={`Remove ${item.title.name} from My List`}
+          aria-label={`Remove ${item.title?.name ?? 'Untitled'} from My List`}
           className="absolute right-2 top-2 z-30 hidden h-7 w-7 items-center justify-center rounded-full border border-white/15 bg-black/75 text-white/80 shadow-lg transition-colors hover:bg-red-500 hover:text-white md:flex"
         >
           <X size={14} />

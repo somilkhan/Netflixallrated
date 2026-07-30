@@ -155,7 +155,7 @@ const ContentCard = memo(function ContentCard({
       <div
         role="link"
         tabIndex={0}
-        aria-label={`View ${title.name}`}
+        aria-label={`View ${title?.name ?? 'Untitled'}`}
         onClick={handleClick}
         onKeyDown={handleKeyDown}
         className="
@@ -196,7 +196,7 @@ const ContentCard = memo(function ContentCard({
               <img
                 {...tmdbSrcSet(title.posterUrl)!}
                 sizes="(max-width: 640px) 45vw, (max-width: 1024px) 30vw, 230px"
-                alt={title.name}
+                alt={title?.name ?? 'Untitled'}
                 loading="lazy"
                 decoding="async"
                 onLoad={() => setImgLoaded(true)}
@@ -219,7 +219,7 @@ const ContentCard = memo(function ContentCard({
           >
             <Film size={22} className="text-white/20" />
             <span className="text-[9px] text-white/25 text-center leading-tight line-clamp-3">
-              {title.name}
+              {title?.name ?? 'Untitled'}
             </span>
           </div>
         )}
@@ -277,7 +277,7 @@ const ContentCard = memo(function ContentCard({
       <div className="hidden md:block absolute inset-0 z-20 opacity-0 md:group-hover:opacity-100 transition-opacity duration-[400ms] pointer-events-none">
         <button
           type="button"
-          aria-label={`Play ${title.name}`}
+          aria-label={`Play ${title?.name ?? 'Untitled'}`}
           onClick={handlePlay}
           className="pointer-events-auto absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 flex items-center justify-center w-12 h-12 rounded-full bg-white hover:bg-white/90 shadow-[0_4px_24px_rgba(0,0,0,0.6)] transition-transform duration-200 active:scale-90 scale-90 group-hover:scale-100"
           style={{ touchAction: 'manipulation', transition: 'transform 400ms cubic-bezier(0.4,0,0.2,1)' }}
@@ -292,12 +292,12 @@ const ContentCard = memo(function ContentCard({
             transition: 'transform 400ms cubic-bezier(0.4,0,0.2,1)',
           }}
         >
-          <p className="text-[12px] font-semibold text-white leading-tight line-clamp-1 mb-1.5">{title.name}</p>
+          <p className="text-[12px] font-semibold text-white leading-tight line-clamp-1 mb-1.5">{title?.name ?? 'Untitled'}</p>
           <div className="flex items-center justify-between gap-1">
             {onAddToList ? (
               <button
                 type="button"
-                aria-label={`Add ${title.name} to list`}
+                aria-label={`Add ${title?.name ?? 'Untitled'} to list`}
                 onClick={handleAddList}
                 className="pointer-events-auto flex items-center gap-1 px-2 py-1 rounded-full bg-white/10 border border-white/10 text-white/80 hover:text-white hover:bg-white/20 text-[10px] font-medium transition-colors duration-150"
               >
@@ -306,7 +306,7 @@ const ContentCard = memo(function ContentCard({
             ) : <span />}
             <button
               type="button"
-              aria-label={`Info about ${title.name}`}
+              aria-label={`Info about ${title?.name ?? 'Untitled'}`}
               onClick={handleInfo}
               className="pointer-events-auto flex items-center justify-center w-7 h-7 rounded-full bg-white/10 border border-white/10 text-white/80 hover:text-white hover:bg-white/20 transition-colors duration-150"
             >
@@ -320,8 +320,8 @@ const ContentCard = memo(function ContentCard({
       <div className="mt-2 px-0.5">
             <p className="text-[14px] font-semibold text-white leading-[1.25] line-clamp-2">
           {highlightQuery
-            ? <HighlightText text={title.name} query={highlightQuery} />
-            : title.name}
+            ? <HighlightText text={title?.name ?? 'Untitled'} query={highlightQuery} />
+            : title?.name ?? 'Untitled'}
         </p>
         <div className="flex items-center gap-1.5 mt-0.5">
           {rating && (

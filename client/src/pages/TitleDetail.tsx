@@ -491,7 +491,7 @@ export default function TitleDetail() {
     const description = title.synopsis
       ? title.synopsis.slice(0, 200).replace(/<[^>]+>/g, '')
       : undefined;
-    setPageMeta(`/title/${id}`, title.name, description, image);
+    setPageMeta(`/title/${id}`, title?.name ?? 'Untitled', description, image);
   }, [title, id]);
 
   useEffect(() => {
@@ -529,7 +529,7 @@ export default function TitleDetail() {
     setFlixhqUrl(null);
     setFlixhqError(null);
     setFlixhqLoading(true);
-    api.consumet.moviesAuto(title.name, title.type, selectedSeason, selectedEp)
+    api.consumet.moviesAuto(title?.name ?? '', title?.type ?? 'MOVIE', selectedSeason, selectedEp)
       .then((data: any) => {
         if (reqId !== flixhqReqRef.current) return;
         if (data?.playerUrl) setFlixhqUrl(data.playerUrl);
@@ -557,7 +557,7 @@ export default function TitleDetail() {
       title.type === 'MOVIE' ? 'movie' : 'tv',
       selectedSeason,
       selectedEp,
-      title.name,
+      title?.name ?? '',
     )
       .then((data: any) => {
         if (reqId !== febboxReqRef.current) return;
@@ -588,7 +588,7 @@ export default function TitleDetail() {
     setHdhubUrl(null);
     setHdhubError(null);
     setHdhubLoading(true);
-    api.screenscape.hdhub4uResolve(title.name)
+    api.screenscape.hdhub4uResolve(title?.name ?? '')
       .then((data: any) => {
         if (reqId !== hdhubReqRef.current) return;
         const url = data?.streamUrl ?? data?.embedUrl ?? null;
@@ -612,7 +612,7 @@ export default function TitleDetail() {
     setHubError(null);
     setHubLoading(true);
     api.screenscape.resolve(
-      title.name,
+      title?.name ?? '',
       title.type === 'MOVIE' ? 'movie' : 'tv',
       selectedSeason,
       selectedEp,
@@ -681,7 +681,7 @@ export default function TitleDetail() {
     if (title.type === 'ANIME') {
       setAnilistData(null);
       setAnilistLoading(true);
-      getAnimeDetail(title.anilistId ? { id: title.anilistId } : { name: title.name })
+      getAnimeDetail(title.anilistId ? { id: title.anilistId } : { name: title?.name ?? '' })
         .then((data) => { if (!cancelled && data) setAnilistData(data); })
         .catch(() => {})
         .finally(() => { if (!cancelled) setAnilistLoading(false); });
@@ -724,7 +724,7 @@ export default function TitleDetail() {
       try {
         // Call anicrush directly from the browser — bypasses Cloudflare's
         // datacenter IP block that affects server-side proxy requests (521).
-        const movies = await anicrushSearch(title.name);
+        const movies = await anicrushSearch(title?.name ?? '');
         if (signal.aborted) return;
 
         if (!movies.length) throw new Error('Not found on Anicrush');
@@ -778,7 +778,7 @@ export default function TitleDetail() {
     const reqId = ++gogoSearchReqRef.current;
 
     // Try multiple name variants: prefer English title from anilist, then romaji, then stored name
-    const searchName = title.name;
+    const searchName = title?.name ?? '';
     api.consumet.animeSearch(searchName)
       .then((data: any) => {
         if (gogoSearchReqRef.current !== reqId) return; // stale — a newer title navigated in
@@ -1395,7 +1395,7 @@ export default function TitleDetail() {
                   src={embedUrl || ''}
                   allowFullScreen
                   allow="autoplay; fullscreen; picture-in-picture; encrypted-media; clipboard-write; web-share"
-                  title={title.name}
+                  title={title?.name ?? 'Untitled'}
                   onLoad={() => setIsIframeLoading(false)}
                   onError={() => { setIsIframeLoading(false); setIframeError(true); }}
                   style={{ opacity: isIframeLoading ? 0 : 1 }}
@@ -1572,7 +1572,7 @@ export default function TitleDetail() {
                     src={embedUrl}
                     allowFullScreen
                     allow="autoplay; fullscreen; picture-in-picture; encrypted-media; clipboard-write; web-share"
-                    title={title.name}
+                    title={title?.name ?? 'Untitled'}
                     onLoad={() => setIsIframeLoading(false)}
                     onError={() => { setIsIframeLoading(false); setIframeError(true); }}
                     style={{ opacity: isIframeLoading ? 0 : 1 }}

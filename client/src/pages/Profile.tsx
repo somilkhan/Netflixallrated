@@ -212,7 +212,7 @@ export default function Profile() {
                     {item.title.posterUrl && (
                       <img
                         {...tmdbSrcSet(item.title.posterUrl)}
-                        alt={item.title.name}
+                        alt={item.title?.name ?? ''}
                         className="absolute inset-0 w-full h-full object-cover"
                         loading="lazy"
                         decoding="async"
@@ -243,7 +243,7 @@ export default function Profile() {
                       </div>
                     )}
                   </div>
-                  <p className="text-[12px] font-medium text-white leading-tight line-clamp-2">{item.title.name}</p>
+                  <p className="text-[12px] font-medium text-white leading-tight line-clamp-2">{item.title?.name ?? 'Untitled'}</p>
                   <p className="text-[10px] text-white/40 mt-0.5">{timeAgo(item.updatedAt)}</p>
                 </div>
               );
