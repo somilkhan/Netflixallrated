@@ -74,14 +74,14 @@ function HistoryRow({
         className="relative shrink-0 w-12 h-16 rounded-md overflow-hidden bg-white/5 cursor-pointer"
         role="button"
         tabIndex={0}
-        aria-label={`Play ${item.title.name}`}
+        aria-label={`Play ${item.title?.name ?? 'Untitled'}`}
         onClick={() => navigate(`/title/${item.title.id}?play=1`)}
         onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); navigate(`/title/${item.title.id}?play=1`); } }}
       >
         {item.title.posterUrl ? (
           <img
             {...tmdbSrcSet(item.title.posterUrl)}
-            alt={item.title.name}
+            alt={item.title?.name ?? 'Untitled'}
             className="w-full h-full object-cover"
             loading="lazy"
             decoding="async"
@@ -113,11 +113,11 @@ function HistoryRow({
         className="flex-1 min-w-0 cursor-pointer"
         role="button"
         tabIndex={0}
-        aria-label={`View ${item.title.name}`}
+        aria-label={`View ${item.title?.name ?? 'Untitled'}`}
         onClick={() => navigate(`/title/${item.title.id}?play=1`)}
         onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); navigate(`/title/${item.title.id}?play=1`); } }}
       >
-        <p className="text-sm font-semibold text-white leading-tight truncate">{item.title.name}</p>
+        <p className="text-sm font-semibold text-white leading-tight truncate">{item.title?.name ?? 'Untitled'}</p>
         <p className="text-[10px] text-white/40 mt-0.5">
           {typeLabel} · {item.title.year}
         </p>

@@ -437,7 +437,7 @@ export default function CategoriesPage() {
           })),
         );
       })
-      .catch(() => {});
+      .catch((err) => console.error('[geo]', err));
   }, []);
 
   const filteredGenres = useMemo(() => {

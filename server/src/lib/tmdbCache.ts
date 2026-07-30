@@ -68,6 +68,11 @@ export async function withTmdbCache<T>(
       );
     }
 
-    return { data: JSON.parse(cached.value) as T, fromCache: true };
+    try {
+      return { data: JSON.parse(cached.value) as T, fromCache: true };
+    } catch (parseErr) {
+      console.error(`[tmdb-cache] Failed to parse cached value for "${key}":`, parseErr);
+      throw liveErr;
+    }
   }
 }

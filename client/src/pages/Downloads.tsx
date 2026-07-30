@@ -102,7 +102,7 @@ export default function Downloads() {
           {items.map(item => (
             <div key={item.id} className="group relative">
               <ContentCard title={item.title} fluid />
-              <button type="button" onClick={() => save(items.filter(entry => entry.id !== item.id))} aria-label={`Delete ${item.title.name} download`} className="absolute right-2 top-2 z-30 flex h-7 w-7 items-center justify-center rounded-full border border-white/15 bg-black/75 text-white/80 hover:bg-red-500 hover:text-white">
+              <button type="button" onClick={() => save(items.filter(entry => entry.id !== item.id))} aria-label={`Delete ${item.title?.name ?? 'Untitled'} download`} className="absolute right-2 top-2 z-30 flex h-7 w-7 items-center justify-center rounded-full border border-white/15 bg-black/75 text-white/80 hover:bg-red-500 hover:text-white">
                 <X size={14} />
               </button>
               <div className="mt-2 flex items-center justify-between gap-2 text-[11px] text-white/45">
