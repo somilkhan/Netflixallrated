@@ -1,10 +1,15 @@
 import { useEffect, useState, type RefObject } from 'react';
 
+export interface UseHasIntersectedOptions extends IntersectionObserverInit {
+  triggerOnce?: boolean;
+}
+
 export function useHasIntersected(
   ref: RefObject<Element>,
-  options: IntersectionObserverInit = {},
+  options: UseHasIntersectedOptions = {},
 ) {
   const [hasIntersected, setHasIntersected] = useState(false);
+  const { triggerOnce = true, ...observerOptions } = options;
 
   useEffect(() => {
     const element = ref.current;
@@ -12,12 +17,21 @@ export function useHasIntersected(
       setHasIntersected(true);
       return;
     }
+
     const observer = new IntersectionObserver(([entry]) => {
-      if (entry?.isIntersecting) setHasIntersected(true);
-    }, { rootMargin: '240px', ...options });
+      if (entry?.isIntersecting) {
+        setHasIntersected(true);
+        if (triggerOnce) {
+          observer.disconnect();
+        }
+      } else if (!triggerOnce) {
+        setHasIntersected(false);
+      }
+    }, { rootMargin: '240px', ...observerOptions });
+
     observer.observe(element);
     return () => observer.disconnect();
-  }, [ref, options.root, options.rootMargin, options.threshold]);
+  }, [ref, observerOptions.root, observerOptions.rootMargin, observerOptions.threshold, triggerOnce]);
 
   return hasIntersected;
 }
