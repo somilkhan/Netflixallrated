@@ -1,0 +1,3 @@
+## 2025-03-01 - Infinite Scroll Sentinel & DOM Observation Overhead
+**Learning:** Adding lazy loading below the fold using IntersectionObserver often introduces continuous observation overhead if triggerOnce is not supported, while keeping the observer alive for infinite scroll sentinels requires disabling triggerOnce so the scroll detector resets when out of view.
+**Action:** Enhance the `useHasIntersected` hook to accept a `triggerOnce?: boolean` option defaulting to true (perfect for lazy images and section wrappers), and explicitly pass `triggerOnce: false` to the infinite scroll sentinel in SearchResults.
