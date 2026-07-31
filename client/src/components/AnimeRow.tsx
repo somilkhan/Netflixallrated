@@ -25,11 +25,14 @@ interface AnimeRowProps {
   viewAllHref?: string;
   notIds?: number[];
   onLoaded?: (ids: number[]) => void;
+  /** Fetch immediately on mount instead of waiting for IntersectionObserver */
+  eager?: boolean;
 }
 
 const AnimeRow = memo(function AnimeRow({
   title, badge, sort = 'POPULARITY_DESC', genre, tag, status,
   season, seasonYear, format, perPage = 20, viewAllHref, notIds, onLoaded,
+  eager = false,
 }: AnimeRowProps) {
   const nav = useNavigate();
   const [items, setItems] = useState<any[]>([]);
@@ -47,6 +50,8 @@ const AnimeRow = memo(function AnimeRow({
   const resolvedViewAllHref = viewAllHref ?? buildAnimeSectionHref({ title, sort, genre, tag, status, season, seasonYear, format });
 
   const fetchData = useCallback(() => {
+    if (didFetch.current) return;
+    didFetch.current = true;
     setLoadState('loading');
     getAnimePage({ sort, genre, tag, status, season, seasonYear, format, perPage, idNotIn: notIdsRef.current })
       .then((media: any[]) => {
@@ -58,23 +63,25 @@ const AnimeRow = memo(function AnimeRow({
         console.error(`[anime] failed to load "${title}"`, err);
         setLoadState('error');
       });
-  }, [sort, genre, tag, status, season, seasonYear, format, perPage]);
+  }, [sort, genre, tag, status, season, seasonYear, format, perPage, title]);
 
+  // Eager rows fetch immediately on mount
   useEffect(() => {
+    if (eager) fetchData();
+  }, [eager, fetchData]);
+
+  // Lazy rows fetch when scrolled into view
+  useEffect(() => {
+    if (eager) return;
     const el = sectionRef.current;
     if (!el) return;
     const io = new IntersectionObserver(
-      ([entry]) => {
-        if (entry.isIntersecting && !didFetch.current) {
-          didFetch.current = true;
-          fetchData();
-        }
-      },
+      ([entry]) => { if (entry.isIntersecting) fetchData(); },
       { rootMargin: '300px 0px', threshold: 0 },
     );
     io.observe(el);
     return () => io.disconnect();
-  }, [fetchData]);
+  }, [eager, fetchData]);
 
   const scroll = useCallback((dir: 'left' | 'right') => {
     const el = scrollRef.current;

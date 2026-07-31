@@ -16,9 +16,11 @@ interface AnimeRankRowProps {
   badge?: string;
   perPage?: number;
   onLoaded?: (ids: number[]) => void;
+  /** Fetch immediately on mount instead of waiting for IntersectionObserver */
+  eager?: boolean;
 }
 
-const AnimeRankRow = memo(function AnimeRankRow({ title, badge, perPage = 10, onLoaded }: AnimeRankRowProps) {
+const AnimeRankRow = memo(function AnimeRankRow({ title, badge, perPage = 10, onLoaded, eager = false }: AnimeRankRowProps) {
   const nav = useNavigate();
   const [items, setItems] = useState<any[]>([]);
   const [loadState, setLoadState] = useState<'idle' | 'loading' | 'done' | 'error'>('idle');
@@ -32,6 +34,8 @@ const AnimeRankRow = memo(function AnimeRankRow({ title, badge, perPage = 10, on
   const viewAllHref = buildAnimeSectionHref({ title, sort: 'TRENDING_DESC' });
 
   const fetchData = useCallback(() => {
+    if (didFetch.current) return;
+    didFetch.current = true;
     setLoadState('loading');
     getAnimePage({ sort: 'TRENDING_DESC', perPage })
       .then((media: any[]) => {
@@ -43,23 +47,25 @@ const AnimeRankRow = memo(function AnimeRankRow({ title, badge, perPage = 10, on
         console.error(`[anime] failed to load "${title}"`, err);
         setLoadState('error');
       });
-  }, [perPage]);
+  }, [perPage, title]);
 
+  // Eager rows fetch immediately on mount
   useEffect(() => {
+    if (eager) fetchData();
+  }, [eager, fetchData]);
+
+  // Lazy rows fetch when scrolled into view
+  useEffect(() => {
+    if (eager) return;
     const el = sectionRef.current;
     if (!el) return;
     const io = new IntersectionObserver(
-      ([entry]) => {
-        if (entry.isIntersecting && !didFetch.current) {
-          didFetch.current = true;
-          fetchData();
-        }
-      },
+      ([entry]) => { if (entry.isIntersecting) fetchData(); },
       { rootMargin: '300px 0px', threshold: 0 },
     );
     io.observe(el);
     return () => io.disconnect();
-  }, [fetchData]);
+  }, [eager, fetchData]);
 
   const scroll = useCallback((dir: 'left' | 'right') => {
     const el = scrollRef.current;

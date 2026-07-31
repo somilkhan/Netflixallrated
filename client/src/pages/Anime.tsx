@@ -176,10 +176,10 @@ export default function Anime() {
         </div>
       )}
 
-      {/* Content rows */}
-      <AnimeRankRow title="Trending Anime" badge="LIVE" perPage={10} onLoaded={onTrendingLoaded} />
-      <AnimeRow title="Popular Anime" badge="LIVE" sort="POPULARITY_DESC" perPage={20} notIds={trendingIds} onLoaded={onPopularLoaded} />
-      <AnimeRow title="Top Rated" sort="SCORE_DESC" perPage={20} notIds={[...trendingIds, ...popularIds]} />
+      {/* Content rows — first 3 eager (fetch on mount, no IO wait) */}
+      <AnimeRankRow title="Trending Anime" badge="LIVE" perPage={10} onLoaded={onTrendingLoaded} eager />
+      <AnimeRow title="Popular Anime" badge="LIVE" sort="POPULARITY_DESC" perPage={20} notIds={trendingIds} onLoaded={onPopularLoaded} eager />
+      <AnimeRow title="Top Rated" sort="SCORE_DESC" perPage={20} notIds={[...trendingIds, ...popularIds]} eager />
       <AnimeRow title="Top Rated Movies" sort="SCORE_DESC" format="MOVIE" perPage={20} />
       <AnimeRow title="Airing Now" badge="NOW" sort="TRENDING_DESC" status="RELEASING" perPage={20} />
       <AnimeRow title={`Seasonal — ${SEASON_LABEL}`} sort="POPULARITY_DESC" season={SEASON} seasonYear={SEASON_YEAR} perPage={20} />
