@@ -1,5 +1,28 @@
 const ANILIST_API = 'https://graphql.anilist.co';
 
+// ── Concurrency limiter — max 4 simultaneous AniList requests ─────────────────
+// AniList rate-limits at 90 req/min per IP. With 10+ genre rows all firing on
+// scroll, bursts easily exceed that. This queue keeps at most 4 in-flight.
+const MAX_CONCURRENT = 4;
+let _active = 0;
+const _queue: Array<() => void> = [];
+
+function _enqueue<T>(fn: () => Promise<T>): Promise<T> {
+  return new Promise((resolve, reject) => {
+    const run = () => {
+      _active++;
+      fn()
+        .then(resolve, reject)
+        .finally(() => {
+          _active--;
+          if (_queue.length > 0) _queue.shift()!();
+        });
+    };
+    if (_active < MAX_CONCURRENT) run();
+    else _queue.push(run);
+  });
+}
+
 export interface AniListMedia {
   id: number;
   title: { romaji: string; english: string | null; native?: string | null };
@@ -64,7 +87,7 @@ const PAGE_MEDIA_FIELDS = `
   studios { nodes { name } }
 `;
 
-async function runQuery<T = unknown>(
+async function _runQuery<T = unknown>(
   query: string,
   variables: Record<string, unknown>,
 ): Promise<T> {
@@ -77,6 +100,10 @@ async function runQuery<T = unknown>(
   const json = await response.json();
   if (json.errors) throw new Error(json.errors[0]?.message ?? 'AniList API error');
   return json.data as T;
+}
+
+function runQuery<T = unknown>(query: string, variables: Record<string, unknown>): Promise<T> {
+  return _enqueue(() => _runQuery<T>(query, variables));
 }
 
 // ── Single-result search (used by TitleDetail for anicrush look-up) ─────────

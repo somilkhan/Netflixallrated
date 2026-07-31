@@ -1045,7 +1045,7 @@ export default function TitleDetail() {
     || (title.type === 'ANIME' ? anilistData?.bannerImage : null);
   const displayName = title.type === 'ANIME' && anilistData
     ? (anilistData.title.english || anilistData.title.romaji)
-    : title.name;
+    : (title?.name ?? 'Untitled');
   const genres: string[] = title.genres?.length > 0
     ? title.genres
     : (anilistData?.genres || []);
