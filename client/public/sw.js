@@ -1,6 +1,6 @@
 // Keep the cache versioned so a deployed service-worker update can retire
 // assets from an older release instead of pinning the app shell forever.
-const CACHE_NAME = 'allrated-v3';
+const CACHE_NAME = 'allrated-v4';
 const SHELL_ASSETS = ['/', '/index.html', '/manifest.webmanifest'];
 
 // Install: cache the static shell and activate this worker immediately.
