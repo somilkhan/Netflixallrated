@@ -7,7 +7,8 @@ interface LazyImageProps extends React.ImgHTMLAttributes<HTMLImageElement> {
 
 export default function LazyImage({ src, alt, className = '', placeholder = '#171717', ...props }: LazyImageProps) {
   const ref = useRef<HTMLImageElement>(null);
-  const visible = useHasIntersected(ref);
+  // Leverage triggerOnce: true (the default) to stop observing immediately once the image loads or is ready.
+  const visible = useHasIntersected(ref, { triggerOnce: true });
   const [loaded, setLoaded] = useState(false);
   const [failed, setFailed] = useState(false);
 
