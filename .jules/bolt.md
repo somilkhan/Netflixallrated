@@ -1,0 +1,3 @@
+## 2026-07-25 - [Intersection Observer Infinite Scroll Loop]
+**Learning:** The custom `useHasIntersected` hook previously kept the intersection state `true` forever. For an infinite scroll sentinel (e.g. in SearchResults), this caused a continuous eager over-fetching loop because the visibility state remained positive even after the sentinel was pushed down out of view.
+**Action:** Add a `triggerOnce` parameter to the hook. For infinite scroll sentinels, pass `triggerOnce: false` and reset the state to `false` when out of view to successfully pause eager loading until the user actually scrolls to the sentinel again.
