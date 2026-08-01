@@ -2,7 +2,6 @@ import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 import { execSync } from 'child_process';
 import path from 'path';
-import fs from 'fs';
 
 type GitInfo = {
   sha: string;
@@ -29,23 +28,8 @@ function getGitInfo(): GitInfo {
 const gitInfo = getGitInfo();
 const buildDate = new Date().toISOString();
 
-/** Rewrites dist/sw.js cache name to allrated-<sha> so every deploy auto-busts stale caches. */
-function swCacheVersionPlugin(sha: string) {
-  return {
-    name: 'sw-cache-version',
-    closeBundle() {
-      const swPath = path.resolve(__dirname, 'dist/sw.js');
-      if (!fs.existsSync(swPath)) return;
-      const content = fs.readFileSync(swPath, 'utf8');
-      const updated = content.replace(/allrated-v\d+/, `allrated-${sha}`);
-      fs.writeFileSync(swPath, updated);
-      console.log(`[sw-cache-version] cache name → allrated-${sha}`);
-    },
-  };
-}
-
 export default defineConfig({
-  plugins: [react(), swCacheVersionPlugin(gitInfo.sha)],
+  plugins: [react()],
   define: {
     'import.meta.env.VITE_GIT_SHA': JSON.stringify(gitInfo.sha),
     'import.meta.env.VITE_BUILD_DATE': JSON.stringify(buildDate),
