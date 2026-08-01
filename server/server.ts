@@ -509,6 +509,29 @@ async function startServer(): Promise<void> {
     });
     app.use(vite.middlewares);
   } else {
+
+// Proxy AniList images to bypass browser referrer/CORS issues
+app.get('/api/proxy-image', async (req: Request, res: Response) => {
+  const url = req.query.url as string;
+  if (!url || !url.startsWith('https://')) {
+    return res.status(400).send('Invalid URL');
+  }
+  try {
+    const response = await fetch(url, {
+      headers: { 'Referer': 'https://anilist.co', 'User-Agent': 'Mozilla/5.0' }
+    });
+    if (!response.ok) throw new Error(`HTTP ${response.status}`);
+    const contentType = response.headers.get('content-type') || 'image/jpeg';
+    res.setHeader('Content-Type', contentType);
+    res.setHeader('Cache-Control', 'public, max-age=86400');
+    const buffer = await response.arrayBuffer();
+    res.send(Buffer.from(buffer));
+  } catch (err: any) {
+    console.error('Image proxy error:', err.message);
+    res.status(502).send('Image fetch failed');
+  }
+});
+
     const distPath = path.join(process.cwd(), '..', 'client', 'dist');
     // Hashed assets (JS/CSS) can be cached forever since filenames change on rebuild
     app.use(express.static(distPath, { maxAge: '1y', immutable: true }));
