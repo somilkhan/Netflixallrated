@@ -96,7 +96,6 @@ const AnimeHeroBanner = memo(function AnimeHeroBanner() {
                     loading="eager"
                     decoding="async"
                     referrerPolicy="no-referrer"
-                    crossOrigin="anonymous"
                     onLoad={() => setImgLoaded(prev => ({ ...prev, [i]: true }))}
                   />
                   <div
