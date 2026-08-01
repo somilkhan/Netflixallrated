@@ -103,7 +103,6 @@ const AniCard = memo(function AniCard({ anime, rank, fluid = false, className = 
               loading="lazy"
               decoding="async"
               referrerPolicy="no-referrer"
-              crossOrigin="anonymous"
               onLoad={() => setImgLoaded(true)}
               onError={() => setImgError(true)}
               className={`
