@@ -98,12 +98,11 @@ const AniCard = memo(function AniCard({ anime, rank, fluid = false, className = 
               </div>
             )}
             <img
-              src={posterUrl!}
+              src={posterUrl ? `/api/proxy-image?url=${encodeURIComponent(posterUrl)}` : ''}
               alt={title}
               loading="lazy"
               decoding="async"
               referrerPolicy="no-referrer"
-              crossOrigin="anonymous"
               onLoad={() => setImgLoaded(true)}
               onError={() => setImgError(true)}
               className={`
