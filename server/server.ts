@@ -509,7 +509,7 @@ async function startServer(): Promise<void> {
     });
     app.use(vite.middlewares);
   } else {
-    const distPath = path.join(process.cwd(), 'dist');
+    const distPath = path.join(process.cwd(), '..', 'client', 'dist');
     // Hashed assets (JS/CSS) can be cached forever since filenames change on rebuild
     app.use(express.static(distPath, { maxAge: '1y', immutable: true }));
     // index.html must NEVER be cached — it contains the latest asset hashes
