@@ -428,7 +428,7 @@ export async function getTmdbDetails(tmdbId: number, mediaType: 'movie' | 'tv'):
     tmdbId,
     name: detail.title || detail.name,
     year: dateStr ? Number(dateStr.slice(0, 4)) : new Date().getFullYear(),
-    runtimeMinutes: detail.runtime || (Array.isArray(detail.episode_run_time) ? detail.episode_run_time[0] : null) || null,
+    runtimeMinutes: detail.runtime || (Array.isArray(detail.episode_run_time) ? detail.episode_run_time?.[0] : null) || null,
     genres: (detail.genres || []).map((g: any) => g.name),
     synopsis: detail.overview || '',
     posterUrl: tmdbImageUrl(detail.poster_path, 'original'),

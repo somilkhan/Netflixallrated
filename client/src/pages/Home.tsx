@@ -522,7 +522,8 @@ export default function Home() {
         {showAll && renderDeferredRow(
           'topRated',
           () => Promise.all([getTopRatedMovies(1, { region: region.countryCode, language: region.language }), getTopRatedTVShows(1, { region: region.countryCode, language: region.language })])
-            .then(([movies, tv]) => [...movies, ...tv].sort((a, b) => (b.rating ?? 0) - (a.rating ?? 0)).slice(0, 20)),
+            .then(([movies, tv]) => [...movies, ...tv].sort((a, b) => (b.rating ?? 0) - (a.rating ?? 0)).slice(0, 20))
+            .catch((err: any) => { console.error('Home topRated fetch error:', err); return []; }),
           setTopRated,
           topRated,
           'Top Rated',

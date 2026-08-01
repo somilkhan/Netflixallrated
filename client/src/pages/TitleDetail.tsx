@@ -729,12 +729,13 @@ export default function TitleDetail() {
 
         if (!movies.length) throw new Error('Not found on Anicrush');
 
+        if (!movies.length) { setAnimeError('No movies found'); return; }
         const movieId: string = movies[0].id;
         setAnicrushMovieId(movieId);
 
         const count = await fetchAnicrushEpCount(movieId);
         if (signal.aborted) return;
-        setAnicrushEpCount(count || movies[0].totalEpisodes || 0);
+        setAnicrushEpCount(count || movies[0]?.totalEpisodes || 0);
         setSelectedEp(1);
       } catch (err: any) {
         if (err?.name === 'AbortError' || signal.aborted) return;
@@ -792,6 +793,7 @@ export default function TitleDetail() {
           r.title?.toLowerCase() === searchName.toLowerCase()
         );
         const result = exact ?? results[0];
+        if (!result) { setGogoError('No anime found'); return; }
         setGogoAnimeId(result.id);
         api.consumet.animeInfo(result.id)
           .then((info: any) => {
@@ -897,6 +899,7 @@ export default function TitleDetail() {
     }
 
     // Find episode by number field (normalised above), fallback to index
+    if (!episodes.length) { setGogoError(`Episode ${epNum} not found`); return; }
     const gogoEp = episodes.find((e: any) => Number(e.number) === epNum)
       ?? episodes[epNum - 1]
       ?? episodes[0];
@@ -909,6 +912,7 @@ export default function TitleDetail() {
       const data = await api.consumet.animeStream(gogoEp.id);
       const sources: any[] = data.sources ?? [];
       // Prefer M3U8, then highest quality, then first available
+      if (!sources.length) throw new Error('No stream source returned by server');
       const m3u8 = sources.find((s: any) => s.isM3U8) ?? sources[0];
       if (!m3u8?.url) throw new Error('No stream source returned by server');
       const url = api.consumet.playerUrl(m3u8.url, data.headers?.Referer ?? '');
@@ -1127,7 +1131,7 @@ export default function TitleDetail() {
               <div className="hero-title-block">
                 <div className="eyebrow">{typeLabel}</div>
                 <h1 className="hero-title">{displayName}</h1>
-                {title.type === 'ANIME' && anilistData?.title.romaji && anilistData.title.english && (
+                {title.type === 'ANIME' && anilistData?.title?.romaji && anilistData?.title?.english && (
                   <p className="detail-subtitle">{anilistData?.title?.romaji ?? ''}</p>
                 )}
                 <div className="hero-meta">
@@ -1680,7 +1684,7 @@ export default function TitleDetail() {
                             >
                               {p.logoUrl
                                 ? <img src={p.logoUrl} alt={p.name} loading="lazy" />
-                                : <div style={{ width: 48, height: 48, borderRadius: 10, background: 'rgba(255,255,255,0.07)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 10, color: '#aaa' }}>{p.name[0]}</div>
+                                : <div style={{ width: 48, height: 48, borderRadius: 10, background: 'rgba(255,255,255,0.07)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 10, color: '#aaa' }}>{p.name?.[0] ?? '?'}</div>
                               }
                               <span>{p.name}</span>
                             </a>
@@ -1693,7 +1697,7 @@ export default function TitleDetail() {
                               rel="noreferrer"
                               className="provider-sheet-item"
                             >
-                              <div style={{ width: 48, height: 48, borderRadius: 10, background: 'rgba(255,255,255,0.07)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 10, color: '#fff' }}>{link.platform[0]}</div>
+                              <div style={{ width: 48, height: 48, borderRadius: 10, background: 'rgba(255,255,255,0.07)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 10, color: '#fff' }}>{link.platform?.[0] ?? '?'}</div>
                               <span>{link.platform}</span>
                             </a>
                           ))

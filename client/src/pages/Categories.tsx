@@ -416,7 +416,7 @@ export default function CategoriesPage() {
           };
         }),
       );
-    });
+    }).catch((err: any) => console.error('Categories platforms/providers error:', err));
 
     api.geo
       .detect()
