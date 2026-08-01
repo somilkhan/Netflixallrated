@@ -33,13 +33,10 @@ app.use(helmet({
   contentSecurityPolicy: {
     directives: {
       defaultSrc: ["'self'"],
-      imgSrc: ["'self'", "data:", "https://image.tmdb.org", "https://img.youtube.com", "https://i.ytimg.com", "https://cdn.myanimelist.net"],
+      imgSrc: ["'self'", "data:", "https://image.tmdb.org", "https://img.youtube.com", "https://i.ytimg.com", "https://cdn.myanimelist.net", "https://s4.anilist.co"],
       scriptSrc: ["'self'", "'unsafe-inline'", "https://www.youtube-nocookie.com"],
       styleSrc: ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com"],
       fontSrc: ["'self'", "https:", "data:", "https://fonts.gstatic.com"],
-      // Allow all HTTPS iframes — embed players (VidSrc, Filmu, 2Embed, NebulaFlix,
-      // Screenscape, Anicrush, etc.) come from many different domains that rotate
-      // frequently. Locking to specific domains breaks players silently.
       frameSrc: ["'self'", "https:"],
       connectSrc: ["'self'", "https://api.themoviedb.org", "https://ipapi.co", "https://graphql.anilist.co", "https:"],
       mediaSrc: ["'self'", "https:", "blob:"],
@@ -85,10 +82,29 @@ app.use('/api/tmdb', tmdbRoutes);
 
 app.get('/api/health', (_req, res) => res.json({ status: 'ok' }));
 
+// ── Proxy AniList images to bypass browser referrer/CORS issues ───────────
+app.get('/api/proxy-image', async (req: express.Request, res: express.Response) => {
+  const url = req.query.url as string;
+  if (!url || !url.startsWith('https://')) {
+    return res.status(400).send('Invalid URL');
+  }
+  try {
+    const response = await fetch(url, {
+      headers: { 'Referer': 'https://anilist.co', 'User-Agent': 'Mozilla/5.0' }
+    });
+    if (!response.ok) throw new Error(`HTTP ${response.status}`);
+    const contentType = response.headers.get('content-type') || 'image/jpeg';
+    res.setHeader('Content-Type', contentType);
+    res.setHeader('Cache-Control', 'public, max-age=86400');
+    const buffer = await response.arrayBuffer();
+    res.send(Buffer.from(buffer));
+  } catch (err: any) {
+    console.error('Image proxy error:', err.message);
+    res.status(502).send('Image fetch failed');
+  }
+});
+
 // ── Auto TMDB sync ─────────────────────────────────────────────────────────
-// On startup: if catalog is empty, seed with 5 pages (~100 movies) so the
-// UI isn't blank. The full catalog is populated incrementally via
-// POST /api/titles/sync-tmdb or the Vercel daily cron (/api/titles/sync-batch).
 async function autoSyncTmdb() {
   if (!process.env.TMDB_API_KEY) return;
 
@@ -112,31 +128,32 @@ async function autoSyncTmdb() {
 }
 
 // ── Serve built client in production ──────────────────────────────────────
-// When deployed as a single Railway service the client is built into
-// ../client/dist (relative to this file's compiled location at dist/server.js).
 const __filename = fileURLToPath(import.meta.url);
 const __dirname  = dirname(__filename);
 const clientDist = join(__dirname, '../../client/dist');
 
 if (process.env.NODE_ENV === 'production' && existsSync(clientDist)) {
-  app.use(express.static(clientDist));
-  // SPA fallback — let React Router handle all non-API routes
-  app.get('*', (_req, res) => res.sendFile(join(clientDist, 'index.html')));
+  // Hashed assets can be cached forever
+  app.use(express.static(clientDist, { maxAge: '1y', immutable: true }));
+  // SPA fallback — never cache index.html so users always get latest deploy
+  app.get('*', (_req, res) => {
+    res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
+    res.setHeader('Pragma', 'no-cache');
+    res.setHeader('Expires', '0');
+    res.sendFile(join(clientDist, 'index.html'));
+  });
   console.log(`[static] Serving client from ${clientDist}`);
 }
 
-// Centralized error handler — catches anything passed to next(err)
-app.use((err: any, _req: express.Request, res: express.Response, _next: express.NextFunction) => {
+// Centralized error handler
+app.use((err: any, _req: express.Request, res: express.Response, _next: express.Next) => {
   console.error('[unhandled]', err);
   res.status(err?.status || 500).json({ error: 'Internal server error' });
 });
 
 export default app;
 
-// REMOVED from startup — run manually via a cron job or script if needed.
-// Never block app.listen() with database mutations.
-
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
-  autoSyncTmdb(); // non-blocking — fires in background
+  autoSyncTmdb();
 });
