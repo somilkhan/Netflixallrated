@@ -342,7 +342,7 @@ export function LanguageDetail() {
   const { slug = "" } = useParams();
   return (
     <DetailShell title={slug} subtitle="Language filtering">
-      <p className="font-mono text-sm text-ink-faint">
+      <p className="text-[13px] text-white/40">
         Language isn't stored on titles yet, so this filter can't return real
         results. Add a language field to the catalog to enable this page.
       </p>
