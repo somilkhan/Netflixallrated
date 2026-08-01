@@ -1258,7 +1258,7 @@ export default function TitleDetail() {
 
         {/* Anime-only: studios */}
         {title.type === 'ANIME' && studioNodes.length > 0 && (
-          <p className="font-mono text-[10px] text-ink-faint uppercase tracking-wider" style={{ marginTop: 8 }}>
+          <p className="text-[10px] text-white/40 uppercase tracking-wider" style={{ marginTop: 8 }}>
             {studioNodes.map(s => s.name).join(' · ')}
           </p>
         )}
