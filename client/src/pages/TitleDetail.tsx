@@ -301,7 +301,7 @@ export default function TitleDetail() {
           durationSeconds: prog.durationSeconds ?? null,
         });
       })
-      .catch(() => { progressBaseRef.current = 0; });
+      .catch((err: any) => { console.error('TitleDetail history get error:', err); progressBaseRef.current = 0; });
   }, [user, id, title]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Start / stop the wall-clock timer whenever playback state changes

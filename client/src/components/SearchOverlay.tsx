@@ -163,6 +163,7 @@ export default function SearchOverlay({ open, onClose }: Props) {
       })
       .catch((err: any) => {
         if (err?.name === 'AbortError' || ctrl.signal.aborted) return;
+        console.error('SearchOverlay searchMulti error:', err);
         setLoading(false);
       });
   }, []);

@@ -27,6 +27,7 @@ function cachedFetcher(cacheKey: string, ttl: number, fetcher: () => Promise<any
     return value;
   }, (error: unknown) => {
     if (inflight.get(cacheKey) === req) inflight.delete(cacheKey);
+    console.error('API cache fetcher error:', error);
     throw error;
   });
 
