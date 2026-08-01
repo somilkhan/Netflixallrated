@@ -176,13 +176,13 @@ const AniCard = memo(function AniCard({ anime, rank, fluid = false, className = 
 
       {/* Title + meta below card */}
       <div className="mt-2 px-0.5">
-        <h3 className="text-[11px] sm:text-[13px] font-semibold text-white leading-tight truncate">
+        <h3 className="text-[13px] font-semibold text-white leading-tight truncate">
           {title}
         </h3>
-        <div className="flex items-center gap-1.5 mt-0.5 text-[10px] text-white/40">
+        <div className="flex items-center gap-1.5 mt-0.5 text-[11px] text-white/40">
           {rating && (
-            <span className="flex items-center gap-0.5 text-amber-400">
-              <Star size={9} className="fill-current" />
+            <span className="flex items-center gap-0.5 text-[#f5c518]">
+              <Star size={10} className="fill-[#f5c518] text-[#f5c518]" />
               {rating}
             </span>
           )}
