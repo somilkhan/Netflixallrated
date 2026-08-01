@@ -200,7 +200,7 @@ export default function TVShows() {
   }, [navigate]);
 
   return (
-    <div className="min-h-screen pb-28 md:pb-0">
+    <div className="min-h-screen pb-28 md:pb-0" style={{ background: '#0A0A0A' }}>
 
       {/* ── Hero ─────────────────────────────────────────────────────── */}
       {heroItems.length > 0 ? (
@@ -215,7 +215,7 @@ export default function TVShows() {
       ) : null}
 
       {/* ── Page header ──────────────────────────────────────────────── */}
-      <div className="px-5 pt-8 pb-4 border-b border-[#1a1a1a]">
+      <div className="px-4 md:px-6 pt-8 pb-4 border-b border-[#1a1a1a]">
         <div className="flex items-center gap-3 mb-1">
           <Tv size={20} className="text-white shrink-0" strokeWidth={1.8} />
           <h1 className="text-[28px] font-bold tracking-tight text-white leading-none">TV Shows</h1>
@@ -226,13 +226,13 @@ export default function TVShows() {
       </div>
 
       {/* ── Genre filter pills ────────────────────────────────────────── */}
-      <div className="px-5 py-3 flex gap-2 overflow-x-auto scrollbar-hide border-b border-[#1a1a1a]">
+      <div className="px-4 md:px-6 py-3 flex gap-2 overflow-x-auto scrollbar-hide border-b border-[#1a1a1a]">
         <button
           onClick={() => setSelectedGenre(null)}
           className={`shrink-0 text-[12px] px-4 py-1.5 rounded-full border transition-colors duration-200 ${
             !selectedGenre
               ? 'bg-white text-black border-white'
-              : 'bg-transparent border-[#333] text-[#888] hover:text-white hover:border-[#555]'
+              : 'bg-transparent border-white/[0.10] text-[#888] hover:text-white hover:border-white/[0.22]'
           }`}
         >
           All
@@ -244,7 +244,7 @@ export default function TVShows() {
             className={`shrink-0 text-[12px] px-4 py-1.5 rounded-full border transition-colors duration-200 ${
               selectedGenre?.id === g.id
                 ? 'bg-white text-black border-white'
-                : 'bg-transparent border-[#333] text-[#888] hover:text-white hover:border-[#555]'
+                : 'bg-transparent border-white/[0.10] text-[#888] hover:text-white hover:border-white/[0.22]'
             }`}
           >
             {g.name}
@@ -254,7 +254,7 @@ export default function TVShows() {
 
       {/* ── Genre-filtered view ───────────────────────────────────────── */}
       {selectedGenre ? (
-        <div className="px-5 pt-8">
+        <div className="px-4 md:px-6 pt-8">
           <div className="flex items-baseline gap-2 mb-5">
             <span className="text-[22px] font-semibold text-white">{selectedGenre.name}</span>
           </div>
