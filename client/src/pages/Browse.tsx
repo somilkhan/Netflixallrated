@@ -259,7 +259,7 @@ export default function Browse() {
   const visibleLoading = isLiveCollection ? liveLoading : loading;
 
   return (
-    <div className="min-h-screen pb-32 pt-20">
+    <div className="min-h-screen pb-32 pt-20" style={{ background: '#0A0A0A' }}>
       {/* ── Page header ──────────────────────────────────────────────────── */}
       <div className="px-4 md:px-6 pt-4 pb-2">
         <h1 className="text-2xl md:text-3xl font-bold text-white tracking-tight">{heading}</h1>
