@@ -296,7 +296,7 @@ export default function TVShows() {
           ) : (
             <>
               {trending.length > 0 && (
-                <ContentRow title={`Trending TV in ${region.countryName}`}>
+                <ContentRow title="Trending TV">
                   {trending.slice(0, 20).map(item => (
                     <TmdbContentCard key={item.id} item={item} />
                   ))}
