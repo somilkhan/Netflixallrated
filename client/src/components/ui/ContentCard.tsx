@@ -327,12 +327,12 @@ const ContentCard = memo(function ContentCard({
           {rating && (
             <span className="flex items-center gap-0.5">
               <Star size={9} className="fill-[#f5c518] text-[#f5c518]" />
-              <span className="text-[12px] text-[#8a8a8a]">
+              <span className="text-[12px] text-white/40">
                 {typeof rating === 'number' ? rating.toFixed(1) : rating}
               </span>
             </span>
           )}
-          {title.year && <span className="text-[12px] text-[#8a8a8a]">{title.year}</span>}
+          {title.year && <span className="text-[12px] text-white/40">{title.year}</span>}
         </div>
       </div>
     </article>
