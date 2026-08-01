@@ -22,7 +22,8 @@ ARG VITE_API_URL
 ENV VITE_API_URL=$VITE_API_URL
 
 COPY client ./client
-RUN cd client && npm run build
+# Force clean build — delete any stale dist from cache
+RUN rm -rf client/dist && cd client && npm run build
 
 # ── Server setup ──────────────────────────────────────────────────────────
 COPY server/package.json server/package-lock.json ./server/
