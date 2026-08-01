@@ -302,7 +302,7 @@ function ExpandedGrid({ title, items, onBack, onOpen }: {
       >
         <ChevronRight size={15} className="rotate-180" /> Back
       </button>
-      <h2 className="mb-5 font-serif text-3xl font-semibold text-ink">{title}</h2>
+      <h2 className="mb-5 text-[28px] font-bold text-white tracking-tight">{title}</h2>
       <div className="grid grid-cols-2 gap-3 pb-20">
         {items.map((item, i) => {
           const v = GENRE_VISUAL[item.label];
