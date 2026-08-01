@@ -122,6 +122,7 @@ router.get('/resolve', authenticate, async (req: Request, res: Response) => {
     // Pick best match — prefer exact title match, fall back to first result
     const normalise = (s: string) => s?.toLowerCase().replace(/[^a-z0-9]/g, '');
     const needle = normalise(titleParam);
+    if (!results.length) return res.status(404).json({ success: false, error: `"${titleParam}" not found` });
     const match =
       results.find((r: any) => normalise(r.title ?? r.name ?? '') === needle) ??
       results[0];
@@ -213,7 +214,7 @@ router.get('/hdhub4u/resolve', authenticate, async (req: Request, res: Response)
       const items: any[] = data?.data?.recentMovies ?? data?.data ?? [];
       if (!items.length) break;
 
-      if (page === 1) firstItem = items[0];
+      if (page === 1 && items.length > 0) firstItem = items[0];
 
       for (const r of items) {
         const norm = normalise(r.title ?? '');

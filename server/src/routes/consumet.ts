@@ -126,6 +126,7 @@ router.get('/movies/auto', async (req: Request, res: Response) => {
     if (!results.length) return res.status(404).json({ error: 'No results found' });
 
     const wantMovie = String(type) === 'MOVIE';
+    if (results.length === 0) return null;
     const best: any =
       results.find(r => wantMovie ? r.type === 'Movie' : r.type === 'TV Series') ??
       results[0];

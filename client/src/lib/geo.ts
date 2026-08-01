@@ -173,7 +173,7 @@ export function getCachedRegion(): RegionInfo | null {
  */
 export function setRegion(info: RegionInfo | null): void {
   if (info === null) {
-    localStorage.removeItem(CACHE_KEY);
+    try { localStorage.removeItem(CACHE_KEY); } catch { /* storage unavailable */ }
   } else {
     writeCache(info);
   }

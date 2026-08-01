@@ -50,7 +50,7 @@ function ContinueWatchingCard({ item, onRemove }: ContinueWatchingCardProps) {
       <ContentCard
         title={{
           ...title,
-          posterUrl: title.posterUrl,
+          posterUrl: title?.posterUrl ?? null,
           rating: undefined,
           synopsis: subLabel ? `${subLabel}${item.episodeTitle ? ` · ${item.episodeTitle}` : ''}` : '',
         }}

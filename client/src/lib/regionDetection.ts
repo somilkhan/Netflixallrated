@@ -165,7 +165,8 @@ export function detectRegionFromBrowser(): string {
  */
 export function getCurrentRegion(): RegionConfig {
   // Check localStorage first
-  const stored = localStorage.getItem(STORAGE_KEY);
+  let stored: string | null = null;
+  try { stored = localStorage.getItem(STORAGE_KEY); } catch { /* storage unavailable */ }
   if (stored && REGIONS[stored]) {
     return REGIONS[stored];
   }
@@ -180,7 +181,7 @@ export function getCurrentRegion(): RegionConfig {
  */
 export function setRegionPreference(code: string): void {
   if (REGIONS[code]) {
-    localStorage.setItem(STORAGE_KEY, code);
+    try { localStorage.setItem(STORAGE_KEY, code); } catch { /* storage unavailable */ }
   }
 }
 

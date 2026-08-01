@@ -42,7 +42,7 @@ export default function Downloads() {
 
   const save = (next: DownloadItem[]) => {
     setItems(next);
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(next));
+    try { localStorage.setItem(STORAGE_KEY, JSON.stringify(next)); } catch { /* storage unavailable */ }
   };
 
   const usedMb = useMemo(() => items.reduce((total, item) => total + item.sizeMb * (item.progress / 100), 0), [items]);

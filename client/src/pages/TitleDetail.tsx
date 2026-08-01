@@ -1044,7 +1044,7 @@ export default function TitleDetail() {
   const backdropUrl = title.backdropUrl
     || (title.type === 'ANIME' ? anilistData?.bannerImage : null);
   const displayName = title.type === 'ANIME' && anilistData
-    ? (anilistData.title.english || anilistData.title.romaji)
+    ? ((anilistData?.title?.english ?? '') || (anilistData?.title?.romaji ?? ''))
     : (title?.name ?? 'Untitled');
   const genres: string[] = title.genres?.length > 0
     ? title.genres
@@ -1128,7 +1128,7 @@ export default function TitleDetail() {
                 <div className="eyebrow">{typeLabel}</div>
                 <h1 className="hero-title">{displayName}</h1>
                 {title.type === 'ANIME' && anilistData?.title.romaji && anilistData.title.english && (
-                  <p className="detail-subtitle">{anilistData.title.romaji}</p>
+                  <p className="detail-subtitle">{anilistData?.title?.romaji ?? ''}</p>
                 )}
                 <div className="hero-meta">
                   <span>{title.year || anilistData?.startDate?.year}</span>

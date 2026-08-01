@@ -49,11 +49,11 @@ function getRecent(): string[] {
 function saveRecent(term: string) {
   const prev = getRecent();
   const next = [term, ...prev.filter(s => s !== term)].slice(0, MAX_RECENT);
-  localStorage.setItem(RECENT_KEY, JSON.stringify(next));
+  try { localStorage.setItem(RECENT_KEY, JSON.stringify(next)); } catch { /* storage unavailable */ }
 }
 
 function clearRecentStorage() {
-  localStorage.removeItem(RECENT_KEY);
+  try { localStorage.removeItem(RECENT_KEY); } catch { /* storage unavailable */ }
 }
 
 /** Wrap matching substring in a <mark> element. */

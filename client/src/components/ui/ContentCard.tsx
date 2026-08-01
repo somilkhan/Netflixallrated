@@ -107,7 +107,7 @@ const ContentCard = memo(function ContentCard({
   const [imgLoaded, setImgLoaded] = useState(false);
   const [imgError,  setImgError]  = useState(false);
 
-  const hasImage    = !!title.posterUrl && !imgError;
+  const hasImage    = !!(title?.posterUrl) && !imgError;
   const rating      = title.rating || title.imdbRating || title.voteAverage;
   const progressPct = durationSeconds > 0
     ? Math.min(100, (progressSeconds / durationSeconds) * 100)
@@ -192,9 +192,9 @@ const ContentCard = memo(function ContentCard({
                 }} />
               </div>
             )}
-            {tmdbSrcSet(title.posterUrl) && (
+            {tmdbSrcSet(title?.posterUrl) && (
               <img
-                {...tmdbSrcSet(title.posterUrl)!}
+                {...tmdbSrcSet(title?.posterUrl)!}
                 sizes="(max-width: 640px) 45vw, (max-width: 1024px) 30vw, 230px"
                 alt={title?.name ?? 'Untitled'}
                 loading="lazy"
