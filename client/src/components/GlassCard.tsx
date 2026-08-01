@@ -152,8 +152,8 @@ const GlassCard = memo(function GlassCard({
                 #0A0A0A 75%)`,
             }}
           >
-            <Film size={22} className="text-ink-faint/30" />
-            <span className="text-[9px] font-mono text-ink-faint/35 text-center leading-tight line-clamp-3">
+            <Film size={22} className="text-white/30" />
+            <span className="text-[9px] font-mono text-white/35 text-center leading-tight line-clamp-3">
               {title}
             </span>
           </div>
@@ -193,7 +193,7 @@ const GlassCard = memo(function GlassCard({
             absolute top-2 left-2 z-10
             h-[22px] w-[22px] flex items-center justify-center
             rounded-full bg-black/80 border border-white/[0.12]
-            font-serif font-semibold text-[11px] text-ink-dim leading-none
+            font-semibold text-[11px] text-white/60 leading-none
           ">
             {rank}
           </div>
@@ -215,7 +215,7 @@ const GlassCard = memo(function GlassCard({
             absolute top-2 right-2 z-10
             font-mono text-[7px] px-[6px] py-[2.5px] rounded-full
             border border-white/[0.10] bg-black/60
-            text-ink-faint/65 uppercase tracking-[0.08em] leading-none
+            text-white/65 uppercase tracking-[0.08em] leading-none
           ">
             {typeLabel}
           </span>
@@ -257,12 +257,12 @@ const GlassCard = memo(function GlassCard({
           transition-[background-color] duration-300 ease-spring
           md:group-hover:bg-black/70
         ">
-          <p className="text-[11.5px] font-sans font-semibold leading-[1.28] line-clamp-2 text-ink">
+          <p className="text-[11.5px] font-sans font-semibold leading-[1.28] line-clamp-2 text-white">
             {title}
           </p>
 
           {metaParts && (
-            <p className="mt-[2px] font-mono text-[9px] text-ink-faint/75 truncate leading-none">
+            <p className="mt-[2px] font-mono text-[9px] text-white/75 truncate leading-none">
               {metaParts}
             </p>
           )}
@@ -280,7 +280,7 @@ const GlassCard = memo(function GlassCard({
                   <span
                     key={p.name}
                     className="h-[13px] px-[4px] rounded-[3px] border border-white/[0.07]
-                      bg-white/[0.04] text-[6.5px] font-mono flex items-center text-ink-faint"
+                      bg-white/[0.04] text-[6.5px] font-mono flex items-center text-white/50"
                   >
                     {p.name.slice(0, 3)}
                   </span>
@@ -308,7 +308,7 @@ const GlassCard = memo(function GlassCard({
                       key={g}
                       className="
                         text-[7.5px] font-mono px-[5px] py-[2px] rounded-full
-                        border border-white/[0.08] bg-white/[0.04] text-ink-faint/75
+                        border border-white/[0.08] bg-white/[0.04] text-white/75
                         leading-none
                       "
                     >
@@ -318,7 +318,7 @@ const GlassCard = memo(function GlassCard({
                 </div>
               )}
               {overview && (
-                <p className="mt-[5px] text-[8.5px] leading-[1.48] text-ink-faint/65 line-clamp-2">
+                <p className="mt-[5px] text-[8.5px] leading-[1.48] text-white/65 line-clamp-2">
                   {overview}
                 </p>
               )}

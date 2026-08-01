@@ -207,7 +207,7 @@ export default function TVShows() {
         <HeroSection
           titles={heroItems}
           onAction={heroAction}
-          regionLabel={`Popular TV in ${region.countryName}`}
+          regionLabel="Trending TV"
         />
       ) : loading ? (
         <div className="w-full bg-[#0f0f0f] animate-pulse"

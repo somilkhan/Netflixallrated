@@ -153,10 +153,10 @@ function BackButton() {
   return (
     <button
       onClick={() => navigate(-1)}
-      className="flex items-center gap-1.5 font-mono text-[11px] text-ink-faint
-        hover:text-ink transition-colors mb-6"
+      className="flex items-center gap-1.5 text-[13px] text-white/40
+        hover:text-white transition-colors mb-6"
     >
-      <ChevronLeft size={14} />
+      <ChevronLeft size={16} />
       Back
     </button>
   );
@@ -167,18 +167,17 @@ const TAB_LABEL: Record<MediaType, string> = { MOVIE: "Movies", SERIES: "Series"
 function Tabs({ active, onChange, includeAnime = false }: { active: MediaType; onChange: (value: MediaType) => void; includeAnime?: boolean }) {
   const options: MediaType[] = includeAnime ? ["MOVIE", "SERIES", "ANIME"] : ["MOVIE", "SERIES"];
   return (
-    <div className="flex gap-6 border-b border-line mb-6">
+    <div className="flex gap-1 mb-6 overflow-x-auto scrollbar-hide">
       {options.map((key) => (
         <button
           key={key}
           onClick={() => onChange(key)}
-          className={`pb-3 text-lg font-semibold transition-colors relative
-            ${active === key ? "text-ink" : "text-ink-faint hover:text-ink-dim"}`}
+          className={`shrink-0 text-[13px] font-medium px-4 py-2 rounded-full border transition-all duration-200
+            ${active === key
+              ? "bg-white text-black border-white"
+              : "bg-transparent border-white/10 text-white/50 hover:text-white hover:border-white/25"}`}
         >
           {TAB_LABEL[key]}
-          {active === key && (
-            <span className="absolute left-0 right-0 -bottom-px h-[2px] bg-maroon-bright rounded-full" />
-          )}
         </button>
       ))}
     </div>
@@ -230,14 +229,14 @@ function PosterGrid({
   }
   if (loadState === "error" && items.length === 0) {
     return (
-      <p className="font-mono text-sm text-ink-faint">
+      <p className="text-sm text-white/40 py-12 text-center">
         Couldn't load titles: {error}
       </p>
     );
   }
   if (loadState === "done" && items.length === 0) {
     return (
-      <p className="font-mono text-sm text-ink-faint">
+      <p className="text-sm text-white/40 py-12 text-center">
         No titles found for this filter yet.
       </p>
     );
@@ -259,7 +258,7 @@ function PosterGrid({
       <div ref={sentinelRef} className="h-8" />
 
       {loadState === "done" && !hasNext && items.length > 0 && (
-        <p className="font-mono text-[11px] text-ink-faint/50 text-center py-6 pb-24">
+        <p className="text-[12px] text-white/25 text-center py-6 pb-24">
           You've reached the end · {items.length} title{items.length !== 1 ? "s" : ""}
         </p>
       )}
@@ -277,13 +276,13 @@ function DetailShell({
   children: React.ReactNode;
 }) {
   return (
-    <div className="min-h-screen bg-void px-5 pt-10">
+    <div className="min-h-screen px-5 pt-10 pb-28" style={{ background: '#0A0A0A' }}>
       <BackButton />
-      <h1 className="font-serif text-[38px] font-semibold leading-tight text-ink mb-1 capitalize italic">
+      <h1 className="text-[32px] md:text-[42px] font-bold leading-tight text-white mb-1 capitalize tracking-tight">
         {title}
       </h1>
       {subtitle && (
-        <p className="font-mono text-[11px] text-ink-faint mb-6">{subtitle}</p>
+        <p className="text-[13px] text-white/40 mb-6">{subtitle}</p>
       )}
       {children}
     </div>
@@ -328,7 +327,7 @@ export function StudioDetail() {
           ))}
         </div>
       ) : !platform ? (
-        <p className="font-mono text-sm text-ink-faint">
+        <p className="text-sm text-white/40 py-12 text-center">
           This streaming platform doesn't exist in the catalog.
         </p>
       ) : (
@@ -386,7 +385,7 @@ export function GenreDetail() {
           ))}
         </div>
       ) : !genreName ? (
-        <p className="font-mono text-sm text-ink-faint">
+        <p className="text-sm text-white/40 py-12 text-center">
           This genre doesn't exist in the catalog.
         </p>
       ) : (

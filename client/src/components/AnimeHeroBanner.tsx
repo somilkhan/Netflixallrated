@@ -4,7 +4,7 @@
  */
 import { useState, useEffect, useCallback, useRef, memo } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { Play, Info, ChevronRight, ChevronLeft, ChevronDown } from 'lucide-react';
+import { Play, Info, ChevronRight, ChevronLeft } from 'lucide-react';
 import { getAnimePage } from '../lib/anilist';
 import { navigateToAnime } from '../lib/animeResolve';
 
@@ -95,6 +95,8 @@ const AnimeHeroBanner = memo(function AnimeHeroBanner() {
                     className="sr-only"
                     loading="eager"
                     decoding="async"
+                    referrerPolicy="no-referrer"
+                    crossOrigin="anonymous"
                     onLoad={() => setImgLoaded(prev => ({ ...prev, [i]: true }))}
                   />
                   <div
@@ -281,14 +283,7 @@ const AnimeHeroBanner = memo(function AnimeHeroBanner() {
         )}
       </div>
 
-      {/* Scroll hint */}
-      <div
-        className="absolute bottom-4 left-1/2 -translate-x-1/2 z-[10] md:hidden pointer-events-none"
-        style={{ opacity: 0.6, animation: 'bounce 2s infinite' }}
-        aria-hidden
-      >
-        <ChevronDown size={24} className="text-white" />
-      </div>
+
     </section>
   );
 });
