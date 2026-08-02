@@ -122,7 +122,7 @@ const AnimeHeroBanner = memo(function AnimeHeroBanner() {
       {/* Gradient overlays */}
       <div
         className="absolute inset-0 z-[2] pointer-events-none"
-        style={{ background: 'linear-gradient(to top, rgba(15,15,15,1) 0%, rgba(15,15,15,0.85) 25%, rgba(15,15,15,0.4) 60%, rgba(15,15,15,0) 100%)' }}
+        style={{ background: 'linear-gradient(to top, rgba(10,10,10,1) 0%, rgba(10,10,10,0.85) 25%, rgba(10,10,10,0.4) 60%, rgba(10,10,10,0) 100%)' }}
       />
       <div
         className="absolute inset-0 z-[2] pointer-events-none hidden md:block"
