@@ -161,11 +161,11 @@ const AnimeRow = memo(function AnimeRow({
             : loadState === 'error'
             ? (
                 <div className="flex items-center justify-center py-8 px-6 w-full">
-                  <p className="text-sm text-white/40">
+                  <p className="text-sm text-white/50">
                     Failed to load —{' '}
                     <button
                       onClick={() => { didFetch.current = true; fetchData(); }}
-                      className="text-white/60 hover:text-white underline underline-offset-2"
+                      className="text-white/50 hover:text-white underline underline-offset-2"
                     >
                       retry
                     </button>
