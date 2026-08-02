@@ -128,7 +128,7 @@ function NoKeyBanner() {
             href="https://www.themoviedb.org/settings/api"
             target="_blank"
             rel="noopener noreferrer"
-            className="underline text-white/50 hover:text-white"
+            className="underline text-white/70 hover:text-white"
           >
             themoviedb.org/settings/api
           </a>
@@ -174,7 +174,7 @@ function ErrorRow({ label, onRetry }: { label: string; onRetry: () => void }) {
       <button
         type="button"
         onClick={onRetry}
-        className="flex items-center gap-1.5 text-[12px] text-white/50 hover:text-white transition-colors"
+        className="flex items-center gap-1.5 text-[12px] text-white/70 hover:text-white transition-colors"
       >
         <RefreshCw size={11} /> Retry
       </button>
