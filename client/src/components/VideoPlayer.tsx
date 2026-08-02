@@ -470,7 +470,7 @@ export function FebBoxPlayer({
 
   if (!streams.length) {
     return (
-      <div className="absolute inset-0 flex items-center justify-center text-white/40 text-sm">
+      <div className="absolute inset-0 flex items-center justify-center text-white/70 text-sm">
         No streams available
       </div>
     );
@@ -553,7 +553,7 @@ export function FebBoxPlayer({
               className={`text-[10px] font-mono px-2 py-0.5 rounded border transition-colors ${
                 qualityIdx === i
                   ? 'border-white/40 bg-white/20 text-white'
-                  : 'border-white/10 text-white/40 bg-black/60 hover:text-white hover:border-white/30'
+                  : 'border-white/10 text-white/70 bg-black/60 hover:text-white hover:border-white/30'
               }`}
             >
               {s.quality || s.name || `Q${i + 1}`}
@@ -573,7 +573,7 @@ export function FebBoxPlayer({
         <button
           type="button"
           onClick={() => setCastMessage(null)}
-          className="absolute top-14 left-1/2 z-40 -translate-x-1/2 rounded-lg border border-white/10 bg-black/85 px-3 py-2 text-xs text-white/80 shadow-xl"
+          className="absolute top-14 left-1/2 z-40 -translate-x-1/2 rounded-[8px] border border-white/10 bg-black/85 px-3 py-2 text-xs text-white/80 shadow-xl"
         >
           {castMessage}
         </button>
@@ -583,8 +583,8 @@ export function FebBoxPlayer({
         <div className="absolute inset-x-0 bottom-20 z-40 mx-auto flex max-w-sm flex-col items-center gap-3 rounded-2xl border border-white/10 bg-black/90 p-5 text-center shadow-2xl">
           <p className="text-sm font-semibold text-white">Next episode in {nextCountdown}s</p>
           <div className="flex gap-2">
-            <button type="button" onClick={() => { setNextCountdown(null); onNextEpisode?.(); }} className="rounded-lg bg-white px-3 py-2 text-xs font-semibold text-black">Play next</button>
-            <button type="button" onClick={() => setNextCountdown(null)} className="rounded-lg border border-white/15 px-3 py-2 text-xs text-white/70">Cancel</button>
+            <button type="button" onClick={() => { setNextCountdown(null); onNextEpisode?.(); }} className="rounded-[8px] bg-white px-3 py-2 text-xs font-semibold text-black">Play next</button>
+            <button type="button" onClick={() => setNextCountdown(null)} className="rounded-[8px] border border-white/15 px-3 py-2 text-xs text-white/70">Cancel</button>
           </div>
         </div>
       )}
@@ -594,7 +594,7 @@ export function FebBoxPlayer({
           <div className="w-full max-w-sm rounded-2xl border border-white/10 bg-[#171717] p-6 text-center shadow-2xl">
             <p className="text-base font-semibold text-white">Are you still watching?</p>
             <p className="mt-2 text-xs text-white/45">You’ve watched three episodes in a row.</p>
-            <button type="button" onClick={() => { setStillWatching(false); setNextCountdown(5); }} className="mt-5 rounded-lg bg-white px-4 py-2 text-xs font-semibold text-black">Continue watching</button>
+            <button type="button" onClick={() => { setStillWatching(false); setNextCountdown(5); }} className="mt-5 rounded-[8px] bg-white px-4 py-2 text-xs font-semibold text-black">Continue watching</button>
           </div>
         </div>
       )}
@@ -618,7 +618,7 @@ export function FebBoxPlayer({
                 <p className="text-xs font-semibold text-white">Playback settings</p>
                 <button type="button" onClick={() => setShowSettings(false)} className="text-white/45 hover:text-white"><X size={14} /></button>
               </div>
-              <div className="mb-3 grid grid-cols-3 gap-1 rounded-lg bg-white/[.04] p-1">
+              <div className="mb-3 grid grid-cols-3 gap-1 rounded-[8px] bg-white/[.04] p-1">
                 {([['playback', 'Speed'], ['audio', 'Audio'], ['subtitles', 'Subtitles']] as const).map(([tab, label]) => (
                   <button key={tab} type="button" onClick={() => setSettingsTab(tab)} className={`rounded-md px-1 py-1.5 text-[10px] ${settingsTab === tab ? 'bg-white/10 text-white' : 'text-white/45'}`}>{label}</button>
                 ))}
@@ -631,7 +631,7 @@ export function FebBoxPlayer({
                 </div>
               )}
               {settingsTab === 'audio' && (
-                <label className="flex items-center justify-between text-xs text-white/60">
+                <label className="flex items-center justify-between text-xs text-white/70">
                   Audio track
                   <select className="rounded-md border border-white/10 bg-black px-2 py-1 text-xs text-white" defaultValue="auto">
                     <option value="auto">Auto</option><option value="original">Original</option><option value=" dubbed">Dubbed</option>
@@ -639,7 +639,7 @@ export function FebBoxPlayer({
                 </label>
               )}
               {settingsTab === 'subtitles' && (
-                <div className="space-y-3 text-xs text-white/60">
+                <div className="space-y-3 text-xs text-white/70">
                   <label className="flex items-center justify-between">Size <input aria-label="Subtitle size" type="range" min="75" max="150" value={subtitleSize} onChange={e => setSubtitleSize(Number(e.target.value))} /></label>
                   <label className="flex items-center justify-between">Color <input aria-label="Subtitle color" type="color" value={subtitleColor} onChange={e => setSubtitleColor(e.target.value)} /></label>
                   <label className="flex items-center justify-between">Background <input aria-label="Subtitle background opacity" type="range" min="0" max="100" value={subtitleOpacity} onChange={e => setSubtitleOpacity(Number(e.target.value))} /></label>
@@ -677,7 +677,7 @@ export function FebBoxPlayer({
 
         {/* Time row */}
         <div className="flex items-center justify-between px-4 pb-1">
-          <span className="text-[11px] font-mono text-white/50 tabular-nums">
+          <span className="text-[11px] font-mono text-white/70 tabular-nums">
             {fmtTime(currentTime)}
           </span>
           <span className="text-[11px] font-mono text-white/30 tabular-nums">
@@ -824,7 +824,7 @@ export default function VideoPlayer({
           <p className="text-[13px] font-semibold text-white leading-tight truncate max-w-[200px] md:max-w-none">
             {title?.name ?? 'Untitled'}
           </p>
-          <p className="text-[10px] text-white/40 font-mono mt-0.5">
+          <p className="text-[10px] text-white/70 font-mono mt-0.5">
             {title.type === 'SERIES'
               ? `S${selectedSeason} · E${selectedEp}`
               : title.type === 'ANIME'
@@ -843,7 +843,7 @@ export default function VideoPlayer({
                 className={`text-[10px] font-mono px-2.5 py-1 rounded-full border transition-colors ${
                   serverId === s.id
                     ? 'border-white/20 bg-white/[0.08] text-white'
-                    : 'border-white/[0.08] text-white/40 hover:text-white/80 hover:border-white/[0.16]'
+                    : 'border-white/[0.08] text-white/70 hover:text-white/80 hover:border-white/[0.16]'
                 }`}
               >
                 {s.label}
@@ -866,7 +866,7 @@ export default function VideoPlayer({
             onClick={() => setDeviceModal('cast')}
             aria-label="Cast to device"
             title="Cast to device"
-            className="flex items-center justify-center w-8 h-8 rounded-lg text-white/40 border border-white/[0.08] hover:text-white hover:bg-white/[0.06] transition-colors"
+            className="flex items-center justify-center w-8 h-8 rounded-[8px] text-white/70 border border-white/[0.08] hover:text-white hover:bg-white/[0.06] transition-colors"
           >
             <Cast size={13} />
           </button>
@@ -875,7 +875,7 @@ export default function VideoPlayer({
             onClick={() => setDeviceModal('airplay')}
             aria-label="AirPlay"
             title="AirPlay"
-            className="flex items-center justify-center w-8 h-8 rounded-lg text-white/40 border border-white/[0.08] hover:text-white hover:bg-white/[0.06] transition-colors"
+            className="flex items-center justify-center w-8 h-8 rounded-[8px] text-white/70 border border-white/[0.08] hover:text-white hover:bg-white/[0.06] transition-colors"
           >
             <Airplay size={13} />
           </button>
@@ -883,7 +883,7 @@ export default function VideoPlayer({
             type="button"
             onClick={() => setIframeKey(k => k + 1)}
             title="Reload player"
-            className="flex items-center justify-center w-8 h-8 rounded-lg text-white/40 border border-white/[0.08] hover:text-white hover:bg-white/[0.06] transition-colors"
+            className="flex items-center justify-center w-8 h-8 rounded-[8px] text-white/70 border border-white/[0.08] hover:text-white hover:bg-white/[0.06] transition-colors"
           >
             <RefreshCw size={13} />
           </button>
@@ -893,14 +893,14 @@ export default function VideoPlayer({
               <button
                 type="button"
                 onClick={() => { setSelectedEp(p => Math.max(1, p - 1)); setIframeKey(k => k + 1); }}
-                className="flex items-center gap-1 h-8 px-2.5 rounded-lg text-[11px] text-white/40 border border-white/[0.08] hover:text-white hover:bg-white/[0.06] transition-colors"
+                className="flex items-center gap-1 h-8 px-2.5 rounded-[8px] text-[11px] text-white/70 border border-white/[0.08] hover:text-white hover:bg-white/[0.06] transition-colors"
               >
                 <ChevronLeft size={12} /> Prev
               </button>
               <button
                 type="button"
                 onClick={() => { setSelectedEp(p => p + 1); setIframeKey(k => k + 1); }}
-                className="flex items-center gap-1 h-8 px-2.5 rounded-lg text-[11px] text-white/40 border border-white/[0.08] hover:text-white hover:bg-white/[0.06] transition-colors"
+                className="flex items-center gap-1 h-8 px-2.5 rounded-[8px] text-[11px] text-white/70 border border-white/[0.08] hover:text-white hover:bg-white/[0.06] transition-colors"
               >
                 Next <ChevronRight size={12} />
               </button>
@@ -913,14 +913,14 @@ export default function VideoPlayer({
                 type="button"
                 onClick={onAnimePrev}
                 disabled={selectedEp <= 1}
-                className="flex items-center gap-1 h-8 px-2.5 rounded-lg text-[11px] text-white/40 border border-white/[0.08] hover:text-white hover:bg-white/[0.06] transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
+                className="flex items-center gap-1 h-8 px-2.5 rounded-[8px] text-[11px] text-white/70 border border-white/[0.08] hover:text-white hover:bg-white/[0.06] transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
               >
                 <ChevronLeft size={12} /> Prev
               </button>
               <button
                 type="button"
                 onClick={onAnimeNext}
-                className="flex items-center gap-1 h-8 px-2.5 rounded-lg text-[11px] text-white/40 border border-white/[0.08] hover:text-white hover:bg-white/[0.06] transition-colors"
+                className="flex items-center gap-1 h-8 px-2.5 rounded-[8px] text-[11px] text-white/70 border border-white/[0.08] hover:text-white hover:bg-white/[0.06] transition-colors"
               >
                 Next <ChevronRight size={12} />
               </button>
@@ -933,7 +933,7 @@ export default function VideoPlayer({
               target="_blank"
               rel="noreferrer"
               title="Open in new tab"
-              className="flex items-center justify-center w-8 h-8 rounded-lg text-white/40 border border-white/[0.08] hover:text-white hover:bg-white/[0.06] transition-colors"
+              className="flex items-center justify-center w-8 h-8 rounded-[8px] text-white/70 border border-white/[0.08] hover:text-white hover:bg-white/[0.06] transition-colors"
             >
               <ExternalLink size={13} />
             </a>
@@ -943,7 +943,7 @@ export default function VideoPlayer({
             type="button"
             onClick={() => setPlayerOpen(false)}
             aria-label="Close player"
-            className="flex items-center justify-center w-8 h-8 rounded-lg text-white/40 border border-white/[0.08] hover:text-white hover:bg-white/[0.06] transition-colors"
+            className="flex items-center justify-center w-8 h-8 rounded-[8px] text-white/70 border border-white/[0.08] hover:text-white hover:bg-white/[0.06] transition-colors"
           >
             <X size={14} />
           </button>
