@@ -192,8 +192,8 @@ const GlassCard = memo(function GlassCard({
           <div className="
             absolute top-2 left-2 z-10
             h-[22px] w-[22px] flex items-center justify-center
-            rounded-full bg-black/80 border border-white/[0.12]
-            font-semibold text-[11px] text-white/60 leading-none
+            rounded-full bg-[#141414]/80 border border-white/[0.12]
+            font-semibold text-[11px] text-white/50 leading-none
           ">
             {rank}
           </div>
@@ -214,7 +214,7 @@ const GlassCard = memo(function GlassCard({
           <span className="
             absolute top-2 right-2 z-10
             font-mono text-[7px] px-[6px] py-[2.5px] rounded-full
-            border border-white/[0.10] bg-black/60
+            border border-white/[0.10] bg-[#141414]/60
             text-white/65 uppercase tracking-[0.08em] leading-none
           ">
             {typeLabel}
@@ -252,10 +252,10 @@ const GlassCard = memo(function GlassCard({
           absolute inset-x-0 bottom-0 z-10
           px-2.5 pt-2 pb-2
           border-t border-white/[0.05]
-          bg-black/80
-          md:bg-black/60 md:backdrop-blur-[14px]
+          bg-[#141414]/80
+          md:bg-[#141414]/60 md:backdrop-blur-[14px]
           transition-[background-color] duration-300 ease-spring
-          md:group-hover:bg-black/70
+          md:group-hover:bg-[#141414]/70
         ">
           <p className="text-[11.5px] font-sans font-semibold leading-[1.28] line-clamp-2 text-white">
             {title}
@@ -365,7 +365,7 @@ export function GlassCardSkeleton({
         <div className="absolute inset-x-0 bottom-0 h-[40%] bg-gradient-to-t from-black/40 to-transparent pointer-events-none" />
         <div className="absolute top-2 left-2 h-[20px] w-[20px] rounded-full bg-white/[0.05]" />
         <div className="absolute top-2 right-2 h-[14px] w-[28px] rounded-full bg-white/[0.04]" />
-        <div className="absolute inset-x-0 bottom-0 px-2.5 pt-2 pb-2 bg-black/70 border-t border-white/[0.05]">
+        <div className="absolute inset-x-0 bottom-0 px-2.5 pt-2 pb-2 bg-[#141414]/70 border-t border-white/[0.05]">
           <div className="h-[10px] w-[82%] rounded-full bg-white/[0.08] mb-[4px]" />
           <div className="h-[8px] w-[50%] rounded-full bg-white/[0.06] mb-[6px]" />
           <div className="flex gap-[4px]">
