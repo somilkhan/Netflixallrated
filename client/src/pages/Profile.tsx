@@ -60,7 +60,7 @@ export default function Profile() {
         </div>
         <div>
           <p className="text-xl font-semibold text-white mb-1">Sign in to your account</p>
-          <p className="text-sm text-white/40">Track what you watch, build your list</p>
+          <p className="text-sm text-white/50">Track what you watch, build your list</p>
         </div>
         <button
           type="button"
@@ -162,7 +162,7 @@ export default function Profile() {
           <button
             type="button"
             onClick={() => nav('/history')}
-            className="flex items-center gap-0.5 text-sm text-white/40 hover:text-white transition-colors"
+            className="flex items-center gap-0.5 text-sm text-white/50 hover:text-white transition-colors"
           >
             View All <ChevronRight size={14} />
           </button>
@@ -244,7 +244,7 @@ export default function Profile() {
                     )}
                   </div>
                   <p className="text-[12px] font-medium text-white leading-tight line-clamp-2">{item.title?.name ?? 'Untitled'}</p>
-                  <p className="text-[10px] text-white/40 mt-0.5">{timeAgo(item.updatedAt)}</p>
+                  <p className="text-[10px] text-white/50 mt-0.5">{timeAgo(item.updatedAt)}</p>
                 </div>
               );
             })}
@@ -262,7 +262,7 @@ export default function Profile() {
           <button
             type="button"
              onClick={() => nav('/my-list')}
-            className="flex items-center gap-0.5 text-sm text-white/40 hover:text-white transition-colors"
+            className="flex items-center gap-0.5 text-sm text-white/50 hover:text-white transition-colors"
           >
             View All <ChevronRight size={14} />
           </button>
