@@ -14,8 +14,9 @@ export default {
         'surface-2':  '#161616',
         line:         'rgba(255,255,255,0.08)',
         'line-bright':'rgba(255,255,255,0.15)',
-        // Netflix uses only black/white/red
-        // maroon/amber removed for spec compliance
+        maroon:       '#7A2530',
+        'maroon-bright': '#C2434F',
+        amber:        '#C99A4A',
         ink:          '#FFFFFF',
         'ink-dim':    '#A3A3A3',
         'ink-faint':  '#737373',
@@ -47,8 +48,8 @@ export default {
         shimmer:       'shimmer 1.8s ease-in-out infinite',
         'pulse-soft':  'pulse 2s ease-in-out infinite',
         spin:          'spin 1s linear infinite',
+        fadeUp:    'fadeUpIn 0.3s cubic-bezier(0.4,0,0.2,1) forwards',
         /* Legacy */
-        // Netflix spec: minimal, purposeful motion only
       },
       keyframes: {
         fadeIn: {
@@ -72,6 +73,10 @@ export default {
         },
         slideInRight: {
           from: { opacity: '0', transform: 'translate3d(24px,0,0)' },
+          to:   { opacity: '1', transform: 'translate3d(0,0,0)' },
+        },
+        fadeUpIn: {
+          from: { opacity: '0', transform: 'translate3d(0,20px,0)' },
           to:   { opacity: '1', transform: 'translate3d(0,0,0)' },
         },
         // Netflix spec: minimal keyframes only

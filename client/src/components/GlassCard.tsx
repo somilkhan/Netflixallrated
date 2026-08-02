@@ -36,8 +36,8 @@ export interface GlassCardProps {
 const TIER_STYLE: Record<string, string> = {
   PERFECTION: 'text-amber border-amber/40 bg-amber/10',
   GOFORIT:    'text-[#C2434F] border-[#C2434F]/40 bg-[#C2434F]/10',
-  TIMEPASS:   'text-[#999] border-[#333] bg-[#1a1a1a]',
-  SKIP:       'text-[#555] border-[#161616] bg-[#111]',
+  TIMEPASS:   'text-[#999] border-[#333] bg-[#161616]',
+  SKIP:       'text-[#555] border-[#161616] bg-[#000000]',
 };
 const TIER_LABEL: Record<string, string> = {
   PERFECTION: 'S',

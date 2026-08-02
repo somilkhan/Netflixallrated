@@ -312,7 +312,7 @@ function ExpandedGrid({ title, items, onBack, onOpen }: {
         {items.map((item, i) => {
           const v = GENRE_VISUAL[item.label];
           return (
-            <div key={item.slug} className="animate-fadeUp opacity-0" style={{ animationDelay: `${Math.min(i, 12) * 30}ms` }}>
+            <div key={item.slug} className="animate-fade-up opacity-0" style={{ animationDelay: `${Math.min(i, 12) * 30}ms` }}>
               <ImgCard
                 label={item.label}
                 sub={item.tag}
@@ -351,7 +351,7 @@ function PosterRow({ title, items }: { title: string; items: PosterItem[] }) {
       <SectionHeader title={title} />
       <div className="flex gap-3 overflow-x-auto px-4 pb-1 scrollbar-none snap-x snap-mandatory">
         {items.map((item, i) => (
-          <div key={item.key} className="snap-start animate-fadeUp opacity-0" style={{ animationDelay: `${Math.min(i, 10) * 35}ms` }}>
+          <div key={item.key} className="snap-start animate-fade-up opacity-0" style={{ animationDelay: `${Math.min(i, 10) * 35}ms` }}>
             <GlassCard
               title={item.name}
               year={item.year}
