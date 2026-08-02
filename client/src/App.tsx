@@ -95,7 +95,7 @@ export default function App() {
   const closeSearch = useCallback(() => setSearchOpen(false), []);
 
   useEffect(() => {
-    console.log('[Allrated]', BUILD_INFO.sha, BUILD_INFO.date);
+    // Build info logged in development only
   }, []);
 
   // Global Ctrl+K / Cmd+K
