@@ -153,7 +153,7 @@ function BackButton() {
   return (
     <button
       onClick={() => navigate(-1)}
-      className="flex items-center gap-1.5 text-[13px] text-white/50
+      className="flex items-center gap-1.5 text-[13px] text-white/70
         hover:text-white transition-colors mb-6"
     >
       <ChevronLeft size={16} />
@@ -175,7 +175,7 @@ function Tabs({ active, onChange, includeAnime = false }: { active: MediaType; o
           className={`shrink-0 text-[13px] font-medium px-4 py-2 rounded-full border transition-all duration-200
             ${active === key
               ? "bg-white text-black border-white"
-              : "bg-transparent border-white/10 text-white/50 hover:text-white hover:border-white/25"}`}
+              : "bg-transparent border-white/10 text-white/70 hover:text-white hover:border-white/25"}`}
         >
           {TAB_LABEL[key]}
         </button>
@@ -229,14 +229,14 @@ function PosterGrid({
   }
   if (loadState === "error" && items.length === 0) {
     return (
-      <p className="text-sm text-white/50 py-12 text-center">
+      <p className="text-sm text-white/70 py-12 text-center">
         Couldn't load titles: {error}
       </p>
     );
   }
   if (loadState === "done" && items.length === 0) {
     return (
-      <p className="text-sm text-white/50 py-12 text-center">
+      <p className="text-sm text-white/70 py-12 text-center">
         No titles found for this filter yet.
       </p>
     );
@@ -276,13 +276,13 @@ function DetailShell({
   children: React.ReactNode;
 }) {
   return (
-    <div className="min-h-screen px-5 pt-10 pb-28" style={{ background: '#0A0A0A' }}>
+    <div className="min-h-screen px-5 pt-10 pb-28" style={{ background: '#000000' }}>
       <BackButton />
       <h1 className="text-[32px] md:text-[42px] font-bold leading-tight text-white mb-1 capitalize tracking-tight">
         {title}
       </h1>
       {subtitle && (
-        <p className="text-[13px] text-white/50 mb-6">{subtitle}</p>
+        <p className="text-[13px] text-white/70 mb-6">{subtitle}</p>
       )}
       {children}
     </div>
@@ -327,7 +327,7 @@ export function StudioDetail() {
           ))}
         </div>
       ) : !platform ? (
-        <p className="text-sm text-white/50 py-12 text-center">
+        <p className="text-sm text-white/70 py-12 text-center">
           This streaming platform doesn't exist in the catalog.
         </p>
       ) : (
@@ -342,7 +342,7 @@ export function LanguageDetail() {
   const { slug = "" } = useParams();
   return (
     <DetailShell title={slug} subtitle="Language filtering">
-      <p className="text-[13px] text-white/50">
+      <p className="text-[13px] text-white/70">
         Language isn't stored on titles yet, so this filter can't return real
         results. Add a language field to the catalog to enable this page.
       </p>
@@ -385,7 +385,7 @@ export function GenreDetail() {
           ))}
         </div>
       ) : !genreName ? (
-        <p className="text-sm text-white/50 py-12 text-center">
+        <p className="text-sm text-white/70 py-12 text-center">
           This genre doesn't exist in the catalog.
         </p>
       ) : (
