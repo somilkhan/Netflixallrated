@@ -312,7 +312,7 @@ export default function SearchResults() {
           transition={{ duration: 0.2 }}
           className="flex flex-col items-center py-20 text-center"
         >
-          <div className="w-16 h-16 rounded-2xl flex items-center justify-center mb-4 border border-white/[0.07]"
+          <div className="w-16 h-16 rounded-[12px] flex items-center justify-center mb-4 border border-white/[0.07]"
             style={{ background: 'rgba(255,255,255,0.04)' }}>
             <Search size={24} className="text-white/20" />
           </div>

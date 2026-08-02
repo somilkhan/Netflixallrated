@@ -193,7 +193,7 @@ export default function Anime() {
         <button
           onClick={() => nav('/anime/genres')}
           className="
-            relative w-full overflow-hidden rounded-2xl
+            relative w-full overflow-hidden rounded-[12px]
             border border-white/[0.07] group
             bg-[radial-gradient(ellipse_120%_100%_at_20%_40%,rgba(255,255,255,0.04),rgba(10,10,10,0.9)_60%)]
             hover:border-white/[0.14] transition-[border-color,box-shadow] duration-300

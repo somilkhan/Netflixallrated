@@ -565,7 +565,7 @@ export function FebBoxPlayer({
       {/* Error overlay */}
       {error && (
         <div className="absolute inset-0 flex items-center justify-center bg-black/80 z-30">
-          <p className="text-red-400 text-sm text-center px-8">{error}</p>
+          <p className="text-[#e50914] text-sm text-center px-8">{error}</p>
         </div>
       )}
 
@@ -580,7 +580,7 @@ export function FebBoxPlayer({
       )}
 
       {nextCountdown !== null && (
-        <div className="absolute inset-x-0 bottom-20 z-40 mx-auto flex max-w-sm flex-col items-center gap-3 rounded-2xl border border-white/10 bg-black/90 p-5 text-center shadow-2xl">
+        <div className="absolute inset-x-0 bottom-20 z-40 mx-auto flex max-w-sm flex-col items-center gap-3 rounded-[12px] border border-white/10 bg-black/90 p-5 text-center shadow-2xl">
           <p className="text-sm font-semibold text-white">Next episode in {nextCountdown}s</p>
           <div className="flex gap-2">
             <button type="button" onClick={() => { setNextCountdown(null); onNextEpisode?.(); }} className="rounded-[8px] bg-white px-3 py-2 text-xs font-semibold text-black">Play next</button>
@@ -591,7 +591,7 @@ export function FebBoxPlayer({
 
       {stillWatching && (
         <div className="absolute inset-0 z-40 flex items-center justify-center bg-black/65 p-6">
-          <div className="w-full max-w-sm rounded-2xl border border-white/10 bg-[#171717] p-6 text-center shadow-2xl">
+          <div className="w-full max-w-sm rounded-[12px] border border-white/10 bg-[#161616] p-6 text-center shadow-2xl">
             <p className="text-base font-semibold text-white">Are you still watching?</p>
             <p className="mt-2 text-xs text-white/45">You’ve watched three episodes in a row.</p>
             <button type="button" onClick={() => { setStillWatching(false); setNextCountdown(5); }} className="mt-5 rounded-[8px] bg-white px-4 py-2 text-xs font-semibold text-black">Continue watching</button>
@@ -611,7 +611,7 @@ export function FebBoxPlayer({
       >
           {showSettings && (
             <div
-              className="absolute bottom-16 right-3 z-50 w-72 rounded-xl border border-white/10 bg-[#171717]/[.98] p-3 shadow-2xl"
+              className="absolute bottom-16 right-3 z-50 w-72 rounded-[8px] border border-white/10 bg-[#161616]/[.98] p-3 shadow-2xl"
               onClick={e => e.stopPropagation()}
             >
               <div className="mb-3 flex items-center justify-between">
@@ -620,20 +620,20 @@ export function FebBoxPlayer({
               </div>
               <div className="mb-3 grid grid-cols-3 gap-1 rounded-[8px] bg-white/[.04] p-1">
                 {([['playback', 'Speed'], ['audio', 'Audio'], ['subtitles', 'Subtitles']] as const).map(([tab, label]) => (
-                  <button key={tab} type="button" onClick={() => setSettingsTab(tab)} className={`rounded-md px-1 py-1.5 text-[10px] ${settingsTab === tab ? 'bg-white/10 text-white' : 'text-white/45'}`}>{label}</button>
+                  <button key={tab} type="button" onClick={() => setSettingsTab(tab)} className={`rounded-[4px] px-1 py-1.5 text-[10px] ${settingsTab === tab ? 'bg-white/10 text-white' : 'text-white/45'}`}>{label}</button>
                 ))}
               </div>
               {settingsTab === 'playback' && (
                 <div className="grid grid-cols-3 gap-1.5">
                   {[0.5, 0.75, 1, 1.25, 1.5, 2].map(rate => (
-                    <button key={rate} type="button" onClick={() => setRate(rate)} className={`rounded-md border px-2 py-2 text-xs ${playbackRate === rate ? 'border-white/40 bg-white/10 text-white' : 'border-white/10 text-white/55'}`}>{rate}x {playbackRate === rate && <Check size={11} className="ml-1 inline" />}</button>
+                    <button key={rate} type="button" onClick={() => setRate(rate)} className={`rounded-[4px] border px-2 py-2 text-xs ${playbackRate === rate ? 'border-white/40 bg-white/10 text-white' : 'border-white/10 text-white/55'}`}>{rate}x {playbackRate === rate && <Check size={11} className="ml-1 inline" />}</button>
                   ))}
                 </div>
               )}
               {settingsTab === 'audio' && (
                 <label className="flex items-center justify-between text-xs text-white/70">
                   Audio track
-                  <select className="rounded-md border border-white/10 bg-black px-2 py-1 text-xs text-white" defaultValue="auto">
+                  <select className="rounded-[4px] border border-white/10 bg-black px-2 py-1 text-xs text-white" defaultValue="auto">
                     <option value="auto">Auto</option><option value="original">Original</option><option value=" dubbed">Dubbed</option>
                   </select>
                 </label>
@@ -643,7 +643,7 @@ export function FebBoxPlayer({
                   <label className="flex items-center justify-between">Size <input aria-label="Subtitle size" type="range" min="75" max="150" value={subtitleSize} onChange={e => setSubtitleSize(Number(e.target.value))} /></label>
                   <label className="flex items-center justify-between">Color <input aria-label="Subtitle color" type="color" value={subtitleColor} onChange={e => setSubtitleColor(e.target.value)} /></label>
                   <label className="flex items-center justify-between">Background <input aria-label="Subtitle background opacity" type="range" min="0" max="100" value={subtitleOpacity} onChange={e => setSubtitleOpacity(Number(e.target.value))} /></label>
-                  <p className="rounded-md bg-black/60 p-2 text-center" style={{ color: subtitleColor, opacity: 0.5 + subtitleOpacity / 200, fontSize: `${subtitleSize}%` }}>Subtitle preview</p>
+                  <p className="rounded-[4px] bg-black/60 p-2 text-center" style={{ color: subtitleColor, opacity: 0.5 + subtitleOpacity / 200, fontSize: `${subtitleSize}%` }}>Subtitle preview</p>
                 </div>
               )}
             </div>
@@ -953,7 +953,7 @@ export default function VideoPlayer({
       {/* ── Player area ─────────────────────────────────────────────────── */}
       {deviceModal && (
         <div className="absolute inset-0 z-[60] flex items-center justify-center bg-black/60 p-4" onClick={() => setDeviceModal(null)}>
-          <div className="w-full max-w-sm rounded-2xl border border-white/10 bg-[#171717] p-5 shadow-2xl" onClick={e => e.stopPropagation()}>
+          <div className="w-full max-w-sm rounded-[12px] border border-white/10 bg-[#161616] p-5 shadow-2xl" onClick={e => e.stopPropagation()}>
             <div className="mb-4 flex items-center justify-between">
               <div>
                 <p className="text-sm font-semibold text-white">{deviceModal === 'cast' ? 'Cast to device' : 'AirPlay'}</p>
@@ -961,7 +961,7 @@ export default function VideoPlayer({
               </div>
               <button type="button" onClick={() => setDeviceModal(null)} className="text-white/45 hover:text-white"><X size={16} /></button>
             </div>
-            <button type="button" onClick={() => setDeviceModal(null)} className="flex w-full items-center justify-between rounded-xl border border-white/10 bg-white/[.04] px-3 py-3 text-left text-sm text-white/70 hover:bg-white/[.08]">
+            <button type="button" onClick={() => setDeviceModal(null)} className="flex w-full items-center justify-between rounded-[8px] border border-white/10 bg-white/[.04] px-3 py-3 text-left text-sm text-white/70 hover:bg-white/[.08]">
               <span>{deviceModal === 'cast' ? 'No devices found' : 'No AirPlay devices found'}</span>
               <span className="text-xs text-white/30">Scan again</span>
             </button>

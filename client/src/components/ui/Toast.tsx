@@ -76,7 +76,7 @@ function ToastEntry({ item, onDismiss }: { item: ToastItem; onDismiss: () => voi
       transition={{ type: 'spring', damping: 24, stiffness: 300 }}
       role="alert"
       aria-live="polite"
-      className="flex items-start gap-3 w-full px-4 py-3 rounded-2xl shadow-2xl"
+      className="flex items-start gap-3 w-full px-4 py-3 rounded-[12px] shadow-2xl"
       style={{
         background:          colors.bg,
         border:              `1px solid ${colors.border}`,

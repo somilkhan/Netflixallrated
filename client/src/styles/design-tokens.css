@@ -3,7 +3,7 @@
   /* Backgrounds */
   --bg-primary:   #0A0A0A;
   --bg-secondary: #141414;
-  --bg-tertiary:  #1A1A1A;
+  --bg-tertiary:  #161616;
   --bg-glass:     rgba(255, 255, 255, 0.03);
 
   /* Text */
@@ -19,7 +19,7 @@
   --accent-amber:  #F59E0B;
   --accent-red:    #E50914;
   --bg-card:       #141414;
-  --bg-elevated:   #1A1A1A;
+  --bg-elevated:   #161616;
   --bg-hover:      rgba(255, 255, 255, 0.05);
   --text-muted:    #666666;
 

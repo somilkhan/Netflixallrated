@@ -270,7 +270,7 @@ const TopNav = memo(function TopNav({ onOpenSearch }: TopNavProps) {
                     <div
                       className="
                         absolute right-0 top-[calc(100%+8px)] w-56 z-50
-                        rounded-2xl border border-white/[0.08] overflow-hidden
+                        rounded-[12px] border border-white/[0.08] overflow-hidden
                         animate-menu
                       "
                       style={{ background: '#000000', boxShadow: '0 8px 40px rgba(0,0,0,0.7)' }}
@@ -400,7 +400,7 @@ const TopNav = memo(function TopNav({ onOpenSearch }: TopNavProps) {
                   aria-current={active ? 'page' : undefined}
                   className={`
                     flex items-center gap-4
-                    min-h-[56px] px-4 rounded-2xl
+                    min-h-[56px] px-4 rounded-[12px]
                     text-[17px] font-medium
                     transition-colors duration-200 touch-manipulation
                     ${active
@@ -424,7 +424,7 @@ const TopNav = memo(function TopNav({ onOpenSearch }: TopNavProps) {
                   <button
                     type="button"
                     onClick={() => nav('/profile')}
-                    className="w-full flex items-center gap-3 px-4 py-3 rounded-2xl hover:bg-white/[0.04] transition-colors touch-manipulation"
+                    className="w-full flex items-center gap-3 px-4 py-3 rounded-[12px] hover:bg-white/[0.04] transition-colors touch-manipulation"
                   >
                     <Avatar
                       name={user.displayName}
@@ -443,7 +443,7 @@ const TopNav = memo(function TopNav({ onOpenSearch }: TopNavProps) {
                   <button
                     type="button"
                     onClick={handleSignOut}
-                    className="w-full flex items-center gap-3 h-12 px-4 rounded-2xl text-sm text-[#737373] hover:text-white hover:bg-white/[0.04] transition-colors touch-manipulation"
+                    className="w-full flex items-center gap-3 h-12 px-4 rounded-[12px] text-sm text-[#737373] hover:text-white hover:bg-white/[0.04] transition-colors touch-manipulation"
                   >
                     <LogOut size={16} className="shrink-0" />
                     Sign out
@@ -453,7 +453,7 @@ const TopNav = memo(function TopNav({ onOpenSearch }: TopNavProps) {
                 <button
                   type="button"
                   onClick={() => nav('/login')}
-                  className="w-full flex items-center justify-center gap-2 h-12 rounded-2xl text-sm font-medium text-white bg-white/[0.08] border border-white/[0.12] hover:bg-white/[0.12] transition-colors touch-manipulation"
+                  className="w-full flex items-center justify-center gap-2 h-12 rounded-[12px] text-sm font-medium text-white bg-white/[0.08] border border-white/[0.12] hover:bg-white/[0.12] transition-colors touch-manipulation"
                 >
                   <User size={16} />
                   Sign in

@@ -34,7 +34,7 @@ const MobileBottomNav = memo(function MobileBottomNav() {
     <>
       {moreOpen && (
         <div
-          className="md:hidden fixed inset-x-3 bottom-[calc(72px+env(safe-area-inset-bottom))] z-[51] rounded-2xl border border-white/[0.10] bg-[#151515] p-2 shadow-[0_12px_40px_rgba(0,0,0,0.65)]"
+          className="md:hidden fixed inset-x-3 bottom-[calc(72px+env(safe-area-inset-bottom))] z-[51] rounded-[12px] border border-white/[0.10] bg-[#151515] p-2 shadow-[0_12px_40px_rgba(0,0,0,0.65)]"
           role="dialog"
           aria-label="More navigation"
         >
@@ -60,7 +60,7 @@ const MobileBottomNav = memo(function MobileBottomNav() {
               key={path}
               type="button"
               onClick={() => { setMoreOpen(false); nav(path); }}
-              className="flex w-full items-center gap-3 rounded-xl px-3 py-3 text-left text-[14px] text-white/75 hover:bg-white/[0.06] hover:text-white"
+              className="flex w-full items-center gap-3 rounded-[8px] px-3 py-3 text-left text-[14px] text-white/75 hover:bg-white/[0.06] hover:text-white"
             >
               <Icon size={17} className="text-white/45" />
               {label}

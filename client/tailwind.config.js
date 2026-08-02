@@ -7,20 +7,19 @@ export default {
         /* ── New design system ── */
         primary:   '#000000',
         secondary: '#000000',
-        tertiary:  '#1A1A1A',
+        tertiary:  '#161616',
         /* ── Legacy aliases (keep for existing components) ── */
         void:         '#000000',
         surface:      '#000000',
-        'surface-2':  '#1A1A1A',
+        'surface-2':  '#161616',
         line:         'rgba(255,255,255,0.08)',
         'line-bright':'rgba(255,255,255,0.15)',
-        maroon:       '#7A2530',
-        'maroon-bright': '#C2434F',
-        amber:        '#C99A4A',
+        // Netflix uses only black/white/red
+        // maroon/amber removed for spec compliance
         ink:          '#FFFFFF',
         'ink-dim':    '#A3A3A3',
         'ink-faint':  '#737373',
-        'ink-ghost':  '#525252',
+        // 'ink-ghost':  '#525252', // Removed — Netflix doesn't use this shade
       },
       fontFamily: {
         sans:    ['Inter', 'system-ui', '-apple-system', 'sans-serif'],
@@ -49,12 +48,7 @@ export default {
         'pulse-soft':  'pulse 2s ease-in-out infinite',
         spin:          'spin 1s linear infinite',
         /* Legacy */
-        marquee:   'marquee 42s linear infinite',
-        kenBurns:  'kenBurns 28s ease-in-out infinite',
-        fadeUp:    'fadeUpIn 0.3s cubic-bezier(0.4,0,0.2,1) forwards',
-        fadeIn:    'fadeIn 0.2s ease-out forwards',
-        fadeUpIn:  'fadeUpIn 0.3s cubic-bezier(0.4,0,0.2,1) forwards',
-        activeGlow:'activeGlow 2.4s ease-in-out infinite',
+        // Netflix spec: minimal, purposeful motion only
       },
       keyframes: {
         fadeIn: {
@@ -80,22 +74,7 @@ export default {
           from: { opacity: '0', transform: 'translate3d(24px,0,0)' },
           to:   { opacity: '1', transform: 'translate3d(0,0,0)' },
         },
-        marquee: {
-          from: { transform: 'translate3d(0,0,0)' },
-          to:   { transform: 'translate3d(-50%,0,0)' },
-        },
-        kenBurns: {
-          '0%,100%': { transform: 'scale(1.0) translate3d(0,0,0)' },
-          '50%':     { transform: 'scale(1.06) translate3d(-1.2%,0.6%,0)' },
-        },
-        progressFill: {
-          from: { width: '0%' },
-          to:   { width: '100%' },
-        },
-        activeGlow: {
-          '0%,100%': { opacity: '0.6' },
-          '50%':     { opacity: '1' },
-        },
+        // Netflix spec: minimal keyframes only
       },
       boxShadow: {
         'soft':       '0 8px 32px rgba(0,0,0,0.4)',

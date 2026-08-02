@@ -59,7 +59,7 @@ const AniCard = memo(function AniCard({ anime, rank, fluid = false, className = 
       onMouseEnter={(e) => {
         const el = e.currentTarget;
         el.style.zIndex = '50';
-        el.style.transform = 'scale(1.35)';
+        el.style.transform = 'scale(1.4)';
         el.style.transition = 'transform 350ms cubic-bezier(0.4, 0, 0.2, 1), z-index 0ms';
       }}
       onMouseLeave={(e) => {
@@ -105,7 +105,7 @@ const AniCard = memo(function AniCard({ anime, rank, fluid = false, className = 
         {hasImage ? (
           <>
             {!imgLoaded && (
-              <div className="absolute inset-0 bg-[#1A1A1A] overflow-hidden">
+              <div className="absolute inset-0 bg-[#161616] overflow-hidden">
                 <div className="absolute inset-0" style={{
                   background: 'linear-gradient(90deg, transparent, rgba(255,255,255,0.05) 50%, transparent)',
                   animation: 'shimmer 1.8s ease-in-out infinite',

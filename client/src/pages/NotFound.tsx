@@ -16,10 +16,10 @@ export default function NotFound() {
       </div>
 
       <div className="space-y-3 max-w-[440px]">
-        <h1 className="font-sans font-bold text-[32px] leading-tight text-white">
+        <h1 className="font-bold text-[32px] leading-tight text-white">
           Page not found
         </h1>
-        <p className="font-sans text-[14px] text-[#888] leading-relaxed">
+        <p className="text-[14px] text-[#888] leading-relaxed">
           This page doesn’t exist or may have moved. Let’s get you back to something good.
         </p>
       </div>
@@ -27,9 +27,9 @@ export default function NotFound() {
       <button
         onClick={() => nav('/')}
         className="
-          mt-2 px-6 py-2.5 rounded-xl
+          mt-2 px-6 py-2.5 rounded-[8px]
           bg-[#1a1a1a] border border-white/10
-          font-sans font-semibold text-[14px] text-white
+          font-semibold text-[14px] text-white
           hover:bg-white/10 active:scale-[0.97]
           transition-all duration-150
         "

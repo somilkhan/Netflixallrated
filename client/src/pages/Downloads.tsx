@@ -66,7 +66,7 @@ export default function Downloads() {
         </div>
       </div>
 
-      <section className="mb-8 rounded-2xl border border-white/[0.07] bg-white/[0.025] p-4 sm:p-5">
+      <section className="mb-8 rounded-[12px] border border-white/[0.07] bg-white/[0.025] p-4 sm:p-5">
         <div className="mb-3 flex items-center justify-between gap-3">
           <div className="flex items-center gap-2 text-sm text-white/65"><HardDrive size={15} /> Storage</div>
           <span className="text-xs text-white/35">{(usedMb / 1024).toFixed(1)} GB of 10 GB</span>
@@ -82,27 +82,27 @@ export default function Downloads() {
 
       {items.length > 0 && (
         <div className="mb-5 flex justify-end">
-          <button type="button" onClick={() => save([])} className="flex items-center gap-2 rounded-lg border border-red-400/15 px-3 py-2 text-xs text-red-200/65 hover:border-red-400/30 hover:text-red-100">
+          <button type="button" onClick={() => save([])} className="flex items-center gap-2 rounded-[8px] border border-[#e50914]/15 px-3 py-2 text-xs text-[#e50914]200/65 hover:border-[#e50914]/30 hover:text-[#e50914]100">
             <Trash2 size={14} /> Delete all
           </button>
         </div>
       )}
 
       {items.length === 0 ? (
-        <div className="flex min-h-[420px] flex-col items-center justify-center rounded-2xl border border-white/[0.07] bg-white/[0.02] px-6 text-center">
+        <div className="flex min-h-[420px] flex-col items-center justify-center rounded-[12px] border border-white/[0.07] bg-white/[0.02] px-6 text-center">
           <div className="mb-5 flex h-20 w-20 items-center justify-center rounded-3xl border border-white/[0.08] bg-white/[0.04]">
             <Download size={34} className="text-white/25" />
           </div>
           <h2 className="text-xl font-semibold text-white">No downloads yet</h2>
           <p className="mt-2 max-w-sm text-sm leading-6 text-white/40">Download a title from its detail page to watch it offline.</p>
-          <button type="button" onClick={() => nav('/browse')} className="mt-6 rounded-xl bg-white px-5 py-2.5 text-sm font-semibold text-black hover:bg-white/90">Browse titles</button>
+          <button type="button" onClick={() => nav('/browse')} className="mt-6 rounded-[8px] bg-white px-5 py-2.5 text-sm font-semibold text-black hover:bg-white/90">Browse titles</button>
         </div>
       ) : (
         <div className="grid grid-cols-2 gap-x-4 gap-y-7 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6">
           {items.map(item => (
             <div key={item.id} className="group relative">
               <ContentCard title={item.title} fluid />
-              <button type="button" onClick={() => save(items.filter(entry => entry.id !== item.id))} aria-label={`Delete ${item.title?.name ?? 'Untitled'} download`} className="absolute right-2 top-2 z-30 flex h-7 w-7 items-center justify-center rounded-full border border-white/15 bg-black/75 text-white/80 hover:bg-red-500 hover:text-white">
+              <button type="button" onClick={() => save(items.filter(entry => entry.id !== item.id))} aria-label={`Delete ${item.title?.name ?? 'Untitled'} download`} className="absolute right-2 top-2 z-30 flex h-7 w-7 items-center justify-center rounded-full border border-white/15 bg-black/75 text-white/80 hover:bg-[#e50914] hover:text-white">
                 <X size={14} />
               </button>
               <div className="mt-2 flex items-center justify-between gap-2 text-[11px] text-white/45">

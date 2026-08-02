@@ -54,7 +54,7 @@ const BottomPlayer = memo(function BottomPlayer() {
           onClick={() => setExpanded(false)}
         >
           <div
-            className="mx-3 mb-[72px] rounded-2xl overflow-hidden border border-white/[0.08]"
+            className="mx-3 mb-[72px] rounded-[12px] overflow-hidden border border-white/[0.08]"
             style={{ background: '#000000' }}
             onClick={e => e.stopPropagation()}
           >
@@ -70,8 +70,8 @@ const BottomPlayer = memo(function BottomPlayer() {
 
             <div className="px-8 py-6 flex flex-col items-center gap-4">
               <div
-                className="w-full max-w-[180px] rounded-xl overflow-hidden cursor-pointer"
-                style={{ aspectRatio: '2/3', background: '#1A1A1A' }}
+                className="w-full max-w-[180px] rounded-[8px] overflow-hidden cursor-pointer"
+                style={{ aspectRatio: '2/3', background: '#161616' }}
                 onClick={handleGoToTitle}
               >
                 {nowPlaying.posterUrl && (
@@ -109,7 +109,7 @@ const BottomPlayer = memo(function BottomPlayer() {
               <button
                 type="button"
                 onClick={handleGoToTitle}
-                className="w-full flex items-center justify-center gap-2 h-10 rounded-xl text-sm text-white/70 bg-white/[0.06] border border-white/[0.08] hover:bg-white/[0.10] hover:text-white transition-colors"
+                className="w-full flex items-center justify-center gap-2 h-10 rounded-[8px] text-sm text-white/70 bg-white/[0.06] border border-white/[0.08] hover:bg-white/[0.10] hover:text-white transition-colors"
               >
                 <Maximize size={14} /> Go to title
               </button>
@@ -151,7 +151,7 @@ const BottomPlayer = memo(function BottomPlayer() {
               onClick={() => window.innerWidth < 768 ? setExpanded(true) : handleGoToTitle()}
               aria-label={`Now playing: ${nowPlaying.name}`}
             >
-              <div className="shrink-0 w-10 h-14 md:w-12 md:h-[60px] rounded-md overflow-hidden bg-[#1A1A1A]">
+              <div className="shrink-0 w-10 h-14 md:w-12 md:h-[60px] rounded-[4px] overflow-hidden bg-[#161616]">
                 {nowPlaying.posterUrl && (
                   <img {...tmdbSrcSet(nowPlaying.posterUrl)} alt={nowPlaying.name} className="w-full h-full object-cover" loading="lazy" decoding="async" sizes="48px" />
                 )}

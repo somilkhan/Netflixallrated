@@ -71,7 +71,7 @@ function HistoryRow({
     <div className="flex items-center gap-4 px-4 py-3 border-b border-white/[0.05] hover:bg-white/[0.03] transition-colors group">
       {/* Poster */}
       <div
-        className="relative shrink-0 w-12 h-16 rounded-md overflow-hidden bg-white/5 cursor-pointer"
+        className="relative shrink-0 w-12 h-16 rounded-[4px] overflow-hidden bg-white/5 cursor-pointer"
         role="button"
         tabIndex={0}
         aria-label={`Play ${item.title?.name ?? 'Untitled'}`}

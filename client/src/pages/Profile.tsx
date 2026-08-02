@@ -95,7 +95,7 @@ export default function Profile() {
 
       {/* ── User card ──────────────────────────────────────────────────────── */}
       <div
-        className="rounded-2xl border border-white/[0.08] p-6 mb-8 flex flex-col sm:flex-row items-center sm:items-start gap-5"
+        className="rounded-[12px] border border-white/[0.08] p-6 mb-8 flex flex-col sm:flex-row items-center sm:items-start gap-5"
         style={{ background: 'rgba(255,255,255,0.03)', backdropFilter: 'blur(16px)' }}
       >
         <Avatar
@@ -314,7 +314,7 @@ export default function Profile() {
         </div>
 
         <div
-          className="rounded-2xl border border-white/[0.06] overflow-hidden divide-y divide-white/[0.05]"
+          className="rounded-[12px] border border-white/[0.06] overflow-hidden divide-y divide-white/[0.05]"
           style={{ background: 'rgba(255,255,255,0.02)' }}
         >
           {[

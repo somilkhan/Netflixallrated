@@ -37,7 +37,7 @@ const TIER_STYLE: Record<string, string> = {
   PERFECTION: 'text-amber border-amber/40 bg-amber/10',
   GOFORIT:    'text-[#C2434F] border-[#C2434F]/40 bg-[#C2434F]/10',
   TIMEPASS:   'text-[#999] border-[#333] bg-[#1a1a1a]',
-  SKIP:       'text-[#555] border-[#222] bg-[#111]',
+  SKIP:       'text-[#555] border-[#161616] bg-[#111]',
 };
 const TIER_LABEL: Record<string, string> = {
   PERFECTION: 'S',
@@ -202,7 +202,7 @@ const GlassCard = memo(function GlassCard({
             absolute top-2 left-2 z-10
             inline-flex items-center justify-center
             rounded-full border w-[20px] h-[20px]
-            text-[10px] font-sans font-semibold leading-none
+            text-[10px] font-semibold leading-none
             ${tierStyle}
           `}>
             {tierLabel}
@@ -257,12 +257,12 @@ const GlassCard = memo(function GlassCard({
           transition-[background-color] duration-300 ease-spring
           md:group-hover:bg-[#000000]/70
         ">
-          <p className="text-[11.5px] font-sans font-semibold leading-[1.28] line-clamp-2 text-white">
+          <p className="text-[11.5px] font-semibold leading-[1.28] line-clamp-2 text-white">
             {title}
           </p>
 
           {metaParts && (
-            <p className="mt-[2px] font-mono text-[9px] text-white/75 truncate leading-none">
+            <p className="mt-[2px] text-[9px] text-white/75 truncate leading-none">
               {metaParts}
             </p>
           )}
@@ -296,7 +296,7 @@ const GlassCard = memo(function GlassCard({
                 <span className={`
                   mt-[6px] inline-flex items-center justify-center
                   rounded-full border w-[18px] h-[18px]
-                  text-[9px] font-sans font-semibold leading-none ${tierStyle}
+                  text-[9px] font-semibold leading-none ${tierStyle}
                 `}>
                   {tierLabel}
                 </span>

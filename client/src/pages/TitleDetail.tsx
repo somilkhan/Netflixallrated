@@ -104,11 +104,11 @@ const RelatedPosterCard = memo(function RelatedPosterCard({
       aria-label={name}
       onClick={onClick}
       onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onClick(); } }}
-      className="group relative shrink-0 w-[140px] sm:w-[180px] lg:w-[230px] scroll-snap-start cursor-pointer touch-manipulation select-none focus:outline-none focus-visible:ring-2 focus-visible:ring-white/30 rounded-xl"
+      className="group relative shrink-0 w-[140px] sm:w-[180px] lg:w-[230px] scroll-snap-start cursor-pointer touch-manipulation select-none focus:outline-none focus-visible:ring-2 focus-visible:ring-white/30 rounded-[8px]"
       style={{ WebkitTapHighlightColor: 'transparent' }}
     >
       <div
-        className="relative w-full overflow-hidden rounded-xl bg-[#000000] transition-transform duration-300 ease-[cubic-bezier(0.4,0,0.2,1)] md:group-hover:scale-[1.05] active:scale-[0.97]"
+        className="relative w-full overflow-hidden rounded-[8px] bg-[#000000] transition-transform duration-300 ease-[cubic-bezier(0.4,0,0.2,1)] md:group-hover:scale-[1.05] active:scale-[0.97]"
         style={{ aspectRatio: '2/3', boxShadow: '0 4px 16px rgba(0,0,0,0.3)' }}
       >
         {typeLabel && (

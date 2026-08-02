@@ -119,7 +119,7 @@ const RegionSwitcher = memo(function RegionSwitcher() {
         <div
           className="
             absolute top-full right-0 mt-2 z-[200]
-            w-64 rounded-xl overflow-hidden
+            w-64 rounded-[8px] overflow-hidden
             bg-[#000000] border border-white/[0.09]
             shadow-[0_8px_32px_rgba(0,0,0,0.6)]
           "

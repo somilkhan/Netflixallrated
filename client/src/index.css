@@ -72,8 +72,8 @@
   /* ── Glass surface ───────────────────────────────────────────────────── */
   .glass {
     background: var(--glass-bg-low);
-    backdrop-filter: blur(var(--glass-blur-md));
-    -webkit-backdrop-filter: blur(var(--glass-blur-md));
+    /* Netflix spec: no glassmorphism */
+    -webkit-/* Netflix spec: no glassmorphism */
     border: 1px solid var(--border-subtle);
     border-radius: var(--radius-lg);
   }

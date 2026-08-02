@@ -52,15 +52,15 @@ export default function Admin() {
       </div>
 
       {statusError && (
-        <p className="text-sm text-red-400">Couldn't load status: {statusError}</p>
+        <p className="text-sm text-[#e50914]">Couldn't load status: {statusError}</p>
       )}
 
       {status ? (
-        <div className="rounded-lg border border-line p-5 space-y-3 text-sm">
+        <div className="rounded-[8px] border border-line p-5 space-y-3 text-sm">
           {/* Health indicator */}
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
-              <span className={`inline-block w-2.5 h-2.5 rounded-full ${status.cron.healthy ? 'bg-green-500' : 'bg-red-400'}`} />
+              <span className={`inline-block w-2.5 h-2.5 rounded-full ${status.cron.healthy ? 'bg-green-500' : 'bg-[#e50914]'}`} />
               <span className="font-semibold">{status.cron.healthy ? 'Healthy' : 'Needs attention'}</span>
             </div>
             <button
@@ -76,7 +76,7 @@ export default function Admin() {
 
           {/* Stats */}
           <div className="grid grid-cols-2 gap-3">
-            <div className="bg-surface-2 rounded-lg px-4 py-3">
+            <div className="bg-surface-2 rounded-[8px] px-4 py-3">
               <div className="text-ink-faint text-[11px] uppercase tracking-wider mb-1">Catalog size</div>
               <div className="text-lg font-semibold tabular-nums">{status.dbCount.toLocaleString()}</div>
               {status.totalResults > 0 && (
@@ -85,7 +85,7 @@ export default function Admin() {
                 </div>
               )}
             </div>
-            <div className="bg-surface-2 rounded-lg px-4 py-3">
+            <div className="bg-surface-2 rounded-[8px] px-4 py-3">
               <div className="text-ink-faint text-[11px] uppercase tracking-wider mb-1">Pages synced</div>
               <div className="text-lg font-semibold tabular-nums">
                 {status.lastCompletedPage}

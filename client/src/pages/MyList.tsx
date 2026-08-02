@@ -47,7 +47,7 @@ function SwipeCard({
         type="button"
         onClick={() => onRemove(item)}
         aria-label={`Remove ${item.title?.name ?? 'Untitled'} from My List`}
-        className="absolute right-0 top-0 bottom-8 z-0 flex w-[76px] items-center justify-center rounded-[8px] bg-red-500/80 text-white md:hidden"
+        className="absolute right-0 top-0 bottom-8 z-0 flex w-[76px] items-center justify-center rounded-[8px] bg-[#e50914]/80 text-white md:hidden"
       >
         <X size={18} />
       </button>
@@ -63,7 +63,7 @@ function SwipeCard({
             onRemove(item);
           }}
           aria-label={`Remove ${item.title?.name ?? 'Untitled'} from My List`}
-          className="absolute right-2 top-2 z-30 hidden h-7 w-7 items-center justify-center rounded-full border border-white/15 bg-black/75 text-white/80 shadow-lg transition-colors hover:bg-red-500 hover:text-white md:flex"
+          className="absolute right-2 top-2 z-30 hidden h-7 w-7 items-center justify-center rounded-full border border-white/15 bg-black/75 text-white/80 shadow-lg transition-colors hover:bg-[#e50914] hover:text-white md:flex"
         >
           <X size={14} />
         </button>
@@ -176,7 +176,7 @@ export default function MyList() {
       )}
 
       {!loading && !error && filtered.length === 0 && (
-        <div className="flex min-h-[420px] flex-col items-center justify-center rounded-2xl border border-white/[0.07] bg-white/[0.02] px-6 text-center">
+        <div className="flex min-h-[420px] flex-col items-center justify-center rounded-[12px] border border-white/[0.07] bg-white/[0.02] px-6 text-center">
           <div className="mb-5 flex h-20 w-20 items-center justify-center rounded-3xl border border-white/[0.08] bg-white/[0.04]">
             <Bookmark size={34} className="text-white/25" />
           </div>

@@ -277,7 +277,7 @@ export default function SearchOverlay({ open, onClose }: Props) {
         <form
           onSubmit={handleSubmit}
           className="
-            flex items-center gap-3 px-4 py-3.5 rounded-2xl sticky top-4 z-10
+            flex items-center gap-3 px-4 py-3.5 rounded-[12px] sticky top-4 z-10
             border border-white/[0.12] bg-white/[0.06]
             focus-within:border-white/[0.25] focus-within:bg-white/[0.08]
             transition-[border-color,background-color] duration-200
@@ -325,7 +325,7 @@ export default function SearchOverlay({ open, onClose }: Props) {
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -4 }}
               transition={{ duration: 0.15 }}
-              className="mt-2 rounded-2xl overflow-hidden border border-white/[0.08]"
+              className="mt-2 rounded-[12px] overflow-hidden border border-white/[0.08]"
               style={{ background: 'rgba(20,20,20,0.98)' }}
             >
               {loading && (
@@ -448,7 +448,7 @@ export default function SearchOverlay({ open, onClose }: Props) {
             ) : (
               /* No results at all */
               <div className="flex flex-col items-center py-20 text-center">
-                <div className="w-14 h-14 rounded-2xl flex items-center justify-center mb-4 border border-white/[0.07]"
+                <div className="w-14 h-14 rounded-[12px] flex items-center justify-center mb-4 border border-white/[0.07]"
                   style={{ background: 'rgba(255,255,255,0.04)' }}>
                   <Search size={22} className="text-white/20" />
                 </div>
@@ -478,7 +478,7 @@ export default function SearchOverlay({ open, onClose }: Props) {
                   <button
                     type="button"
                     onClick={handleClearRecent}
-                    className="text-[13px] text-red-500 hover:text-red-400 transition-colors"
+                    className="text-[13px] text-[#e50914] hover:text-[#e50914] transition-colors"
                   >
                     Clear
                   </button>
@@ -522,7 +522,7 @@ export default function SearchOverlay({ open, onClose }: Props) {
                       transition-all duration-150
                     "
                   >
-                    <span className="text-red-500 font-bold text-[11px]">{i + 1}</span>
+                    <span className="text-[#e50914] font-bold text-[11px]">{i + 1}</span>
                     {term}
                   </button>
                 ))}

@@ -94,7 +94,7 @@ export default function Watchlist() {
           <p className="text-white/35 mb-4 text-sm">Couldn't load your watchlist.</p>
           <button
             onClick={() => setRetryTick(t => t + 1)}
-            className="px-4 py-2 border border-white/[0.12] rounded-lg text-sm text-white/50 hover:text-white hover:border-white/25 transition-colors"
+            className="px-4 py-2 border border-white/[0.12] rounded-[8px] text-sm text-white/50 hover:text-white hover:border-white/25 transition-colors"
           >
             Retry
           </button>

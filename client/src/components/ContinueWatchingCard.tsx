@@ -63,7 +63,7 @@ function ContinueWatchingCard({ item, onRemove }: ContinueWatchingCardProps) {
 
       {/* Progress bar */}
       {!completed && pct > 0 && subLabel && (
-        <span className="pointer-events-none absolute left-2 top-2 z-30 rounded-md border border-white/10 bg-black/75 px-1.5 py-1 text-[10px] font-medium text-white/85">
+        <span className="pointer-events-none absolute left-2 top-2 z-30 rounded-[4px] border border-white/10 bg-black/75 px-1.5 py-1 text-[10px] font-medium text-white/85">
           {subLabel}
         </span>
       )}
