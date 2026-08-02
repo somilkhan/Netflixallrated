@@ -6,7 +6,7 @@
  */
 import { useState, useEffect, useCallback, useMemo, useRef, memo } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Play, Info, Volume2, VolumeX, ChevronRight, ChevronDown } from 'lucide-react';
+import { Play, Info, Volume2, VolumeX, ChevronRight } from 'lucide-react';
 import { tmdbSrcSet } from '../../services/tmdb';
 
 const AUTO_MS = 8000;
@@ -385,14 +385,7 @@ const HeroSection = memo(function HeroSection({ titles, onAction, regionLabel }:
         )}
       </div>
 
-      {/* ── Scroll hint — centered, animated bounce ────────────────────── */}
-      <div
-        className="absolute bottom-4 left-1/2 -translate-x-1/2 z-[10] md:hidden pointer-events-none"
-        style={{ opacity: 0.6, animation: 'bounce 2s infinite' }}
-        aria-hidden
-      >
-        <ChevronDown size={24} className="text-white" />
-      </div>
+
     </section>
   );
 });
