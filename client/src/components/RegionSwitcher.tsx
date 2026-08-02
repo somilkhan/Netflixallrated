@@ -100,7 +100,7 @@ const RegionSwitcher = memo(function RegionSwitcher() {
         aria-label={`Current region: ${current.countryName}. Click to change.`}
         aria-expanded={open}
         className="
-          flex items-center gap-1.5 h-9 px-2.5 rounded-lg
+          flex items-center gap-1.5 h-9 px-2.5 rounded-[8px]
           text-[13px] font-medium text-[#A3A3A3] hover:text-white
           hover:bg-white/[0.06] transition-all duration-200
           touch-manipulation select-none
@@ -120,7 +120,7 @@ const RegionSwitcher = memo(function RegionSwitcher() {
           className="
             absolute top-full right-0 mt-2 z-[200]
             w-64 rounded-xl overflow-hidden
-            bg-[#141414] border border-white/[0.09]
+            bg-[#000000] border border-white/[0.09]
             shadow-[0_8px_32px_rgba(0,0,0,0.6)]
           "
           role="dialog"
@@ -128,8 +128,8 @@ const RegionSwitcher = memo(function RegionSwitcher() {
         >
           {/* Search */}
           <div className="p-2 border-b border-white/[0.06]">
-            <div className="flex items-center gap-2 h-8 px-2.5 rounded-lg bg-white/[0.06]">
-              <Search size={12} className="shrink-0 text-white/40" />
+            <div className="flex items-center gap-2 h-8 px-2.5 rounded-[8px] bg-white/[0.06]">
+              <Search size={12} className="shrink-0 text-white/70" />
               <input
                 ref={searchRef}
                 type="text"
@@ -179,7 +179,7 @@ const RegionSwitcher = memo(function RegionSwitcher() {
                         {region.countryCode}
                       </span>
                       {isActive && (
-                        <Check size={12} className="shrink-0 text-white/60" />
+                        <Check size={12} className="shrink-0 text-white/70" />
                       )}
                     </button>
                   </li>
