@@ -42,7 +42,7 @@ export default function Watchlist() {
       <p className="text-white/40 text-sm">Sign in to view your watchlist</p>
       <button
         onClick={() => nav('/login')}
-        className="px-5 py-2 bg-white text-black rounded-xl text-sm font-semibold hover:bg-white/90 transition-colors"
+        className="px-5 py-2 bg-white text-black rounded-[8px] text-sm font-semibold hover:bg-white/90 transition-colors"
       >
         Sign In
       </button>
@@ -80,7 +80,7 @@ export default function Watchlist() {
         <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
           {Array.from({ length: 12 }).map((_, i) => (
             <div key={i}>
-              <div className="aspect-[2/3] rounded-xl bg-white/[0.05] mb-2 animate-pulse" />
+              <div className="aspect-[2/3] rounded-[8px] bg-white/[0.05] mb-2 animate-pulse" />
               <div className="h-3 bg-white/[0.05] rounded-full w-3/4 mb-1 animate-pulse" />
               <div className="h-2.5 bg-white/[0.04] rounded-full w-1/2 animate-pulse" />
             </div>

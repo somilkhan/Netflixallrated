@@ -31,7 +31,7 @@ export default function Login() {
         <p className="text-sm text-white/40 mb-8">Sign in to your account</p>
 
         {error && (
-          <div className="mb-4 px-4 py-3 rounded-xl border border-white/[0.10] bg-white/[0.04] text-sm text-white/70">
+          <div className="mb-4 px-4 py-3 rounded-[8px] border border-white/[0.10] bg-white/[0.04] text-sm text-white/70">
             {error}
           </div>
         )}
@@ -44,7 +44,7 @@ export default function Login() {
             placeholder="Email"
             autoComplete="email"
             required
-            className="w-full bg-white/[0.04] border border-white/[0.09] rounded-xl px-4 py-3 text-sm text-white focus:border-white/[0.28] focus:bg-white/[0.06] outline-none placeholder:text-white/25 transition-[border-color,background-color] duration-200"
+            className="w-full bg-white/[0.04] border border-white/[0.09] rounded-[8px] px-4 py-3 text-sm text-white focus:border-white/[0.28] focus:bg-white/[0.06] outline-none placeholder:text-white/25 transition-[border-color,background-color] duration-200"
           />
           <input
             type="password"
@@ -53,14 +53,14 @@ export default function Login() {
             placeholder="Password"
             autoComplete="current-password"
             required
-            className="w-full bg-white/[0.04] border border-white/[0.09] rounded-xl px-4 py-3 text-sm text-white focus:border-white/[0.28] focus:bg-white/[0.06] outline-none placeholder:text-white/25 transition-[border-color,background-color] duration-200"
+            className="w-full bg-white/[0.04] border border-white/[0.09] rounded-[8px] px-4 py-3 text-sm text-white focus:border-white/[0.28] focus:bg-white/[0.06] outline-none placeholder:text-white/25 transition-[border-color,background-color] duration-200"
           />
         </div>
 
         <button
           type="submit"
           disabled={loading}
-          className="mt-5 w-full bg-white text-black font-semibold py-3 rounded-xl hover:bg-white/90 transition-colors disabled:opacity-50"
+          className="mt-5 w-full bg-white text-black font-semibold py-3 rounded-[8px] hover:bg-white/90 transition-colors disabled:opacity-50"
         >
           {loading ? 'Signing in…' : 'Sign In'}
         </button>

@@ -5,6 +5,12 @@ interface SkeletonCardProps {
   fluid?: boolean;
 }
 
+/** Netflix-style shimmer sweep animation */
+const SHIMMER_SWEEP = {
+  background: 'linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.06) 50%, transparent 100%)',
+  animation: 'shimmer 1.6s linear infinite',
+};
+
 export const SkeletonCard = memo(function SkeletonCard({ className = '', fluid = false }: SkeletonCardProps) {
   return (
     <div
@@ -16,21 +22,22 @@ export const SkeletonCard = memo(function SkeletonCard({ className = '', fluid =
     >
       {/* Poster skeleton */}
       <div
-        className="relative w-full rounded-xl overflow-hidden bg-[#1A1A1A]"
+        className="relative w-full rounded-[8px] overflow-hidden bg-[#161616]"
         style={{ aspectRatio: '2/3' }}
       >
         <div
-          className="absolute inset-0"
-          style={{
-            background: 'linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.05) 50%, transparent 100%)',
-            animation: 'shimmer 1.8s ease-in-out infinite',
-          }}
+          className="absolute top-0 bottom-0 w-[40%]"
+          style={SHIMMER_SWEEP}
         />
       </div>
       {/* Text skeleton */}
       <div className="mt-2 space-y-1.5">
-        <div className="h-3 w-4/5 rounded-full bg-[#1A1A1A]" style={{ animation: 'shimmer 1.8s ease-in-out 0.2s infinite' }} />
-        <div className="h-2.5 w-2/5 rounded-full bg-[#000000]" style={{ animation: 'shimmer 1.8s ease-in-out 0.4s infinite' }} />
+        <div className="h-3 w-4/5 rounded-[4px] bg-[#161616] relative overflow-hidden">
+          <div className="absolute inset-0" style={{ ...SHIMMER_SWEEP, animationDelay: '0.2s' }} />
+        </div>
+        <div className="h-2.5 w-2/5 rounded-[4px] bg-[#161616] relative overflow-hidden">
+          <div className="absolute inset-0" style={{ ...SHIMMER_SWEEP, animationDelay: '0.4s' }} />
+        </div>
       </div>
     </div>
   );

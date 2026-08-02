@@ -157,8 +157,8 @@
 
 /* ── Shimmer for skeletons ───────────────────────────────────────────────── */
 @keyframes shimmer {
-  0%   { transform: translateX(-150%); }
-  100% { transform: translateX(150%); }
+  0%   { transform: translateX(-250%); }
+  100% { transform: translateX(350%); }
 }
 
 /* ── GlassLoader ─────────────────────────────────────────────────────────── */

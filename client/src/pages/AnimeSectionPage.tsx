@@ -101,7 +101,7 @@ export default function AnimeSectionPage() {
         </button>
 
         <div className="flex items-center gap-2 mb-3">
-          <span className="inline-block w-1.5 h-1.5 rounded-full bg-white/50 animate-pulse" />
+          <span className="inline-block w-1.5 h-1.5 rounded-[8px] bg-white/50 animate-pulse" />
           <span className="text-[10px] uppercase tracking-[0.22em] text-white/35 font-medium">
             Live from AniList
           </span>
@@ -120,7 +120,7 @@ export default function AnimeSectionPage() {
             <p className="text-xl font-semibold text-white">Failed to load</p>
             <button
               onClick={() => loadPage(1, true)}
-              className="mt-2 px-5 py-2 rounded-full bg-white/[0.08] border border-white/[0.12] text-sm text-white/70 hover:text-white hover:bg-white/[0.12] transition-colors"
+              className="mt-2 px-5 py-2 rounded-[8px] bg-white/[0.08] border border-white/[0.12] text-sm text-white/70 hover:text-white hover:bg-white/[0.12] transition-colors"
             >
               Retry
             </button>

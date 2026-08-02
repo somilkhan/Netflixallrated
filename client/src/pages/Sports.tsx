@@ -466,7 +466,7 @@ function MatchCard({ match, onWatch }: { match: LiveMatch; onWatch: () => void }
 
 function Skeleton() {
   return (
-    <div className="rounded-2xl overflow-hidden border border-white/[0.04] bg-[#0f1012] animate-pulse">
+    <div className="rounded-[8px] overflow-hidden border border-white/[0.04] bg-[#161616] animate-pulse">
       <div className="w-full aspect-video bg-white/[0.04]" />
       <div className="p-3 space-y-2">
         <div className="h-3 w-3/4 rounded bg-white/[0.05]" />

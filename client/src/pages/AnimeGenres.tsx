@@ -181,14 +181,14 @@ export default function AnimeGenres() {
           <div className="text-[11px] uppercase tracking-widest text-white/30 mb-4 font-medium">Genres</div>
           <div className="flex flex-wrap gap-2 mb-10">
             {Array.from({ length: 18 }).map((_, i) => (
-              <div key={i} className="h-8 rounded-full bg-white/[0.06] animate-pulse"
+              <div key={i} className="h-8 rounded-[4px] bg-white/[0.06] animate-pulse"
                 style={{ width: `${60 + (i * 17) % 60}px` }} />
             ))}
           </div>
           <div className="text-[11px] uppercase tracking-widest text-white/30 mb-4 font-medium">Tags</div>
           <div className="flex flex-wrap gap-1.5">
             {Array.from({ length: 48 }).map((_, i) => (
-              <div key={i} className="h-6 rounded-full bg-white/[0.04] animate-pulse"
+              <div key={i} className="h-6 rounded-[4px] bg-white/[0.04] animate-pulse"
                 style={{ width: `${48 + (i * 13) % 50}px` }} />
             ))}
           </div>

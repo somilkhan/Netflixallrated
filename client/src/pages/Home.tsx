@@ -142,7 +142,7 @@ function NoKeyBanner() {
 function SectionSkeleton() {
   return (
     <div className="py-5">
-      <div className="px-4 md:px-6 mb-3 h-6 w-36 rounded-full bg-[#1A1A1A] animate-pulse" />
+      <div className="px-4 md:px-6 mb-3 h-6 w-36 rounded-[4px] bg-[#161616] animate-pulse" />
       <SkeletonRow count={8} />
     </div>
   );

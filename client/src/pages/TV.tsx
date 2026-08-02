@@ -112,7 +112,7 @@ function useGenreScroll(genreId: number | null) {
 function SectionSkeleton() {
   return (
     <div className="py-5">
-      <div className="px-4 md:px-6 mb-3 h-6 w-40 rounded-full bg-[#1A1A1A] animate-pulse" />
+      <div className="px-4 md:px-6 mb-3 h-6 w-40 rounded-[4px] bg-[#161616] animate-pulse" />
       <SkeletonRow count={8} />
     </div>
   );
@@ -210,7 +210,7 @@ export default function TVShows() {
           regionLabel="Trending TV"
         />
       ) : loading ? (
-        <div className="w-full bg-[#000000] animate-pulse"
+        <div className="w-full bg-[#161616] animate-pulse"
           style={{ height: 'clamp(320px, 55svh, 640px)' }} />
       ) : null}
 
@@ -269,7 +269,7 @@ export default function TVShows() {
                   {Array.from({ length: 4 }).map((_, i) => (
                     <div
                       key={i}
-                      className="w-[120px] sm:w-[140px] md:w-[180px] aspect-[2/3] bg-[#1A1A1A] rounded-xl animate-pulse"
+                      className="w-[120px] sm:w-[140px] md:w-[180px] aspect-[2/3] bg-[#161616] rounded-[8px] animate-pulse"
                     />
                   ))}
                 </div>
