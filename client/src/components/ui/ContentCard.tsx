@@ -159,8 +159,8 @@ const ContentCard = memo(function ContentCard({
         onClick={handleClick}
         onKeyDown={handleKeyDown}
         className="
-          block relative z-10 w-full rounded-[4px] overflow-hidden aspect-[2/3]
-          bg-[#181818] cursor-pointer
+          block relative z-10 w-full rounded-[8px] overflow-hidden aspect-[2/3]
+          bg-[#161616] cursor-pointer
           transition-transform duration-[400ms] ease-[cubic-bezier(0.4,0,0.2,1)]
           md:group-hover:scale-[1.08] md:group-hover:-translate-y-1
           active:scale-[0.97] md:active:scale-100 md:active:translate-y-0
@@ -214,7 +214,7 @@ const ContentCard = memo(function ContentCard({
           <div
             className="absolute inset-0 flex flex-col items-center justify-center gap-2 px-3"
             style={{
-              background: 'radial-gradient(140% 120% at 30% 0%, #1e1e2e, #0A0A0A 75%)',
+              background: 'radial-gradient(140% 120% at 30% 0%, #1e1e2e, #000000 75%)',
             }}
           >
             <Film size={22} className="text-white/20" />
@@ -327,12 +327,12 @@ const ContentCard = memo(function ContentCard({
           {rating && (
             <span className="flex items-center gap-0.5">
               <Star size={9} className="fill-[#f5c518] text-[#f5c518]" />
-              <span className="text-[12px] text-white/50">
+              <span className="text-[12px] text-white/70">
                 {typeof rating === 'number' ? rating.toFixed(1) : rating}
               </span>
             </span>
           )}
-          {title.year && <span className="text-[12px] text-white/50">{title.year}</span>}
+          {title.year && <span className="text-[12px] text-white/70">{title.year}</span>}
         </div>
       </div>
     </article>
