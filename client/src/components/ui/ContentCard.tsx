@@ -149,7 +149,22 @@ const ContentCard = memo(function ContentCard({
         ${fluid ? 'w-full' : 'shrink-0 w-[140px] sm:w-[180px] lg:w-[230px] scroll-snap-start'}
         ${className}
       `}
-      style={{ WebkitTapHighlightColor: 'transparent' }}
+      style={{
+        WebkitTapHighlightColor: 'transparent',
+        transition: 'transform 350ms cubic-bezier(0.4, 0, 0.2, 1), z-index 0ms 350ms',
+      }}
+      onMouseEnter={(e) => {
+        const el = e.currentTarget;
+        el.style.zIndex = '50';
+        el.style.transform = 'scale(1.35)';
+        el.style.transition = 'transform 350ms cubic-bezier(0.4, 0, 0.2, 1), z-index 0ms';
+      }}
+      onMouseLeave={(e) => {
+        const el = e.currentTarget;
+        el.style.transform = 'scale(1)';
+        el.style.transition = 'transform 350ms cubic-bezier(0.4, 0, 0.2, 1), z-index 0ms 350ms';
+        setTimeout(() => { el.style.zIndex = ''; }, 350);
+      }}
     >
       {/* ── Poster container — navigation target ───────────────────────── */}
       <div
@@ -161,9 +176,7 @@ const ContentCard = memo(function ContentCard({
         className="
           block relative z-10 w-full rounded-[8px] overflow-hidden aspect-[2/3]
           bg-[#161616] cursor-pointer
-          transition-transform duration-[400ms] ease-[cubic-bezier(0.4,0,0.2,1)]
-          md:group-hover:scale-[1.08] md:group-hover:-translate-y-1
-          active:scale-[0.97] md:active:scale-100 md:active:translate-y-0
+          active:scale-[0.97] md:active:scale-100
           focus:outline-none focus-visible:ring-2 focus-visible:ring-white/25
         "
         style={{
@@ -203,8 +216,8 @@ const ContentCard = memo(function ContentCard({
                 onError={() => setImgError(true)}
                 className={`
                   absolute inset-0 w-full h-full object-cover
-                  transition-all duration-[400ms]
-                  md:group-hover:scale-[1.04] md:group-hover:opacity-60
+                  transition-opacity duration-[400ms]
+                  md:group-hover:opacity-60
                   ${imgLoaded ? 'opacity-100' : 'opacity-0'}
                 `}
               />
@@ -273,46 +286,79 @@ const ContentCard = memo(function ContentCard({
         )}
       </div>
 
-      {/* Actions are siblings of the navigation target, never nested inside it. */}
-      <div className="hidden md:block absolute inset-0 z-20 opacity-0 md:group-hover:opacity-100 transition-opacity duration-[400ms] pointer-events-none">
+      {/* ── Netflix-style hover overlay ───────────────────────────────── */}
+      <div className="hidden md:block absolute inset-0 z-20 opacity-0 md:group-hover:opacity-100 transition-opacity duration-[300ms] pointer-events-none">
+        {/* Play button — centered */}
         <button
           type="button"
           aria-label={`Play ${title?.name ?? 'Untitled'}`}
           onClick={handlePlay}
-          className="pointer-events-auto absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 flex items-center justify-center w-12 h-12 rounded-full bg-white hover:bg-white/90 shadow-[0_4px_24px_rgba(0,0,0,0.6)] transition-transform duration-200 active:scale-90 scale-90 group-hover:scale-100"
-          style={{ touchAction: 'manipulation', transition: 'transform 400ms cubic-bezier(0.4,0,0.2,1)' }}
+          className="pointer-events-auto absolute left-1/2 top-[42%] -translate-x-1/2 -translate-y-1/2 flex items-center justify-center w-11 h-11 rounded-full bg-white hover:bg-white/90 shadow-[0_4px_24px_rgba(0,0,0,0.6)] transition-transform duration-200 active:scale-90 scale-90 group-hover:scale-100"
+          style={{ touchAction: 'manipulation', transition: 'transform 350ms cubic-bezier(0.4,0,0.2,1)' }}
         >
-          <Play size={18} className="fill-black text-black ml-0.5" />
+          <Play size={16} className="fill-black text-black ml-0.5" />
         </button>
 
+        {/* Bottom info panel — expands downward on hover */}
         <div
-          className="absolute bottom-[38px] inset-x-0 z-30 px-2.5 pb-2.5 pt-8 translate-y-2 group-hover:translate-y-0"
+          className="absolute -bottom-[72px] inset-x-0 z-30 px-2.5 pb-2.5 pt-6 rounded-b-[8px]"
           style={{
-            background: 'linear-gradient(to top, rgba(0,0,0,0.92), rgba(0,0,0,0.4) 70%, transparent)',
-            transition: 'transform 400ms cubic-bezier(0.4,0,0.2,1)',
+            background: 'linear-gradient(to top, rgba(0,0,0,0.95) 0%, rgba(0,0,0,0.85) 40%, rgba(0,0,0,0.4) 80%, transparent 100%)',
           }}
         >
-          <p className="text-[12px] font-semibold text-white leading-tight line-clamp-1 mb-1.5">{title?.name ?? 'Untitled'}</p>
-          <div className="flex items-center justify-between gap-1">
-            {onAddToList ? (
+          {/* Action row */}
+          <div className="flex items-center gap-1.5 mb-1.5">
+            <button
+              type="button"
+              aria-label={`Play ${title?.name ?? 'Untitled'}`}
+              onClick={handlePlay}
+              className="pointer-events-auto flex items-center justify-center w-7 h-7 rounded-full bg-white hover:bg-white/90 transition-colors"
+            >
+              <Play size={12} className="fill-black text-black ml-0.5" />
+            </button>
+            {onAddToList && (
               <button
                 type="button"
                 aria-label={`Add ${title?.name ?? 'Untitled'} to list`}
                 onClick={handleAddList}
-                className="pointer-events-auto flex items-center gap-1 px-2 py-1 rounded-full bg-white/10 border border-white/10 text-white/80 hover:text-white hover:bg-white/20 text-[10px] font-medium transition-colors duration-150"
+                className="pointer-events-auto flex items-center justify-center w-7 h-7 rounded-full border border-white/30 text-white hover:border-white hover:bg-white/10 transition-colors"
               >
-                <Plus size={10} /> Add
+                <Plus size={12} />
               </button>
-            ) : <span />}
+            )}
+            <div className="flex-1" />
             <button
               type="button"
               aria-label={`Info about ${title?.name ?? 'Untitled'}`}
               onClick={handleInfo}
-              className="pointer-events-auto flex items-center justify-center w-7 h-7 rounded-full bg-white/10 border border-white/10 text-white/80 hover:text-white hover:bg-white/20 transition-colors duration-150"
+              className="pointer-events-auto flex items-center justify-center w-7 h-7 rounded-full border border-white/30 text-white hover:border-white hover:bg-white/10 transition-colors"
             >
               <Info size={12} />
             </button>
           </div>
+
+          {/* Metadata row */}
+          <div className="flex items-center gap-1.5 mb-1">
+            {rating && typeof rating === 'number' && rating >= 7.5 && (
+              <span className="text-[9px] font-bold text-[#46d369] leading-none">{Math.round(rating * 10)}% Match</span>
+            )}
+            {title.year && <span className="text-[9px] text-white/70 leading-none">{title.year}</span>}
+            {title.type && (
+              <span className="text-[9px] text-white/50 leading-none uppercase">{TYPE_LABEL[title.type] ?? title.type}</span>
+            )}
+          </div>
+
+          {/* Genre pills */}
+          {title.genres && title.genres.length > 0 && (
+            <div className="flex flex-wrap gap-1">
+              {title.genres.slice(0, 3).map((g) => (
+                <span key={g} className="text-[8px] text-white/60 leading-none">
+                  {g}
+                  {g !== title.genres[Math.min(2, title.genres.length - 1)] && <span className="ml-1 text-white/30">·</span>}
+                </span>
+              ))}
+            </div>
+          )}
         </div>
       </div>
 

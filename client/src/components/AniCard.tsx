@@ -53,6 +53,21 @@ const AniCard = memo(function AniCard({ anime, rank, fluid = false, className = 
 
   return (
     <article
+      style={{
+        transition: 'transform 350ms cubic-bezier(0.4, 0, 0.2, 1), z-index 0ms 350ms',
+      }}
+      onMouseEnter={(e) => {
+        const el = e.currentTarget;
+        el.style.zIndex = '50';
+        el.style.transform = 'scale(1.35)';
+        el.style.transition = 'transform 350ms cubic-bezier(0.4, 0, 0.2, 1), z-index 0ms';
+      }}
+      onMouseLeave={(e) => {
+        const el = e.currentTarget;
+        el.style.transform = 'scale(1)';
+        el.style.transition = 'transform 350ms cubic-bezier(0.4, 0, 0.2, 1), z-index 0ms 350ms';
+        setTimeout(() => { el.style.zIndex = ''; }, 350);
+      }}
       className={`
         group relative select-none touch-manipulation
         ${fluid ? 'w-full' : 'shrink-0 w-[140px] sm:w-[180px] lg:w-[230px] scroll-snap-start'}
