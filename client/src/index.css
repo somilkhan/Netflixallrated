@@ -248,3 +248,9 @@
 .animate-fade-in {
   animation: pageFadeIn 0.2s cubic-bezier(0.4,0,0.2,1) both;
 }
+
+
+/* Netflix base background */
+html, body, #root {
+  background-color: #141414;
+}
