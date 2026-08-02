@@ -398,7 +398,7 @@ export default function Home() {
 
   const handleRemoveCW = useCallback((titleId: string) => {
     setContinueWatching(prev => prev.filter(i => i.titleId !== titleId));
-    api.history.remove(titleId).catch(() => {});
+    api.history.remove(titleId).catch((err) => console.error('History remove error:', err));
   }, []);
 
   // ── Hero action — route immediately; the detail page resolves the local row
