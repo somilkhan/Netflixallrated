@@ -114,7 +114,7 @@ export default function MyList() {
         <Bookmark size={36} className="text-white/20" />
         <div>
           <h1 className="text-xl font-semibold text-white">Your list is waiting</h1>
-          <p className="mt-2 text-sm text-white/50">Sign in to save movies and shows for later.</p>
+          <p className="mt-2 text-sm text-white/70">Sign in to save movies and shows for later.</p>
         </div>
         <button type="button" onClick={() => nav('/login')} className="rounded-xl bg-white px-5 py-2.5 text-sm font-semibold text-black hover:bg-white/90">
           Sign In
@@ -150,7 +150,7 @@ export default function MyList() {
               type="button"
               onClick={() => setActive(status)}
               className={`whitespace-nowrap rounded-full border px-3.5 py-2 text-xs transition-colors ${
-                active === status ? 'border-white/25 bg-white/10 text-white' : 'border-white/10 text-white/50 hover:text-white/75'
+                active === status ? 'border-white/25 bg-white/10 text-white' : 'border-white/10 text-white/70 hover:text-white/75'
               }`}
             >
               {status === 'ALL' ? 'All titles' : STATUS_LABELS[status] ?? status}
@@ -170,8 +170,8 @@ export default function MyList() {
 
       {!loading && error && (
         <div className="py-20 text-center">
-          <p className="mb-4 text-sm text-white/50">Couldn’t load your list.</p>
-          <button type="button" onClick={load} className="rounded-lg border border-white/15 px-4 py-2 text-sm text-white/65 hover:border-white/30 hover:text-white">Try again</button>
+          <p className="mb-4 text-sm text-white/70">Couldn’t load your list.</p>
+          <button type="button" onClick={load} className="rounded-[8px] border border-white/15 px-4 py-2 text-sm text-white/65 hover:border-white/30 hover:text-white">Try again</button>
         </div>
       )}
 
@@ -181,7 +181,7 @@ export default function MyList() {
             <Bookmark size={34} className="text-white/25" />
           </div>
           <h2 className="text-xl font-semibold text-white">Your list is empty</h2>
-          <p className="mt-2 max-w-sm text-sm leading-6 text-white/50">Save movies and shows you want to watch later. They’ll appear here.</p>
+          <p className="mt-2 max-w-sm text-sm leading-6 text-white/70">Save movies and shows you want to watch later. They’ll appear here.</p>
           <button type="button" onClick={() => nav('/browse')} className="mt-6 rounded-xl bg-white px-5 py-2.5 text-sm font-semibold text-black hover:bg-white/90">Browse</button>
         </div>
       )}
