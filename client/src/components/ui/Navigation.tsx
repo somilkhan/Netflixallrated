@@ -1,0 +1,637 @@
+/**
+ * Navigation — unified navigation component.
+ * Variants: 'top' | 'bottom'
+ *
+ * TOP:    Desktop header (scroll-aware glassmorphism) + mobile hamburger overlay
+ * BOTTOM: Mobile-only fixed tab bar + expandable "More" tray
+ *
+ * DO NOT import this directly in pages — use TopNav or MobileBottomNav wrappers.
+ */
+import { useState, useRef, useCallback, useEffect, memo } from 'react';
+import { useNavigate, useLocation } from 'react-router-dom';
+import {
+  Search, X, Menu, LogIn, LogOut, Shield, User,
+  Bookmark, Clock, Home, Tv, Trophy, Swords, Compass,
+  ChevronDown, Film, MoreHorizontal, Download,
+} from 'lucide-react';
+import { useAuth } from '@/lib/auth';
+import { useScrollDirection } from '@/hooks/useScrollDirection';
+import { useClickOutside } from '@/hooks/useClickOutside';
+import { Avatar } from '@/components/ui/Avatar';
+import RegionSwitcher from '@/components/RegionSwitcher';
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   Shared data
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+const TOP_NAV_LINKS = [
+  { label: 'Home',    path: '/' },
+  { label: 'Browse',  path: '/browse' },
+  { label: 'TV Shows',path: '/tv' },
+  { label: 'Anime',   path: '/anime' },
+  { label: 'My List', path: '/my-list' },
+];
+
+const MOBILE_NAV_ITEMS = [
+  { icon: Home,     label: 'Home',    path: '/' },
+  { icon: Film,     label: 'Browse',  path: '/browse' },
+  { icon: Tv,       label: 'TV Shows',path: '/tv' },
+  { icon: Trophy,   label: 'Sports',  path: '/sports' },
+  { icon: Swords,   label: 'Anime',   path: '/anime' },
+  { icon: Bookmark, label: 'My List', path: '/my-list' },
+  { icon: Clock,    label: 'History', path: '/history' },
+  { icon: Compass,  label: 'Profile', path: '/profile' },
+];
+
+const BOTTOM_TABS = [
+  { icon: Home,         label: 'Home',    path: '/',       action: 'nav' },
+  { icon: Search,       label: 'Search',  path: '/search', action: 'nav' },
+  { icon: Bookmark,     label: 'My List', path: '/my-list',action: 'nav' },
+  { icon: MoreHorizontal, label: 'More',  path: '/more',   action: 'toggle-more' },
+];
+
+const MORE_TRAY_ITEMS = [
+  { icon: Film,     label: 'Browse',    path: '/browse' },
+  { icon: Tv,       label: 'TV Shows',  path: '/tv' },
+  { icon: Trophy,   label: 'Sports',    path: '/sports' },
+  { icon: Swords,   label: 'Anime',     path: '/anime' },
+  { icon: Clock,    label: 'History',   path: '/history' },
+  { icon: User,     label: 'Profile',   path: '/profile' },
+  { icon: Download, label: 'Downloads', path: '/downloads' },
+];
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   Types
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+export interface NavigationProps {
+  variant: 'top' | 'bottom';
+  /** Callback when desktop search shortcut is triggered (Cmd/Ctrl + K). */
+  onOpenSearch?: () => void;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   Top Variant
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+const TopVariant = memo(function TopVariant({ onOpenSearch }: { onOpenSearch?: () => void }) {
+  const nav = useNavigate();
+  const loc = useLocation();
+  const { user, signOut, isLoading } = useAuth();
+  const { scrollY } = useScrollDirection();
+
+  const [searchOpen,  setSearchOpen]  = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [menuOpen,    setMenuOpen]    = useState(false);
+  const [profileOpen, setProfileOpen] = useState(false);
+
+  const searchInputRef = useRef<HTMLInputElement>(null);
+  const profileRef     = useRef<HTMLDivElement>(null);
+  const searchRef      = useRef<HTMLDivElement>(null);
+
+  const isScrolled = scrollY > 50;
+
+  useClickOutside(profileRef, useCallback(() => setProfileOpen(false), []), profileOpen);
+  useClickOutside(searchRef,  useCallback(() => { setSearchOpen(false); setSearchQuery(''); }, []), searchOpen);
+
+  /* Close mobile menu on route change */
+  useEffect(() => { setMenuOpen(false); }, [loc.pathname]);
+
+  /* Lock body scroll when mobile menu open */
+  useEffect(() => {
+    document.body.style.overflow = menuOpen ? 'hidden' : '';
+    return () => { document.body.style.overflow = ''; };
+  }, [menuOpen]);
+
+  /* Keyboard shortcuts */
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
+        e.preventDefault();
+        if (onOpenSearch) {
+          onOpenSearch();
+        } else {
+          setSearchOpen(true);
+          setTimeout(() => searchInputRef.current?.focus(), 50);
+        }
+      }
+      if (e.key === 'Escape') {
+        setSearchOpen(false);
+        setSearchQuery('');
+        setMenuOpen(false);
+        setProfileOpen(false);
+      }
+    };
+    window.addEventListener('keydown', handler);
+    return () => window.removeEventListener('keydown', handler);
+  }, [onOpenSearch]);
+
+  const isActive = useCallback(
+    (path: string) => (path === '/' ? loc.pathname === '/' : loc.pathname.startsWith(path)),
+    [loc.pathname]
+  );
+
+  const handleSearchSubmit = useCallback(
+    (e: React.FormEvent) => {
+      e.preventDefault();
+      if (searchQuery.trim()) {
+        nav(`/search?q=${encodeURIComponent(searchQuery.trim())}`);
+        setSearchOpen(false);
+        setSearchQuery('');
+      }
+    },
+    [searchQuery, nav]
+  );
+
+  const handleSignOut = useCallback(async () => {
+    setProfileOpen(false);
+    setMenuOpen(false);
+    await signOut();
+    nav('/');
+  }, [signOut, nav]);
+
+  const handleSearchOpen = useCallback(() => {
+    if (window.matchMedia('(max-width: 767px)').matches) {
+      nav('/search');
+      return;
+    }
+    if (onOpenSearch) {
+      onOpenSearch();
+    } else {
+      setSearchOpen(true);
+      setTimeout(() => searchInputRef.current?.focus(), 50);
+    }
+  }, [onOpenSearch, nav]);
+
+  return (
+    <>
+      {/* ── Main nav bar ─────────────────────────────────────────────── */}
+      <nav
+        className="fixed top-0 inset-x-0 z-50 flex items-center h-16 px-4 md:px-6 transition-all duration-300"
+        style={{
+          background: isScrolled
+            ? 'rgba(10, 10, 10, 0.88)'
+            : 'linear-gradient(to bottom, rgba(0,0,0,0.55), transparent)',
+          backdropFilter: isScrolled ? 'blur(14px)' : 'none',
+          WebkitBackdropFilter: isScrolled ? 'blur(14px)' : 'none',
+          borderBottom: isScrolled ? '1px solid rgba(255,255,255,0.06)' : 'none',
+          boxShadow: isScrolled ? '0 4px 24px rgba(0,0,0,0.4)' : 'none',
+        }}
+        aria-label="Main navigation"
+      >
+        {/* Logo */}
+        <button
+          type="button"
+          onClick={() => nav('/')}
+          className="shrink-0 mr-6 touch-manipulation active:opacity-70 transition-opacity"
+          aria-label="Allrated home"
+        >
+          <span className="text-white font-bold text-xl tracking-[-0.03em] leading-none select-none">
+            all<span className="text-ink-tertiary">rated</span>
+          </span>
+        </button>
+
+        {/* Desktop links */}
+        <div className="hidden md:flex items-center gap-0.5 mr-auto">
+          {TOP_NAV_LINKS.map(link => {
+            const active = isActive(link.path);
+            return (
+              <button
+                key={link.path}
+                type="button"
+                onClick={() => nav(link.path)}
+                aria-current={active ? 'page' : undefined}
+                className={`
+                  h-9 px-3.5 rounded-lg text-base font-medium
+                  transition-all duration-200 touch-manipulation
+                  ${active
+                    ? 'text-white bg-white/[0.09]'
+                    : 'text-ink-secondary hover:text-white hover:bg-white/[0.05]'
+                  }
+                `}
+              >
+                {link.label}
+              </button>
+            );
+          })}
+        </div>
+
+        {/* Right side: region + search + profile */}
+        <div className="ml-auto flex items-center gap-1.5">
+          <RegionSwitcher />
+
+          {/* Expandable search — desktop */}
+          <div ref={searchRef} className="relative">
+            {searchOpen ? (
+              <form onSubmit={handleSearchSubmit} className="flex items-center">
+                <div
+                  className="
+                    flex items-center gap-2
+                    h-9 px-3 rounded-full
+                    bg-overlay-light border border-white/[0.14]
+                    w-[200px] md:w-[280px]
+                    transition-all duration-200
+                  "
+                >
+                  <Search size={13} className="shrink-0 text-ink-secondary" />
+                  <input
+                    ref={searchInputRef}
+                    type="text"
+                    value={searchQuery}
+                    onChange={e => setSearchQuery(e.target.value)}
+                    placeholder="Search titles…"
+                    className="
+                      flex-1 min-w-0 bg-transparent border-none outline-none
+                      text-base text-white placeholder:text-ink-disabled
+                    "
+                    aria-label="Search"
+                    autoFocus
+                  />
+                  <button
+                    type="button"
+                    onClick={() => { setSearchOpen(false); setSearchQuery(''); }}
+                    className="shrink-0 text-ink-secondary hover:text-white transition-colors touch-manipulation"
+                    aria-label="Close search"
+                  >
+                    <X size={12} />
+                  </button>
+                </div>
+              </form>
+            ) : (
+              <button
+                type="button"
+                onClick={handleSearchOpen}
+                aria-label="Search"
+                className="
+                  flex items-center justify-center w-9 h-9 rounded-full
+                  text-ink-secondary hover:text-white hover:bg-overlay-light
+                  transition-all duration-200 touch-manipulation
+                "
+              >
+                <Search size={17} strokeWidth={1.8} />
+              </button>
+            )}
+          </div>
+
+          {/* Profile — desktop */}
+          <div ref={profileRef} className="relative hidden md:block">
+            {!isLoading && (
+              user ? (
+                <>
+                  <button
+                    type="button"
+                    onClick={() => setProfileOpen(o => !o)}
+                    aria-label="Account menu"
+                    aria-expanded={profileOpen}
+                    className="
+                      flex items-center gap-1.5
+                      h-9 pl-1 pr-2.5 rounded-full
+                      bg-overlay-light border border-white/[0.09]
+                      hover:bg-overlay-medium hover:border-white/[0.15]
+                      transition-all duration-200
+                    "
+                    title={user.displayName || user.email || ''}
+                  >
+                    <Avatar
+                      name={user.displayName}
+                      email={user.email}
+                      src={user.avatarUrl}
+                      size={26}
+                    />
+                    <span className="text-sm font-medium text-white/80 max-w-[80px] truncate">
+                      {user.displayName?.split(' ')[0] || 'Account'}
+                    </span>
+                    <ChevronDown
+                      size={12}
+                      className={`text-ink-secondary transition-transform duration-200 ${profileOpen ? 'rotate-180' : ''}`}
+                    />
+                  </button>
+
+                  {profileOpen && (
+                    <div
+                      className="
+                        absolute right-0 top-[calc(100%+8px)] w-56 z-50
+                        rounded-xl border border-white/[0.08] overflow-hidden
+                        animate-menu
+                      "
+                      style={{ background: '#000000', boxShadow: '0 8px 40px rgba(0,0,0,0.7)' }}
+                    >
+                      {/* User info */}
+                      <div className="px-4 py-3.5 border-b border-border">
+                        <p className="text-base font-semibold text-white truncate">
+                          {user.displayName || 'User'}
+                        </p>
+                        <p className="text-xs text-ink-tertiary truncate mt-0.5">{user.email}</p>
+                        {user.role === 'ADMIN' && (
+                          <span className="mt-1.5 inline-flex items-center gap-1 text-3xs text-ink-secondary bg-overlay-light border border-border-light rounded-full px-2 py-0.5 uppercase tracking-wide">
+                            <Shield size={7} /> Admin
+                          </span>
+                        )}
+                      </div>
+
+                      {/* Menu items */}
+                      <div className="py-1">
+                        <button
+                          type="button"
+                          onClick={() => { setProfileOpen(false); nav('/profile'); }}
+                          className="w-full flex items-center gap-2.5 px-4 py-2.5 text-base text-white/75 hover:bg-overlay-light hover:text-white transition-colors text-left"
+                        >
+                          <User size={13} className="text-ink-secondary shrink-0" />
+                          Profile
+                        </button>
+                        {user.role === 'ADMIN' && (
+                          <button
+                            type="button"
+                            onClick={() => { setProfileOpen(false); nav('/admin'); }}
+                            className="w-full flex items-center gap-2.5 px-4 py-2.5 text-base text-white/75 hover:bg-overlay-light hover:text-white transition-colors text-left"
+                          >
+                            <Shield size={13} className="text-ink-secondary shrink-0" />
+                            Admin Panel
+                          </button>
+                        )}
+                        <button
+                          type="button"
+                          onClick={() => { setProfileOpen(false); nav('/history'); }}
+                          className="w-full flex items-center gap-2.5 px-4 py-2.5 text-base text-white/75 hover:bg-overlay-light hover:text-white transition-colors text-left"
+                        >
+                          <Clock size={13} className="text-ink-secondary shrink-0" />
+                          Watch History
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => { setProfileOpen(false); nav('/my-list'); }}
+                          className="w-full flex items-center gap-2.5 px-4 py-2.5 text-base text-white/75 hover:bg-overlay-light hover:text-white transition-colors text-left"
+                        >
+                          <Bookmark size={13} className="text-ink-secondary shrink-0" />
+                          My List
+                        </button>
+                        <button
+                          type="button"
+                          onClick={handleSignOut}
+                          className="w-full flex items-center gap-2.5 px-4 py-2.5 text-base text-ink-tertiary hover:bg-overlay-light hover:text-white transition-colors text-left border-t border-border mt-1"
+                        >
+                          <LogOut size={13} className="shrink-0" />
+                          Sign out
+                        </button>
+                      </div>
+                    </div>
+                  )}
+                </>
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => nav('/login')}
+                  className="
+                    flex items-center gap-1.5
+                    h-9 px-4 rounded-full
+                    text-base font-medium text-white/75
+                    border border-white/[0.12] hover:border-white/[0.24] hover:text-white
+                    transition-all duration-200
+                  "
+                >
+                  <LogIn size={13} /> Sign in
+                </button>
+              )
+            )}
+          </div>
+
+          {/* Hamburger — mobile only */}
+          <button
+            type="button"
+            onClick={() => setMenuOpen(o => !o)}
+            aria-label={menuOpen ? 'Close menu' : 'Open menu'}
+            aria-expanded={menuOpen}
+            className="
+              md:hidden flex items-center justify-center
+              w-9 h-9 rounded-full
+              text-ink-secondary hover:text-white hover:bg-overlay-light
+              transition-colors duration-200 touch-manipulation
+            "
+          >
+            {menuOpen ? <X size={19} strokeWidth={1.8} /> : <Menu size={19} strokeWidth={1.8} />}
+          </button>
+        </div>
+      </nav>
+
+      {/* ── Mobile full-screen menu overlay ────────────────────────── */}
+      {menuOpen && (
+        <div
+          className="md:hidden fixed inset-0 z-40 flex flex-col"
+          style={{
+            background: 'rgba(10, 10, 10, 0.97)',
+            backdropFilter: 'blur(24px)',
+            WebkitBackdropFilter: 'blur(24px)',
+          }}
+          aria-modal="true"
+          role="dialog"
+          aria-label="Navigation menu"
+        >
+          {/* Spacer for nav bar */}
+          <div className="h-16" />
+
+          {/* Nav items */}
+          <nav className="flex-1 overflow-y-auto flex flex-col px-4 py-2 gap-0.5">
+            {MOBILE_NAV_ITEMS.map(item => {
+              const active = isActive(item.path);
+              return (
+                <button
+                  key={item.path}
+                  type="button"
+                  onClick={() => nav(item.path)}
+                  aria-current={active ? 'page' : undefined}
+                  className={`
+                    flex items-center gap-4
+                    min-h-[56px] px-4 rounded-xl
+                    text-[17px] font-medium
+                    transition-colors duration-200 touch-manipulation
+                    ${active
+                      ? 'text-white bg-white/[0.07]'
+                      : 'text-ink-secondary hover:text-white hover:bg-overlay-light'
+                    }
+                  `}
+                >
+                  <item.icon size={21} strokeWidth={active ? 2.2 : 1.7} className="shrink-0" />
+                  {item.label}
+                </button>
+              );
+            })}
+          </nav>
+
+          {/* Profile section at bottom */}
+          <div className="px-4 pb-8 pt-3 border-t border-border">
+            {!isLoading && (
+              user ? (
+                <div className="space-y-1">
+                  <button
+                    type="button"
+                    onClick={() => nav('/profile')}
+                    className="w-full flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-overlay-light transition-colors touch-manipulation"
+                  >
+                    <Avatar
+                      name={user.displayName}
+                      email={user.email}
+                      src={user.avatarUrl}
+                      size={40}
+                      className="shrink-0"
+                    />
+                    <div className="text-left min-w-0">
+                      <p className="text-sm font-semibold text-white truncate">
+                        {user.displayName || 'User'}
+                      </p>
+                      <p className="text-xs text-ink-tertiary truncate">{user.email}</p>
+                    </div>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={handleSignOut}
+                    className="w-full flex items-center gap-3 h-12 px-4 rounded-xl text-sm text-ink-tertiary hover:text-white hover:bg-overlay-light transition-colors touch-manipulation"
+                  >
+                    <LogOut size={16} className="shrink-0" />
+                    Sign out
+                  </button>
+                </div>
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => nav('/login')}
+                  className="w-full flex items-center justify-center gap-2 h-12 rounded-xl text-sm font-medium text-white bg-overlay-light border border-white/[0.12] hover:bg-overlay-medium transition-colors touch-manipulation"
+                >
+                  <User size={16} />
+                  Sign in
+                </button>
+              )
+            )}
+          </div>
+        </div>
+      )}
+    </>
+  );
+});
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   Bottom Variant
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+const BottomVariant = memo(function BottomVariant() {
+  const nav = useNavigate();
+  const loc = useLocation();
+  const [moreOpen, setMoreOpen] = useState(false);
+
+  const isActive = useCallback(
+    (path: string) => (path === '/' ? loc.pathname === '/' : loc.pathname.startsWith(path)),
+    [loc.pathname]
+  );
+
+  /* Close More tray on route change */
+  useEffect(() => { setMoreOpen(false); }, [loc.pathname]);
+
+  return (
+    <>
+      {/* ── More tray overlay ──────────────────────────────────────── */}
+      {moreOpen && (
+        <div className="fixed inset-x-0 bottom-16 z-40 px-3 pb-3 md:hidden">
+          <div
+            className="rounded-2xl border border-white/[0.08] overflow-hidden"
+            style={{ background: '#000000' }}
+          >
+            <div className="flex items-center justify-between px-4 py-3 border-b border-white/[0.08]">
+              <span className="text-sm font-semibold text-white">More</span>
+              <button
+                onClick={() => setMoreOpen(false)}
+                className="text-ink-secondary hover:text-white transition-colors"
+                aria-label="Close more menu"
+              >
+                <X size={16} />
+              </button>
+            </div>
+            <nav className="grid grid-cols-4 gap-1 p-2">
+              {MORE_TRAY_ITEMS.map(({ icon: Icon, label, path }) => {
+                const active = isActive(path);
+                return (
+                  <button
+                    key={path}
+                    type="button"
+                    onClick={() => { setMoreOpen(false); nav(path); }}
+                    className={`
+                      flex flex-col items-center justify-center gap-1.5 h-16 rounded-xl
+                      transition-colors
+                      ${active
+                        ? 'text-white bg-white/[0.07]'
+                        : 'text-ink-secondary hover:text-white hover:bg-overlay-light'
+                      }
+                    `}
+                  >
+                    <Icon size={18} strokeWidth={active ? 2.2 : 1.7} />
+                    <span
+                      className="text-2xs font-medium"
+                      style={{
+                        color: active ? '#ffffff' : '#A3A3A3',
+                        fontWeight: active ? 600 : 400,
+                        lineHeight: 1,
+                        letterSpacing: '0.01em',
+                      }}
+                    >
+                      {label}
+                    </span>
+                  </button>
+                );
+              })}
+            </nav>
+          </div>
+        </div>
+      )}
+
+      {/* ── Bottom tab bar ─────────────────────────────────────────── */}
+      <nav
+        className="fixed inset-x-0 bottom-0 z-50 h-16 bg-page/95 backdrop-blur-md border-t border-border md:hidden"
+        aria-label="Mobile navigation"
+      >
+        <div className="flex items-center justify-around h-full px-2">
+          {BOTTOM_TABS.map(({ icon: Icon, label, path, action }) => {
+            const active = label === 'More' ? moreOpen : isActive(path);
+            return (
+              <button
+                key={label}
+                type="button"
+                onClick={() => {
+                  if (action === 'toggle-more') setMoreOpen(o => !o);
+                  else nav(path);
+                }}
+                aria-current={active ? 'page' : undefined}
+                className="flex flex-col items-center justify-center gap-1 w-16 h-14 rounded-xl transition-colors touch-manipulation"
+              >
+                <Icon
+                  size={20}
+                  strokeWidth={active ? 2.2 : 1.7}
+                  className={active ? 'text-white' : 'text-ink-secondary'}
+                />
+                <span
+                  className="text-2xs font-medium"
+                  style={{
+                    color: active ? '#ffffff' : '#A3A3A3',
+                    fontWeight: active ? 600 : 400,
+                    lineHeight: 1,
+                    letterSpacing: '0.01em',
+                  }}
+                >
+                  {label}
+                </span>
+              </button>
+            );
+          })}
+        </div>
+      </nav>
+    </>
+  );
+});
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   Unified export
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+const Navigation = memo(function Navigation({ variant, onOpenSearch }: NavigationProps) {
+  if (variant === 'bottom') return <BottomVariant />;
+  return <TopVariant onOpenSearch={onOpenSearch} />;
+});
+
+export default Navigation;
