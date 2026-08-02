@@ -60,7 +60,7 @@ export default function Profile() {
         </div>
         <div>
           <p className="text-xl font-semibold text-white mb-1">Sign in to your account</p>
-          <p className="text-sm text-white/50">Track what you watch, build your list</p>
+          <p className="text-sm text-white/70">Track what you watch, build your list</p>
         </div>
         <button
           type="button"
@@ -72,7 +72,7 @@ export default function Profile() {
         <button
           type="button"
           onClick={() => nav('/register')}
-          className="text-sm text-white/50 hover:text-white transition-colors"
+          className="text-sm text-white/70 hover:text-white transition-colors"
         >
           Create an account
         </button>
@@ -103,7 +103,7 @@ export default function Profile() {
           <p className="text-sm text-white/45 mt-0.5 truncate">{user.email}</p>
 
           {user.role === 'ADMIN' && (
-            <span className="mt-2 inline-flex items-center gap-1 text-[10px] text-white/50 bg-white/[0.06] border border-white/[0.10] rounded-full px-2 py-0.5 uppercase tracking-wide">
+            <span className="mt-2 inline-flex items-center gap-1 text-[10px] text-white/70 bg-white/[0.06] border border-white/[0.10] rounded-full px-2 py-0.5 uppercase tracking-wide">
               <Shield size={9} /> Admin
             </span>
           )}
@@ -156,13 +156,13 @@ export default function Profile() {
       <section className="mb-8">
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center gap-2">
-            <Clock size={16} className="text-white/50" />
+            <Clock size={16} className="text-white/70" />
             <h2 className="text-lg font-semibold text-white">Watch History</h2>
           </div>
           <button
             type="button"
             onClick={() => nav('/history')}
-            className="flex items-center gap-0.5 text-sm text-white/50 hover:text-white transition-colors"
+            className="flex items-center gap-0.5 text-sm text-white/70 hover:text-white transition-colors"
           >
             View All <ChevronRight size={14} />
           </button>
@@ -185,7 +185,7 @@ export default function Profile() {
             <button
               type="button"
               onClick={() => nav('/')}
-              className="text-xs text-white/50 hover:text-white transition-colors"
+              className="text-xs text-white/70 hover:text-white transition-colors"
             >
               Browse titles
             </button>
@@ -244,7 +244,7 @@ export default function Profile() {
                     )}
                   </div>
                   <p className="text-[12px] font-medium text-white leading-tight line-clamp-2">{item.title?.name ?? 'Untitled'}</p>
-                  <p className="text-[10px] text-white/50 mt-0.5">{timeAgo(item.updatedAt)}</p>
+                  <p className="text-[10px] text-white/70 mt-0.5">{timeAgo(item.updatedAt)}</p>
                 </div>
               );
             })}
@@ -256,13 +256,13 @@ export default function Profile() {
       <section className="mb-8">
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center gap-2">
-            <Bookmark size={16} className="text-white/50" />
+            <Bookmark size={16} className="text-white/70" />
             <h2 className="text-lg font-semibold text-white">My List</h2>
           </div>
           <button
             type="button"
              onClick={() => nav('/my-list')}
-            className="flex items-center gap-0.5 text-sm text-white/50 hover:text-white transition-colors"
+            className="flex items-center gap-0.5 text-sm text-white/70 hover:text-white transition-colors"
           >
             View All <ChevronRight size={14} />
           </button>
@@ -299,7 +299,7 @@ export default function Profile() {
       {/* ── Account ──────────────────────────────────────────────────────── */}
       <section>
         <div className="flex items-center gap-2 mb-4">
-          <Settings size={16} className="text-white/50" />
+          <Settings size={16} className="text-white/70" />
           <h2 className="text-lg font-semibold text-white">Account</h2>
         </div>
 
