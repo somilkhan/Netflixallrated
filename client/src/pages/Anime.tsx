@@ -74,7 +74,7 @@ export default function Anime() {
   };
 
   return (
-    <div className="min-h-screen pb-28 md:pb-0" style={{ background: '#0A0A0A' }}>
+    <div className="min-h-screen pb-28 md:pb-0" style={{ background: '#141414' }}>
 
       {/* Cinematic hero — self-contained */}
       <AnimeHeroBanner />
@@ -88,7 +88,7 @@ export default function Anime() {
           </span>
           <button
             onClick={() => nav('/anime/genres')}
-            className="text-[13px] text-white/40 hover:text-white transition-colors flex items-center gap-1"
+            className="text-[13px] text-white/50 hover:text-white transition-colors flex items-center gap-1"
           >
             Browse all genres &amp; tags
             <ArrowRight size={12} strokeWidth={2.2} />
@@ -124,7 +124,7 @@ export default function Anime() {
               type="button"
               aria-label="Clear search"
               onClick={clearSearch}
-              className="text-white/40 hover:text-white transition-colors px-1"
+              className="text-white/50 hover:text-white transition-colors px-1"
             >
               <X size={14} />
             </button>
@@ -140,7 +140,7 @@ export default function Anime() {
               {searchState === 'loading' ? 'Searching…' : `Results for "${query}"`}
             </h2>
             {searchState === 'done' && (
-              <span className="text-[11px] text-white/40">{searchItems.length} found</span>
+              <span className="text-[11px] text-white/50">{searchItems.length} found</span>
             )}
           </div>
 
@@ -153,16 +153,16 @@ export default function Anime() {
           )}
 
           {searchState === 'error' && (
-            <p className="text-sm text-white/40 py-4">
+            <p className="text-sm text-white/50 py-4">
               Search failed —{' '}
-              <button onClick={() => setSearchState('idle')} className="text-white/60 hover:text-white underline underline-offset-2">
+              <button onClick={() => setSearchState('idle')} className="text-white/50 hover:text-white underline underline-offset-2">
                 dismiss
               </button>
             </p>
           )}
 
           {searchState === 'done' && searchItems.length === 0 && (
-            <p className="text-sm text-white/40 py-4">No results found for "{query}".</p>
+            <p className="text-sm text-white/50 py-4">No results found for "{query}".</p>
           )}
 
           {searchState === 'done' && searchItems.length > 0 && (
@@ -209,7 +209,7 @@ export default function Anime() {
               <h2 className="text-2xl md:text-3xl font-bold text-white leading-tight mb-1">
                 Browse All Genres &amp; Tags
               </h2>
-              <p className="text-sm text-white/40 max-w-sm">
+              <p className="text-sm text-white/50 max-w-sm">
                 Every genre and media tag from AniList — searchable, filterable, with live previews.
               </p>
             </div>
