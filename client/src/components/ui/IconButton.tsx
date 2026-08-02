@@ -20,7 +20,7 @@ const SIZE_MAP = {
 
 const SHAPE_MAP = {
   circle: 'rounded-full',
-  rounded: 'rounded-lg',
+  rounded: 'rounded-[8px]',
 } as const;
 
 const VARIANT_MAP = {
