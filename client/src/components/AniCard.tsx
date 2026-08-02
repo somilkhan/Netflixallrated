@@ -70,8 +70,8 @@ const AniCard = memo(function AniCard({ anime, rank, fluid = false, className = 
           if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); handleNav(false); }
         }}
         className="
-          block relative z-10 w-full rounded-[4px] overflow-hidden aspect-[2/3]
-          bg-[#181818] cursor-pointer
+          block relative z-10 w-full rounded-[8px] overflow-hidden aspect-[2/3]
+          bg-[#161616] cursor-pointer
           transition-transform duration-[400ms] ease-[cubic-bezier(0.4,0,0.2,1)]
           md:group-hover:scale-[1.08] md:group-hover:-translate-y-1
           active:scale-[0.97] md:active:scale-100 md:active:translate-y-0
@@ -116,7 +116,7 @@ const AniCard = memo(function AniCard({ anime, rank, fluid = false, className = 
         ) : (
           <div
             className="absolute inset-0 flex flex-col items-center justify-center gap-2 px-3"
-            style={{ background: 'radial-gradient(140% 120% at 30% 0%, #1e1e2e, #0A0A0A 75%)' }}
+            style={{ background: 'radial-gradient(140% 120% at 30% 0%, #1e1e2e, #000000 75%)' }}
           >
             <Film size={22} className="text-white/20" />
             <span className="text-[9px] text-white/25 text-center leading-tight line-clamp-3">{title}</span>
@@ -179,7 +179,7 @@ const AniCard = memo(function AniCard({ anime, rank, fluid = false, className = 
         <h3 className="text-[13px] font-semibold text-white leading-tight truncate">
           {title}
         </h3>
-        <div className="flex items-center gap-1.5 mt-0.5 text-[11px] text-white/50">
+        <div className="flex items-center gap-1.5 mt-0.5 text-[11px] text-white/70">
           {rating && (
             <span className="flex items-center gap-0.5 text-[#f5c518]">
               <Star size={10} className="fill-[#f5c518] text-[#f5c518]" />
