@@ -108,11 +108,11 @@ const AnimeHeroBanner = memo(function AnimeHeroBanner() {
                   />
                   <div
                     className="absolute inset-0 transition-opacity duration-500"
-                    style={{ background: 'radial-gradient(ellipse at 30% 30%, #1a1a2e, #0A0A0A)', opacity: imgLoaded[i] ? 0 : 1 }}
+                    style={{ background: 'radial-gradient(ellipse at 30% 30%, #1a1a2e, #000000)', opacity: imgLoaded[i] ? 0 : 1 }}
                   />
                 </>
               ) : (
-                <div className="absolute inset-0" style={{ background: 'radial-gradient(ellipse at 30% 30%, #1a1a2e, #0A0A0A)' }} />
+                <div className="absolute inset-0" style={{ background: 'radial-gradient(ellipse at 30% 30%, #1a1a2e, #000000)' }} />
               )}
             </div>
           );
@@ -149,7 +149,7 @@ const AnimeHeroBanner = memo(function AnimeHeroBanner() {
               </span>
             )}
             {current.genres?.slice(0, 2).map((g: string) => (
-              <span key={g} className="text-[10px] text-white/50 uppercase tracking-wider border border-white/10 px-1.5 py-0.5 rounded">
+              <span key={g} className="text-[10px] text-white/70 uppercase tracking-wider border border-white/10 px-1.5 py-0.5 rounded">
                 {g}
               </span>
             ))}
