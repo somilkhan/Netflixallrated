@@ -13,7 +13,6 @@ import NotFound from './pages/NotFound';
 import OfflinePage from './components/OfflinePage';
 import { analytics } from './lib/analytics';
 import { setPageMeta } from './lib/seo';
-import { BUILD_INFO } from './lib/version';
 import Footer from './components/layout/Footer';
 import { ToastProvider } from './components/ui/Toast';
 
