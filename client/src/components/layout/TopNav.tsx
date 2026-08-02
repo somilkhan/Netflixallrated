@@ -161,7 +161,7 @@ const TopNav = memo(function TopNav({ onOpenSearch }: TopNavProps) {
                 onClick={() => nav(link.path)}
                 aria-current={active ? 'page' : undefined}
                 className={`
-                  h-9 px-3.5 rounded-lg text-[13px] font-medium
+                  h-9 px-3.5 rounded-[8px] text-[13px] font-medium
                   transition-all duration-200 touch-manipulation
                   ${active
                     ? 'text-white bg-white/[0.09]'
@@ -192,7 +192,7 @@ const TopNav = memo(function TopNav({ onOpenSearch }: TopNavProps) {
                   w-[200px] md:w-[280px]
                   transition-all duration-200
                 ">
-                  <Search size={13} className="shrink-0 text-white/50" />
+                  <Search size={13} className="shrink-0 text-white/70" />
                   <input
                     ref={searchInputRef}
                     type="text"
@@ -209,7 +209,7 @@ const TopNav = memo(function TopNav({ onOpenSearch }: TopNavProps) {
                   <button
                     type="button"
                     onClick={() => { setSearchOpen(false); setSearchQuery(''); }}
-                    className="shrink-0 text-white/40 hover:text-white/80 transition-colors touch-manipulation"
+                    className="shrink-0 text-white/70 hover:text-white/80 transition-colors touch-manipulation"
                     aria-label="Close search"
                   >
                     <X size={12} />
@@ -262,7 +262,7 @@ const TopNav = memo(function TopNav({ onOpenSearch }: TopNavProps) {
                     </span>
                     <ChevronDown
                       size={12}
-                      className={`text-white/40 transition-transform duration-200 ${profileOpen ? 'rotate-180' : ''}`}
+                      className={`text-white/70 transition-transform duration-200 ${profileOpen ? 'rotate-180' : ''}`}
                     />
                   </button>
 
@@ -273,7 +273,7 @@ const TopNav = memo(function TopNav({ onOpenSearch }: TopNavProps) {
                         rounded-2xl border border-white/[0.08] overflow-hidden
                         animate-menu
                       "
-                      style={{ background: '#141414', boxShadow: '0 8px 40px rgba(0,0,0,0.7)' }}
+                      style={{ background: '#000000', boxShadow: '0 8px 40px rgba(0,0,0,0.7)' }}
                     >
                       {/* User info */}
                       <div className="px-4 py-3.5 border-b border-white/[0.06]">
@@ -282,7 +282,7 @@ const TopNav = memo(function TopNav({ onOpenSearch }: TopNavProps) {
                         </p>
                         <p className="text-[11px] text-[#737373] truncate mt-0.5">{user.email}</p>
                         {user.role === 'ADMIN' && (
-                          <span className="mt-1.5 inline-flex items-center gap-1 text-[9px] text-white/50 bg-white/[0.06] border border-white/[0.10] rounded-full px-2 py-0.5 uppercase tracking-wide">
+                          <span className="mt-1.5 inline-flex items-center gap-1 text-[9px] text-white/70 bg-white/[0.06] border border-white/[0.10] rounded-full px-2 py-0.5 uppercase tracking-wide">
                             <Shield size={7} /> Admin
                           </span>
                         )}
@@ -295,7 +295,7 @@ const TopNav = memo(function TopNav({ onOpenSearch }: TopNavProps) {
                           onClick={() => { setProfileOpen(false); nav('/profile'); }}
                           className="w-full flex items-center gap-2.5 px-4 py-2.5 text-[13px] text-white/75 hover:bg-white/[0.04] hover:text-white transition-colors text-left"
                         >
-                          <User size={13} className="text-white/40 shrink-0" />
+                          <User size={13} className="text-white/70 shrink-0" />
                           Profile
                         </button>
                         {user.role === 'ADMIN' && (
@@ -304,7 +304,7 @@ const TopNav = memo(function TopNav({ onOpenSearch }: TopNavProps) {
                             onClick={() => { setProfileOpen(false); nav('/admin'); }}
                             className="w-full flex items-center gap-2.5 px-4 py-2.5 text-[13px] text-white/75 hover:bg-white/[0.04] hover:text-white transition-colors text-left"
                           >
-                            <Shield size={13} className="text-white/40 shrink-0" />
+                            <Shield size={13} className="text-white/70 shrink-0" />
                             Admin Panel
                           </button>
                         )}
@@ -313,7 +313,7 @@ const TopNav = memo(function TopNav({ onOpenSearch }: TopNavProps) {
                           onClick={() => { setProfileOpen(false); nav('/history'); }}
                           className="w-full flex items-center gap-2.5 px-4 py-2.5 text-[13px] text-white/75 hover:bg-white/[0.04] hover:text-white transition-colors text-left"
                         >
-                          <Clock size={13} className="text-white/40 shrink-0" />
+                          <Clock size={13} className="text-white/70 shrink-0" />
                           Watch History
                         </button>
                         <button
@@ -321,7 +321,7 @@ const TopNav = memo(function TopNav({ onOpenSearch }: TopNavProps) {
             onClick={() => { setProfileOpen(false); nav('/my-list'); }}
                           className="w-full flex items-center gap-2.5 px-4 py-2.5 text-[13px] text-white/75 hover:bg-white/[0.04] hover:text-white transition-colors text-left"
                         >
-                          <Bookmark size={13} className="text-white/40 shrink-0" />
+                          <Bookmark size={13} className="text-white/70 shrink-0" />
                           My List
                         </button>
                         <button
