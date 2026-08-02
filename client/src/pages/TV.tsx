@@ -200,7 +200,7 @@ export default function TVShows() {
   }, [navigate]);
 
   return (
-    <div className="min-h-screen pb-28 md:pb-0" style={{ background: '#141414' }}>
+    <div className="min-h-screen pb-28 md:pb-0" style={{ background: '#000000' }}>
 
       {/* ── Hero ─────────────────────────────────────────────────────── */}
       {heroItems.length > 0 ? (
@@ -210,7 +210,7 @@ export default function TVShows() {
           regionLabel="Trending TV"
         />
       ) : loading ? (
-        <div className="w-full bg-[#141414] animate-pulse"
+        <div className="w-full bg-[#000000] animate-pulse"
           style={{ height: 'clamp(320px, 55svh, 640px)' }} />
       ) : null}
 
