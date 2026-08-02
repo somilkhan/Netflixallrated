@@ -159,8 +159,8 @@ const ContentCard = memo(function ContentCard({
         onClick={handleClick}
         onKeyDown={handleKeyDown}
         className="
-          block relative z-10 w-full rounded-lg overflow-hidden aspect-[2/3]
-          bg-[#141414] cursor-pointer
+          block relative z-10 w-full rounded-[4px] overflow-hidden aspect-[2/3]
+          bg-[#181818] cursor-pointer
           transition-transform duration-[400ms] ease-[cubic-bezier(0.4,0,0.2,1)]
           md:group-hover:scale-[1.08] md:group-hover:-translate-y-1
           active:scale-[0.97] md:active:scale-100 md:active:translate-y-0
@@ -241,7 +241,7 @@ const ContentCard = memo(function ContentCard({
           <span className="
             absolute top-2 right-2 z-20
             text-[8px] font-medium px-[5px] py-[2.5px] rounded-full
-            border border-white/[0.08] bg-black/70
+             bg-black/70
             text-white/45 uppercase tracking-wide leading-none
           ">
             {TYPE_LABEL[title.type] ?? title.type}
@@ -327,12 +327,12 @@ const ContentCard = memo(function ContentCard({
           {rating && (
             <span className="flex items-center gap-0.5">
               <Star size={9} className="fill-[#f5c518] text-[#f5c518]" />
-              <span className="text-[12px] text-white/40">
+              <span className="text-[12px] text-white/50">
                 {typeof rating === 'number' ? rating.toFixed(1) : rating}
               </span>
             </span>
           )}
-          {title.year && <span className="text-[12px] text-white/40">{title.year}</span>}
+          {title.year && <span className="text-[12px] text-white/50">{title.year}</span>}
         </div>
       </div>
     </article>
