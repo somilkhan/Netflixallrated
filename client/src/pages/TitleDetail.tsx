@@ -112,7 +112,7 @@ const RelatedPosterCard = memo(function RelatedPosterCard({
         style={{ aspectRatio: '2/3', boxShadow: '0 4px 16px rgba(0,0,0,0.3)' }}
       >
         {typeLabel && (
-          <span className="absolute top-2 right-2 z-20 text-[9px] font-medium px-[6px] py-[3px] rounded-full border border-white/[0.08] bg-black/60 text-white/50 uppercase tracking-wide leading-none">
+          <span className="absolute top-2 right-2 z-20 text-[9px] font-medium px-[6px] py-[3px] rounded-full border border-white/[0.08] bg-[#141414]/60 text-white/50 uppercase tracking-wide leading-none">
             {typeLabel}
           </span>
         )}
@@ -1258,7 +1258,7 @@ export default function TitleDetail() {
 
         {/* Anime-only: studios */}
         {title.type === 'ANIME' && studioNodes.length > 0 && (
-          <p className="text-[10px] text-white/40 uppercase tracking-wider" style={{ marginTop: 8 }}>
+          <p className="text-[10px] text-white/50 uppercase tracking-wider" style={{ marginTop: 8 }}>
             {studioNodes.map(s => s.name).join(' · ')}
           </p>
         )}
