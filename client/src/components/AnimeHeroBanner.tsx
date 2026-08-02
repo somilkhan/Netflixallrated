@@ -5,8 +5,8 @@
 import { useState, useEffect, useCallback, memo } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import Hero from './ui/Hero';
-import { getAnimePage } from './lib/anilist';
-import { navigateToAnime } from './lib/animeResolve';
+import { getAnimePage } from '@/lib/anilist';
+import { navigateToAnime } from '@/lib/animeResolve';
 
 const AnimeHeroBanner = memo(function AnimeHeroBanner() {
   const nav = useNavigate();
