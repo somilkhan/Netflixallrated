@@ -83,7 +83,7 @@ export const typography = {
 
 export const cards = {
   poster: {
-    width: { mobile: '130px', tablet: '180px', desktop: '230px' },
+    width: { mobile: '140px', tablet: '180px', desktop: '230px' },
     aspectRatio: '2 / 3',
     radius: '4px',
     gap: '8px',
