@@ -308,7 +308,7 @@ export function StudioDetail() {
         setPlatform(match || null);
         setPlatformsLoading(false);
       })
-      .catch((err: any) => { console.error('DiscoveryPages platforms list error:', err); if (!cancelled) setPlatformsLoading(false); });
+      .catch((err: unknown) => { console.error('DiscoveryPages platforms list error:', err); if (!cancelled) setPlatformsLoading(false); });
     return () => { cancelled = true; };
   }, [slug]);
 
@@ -366,7 +366,7 @@ export function GenreDetail() {
         setGenreName(match?.genre || null);
         setGenresLoading(false);
       })
-      .catch((err: any) => { console.error('DiscoveryPages genres error:', err); if (!cancelled) setGenresLoading(false); });
+      .catch((err: unknown) => { console.error('DiscoveryPages genres error:', err); if (!cancelled) setGenresLoading(false); });
     return () => { cancelled = true; };
   }, [slug]);
 

@@ -50,7 +50,7 @@ export default function AnimeGenres() {
     setPreview([]);
     setPreviewState('loading');
     getAnimePage({ tag, sort: 'POPULARITY_DESC', perPage: 16 })
-      .then((media: any[]) => { setPreview(media); setPreviewState('done'); })
+      .then((media: unknown[]) => { setPreview(media); setPreviewState('done'); })
       .catch(() => setPreviewState('error'));
   }, [tagSelection]);
 

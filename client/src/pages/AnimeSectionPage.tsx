@@ -55,7 +55,7 @@ export default function AnimeSectionPage() {
         setHasNext(hasNextPage);
         setLoadState('done');
       })
-      .catch((err: any) => {
+      .catch((err: unknown) => {
         if (version !== requestVersion.current) return;
         console.error('AnimeSectionPage fetch error:', err);
         setLoadState('error');

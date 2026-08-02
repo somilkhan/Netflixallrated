@@ -161,7 +161,7 @@ export default function SearchOverlay({ open, onClose }: Props) {
         setSuggestions(results.slice(0, 8));
         setLoading(false);
       })
-      .catch((err: any) => {
+      .catch((err: unknown) => {
         if (err?.name === 'AbortError' || ctrl.signal.aborted) return;
         console.error('SearchOverlay searchMulti error:', err);
         setLoading(false);

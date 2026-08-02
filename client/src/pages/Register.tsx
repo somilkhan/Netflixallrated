@@ -19,7 +19,7 @@ export default function Register() {
     try {
       await signUp(email, password, displayName);
       setSuccess(true);
-    } catch (err: any) {
+    } catch (err: unknown) {
       setError(err.message || 'Registration failed');
     } finally {
       setLoading(false);

@@ -8,7 +8,7 @@ import { useAuth } from '../lib/auth';
 type WatchlistItem = {
   id: string;
   status: string;
-  title: any;
+  title: unknown;
 };
 
 const STATUS_LABELS: Record<string, string> = {

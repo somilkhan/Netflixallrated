@@ -5,7 +5,7 @@ import ContentCard from '../components/ui/ContentCard';
 
 type DownloadItem = {
   id: string;
-  title: any;
+  title: unknown;
   progress: number;
   quality: 'SD' | 'HD' | '4K';
   sizeMb: number;

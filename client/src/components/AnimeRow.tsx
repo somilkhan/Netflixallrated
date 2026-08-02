@@ -54,9 +54,9 @@ const AnimeRow = memo(function AnimeRow({
     didFetch.current = true;
     setLoadState('loading');
     getAnimePage({ sort, genre, tag, status, season, seasonYear, format, perPage, idNotIn: notIdsRef.current })
-      .then((media: any[]) => {
+      .then((media: unknown[]) => {
         setItems(media);
-        onLoadedRef.current?.(media.map((m: any) => m.id));
+        onLoadedRef.current?.(media.map((m: unknown) => m.id));
         setLoadState('done');
       })
       .catch((err) => {
@@ -201,7 +201,7 @@ const AnimeRow = memo(function AnimeRow({
                   </p>
                 </div>
               )
-            : items.map((anime: any) => (
+            : items.map((anime: unknown) => (
                 <AniCard key={anime.id} anime={anime} />
               ))
           }

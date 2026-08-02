@@ -2,22 +2,22 @@ import { getSupabaseClient } from './supabase';
 
 const API_URL = import.meta.env.VITE_API_URL || '/api';
 
-const inflight = new Map<string, Promise<any>>();
+const inflight = new Map<string, Promise<unknown>>();
 
 // Simple TTL cache for hot read-only endpoints (genres, top10, trending, recent, geo)
 const MAX_CACHE_SIZE = 100;
-const cache = new Map<string, { value: any; expires: number }>();
+const cache = new Map<string, { value: unknown; expires: number }>();
 const TTL_MS = 60_000; // 1 minute
 
-function cachedFetcher(cacheKey: string, ttl: number, fetcher: () => Promise<any>): Promise<any> {
+function cachedFetcher<T>(cacheKey: string, ttl: number, fetcher: () => Promise<T>): Promise<T> {
   const now = Date.now();
   const hit = cache.get(cacheKey);
   if (hit && hit.expires > now) return Promise.resolve(hit.value);
 
   if (inflight.has(cacheKey)) return inflight.get(cacheKey)!;
 
-  let req: Promise<any>;
-  req = fetcher().then((value: any) => {
+  let req: Promise<unknown>;
+  req = fetcher().then((value: unknown) => {
     cache.set(cacheKey, { value, expires: Date.now() + ttl });
     if (cache.size > MAX_CACHE_SIZE) {
       const firstKey = cache.keys().next().value;

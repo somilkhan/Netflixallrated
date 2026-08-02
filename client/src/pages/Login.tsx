@@ -17,7 +17,7 @@ export default function Login() {
     try {
       await signIn(email, password);
       nav('/');
-    } catch (err: any) {
+    } catch (err: unknown) {
       setError(err.message || 'Login failed');
     } finally {
       setLoading(false);

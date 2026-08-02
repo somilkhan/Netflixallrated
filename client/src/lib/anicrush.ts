@@ -65,7 +65,7 @@ export async function getEmbedUrl(
     ep: String(episode),
   });
 
-  const servers: any[] = data?.result?.servers ?? [];
+  const servers: unknown[] = data?.result?.servers ?? [];
   if (!servers.length) throw new Error('No servers available for this episode');
 
   const idx = Math.min(Math.max(serverIndex - 1, 0), servers.length - 1);

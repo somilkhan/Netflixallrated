@@ -12,9 +12,9 @@ import { tmdbSrcSet } from '../../services/tmdb';
 const AUTO_MS = 8000;
 
 interface HeroSectionProps {
-  titles: any[];
+  titles: unknown[];
   /** Override default /title/:id navigation. Receives the current item and whether Play was clicked. */
-  onAction?: (item: any, play: boolean) => void;
+  onAction?: (item: unknown, play: boolean) => void;
   /** Optional label shown as a small chip above genre pills, e.g. "Popular in India" */
   regionLabel?: string;
 }

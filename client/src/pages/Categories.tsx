@@ -5,6 +5,11 @@ import { api } from "../lib/api";
 import { slugify } from "../lib/slug";
 import GlassCard from "../components/GlassCard";
 
+interface PlatformItem { id: string; name: string; icon: string; }
+interface ProviderItem { id: string; name: string; icon: string; }
+interface CategoryRowItem { id: string; label: string; items: TmdbNormalized[]; }
+
+
 /* ─── Types ──────────────────────────────────────────────── */
 type CategoryItem = {
   slug: string;
@@ -398,9 +403,9 @@ export default function CategoriesPage() {
     Promise.all([
       api.platforms.list().catch(() => []),
       api.titles.watchProvidersList("US").catch(() => []),
-    ]).then(([platforms, providers]: [any[], any[]]) => {
+    ]).then(([platforms, providers]: [PlatformItem[], ProviderItem[]]) => {
       const providerSlugs = new Map<string, any>(
-        providers.map((prov: any) => [slugify(prov.name || ""), prov])
+        providers.map((prov: ProviderItem) => [slugify(prov.name || ""), prov])
       );
       setStudios(
         platforms.map((p) => {
@@ -416,17 +421,17 @@ export default function CategoriesPage() {
           };
         }),
       );
-    }).catch((err: any) => console.error('Categories platforms/providers error:', err));
+    }).catch((err: unknown) => console.error('Categories platforms/providers error:', err));
 
     api.geo
       .detect()
       .then((d: { region?: string }) => api.geo.content(d.region || "US"))
-      .then((data: { rows: { id: string; label: string; items: any[] }[] }) => {
+      .then((data: { rows: CategoryRowItem[] }) => {
         setGeoRows(
           (data.rows || []).map((row) => ({
             id:    row.id,
             label: row.label,
-            items: (row.items || []).slice(0, 20).map((it: any) => ({
+            items: (row.items || []).slice(0, 20).map((it: TmdbNormalized) => ({
               key:       `${row.id}-${it.mediaType}-${it.tmdbId}`,
               name:      it.name,
               posterUrl: it.posterUrl,

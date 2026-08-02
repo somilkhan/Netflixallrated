@@ -28,7 +28,7 @@ export default function Admin() {
     setRefreshing(true);
     api.titles.syncStatus()
       .then(setStatus)
-      .catch((err: any) => setStatusError(err.message))
+      .catch((err: unknown) => setStatusError(err.message))
       .finally(() => setRefreshing(false));
   }, [user]);
 

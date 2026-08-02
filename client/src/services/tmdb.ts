@@ -9,8 +9,37 @@ const TMDB_PROXY_BASE = '/api/tmdb';
 const IMAGE_BASE = 'https://image.tmdb.org/t/p/';
 
 // 5-minute TTL cache
-const _cache = new Map<string, { value: any; expires: number }>();
+const _cache = new Map<string, { value: unknown; expires: number }>();
 const TTL_MS = 5 * 60 * 1000;
+
+// ── Raw TMDB API item shape ────────────────────────────────────────────────
+interface TmdbApiItem {
+  id: number;
+  title?: string;
+  name?: string;
+  media_type?: 'movie' | 'tv';
+  release_date?: string;
+  first_air_date?: string;
+  poster_path?: string | null;
+  backdrop_path?: string | null;
+  vote_average?: number;
+  genre_ids?: number[];
+  overview?: string;
+  original_language?: string;
+  [key: string]: unknown;
+}
+
+interface TmdbVideoItem {
+  type?: string;
+  site?: string;
+  key?: string;
+  [key: string]: unknown;
+}
+
+interface TmdbGenreItem {
+  id: number;
+  name: string;
+}
 
 async function tmdbFetch<T>(
   path: string,
@@ -129,7 +158,7 @@ export interface TmdbNormalized {
   originalLanguage?: string;
 }
 
-function normalize(item: any, overrideMediaType?: 'movie' | 'tv'): TmdbNormalized {
+function normalize(item: TmdbApiItem, overrideMediaType?: 'movie' | 'tv'): TmdbNormalized {
   const mediaType: 'movie' | 'tv' =
     overrideMediaType ?? item.media_type ?? (item.title ? 'movie' : 'tv');
   const dateStr = item.release_date || item.first_air_date || '';
@@ -159,54 +188,54 @@ export async function getTrending(
   signal?: AbortSignal,
 ): Promise<TmdbNormalized[]> {
   const params: Record<string, string> = { page: String(page) };
-  const data = await tmdbFetch<{ results: any[] }>(`/trending/${type}/${timeWindow}`, params, signal);
+  const data = await tmdbFetch<{ results: TmdbApiItem[] }>(`/trending/${type}/${timeWindow}`, params, signal);
   return data.results.map(item => normalize(item));
 }
 
 export async function getPopularMovies(page = 1, rp: RegionParams = {}): Promise<TmdbNormalized[]> {
   const params: Record<string, string> = { page: String(page) };
   applyRegion(params, rp);
-  const data = await tmdbFetch<{ results: any[] }>('/movie/popular', params);
+  const data = await tmdbFetch<{ results: TmdbApiItem[] }>('/movie/popular', params);
   return data.results.map(item => normalize(item, 'movie'));
 }
 
 export async function getPopularTVShows(page = 1, rp: RegionParams = {}): Promise<TmdbNormalized[]> {
   const params: Record<string, string> = { page: String(page) };
   applyRegion(params, rp);
-  const data = await tmdbFetch<{ results: any[] }>('/tv/popular', params);
+  const data = await tmdbFetch<{ results: TmdbApiItem[] }>('/tv/popular', params);
   return data.results.map(item => normalize(item, 'tv'));
 }
 
 export async function getTopRatedMovies(page = 1, rp: RegionParams = {}): Promise<TmdbNormalized[]> {
   const params: Record<string, string> = { page: String(page) };
   applyRegion(params, rp);
-  const data = await tmdbFetch<{ results: any[] }>('/movie/top_rated', params);
+  const data = await tmdbFetch<{ results: TmdbApiItem[] }>('/movie/top_rated', params);
   return data.results.map(item => normalize(item, 'movie'));
 }
 
 export async function getTopRatedTVShows(page = 1, rp: RegionParams = {}): Promise<TmdbNormalized[]> {
   const params: Record<string, string> = { page: String(page) };
   applyRegion(params, rp);
-  const data = await tmdbFetch<{ results: any[] }>('/tv/top_rated', params);
+  const data = await tmdbFetch<{ results: TmdbApiItem[] }>('/tv/top_rated', params);
   return data.results.map(item => normalize(item, 'tv'));
 }
 
 export async function getNowPlayingMovies(page = 1, rp: RegionParams = {}): Promise<TmdbNormalized[]> {
   const params: Record<string, string> = { page: String(page) };
   applyRegion(params, rp);
-  const data = await tmdbFetch<{ results: any[] }>('/movie/now_playing', params);
+  const data = await tmdbFetch<{ results: TmdbApiItem[] }>('/movie/now_playing', params);
   return data.results.map(item => normalize(item, 'movie'));
 }
 
 export async function getUpcomingMovies(page = 1, rp: RegionParams = {}): Promise<TmdbNormalized[]> {
   const params: Record<string, string> = { page: String(page) };
   applyRegion(params, rp);
-  const data = await tmdbFetch<{ results: any[] }>('/movie/upcoming', params);
+  const data = await tmdbFetch<{ results: TmdbApiItem[] }>('/movie/upcoming', params);
   return data.results.map(item => normalize(item, 'movie'));
 }
 
 export async function getMoviesByGenre(genreId: number, page = 1): Promise<TmdbNormalized[]> {
-  const data = await tmdbFetch<{ results: any[] }>('/discover/movie', {
+  const data = await tmdbFetch<{ results: TmdbApiItem[] }>('/discover/movie', {
     with_genres: String(genreId),
     sort_by: 'popularity.desc',
     page: String(page),
@@ -215,7 +244,7 @@ export async function getMoviesByGenre(genreId: number, page = 1): Promise<TmdbN
 }
 
 export async function getTVByGenre(genreId: number, page = 1): Promise<TmdbNormalized[]> {
-  const data = await tmdbFetch<{ results: any[] }>('/discover/tv', {
+  const data = await tmdbFetch<{ results: TmdbApiItem[] }>('/discover/tv', {
     with_genres: String(genreId),
     sort_by: 'popularity.desc',
     page: String(page),
@@ -227,7 +256,7 @@ export async function getTVByGenre(genreId: number, page = 1): Promise<TmdbNorma
 
 /** Bollywood — Hindi movies sorted by popularity */
 export async function getBollywoodMovies(page = 1): Promise<TmdbNormalized[]> {
-  const data = await tmdbFetch<{ results: any[] }>('/discover/movie', {
+  const data = await tmdbFetch<{ results: TmdbApiItem[] }>('/discover/movie', {
     with_original_language: 'hi',
     sort_by: 'popularity.desc',
     'vote_count.gte': '50',
@@ -240,13 +269,13 @@ export async function getBollywoodMovies(page = 1): Promise<TmdbNormalized[]> {
 /** South Indian cinema — Tamil + Telugu combined, sorted by popularity */
 export async function getSouthIndianMovies(page = 1): Promise<TmdbNormalized[]> {
   const [tamilData, teluguData] = await Promise.all([
-    tmdbFetch<{ results: any[] }>('/discover/movie', {
+    tmdbFetch<{ results: TmdbApiItem[] }>('/discover/movie', {
       with_original_language: 'ta',
       sort_by: 'popularity.desc',
       language: 'en-US',
       page: String(page),
     }),
-    tmdbFetch<{ results: any[] }>('/discover/movie', {
+    tmdbFetch<{ results: TmdbApiItem[] }>('/discover/movie', {
       with_original_language: 'te',
       sort_by: 'popularity.desc',
       language: 'en-US',
@@ -265,7 +294,7 @@ export async function getSouthIndianMovies(page = 1): Promise<TmdbNormalized[]> 
 
 /** Hindi web series / OTT shows */
 export async function getHindiWebSeries(page = 1): Promise<TmdbNormalized[]> {
-  const data = await tmdbFetch<{ results: any[] }>('/discover/tv', {
+  const data = await tmdbFetch<{ results: TmdbApiItem[] }>('/discover/tv', {
     with_original_language: 'hi',
     sort_by: 'popularity.desc',
     language: 'en-US',
@@ -276,7 +305,7 @@ export async function getHindiWebSeries(page = 1): Promise<TmdbNormalized[]> {
 
 /** Malayalam movies */
 export async function getMalayalamMovies(page = 1): Promise<TmdbNormalized[]> {
-  const data = await tmdbFetch<{ results: any[] }>('/discover/movie', {
+  const data = await tmdbFetch<{ results: TmdbApiItem[] }>('/discover/movie', {
     with_original_language: 'ml',
     sort_by: 'popularity.desc',
     language: 'en-US',
@@ -287,7 +316,7 @@ export async function getMalayalamMovies(page = 1): Promise<TmdbNormalized[]> {
 
 /** Kannada movies */
 export async function getKannadaMovies(page = 1): Promise<TmdbNormalized[]> {
-  const data = await tmdbFetch<{ results: any[] }>('/discover/movie', {
+  const data = await tmdbFetch<{ results: TmdbApiItem[] }>('/discover/movie', {
     with_original_language: 'kn',
     sort_by: 'popularity.desc',
     language: 'en-US',
@@ -302,7 +331,7 @@ export async function getIndianByLanguage(
   mediaType: 'movie' | 'tv' = 'movie',
   page = 1,
 ): Promise<TmdbNormalized[]> {
-  const data = await tmdbFetch<{ results: any[] }>(`/discover/${mediaType}`, {
+  const data = await tmdbFetch<{ results: TmdbApiItem[] }>(`/discover/${mediaType}`, {
     with_original_language: langCode,
     sort_by: 'popularity.desc',
     language: 'en-US',
@@ -315,16 +344,16 @@ export async function searchMulti(query: string, page = 1): Promise<TmdbNormaliz
   // Fan out to all three endpoints in parallel so regional / less-popular titles
   // (e.g. Tamil "Master" tmdbId 626392) that rank low in /search/multi still surface.
   const [multiData, movieData, tvData] = await Promise.allSettled([
-    tmdbFetch<{ results: any[] }>('/search/multi', { query, page: String(page) }),
-    tmdbFetch<{ results: any[] }>('/search/movie', { query, page: String(page) }),
-    tmdbFetch<{ results: any[] }>('/search/tv',    { query, page: String(page) }),
+    tmdbFetch<{ results: TmdbApiItem[] }>('/search/multi', { query, page: String(page) }),
+    tmdbFetch<{ results: TmdbApiItem[] }>('/search/movie', { query, page: String(page) }),
+    tmdbFetch<{ results: TmdbApiItem[] }>('/search/tv',    { query, page: String(page) }),
   ]);
 
   const seen = new Set<string>();
   const merged: TmdbNormalized[] = [];
 
   // Helper: push unique items (deduplicated by mediaType+tmdbId)
-  const push = (items: any[], overrideMediaType?: 'movie' | 'tv') => {
+  const push = (items: TmdbApiItem[], overrideMediaType?: 'movie' | 'tv') => {
     for (const item of items) {
       const mt: 'movie' | 'tv' =
         overrideMediaType ?? item.media_type ?? (item.title ? 'movie' : 'tv');
@@ -345,18 +374,18 @@ export async function searchMulti(query: string, page = 1): Promise<TmdbNormaliz
   return merged;
 }
 
-export async function getMovieDetails(id: number): Promise<any> {
+export async function getMovieDetails(id: number): Promise<Record<string, unknown>> {
   return tmdbFetch(`/movie/${id}`);
 }
 
-export async function getTVDetails(id: number): Promise<any> {
+export async function getTVDetails(id: number): Promise<Record<string, unknown>> {
   return tmdbFetch(`/tv/${id}`);
 }
 
 /** Returns the YouTube trailer key for a movie, or null if not found. */
 export async function getMovieVideos(id: number, signal?: AbortSignal): Promise<string | null> {
   try {
-    const data = await tmdbFetch<{ results: any[] }>(`/movie/${id}/videos`, {}, signal);
+    const data = await tmdbFetch<{ results: TmdbVideoItem[] }>(`/movie/${id}/videos`, {}, signal);
     const trailer = data.results.find(v => v.type === 'Trailer' && v.site === 'YouTube')
       ?? data.results.find(v => v.site === 'YouTube');
     return trailer?.key ?? null;
@@ -368,7 +397,7 @@ export async function getMovieVideos(id: number, signal?: AbortSignal): Promise<
 /** Returns the YouTube trailer key for a TV show, or null if not found. */
 export async function getTVVideos(id: number, signal?: AbortSignal): Promise<string | null> {
   try {
-    const data = await tmdbFetch<{ results: any[] }>(`/tv/${id}/videos`, {}, signal);
+    const data = await tmdbFetch<{ results: TmdbVideoItem[] }>(`/tv/${id}/videos`, {}, signal);
     const trailer = data.results.find(v => v.type === 'Trailer' && v.site === 'YouTube')
       ?? data.results.find(v => v.site === 'YouTube');
     return trailer?.key ?? null;
@@ -377,15 +406,15 @@ export async function getTVVideos(id: number, signal?: AbortSignal): Promise<str
   }
 }
 
-export async function getMovieCredits(id: number): Promise<any> {
+export async function getMovieCredits(id: number): Promise<Record<string, unknown>> {
   return tmdbFetch(`/movie/${id}/credits`);
 }
 
 /** Returns deduplicated genre list from both movie and TV genres. */
 export async function getGenres(signal?: AbortSignal): Promise<{ id: number; name: string }[]> {
   const [moviesData, tvData] = await Promise.all([
-    tmdbFetch<{ genres: any[] }>('/genre/movie/list', {}, signal),
-    tmdbFetch<{ genres: any[] }>('/genre/tv/list', {}, signal),
+    tmdbFetch<{ genres: unknown[] }>('/genre/movie/list', {}, signal),
+    tmdbFetch<{ genres: unknown[] }>('/genre/tv/list', {}, signal),
   ]);
   const seen = new Set<number>();
   return [...moviesData.genres, ...tvData.genres].filter(g => {
@@ -420,7 +449,7 @@ export async function getRegionalContent(
       return [];
 
     case 'KR': {
-      const data = await tmdbFetch<{ results: any[] }>('/discover/tv', {
+      const data = await tmdbFetch<{ results: TmdbApiItem[] }>('/discover/tv', {
         with_original_language: 'ko',
         sort_by: 'popularity.desc',
         'vote_count.gte': '50',
@@ -431,12 +460,12 @@ export async function getRegionalContent(
 
     case 'JP': {
       const [movies, tv] = await Promise.all([
-        tmdbFetch<{ results: any[] }>('/discover/movie', {
+        tmdbFetch<{ results: TmdbApiItem[] }>('/discover/movie', {
           with_original_language: 'ja',
           sort_by: 'popularity.desc',
           page: String(page),
         }),
-        tmdbFetch<{ results: any[] }>('/discover/tv', {
+        tmdbFetch<{ results: TmdbApiItem[] }>('/discover/tv', {
           with_original_language: 'ja',
           sort_by: 'popularity.desc',
           page: String(page),
@@ -453,7 +482,7 @@ export async function getRegionalContent(
 
     default: {
       // US, GB, CA, AU and every other country: discover movies released/popular in that region
-      const data = await tmdbFetch<{ results: any[] }>('/discover/movie', {
+      const data = await tmdbFetch<{ results: TmdbApiItem[] }>('/discover/movie', {
         sort_by:             'popularity.desc',
         region:              countryCode,
         'vote_count.gte':    '100',

@@ -38,9 +38,9 @@ const AnimeRankRow = memo(function AnimeRankRow({ title, badge, perPage = 10, on
     didFetch.current = true;
     setLoadState('loading');
     getAnimePage({ sort: 'TRENDING_DESC', perPage })
-      .then((media: any[]) => {
+      .then((media: unknown[]) => {
         setItems(media);
-        onLoadedRef.current?.(media.map((m: any) => m.id));
+        onLoadedRef.current?.(media.map((m: unknown) => m.id));
         setLoadState('done');
       })
       .catch((err) => {
@@ -182,7 +182,7 @@ const AnimeRankRow = memo(function AnimeRankRow({ title, badge, perPage = 10, on
                   </p>
                 </div>
               )
-            : items.map((anime: any, i: number) => (
+            : items.map((anime: unknown, i: number) => (
                 /* Each item: large translucent rank number (left-aligned behind the poster) */
                 <div
                   key={anime.id}

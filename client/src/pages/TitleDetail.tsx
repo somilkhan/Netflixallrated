@@ -289,7 +289,7 @@ export default function TitleDetail() {
   useEffect(() => {
     if (!user || !id || !title) return;
     api.history.get(id)
-      .then((prog: any) => {
+      .then((prog: unknown) => {
         if (!prog) return; // no history yet for this title
         progressBaseRef.current = prog.positionSeconds ?? 0;
         if (title.type === 'SERIES' && prog.seasonNumber) setSelectedSeason(prog.seasonNumber);
@@ -301,7 +301,7 @@ export default function TitleDetail() {
           durationSeconds: prog.durationSeconds ?? null,
         });
       })
-      .catch((err: any) => { console.error('TitleDetail history get error:', err); progressBaseRef.current = 0; });
+      .catch((err: unknown) => { console.error('TitleDetail history get error:', err); progressBaseRef.current = 0; });
   }, [user, id, title]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Start / stop the wall-clock timer whenever playback state changes
@@ -530,12 +530,12 @@ export default function TitleDetail() {
     setFlixhqError(null);
     setFlixhqLoading(true);
     api.consumet.moviesAuto(title?.name ?? '', title?.type ?? 'MOVIE', selectedSeason, selectedEp)
-      .then((data: any) => {
+      .then((data: unknown) => {
         if (reqId !== flixhqReqRef.current) return;
         if (data?.playerUrl) setFlixhqUrl(data.playerUrl);
         else setFlixhqError('No stream found via FlixHQ');
       })
-      .catch((err: any) => {
+      .catch((err: unknown) => {
         if (reqId !== flixhqReqRef.current) return;
         setFlixhqError(err?.message || 'FlixHQ failed to load — try another server');
       })
@@ -559,7 +559,7 @@ export default function TitleDetail() {
       selectedEp,
       title?.name ?? '',
     )
-      .then((data: any) => {
+      .then((data: unknown) => {
         if (reqId !== febboxReqRef.current) return;
         const streams: FebboxStream[] = data?.streams ?? [];
         if (streams.length > 0) {
@@ -572,7 +572,7 @@ export default function TitleDetail() {
           setFebboxError('FebBox stream not available for this title');
         }
       })
-      .catch((err: any) => {
+      .catch((err: unknown) => {
         if (reqId !== febboxReqRef.current) return;
         setFebboxError(err?.message || 'FebBox lookup failed — try another server');
       })
@@ -589,13 +589,13 @@ export default function TitleDetail() {
     setHdhubError(null);
     setHdhubLoading(true);
     api.screenscape.hdhub4uResolve(title?.name ?? '')
-      .then((data: any) => {
+      .then((data: unknown) => {
         if (reqId !== hdhubReqRef.current) return;
         const url = data?.streamUrl ?? data?.embedUrl ?? null;
         if (url) setHdhubUrl(url);
         else setHdhubError('HDHub4u content not available for this title');
       })
-      .catch((err: any) => {
+      .catch((err: unknown) => {
         if (reqId !== hdhubReqRef.current) return;
         setHdhubError(err?.message || 'HDHub4u lookup failed — try another server');
       })
@@ -617,13 +617,13 @@ export default function TitleDetail() {
       selectedSeason,
       selectedEp,
     )
-      .then((data: any) => {
+      .then((data: unknown) => {
         if (reqId !== hubReqRef.current) return;
         const url = data?.embedUrl ?? data?.streamUrl ?? null;
         if (url) setHubUrl(url);
         else setHubError('4kHDHub stream not available for this title');
       })
-      .catch((err: any) => {
+      .catch((err: unknown) => {
         if (reqId !== hubReqRef.current) return;
         setHubError(err?.message || '4kHDHub lookup failed — try another server');
       })
@@ -637,7 +637,7 @@ export default function TitleDetail() {
     if (!title || !id || title.type === 'ANIME') return;
     let cancelled = false;
     api.titles.credits(id)
-      .then((data: any) => {
+      .then((data: unknown) => {
         if (!cancelled) setCredits(data?.cast ?? []);
       })
       .catch(() => { if (!cancelled) setCredits([]); });
@@ -737,7 +737,7 @@ export default function TitleDetail() {
         if (signal.aborted) return;
         setAnicrushEpCount(count || movies[0]?.totalEpisodes || 0);
         setSelectedEp(1);
-      } catch (err: any) {
+      } catch (err: unknown) {
         if (err?.name === 'AbortError' || signal.aborted) return;
         // E: Don't show anicrush error as a hard failure — GogoAnime runs in
         // parallel and the auto-switch below will flip the provider.
@@ -781,38 +781,38 @@ export default function TitleDetail() {
     // Try multiple name variants: prefer English title from anilist, then romaji, then stored name
     const searchName = title?.name ?? '';
     api.consumet.animeSearch(searchName)
-      .then((data: any) => {
+      .then((data: unknown) => {
         if (gogoSearchReqRef.current !== reqId) return; // stale — a newer title navigated in
-        const results: any[] = data?.results ?? [];
+        const results: unknown[] = data?.results ?? [];
         if (!results.length) {
           setGogoError('Not found on GogoAnime — try another source');
           return;
         }
         // Pick the best match (exact title match first, then first result)
-        const exact = results.find((r: any) =>
+        const exact = results.find((r: unknown) =>
           r.title?.toLowerCase() === searchName.toLowerCase()
         );
         const result = exact ?? results[0];
         if (!result) { setGogoError('No anime found'); return; }
         setGogoAnimeId(result.id);
         api.consumet.animeInfo(result.id)
-          .then((info: any) => {
+          .then((info: unknown) => {
             if (gogoSearchReqRef.current !== reqId) return;
-            const eps: any[] = info.episodes ?? [];
+            const eps: unknown[] = info.episodes ?? [];
             setGogoEpCount(info.totalEpisodes ?? eps.length ?? 0);
             // Normalise episode objects: ensure .number field exists
-            const normalised = eps.map((e: any, i: number) => ({
+            const normalised = eps.map((e: unknown, i: number) => ({
               ...e,
               number: e.number ?? e.episode ?? (i + 1),
             }));
             setGogoEpisodes(normalised);
           })
-          .catch((err: any) => {
+          .catch((err: unknown) => {
             if (gogoSearchReqRef.current !== reqId) return;
             setGogoError(err?.message || 'Failed to load episode list');
           });
       })
-      .catch((err: any) => {
+      .catch((err: unknown) => {
         if (gogoSearchReqRef.current !== reqId) return;
         setGogoError(err?.message || 'GogoAnime search failed');
       });
@@ -859,7 +859,7 @@ export default function TitleDetail() {
       setIsIframeLoading(true);
       setIsPlaying(true);
       setTimeout(() => animeVideoRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 50);
-    } catch (err: any) {
+    } catch (err: unknown) {
       if (embedReqRef.current !== reqId) return;
       setAnimeError(err.message || 'Failed to load episode');
     } finally {
@@ -883,16 +883,16 @@ export default function TitleDetail() {
     let episodes = gogoEpisodes;
     if (episodes.length === 0) {
       try {
-        const info: any = await api.consumet.animeInfo(gogoAnimeId);
-        const eps: any[] = info.episodes ?? [];
-        const normalised = eps.map((e: any, i: number) => ({
+        const info: unknown = await api.consumet.animeInfo(gogoAnimeId);
+        const eps: unknown[] = info.episodes ?? [];
+        const normalised = eps.map((e: unknown, i: number) => ({
           ...e,
           number: e.number ?? e.episode ?? (i + 1),
         }));
         setGogoEpisodes(normalised);
         setGogoEpCount(info.totalEpisodes ?? normalised.length);
         episodes = normalised;
-      } catch (err: any) {
+      } catch (err: unknown) {
         setGogoError(err?.message || 'Failed to load episode list');
         return;
       }
@@ -900,7 +900,7 @@ export default function TitleDetail() {
 
     // Find episode by number field (normalised above), fallback to index
     if (!episodes.length) { setGogoError(`Episode ${epNum} not found`); return; }
-    const gogoEp = episodes.find((e: any) => Number(e.number) === epNum)
+    const gogoEp = episodes.find((e: unknown) => Number(e.number) === epNum)
       ?? episodes[epNum - 1]
       ?? episodes[0];
     if (!gogoEp) { setGogoError(`Episode ${epNum} not found`); return; }
@@ -910,17 +910,17 @@ export default function TitleDetail() {
     setGogoError(null);
     try {
       const data = await api.consumet.animeStream(gogoEp.id);
-      const sources: any[] = data.sources ?? [];
+      const sources: unknown[] = data.sources ?? [];
       // Prefer M3U8, then highest quality, then first available
       if (!sources.length) throw new Error('No stream source returned by server');
-      const m3u8 = sources.find((s: any) => s.isM3U8) ?? sources[0];
+      const m3u8 = sources.find((s: unknown) => s.isM3U8) ?? sources[0];
       if (!m3u8?.url) throw new Error('No stream source returned by server');
       const url = api.consumet.playerUrl(m3u8.url, data.headers?.Referer ?? '');
       setGogoEmbedUrl(url);
       setIsIframeLoading(true);
       setIsPlaying(true);
       setTimeout(() => animeVideoRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 50);
-    } catch (err: any) {
+    } catch (err: unknown) {
       setGogoError(err.message ?? 'Stream failed — try another source');
     } finally {
       setGogoEmbedLoading(false);
@@ -975,7 +975,7 @@ export default function TitleDetail() {
   // to a plain numbered list (Anicrush/Filmu/Screenscape only expose a count).
   const animeEpisodeList = useMemo(() => {
     if (animeProvider === 'gogoanime' && gogoEpisodes.length > 0) {
-      return gogoEpisodes.map((e: any) => ({
+      return gogoEpisodes.map((e: unknown) => ({
         episodeNumber: Number(e.number),
         name: e.title || `Episode ${e.number}`,
         stillUrl: e.image || null,
@@ -1235,7 +1235,7 @@ export default function TitleDetail() {
               <span className="dp-section-title">Cast</span>
             </div>
             <div className="cast-row">
-              {credits.slice(0, 20).map((member: any) => (
+              {credits.slice(0, 20).map((member: unknown) => (
                 <div key={member.id ?? member.name} className="cast-member">
                   <div className="cast-photo">
                     {member.profileUrl ? (
@@ -1674,7 +1674,7 @@ export default function TitleDetail() {
                     <h3>Where to Watch</h3>
                     <div className="provider-sheet-grid">
                       {allProviders.length > 0
-                        ? allProviders.map((p: any) => (
+                        ? allProviders.map((p: unknown) => (
                             <a
                               key={p.providerId}
                               href={watchProviders?.link || '#'}
@@ -1689,7 +1689,7 @@ export default function TitleDetail() {
                               <span>{p.name}</span>
                             </a>
                           ))
-                        : officialLinks.map((link: any) => (
+                        : officialLinks.map((link: unknown) => (
                             <a
                               key={link.platform}
                               href={link.url}
@@ -1744,7 +1744,7 @@ export default function TitleDetail() {
         )}
         {!recommendedLoading && recommendedTitles.length > 0 && (
           <RelatedRow title="Recommendations">
-            {recommendedTitles.slice(0, 12).map((t: any) => (
+            {recommendedTitles.slice(0, 12).map((t: unknown) => (
               <div key={t.tmdbId} style={{ flex: '0 0 auto' }}>
                 <RelatedTmdbCard item={t} />
               </div>
@@ -1758,7 +1758,7 @@ export default function TitleDetail() {
         )}
         {!similarLoading && similarTitles.length > 0 && (
           <RelatedRow title="Similar Titles">
-            {similarTitles.slice(0, 12).map((t: any) => (
+            {similarTitles.slice(0, 12).map((t: unknown) => (
               <div key={t.tmdbId} style={{ flex: '0 0 auto' }}>
                 <RelatedTmdbCard item={t} />
               </div>
@@ -1866,7 +1866,7 @@ export default function TitleDetail() {
           {ratings.filter(r => r.reviewText).length === 0 ? (
             <div className="empty-note">No reviews yet — be the first!</div>
           ) : (
-            ratings.filter(r => r.reviewText).map((r: any) => (
+            ratings.filter(r => r.reviewText).map((r: unknown) => (
               <div key={r.id} className="review-card">
                 <div className="review-head">
                   <div className="review-avatar">

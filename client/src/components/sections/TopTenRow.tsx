@@ -8,10 +8,10 @@ import ContentCard from '../ui/ContentCard';
 
 interface TopTenRowProps {
   title: string;
-  items: any[];
+  items: unknown[];
   viewAllPath?: string;
   /** Custom card renderer — defaults to <ContentCard title={item} /> */
-  renderCard?: (item: any, index: number) => React.ReactNode;
+  renderCard?: (item: unknown, index: number) => React.ReactNode;
 }
 
 /**

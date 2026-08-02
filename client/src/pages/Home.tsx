@@ -392,7 +392,7 @@ export default function Home() {
   useEffect(() => {
     if (!user) { setContinueWatching([]); return; }
     api.history.mine()
-      .then((items: any[]) => setContinueWatching(items.filter(i => !i.completed && i.positionSeconds > 10)))
+      .then((items: unknown[]) => setContinueWatching(items.filter(i => !i.completed && i.positionSeconds > 10)))
       .catch(() => setContinueWatching([]));
   }, [user]);
 
@@ -523,7 +523,7 @@ export default function Home() {
           'topRated',
           () => Promise.all([getTopRatedMovies(1, { region: region.countryCode, language: region.language }), getTopRatedTVShows(1, { region: region.countryCode, language: region.language })])
             .then(([movies, tv]) => [...movies, ...tv].sort((a, b) => (b.rating ?? 0) - (a.rating ?? 0)).slice(0, 20))
-            .catch((err: any) => { console.error('Home topRated fetch error:', err); return []; }),
+            .catch((err: unknown) => { console.error('Home topRated fetch error:', err); return []; }),
           setTopRated,
           topRated,
           'Top Rated',

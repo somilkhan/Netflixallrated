@@ -112,7 +112,7 @@ export default function Watchlist() {
       {/* Grid */}
       {!loading && !error && filtered.length > 0 && (
         <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-x-4 gap-y-6">
-          {filtered.map((item: any) => (
+          {filtered.map((item: unknown) => (
             <ContentCard key={item.id} title={item.title} />
           ))}
         </div>

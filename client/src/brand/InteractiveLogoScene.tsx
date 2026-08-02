@@ -40,7 +40,7 @@ export default function InteractiveLogoScene({
       const camera = new THREE.PerspectiveCamera(38, 1, 0.1, 100);
       camera.position.set(0, 0, 6.4);
 
-      let renderer: any;
+      let renderer: unknown;
       try {
         renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
         // Force a context probe now so unsupported environments fall back immediately.
@@ -68,9 +68,9 @@ export default function InteractiveLogoScene({
 
       const disposables: Array<{ dispose: () => void }> = [];
       const extrudeSettings = { depth: 9, bevelEnabled: true, bevelThickness: 1.6, bevelSize: 1.2, bevelSegments: 3 };
-      parsed.paths.forEach((path: any) => {
+      parsed.paths.forEach((path: unknown) => {
         const shapes = path.toShapes(true);
-        shapes.forEach((shape: any) => {
+        shapes.forEach((shape: unknown) => {
           const geometry = new THREE.ExtrudeGeometry(shape, extrudeSettings);
           const color = new THREE.Color(path.color ?? BRAND.maroonBright);
           const material = new THREE.MeshPhysicalMaterial({

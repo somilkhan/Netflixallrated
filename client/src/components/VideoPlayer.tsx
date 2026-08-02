@@ -776,7 +776,7 @@ export function FebBoxPlayer({
 // VideoPlayerProps
 // ─────────────────────────────────────────────────────────────────────────────
 interface VideoPlayerProps {
-  title: any;
+  title: unknown;
   playerOpen: boolean;
   setPlayerOpen: (v: boolean) => void;
   serverId: string;

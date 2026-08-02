@@ -14,6 +14,16 @@ import ContentCard from '../components/ui/ContentCard';
 import { BUILD_INFO } from '../lib/version';
 import { tmdbSrcSet } from '../services/tmdb';
 
+interface ProfileTitleItem {
+  id: string;
+  name: string;
+  posterUrl?: string | null;
+  year?: number | string | null;
+  rating?: number | string | null;
+  type?: string;
+}
+
+
 function timeAgo(dateStr: string): string {
   const diff = Date.now() - new Date(dateStr).getTime();
   const mins = Math.floor(diff / 60_000);
@@ -30,19 +40,19 @@ export default function Profile() {
   const { user, signOut } = useAuth();
   const nav = useNavigate();
 
-  const [history,   setHistory]   = useState<any[]>([]);
-  const [watchlist, setWatchlist] = useState<any[]>([]);
+  const [history,   setHistory]   = useState<ProfileTitleItem[]>([]);
+  const [watchlist, setWatchlist] = useState<ProfileTitleItem[]>([]);
   const [loadingH,  setLoadingH]  = useState(true);
   const [loadingW,  setLoadingW]  = useState(true);
 
   useEffect(() => {
     if (!user) return;
     api.history.mine()
-      .then((data: any[]) => setHistory(data.slice(0, 12)))
+      .then((data: ProfileTitleItem[]) => setHistory(data.slice(0, 12)))
       .catch(() => setHistory([]))
       .finally(() => setLoadingH(false));
     api.watchlist.mine()
-      .then((data: any[]) => setWatchlist(data.slice(0, 12)))
+      .then((data: ProfileTitleItem[]) => setWatchlist(data.slice(0, 12)))
       .catch(() => setWatchlist([]))
       .finally(() => setLoadingW(false));
   }, [user]);
@@ -192,7 +202,7 @@ export default function Profile() {
           </div>
         ) : (
           <div className="flex gap-3 overflow-x-auto scrollbar-hide pb-2">
-            {history.map((item: any) => {
+            {history.map((item: ProfileTitleItem) => {
               const pct = item.durationSeconds > 0
                 ? Math.min(100, Math.round((item.positionSeconds / item.durationSeconds) * 100))
                 : null;
@@ -285,7 +295,7 @@ export default function Profile() {
           </div>
         ) : (
           <div className="flex gap-3 overflow-x-auto scrollbar-hide pb-2">
-            {watchlist.map((item: any) => (
+            {watchlist.map((item: ProfileTitleItem) => (
               <ContentCard
                 key={item.id}
                 title={item.title}

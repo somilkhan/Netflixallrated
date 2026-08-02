@@ -171,7 +171,7 @@ export default function Browse() {
     if (genreParam) params.genre = genreParam;
 
     api.titles.list(params)
-      .then((data: any) => {
+      .then((data: unknown) => {
         if (cancelled) return;
         setTitles(data.titles ?? []);
         setTotal(data.total ?? data.titles?.length ?? 0);

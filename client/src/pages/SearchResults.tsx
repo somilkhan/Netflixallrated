@@ -64,7 +64,7 @@ export default function SearchResults() {
   /* Tab-filtered results via useMemo — no re-filter on every render */
   const results = useMemo(() => {
     if (!type) return rawResults;
-    return rawResults.filter((x: any) => x.type === type);
+    return rawResults.filter((x: unknown) => x.type === type);
   }, [rawResults, type]);
 
   /* Per-tab counts */
@@ -98,7 +98,7 @@ export default function SearchResults() {
         setRawResults(results);
         setLoading(false);
       })
-      .catch((err: any) => {
+      .catch((err: unknown) => {
         if (err?.name === 'AbortError' || ctrl.signal.aborted) return;
         setRawResults([]);
         setLoading(false);
