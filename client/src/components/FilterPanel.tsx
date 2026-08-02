@@ -100,14 +100,14 @@ export default function FilterPanel({ open, onClose, filters, onChange, genres }
           {!isDefault && (
             <button
               onClick={reset}
-              className="flex items-center gap-1.5 text-xs text-white/45 hover:text-white/80 transition-colors px-2 py-1 rounded-lg hover:bg-white/[0.05]"
+              className="flex items-center gap-1.5 text-xs text-white/45 hover:text-white/80 transition-colors px-2 py-1 rounded-[8px] hover:bg-white/[0.05]"
             >
               <RotateCcw size={11} /> Reset
             </button>
           )}
           <button
             onClick={onClose}
-            className="w-8 h-8 flex items-center justify-center rounded-lg bg-white/[0.05] hover:bg-white/[0.10] text-white/50 hover:text-white transition-[background-color,color] duration-150"
+            className="w-8 h-8 flex items-center justify-center rounded-[8px] bg-white/[0.05] hover:bg-white/[0.10] text-white/70 hover:text-white transition-[background-color,color] duration-150"
             aria-label="Close filters"
           >
             <X size={14} />
@@ -170,7 +170,7 @@ export default function FilterPanel({ open, onClose, filters, onChange, genres }
                 className="w-full bg-white/[0.04] border border-white/[0.10] rounded-xl px-3 py-2.5 text-sm text-white/80 focus:border-white/[0.25] focus:outline-none cursor-pointer transition-[border-color] duration-150"
               >
                 {YEAR_OPTIONS.filter(y => y <= filters.yearMax).map(y => (
-                  <option key={y} value={y} className="bg-[#141414]">{y}</option>
+                  <option key={y} value={y} className="bg-[#000000]">{y}</option>
                 ))}
               </select>
             </div>
@@ -183,7 +183,7 @@ export default function FilterPanel({ open, onClose, filters, onChange, genres }
                 className="w-full bg-white/[0.04] border border-white/[0.10] rounded-xl px-3 py-2.5 text-sm text-white/80 focus:border-white/[0.25] focus:outline-none cursor-pointer transition-[border-color] duration-150"
               >
                 {YEAR_OPTIONS.filter(y => y >= filters.yearMin).map(y => (
-                  <option key={y} value={y} className="bg-[#141414]">{y}</option>
+                  <option key={y} value={y} className="bg-[#000000]">{y}</option>
                 ))}
               </select>
             </div>
@@ -194,7 +194,7 @@ export default function FilterPanel({ open, onClose, filters, onChange, genres }
         <section>
           <div className="flex items-center justify-between mb-3">
             <p className="text-[11px] uppercase tracking-wider text-white/35 font-mono">Rating</p>
-            <span className="text-xs text-white/50 font-mono">
+            <span className="text-xs text-white/70 font-mono">
               {filters.ratingMin === 0 && filters.ratingMax === 10
                 ? 'Any'
                 : `${filters.ratingMin}–${filters.ratingMax}`}
@@ -203,7 +203,7 @@ export default function FilterPanel({ open, onClose, filters, onChange, genres }
           <div className="space-y-3">
             <div>
               <label className="text-[10px] text-white/30 mb-1.5 flex justify-between">
-                <span>Min rating</span><span className="text-white/50">{filters.ratingMin}</span>
+                <span>Min rating</span><span className="text-white/70">{filters.ratingMin}</span>
               </label>
               <input
                 type="range" min={0} max={10} step={0.5}
@@ -217,7 +217,7 @@ export default function FilterPanel({ open, onClose, filters, onChange, genres }
             </div>
             <div>
               <label className="text-[10px] text-white/30 mb-1.5 flex justify-between">
-                <span>Max rating</span><span className="text-white/50">{filters.ratingMax}</span>
+                <span>Max rating</span><span className="text-white/70">{filters.ratingMax}</span>
               </label>
               <input
                 type="range" min={0} max={10} step={0.5}
@@ -240,7 +240,7 @@ export default function FilterPanel({ open, onClose, filters, onChange, genres }
               {filters.genres.length > 0 && (
                 <button
                   onClick={() => set('genres', [])}
-                  className="text-[11px] text-white/30 hover:text-white/60 transition-colors"
+                  className="text-[11px] text-white/30 hover:text-white/70 transition-colors"
                 >
                   Clear
                 </button>
@@ -254,7 +254,7 @@ export default function FilterPanel({ open, onClose, filters, onChange, genres }
                   className={`px-3 py-1.5 rounded-full text-xs border transition-[border-color,background-color,color] duration-150 ${
                     filters.genres.includes(g)
                       ? 'bg-white/[0.14] border-white/[0.35] text-white font-medium'
-                      : 'bg-white/[0.03] border-white/[0.08] text-white/50 hover:border-white/[0.20] hover:text-white/80'
+                      : 'bg-white/[0.03] border-white/[0.08] text-white/70 hover:border-white/[0.20] hover:text-white/80'
                   }`}
                 >
                   {g}
