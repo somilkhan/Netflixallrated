@@ -34,17 +34,17 @@ const MobileBottomNav = memo(function MobileBottomNav() {
     <>
       {moreOpen && (
         <div
-          className="md:hidden fixed inset-x-3 bottom-[calc(72px+env(safe-area-inset-bottom))] z-[51] rounded-[12px] border border-white/[0.10] bg-[#151515] p-2 shadow-[0_12px_40px_rgba(0,0,0,0.65)]"
+          className="md:hidden fixed inset-x-3 bottom-[calc(72px+env(safe-area-inset-bottom))] z-[51] rounded-xl border border-border-light bg-[#151515] p-2 shadow-[0_12px_40px_rgba(0,0,0,0.65)]"
           role="dialog"
           aria-label="More navigation"
         >
           <div className="flex items-center justify-between px-3 py-2">
-            <span className="text-[11px] font-semibold uppercase tracking-[0.16em] text-white/45">More</span>
+            <span className="text-xs font-semibold uppercase tracking-[0.16em] text-ink-tertiary">More</span>
             <button
               type="button"
               onClick={() => setMoreOpen(false)}
               aria-label="Close more navigation"
-              className="rounded-full p-1 text-white/45 hover:text-white"
+              className="rounded-full p-1 text-ink-tertiary hover:text-white"
             >
               <X size={15} />
             </button>
@@ -60,9 +60,9 @@ const MobileBottomNav = memo(function MobileBottomNav() {
               key={path}
               type="button"
               onClick={() => { setMoreOpen(false); nav(path); }}
-              className="flex w-full items-center gap-3 rounded-[8px] px-3 py-3 text-left text-[14px] text-white/75 hover:bg-white/[0.06] hover:text-white"
+              className="flex w-full items-center gap-3 rounded-lg px-3 py-3 text-left text-md text-white/75 hover:bg-overlay-light hover:text-white"
             >
-              <Icon size={17} className="text-white/45" />
+              <Icon size={17} className="text-ink-tertiary" />
               {label}
             </button>
           ))}

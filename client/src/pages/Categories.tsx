@@ -303,11 +303,11 @@ function ExpandedGrid({ title, items, onBack, onOpen }: {
     <div className="px-4">
       <button
         onClick={onBack}
-        className="mb-5 flex items-center gap-1 text-sm text-white/70 hover:text-white/80 transition-colors duration-200"
+        className="mb-5 flex items-center gap-1 text-sm text-ink-secondary hover:text-ink-secondary transition-colors duration-200"
       >
         <ChevronRight size={15} className="rotate-180" /> Back
       </button>
-      <h2 className="mb-5 text-[28px] font-bold text-white tracking-tight">{title}</h2>
+      <h2 className="mb-5 text-6xl font-bold text-white tracking-tight">{title}</h2>
       <div className="grid grid-cols-2 gap-3 pb-20">
         {items.map((item, i) => {
           const v = GENRE_VISUAL[item.label];

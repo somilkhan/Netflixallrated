@@ -54,7 +54,7 @@ const ContentRow = memo(function ContentRow({
         )}
       {/* Row header */}
       <div className="flex items-center justify-between px-4 md:px-6 mb-4">
-        <h2 className="text-[18px] md:text-[24px] font-bold text-white tracking-tight leading-none">
+        <h2 className="text-2xl md:text-5xl font-bold text-white tracking-tight leading-none">
           {title}
         </h2>
         {viewAllPath && (
@@ -64,8 +64,8 @@ const ContentRow = memo(function ContentRow({
             className="
               group flex items-center gap-1
               px-3 py-1.5 rounded-full
-              bg-white/[0.08] hover:bg-white/[0.14]
-              text-[14px] text-[#A3A3A3] hover:text-white
+              bg-overlay-light hover:bg-white/[0.14]
+              text-md text-[#A3A3A3] hover:text-white
               transition-all duration-200 touch-manipulation
             "
           >
@@ -117,7 +117,7 @@ const ContentRow = memo(function ContentRow({
           <div className="
             flex items-center justify-center
             w-9 h-9 rounded-full
-            bg-white/[0.08] hover:bg-white/[0.16] border border-white/[0.10]
+            bg-overlay-light hover:bg-white/[0.16] border border-border-light
             text-white transition-all duration-200
           ">
             <ChevronLeft size={16} />
@@ -142,7 +142,7 @@ const ContentRow = memo(function ContentRow({
           <div className="
             flex items-center justify-center
             w-9 h-9 rounded-full
-            bg-white/[0.08] hover:bg-white/[0.16] border border-white/[0.10]
+            bg-overlay-light hover:bg-white/[0.16] border border-border-light
             text-white transition-all duration-200
           ">
             <ChevronRight size={16} />
@@ -160,7 +160,7 @@ const ContentRow = memo(function ContentRow({
              flex gap-4 overflow-x-auto overflow-y-visible
             px-4 md:px-6 pb-3
             scrollbar-hide
-            focus:outline-none focus-visible:ring-1 focus-visible:ring-white/25 rounded-[8px]
+            focus:outline-none focus-visible:ring-1 focus-visible:ring-white/25 rounded-lg
           "
           style={{
             scrollSnapType: 'x mandatory',

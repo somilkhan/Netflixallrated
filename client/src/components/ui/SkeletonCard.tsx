@@ -22,7 +22,7 @@ export const SkeletonCard = memo(function SkeletonCard({ className = '', fluid =
     >
       {/* Poster skeleton */}
       <div
-        className="relative w-full rounded-[8px] overflow-hidden bg-[#161616]"
+        className="relative w-full rounded-lg overflow-hidden bg-surface"
         style={{ aspectRatio: '2/3' }}
       >
         <div
@@ -32,10 +32,10 @@ export const SkeletonCard = memo(function SkeletonCard({ className = '', fluid =
       </div>
       {/* Text skeleton */}
       <div className="mt-2 space-y-1.5">
-        <div className="h-3 w-4/5 rounded-[4px] bg-[#161616] relative overflow-hidden">
+        <div className="h-3 w-4/5 rounded-md bg-surface relative overflow-hidden">
           <div className="absolute inset-0" style={{ ...SHIMMER_SWEEP, animationDelay: '0.2s' }} />
         </div>
-        <div className="h-2.5 w-2/5 rounded-[4px] bg-[#161616] relative overflow-hidden">
+        <div className="h-2.5 w-2/5 rounded-md bg-surface relative overflow-hidden">
           <div className="absolute inset-0" style={{ ...SHIMMER_SWEEP, animationDelay: '0.4s' }} />
         </div>
       </div>

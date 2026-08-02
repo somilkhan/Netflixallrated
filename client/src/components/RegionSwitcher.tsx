@@ -100,9 +100,9 @@ const RegionSwitcher = memo(function RegionSwitcher() {
         aria-label={`Current region: ${current.countryName}. Click to change.`}
         aria-expanded={open}
         className="
-          flex items-center gap-1.5 h-9 px-2.5 rounded-[8px]
-          text-[13px] font-medium text-[#A3A3A3] hover:text-white
-          hover:bg-white/[0.06] transition-all duration-200
+          flex items-center gap-1.5 h-9 px-2.5 rounded-lg
+          text-base font-medium text-[#A3A3A3] hover:text-white
+          hover:bg-overlay-light transition-all duration-200
           touch-manipulation select-none
         "
       >
@@ -119,17 +119,17 @@ const RegionSwitcher = memo(function RegionSwitcher() {
         <div
           className="
             absolute top-full right-0 mt-2 z-[200]
-            w-64 rounded-[8px] overflow-hidden
-            bg-[#000000] border border-white/[0.09]
+            w-64 rounded-lg overflow-hidden
+            bg-page border border-white/[0.09]
             shadow-[0_8px_32px_rgba(0,0,0,0.6)]
           "
           role="dialog"
           aria-label="Select region"
         >
           {/* Search */}
-          <div className="p-2 border-b border-white/[0.06]">
-            <div className="flex items-center gap-2 h-8 px-2.5 rounded-[8px] bg-white/[0.06]">
-              <Search size={12} className="shrink-0 text-white/70" />
+          <div className="p-2 border-b border-border">
+            <div className="flex items-center gap-2 h-8 px-2.5 rounded-lg bg-overlay-light">
+              <Search size={12} className="shrink-0 text-ink-secondary" />
               <input
                 ref={searchRef}
                 type="text"
@@ -138,7 +138,7 @@ const RegionSwitcher = memo(function RegionSwitcher() {
                 placeholder="Search country…"
                 className="
                   flex-1 min-w-0 bg-transparent border-none outline-none
-                  text-[12px] text-white placeholder:text-white/30
+                  text-sm text-white placeholder:text-ink-disabled
                 "
               />
             </div>
@@ -151,7 +151,7 @@ const RegionSwitcher = memo(function RegionSwitcher() {
             aria-label="Regions"
           >
             {filtered.length === 0 ? (
-              <li className="px-3 py-3 text-[12px] text-[#737373] text-center">
+              <li className="px-3 py-3 text-sm text-[#737373] text-center">
                 No results
               </li>
             ) : (
@@ -164,10 +164,10 @@ const RegionSwitcher = memo(function RegionSwitcher() {
                       onClick={() => handleSelect(region)}
                       className={`
                         w-full flex items-center gap-2.5 px-3 py-2
-                        text-left text-[13px] transition-colors duration-150
+                        text-left text-base transition-colors duration-150
                         ${isActive
-                          ? 'text-white bg-white/[0.06]'
-                          : 'text-[#A3A3A3] hover:text-white hover:bg-white/[0.04]'
+                          ? 'text-white bg-overlay-light'
+                          : 'text-[#A3A3A3] hover:text-white hover:bg-overlay-light'
                         }
                       `}
                     >
@@ -175,11 +175,11 @@ const RegionSwitcher = memo(function RegionSwitcher() {
                         {countryCodeToFlag(region.countryCode)}
                       </span>
                       <span className="flex-1 truncate">{region.countryName}</span>
-                      <span className="text-[11px] text-[#737373] shrink-0">
+                      <span className="text-xs text-[#737373] shrink-0">
                         {region.countryCode}
                       </span>
                       {isActive && (
-                        <Check size={12} className="shrink-0 text-white/70" />
+                        <Check size={12} className="shrink-0 text-ink-secondary" />
                       )}
                     </button>
                   </li>

@@ -56,37 +56,37 @@ export default function Admin() {
       )}
 
       {status ? (
-        <div className="rounded-[8px] border border-line p-5 space-y-3 text-sm">
+        <div className="rounded-lg border border-line p-5 space-y-3 text-sm">
           {/* Health indicator */}
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
-              <span className={`inline-block w-2.5 h-2.5 rounded-full ${status.cron.healthy ? 'bg-green-500' : 'bg-[#e50914]'}`} />
+              <span className={`inline-block w-2.5 h-2.5 rounded-full ${status.cron.healthy ? 'bg-green-500' : 'bg-primary'}`} />
               <span className="font-semibold">{status.cron.healthy ? 'Healthy' : 'Needs attention'}</span>
             </div>
             <button
               onClick={loadStatus}
               disabled={refreshing}
-              className="text-white/35 text-xs font-mono hover:text-white/60 transition-colors disabled:opacity-40"
+              className="text-white/35 text-xs font-mono hover:text-ink-tertiary transition-colors disabled:opacity-40"
             >
               {refreshing ? 'Refreshing…' : 'Refresh'}
             </button>
           </div>
 
-          <div className="h-px bg-white/[0.06]" />
+          <div className="h-px bg-overlay-light" />
 
           {/* Stats */}
           <div className="grid grid-cols-2 gap-3">
-            <div className="bg-surface-2 rounded-[8px] px-4 py-3">
-              <div className="text-ink-faint text-[11px] uppercase tracking-wider mb-1">Catalog size</div>
+            <div className="bg-surface-2 rounded-lg px-4 py-3">
+              <div className="text-ink-faint text-xs uppercase tracking-wider mb-1">Catalog size</div>
               <div className="text-lg font-semibold tabular-nums">{status.dbCount.toLocaleString()}</div>
               {status.totalResults > 0 && (
-                <div className="text-ink-faint text-[11px] mt-0.5">
+                <div className="text-ink-faint text-xs mt-0.5">
                   of {status.totalResults.toLocaleString()} on TMDB
                 </div>
               )}
             </div>
-            <div className="bg-surface-2 rounded-[8px] px-4 py-3">
-              <div className="text-ink-faint text-[11px] uppercase tracking-wider mb-1">Pages synced</div>
+            <div className="bg-surface-2 rounded-lg px-4 py-3">
+              <div className="text-ink-faint text-xs uppercase tracking-wider mb-1">Pages synced</div>
               <div className="text-lg font-semibold tabular-nums">
                 {status.lastCompletedPage}
                 {status.totalPages > 0 && <span className="text-ink-faint text-sm font-normal"> / {status.totalPages}</span>}

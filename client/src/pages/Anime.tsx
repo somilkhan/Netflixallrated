@@ -82,13 +82,13 @@ export default function Anime() {
       {/* Search bar */}
       <div className="px-4 md:px-6 pt-8 pb-2">
         <div className="flex items-center justify-between mb-4">
-          <span className="text-[10px] uppercase tracking-[0.22em] text-white/35 flex items-center gap-1.5 font-medium">
-            <span className="inline-block w-1.5 h-1.5 rounded-[8px] bg-white/50 animate-pulse" />
+          <span className="text-2xs uppercase tracking-[0.22em] text-white/35 flex items-center gap-1.5 font-medium">
+            <span className="inline-block w-1.5 h-1.5 rounded-lg bg-white/50 animate-pulse" />
             Live from AniList
           </span>
           <button
             onClick={() => nav('/anime/genres')}
-            className="text-[13px] text-white/70 hover:text-white transition-colors flex items-center gap-1"
+            className="text-base text-ink-secondary hover:text-white transition-colors flex items-center gap-1"
           >
             Browse all genres &amp; tags
             <ArrowRight size={12} strokeWidth={2.2} />
@@ -97,17 +97,17 @@ export default function Anime() {
 
         <form onSubmit={handleSearch} className="flex gap-2 max-w-md">
           <div className="flex-1 relative">
-            <Search size={14} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-white/30 pointer-events-none" />
+            <Search size={14} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-ink-disabled pointer-events-none" />
             <input
               type="text"
               value={query}
               onChange={e => { setQuery(e.target.value); if (e.target.value === '') clearSearch(); }}
               placeholder="Search any anime…"
               className="
-                w-full rounded-[8px] pl-10 pr-4 py-2.5
-                text-sm text-white placeholder:text-white/30
-                border border-white/[0.10] bg-white/[0.06]
-                outline-none focus:border-white/[0.22] focus:bg-white/[0.08]
+                w-full rounded-lg pl-10 pr-4 py-2.5
+                text-sm text-white placeholder:text-ink-disabled
+                border border-border-light bg-overlay-light
+                outline-none focus:border-white/[0.22] focus:bg-overlay-light
                 transition-colors
               "
             />
@@ -115,7 +115,7 @@ export default function Anime() {
           <button
             type="submit"
             disabled={!query.trim() || searchState === 'loading'}
-            className="bg-white hover:bg-white/88 disabled:opacity-40 text-black text-xs px-5 py-2.5 rounded-[8px] transition-colors shrink-0 font-semibold"
+            className="bg-white hover:bg-white/88 disabled:opacity-40 text-black text-xs px-5 py-2.5 rounded-lg transition-colors shrink-0 font-semibold"
           >
             {searchState === 'loading' ? '…' : 'Search'}
           </button>
@@ -124,7 +124,7 @@ export default function Anime() {
               type="button"
               aria-label="Clear search"
               onClick={clearSearch}
-              className="text-white/70 hover:text-white transition-colors px-1"
+              className="text-ink-secondary hover:text-white transition-colors px-1"
             >
               <X size={14} />
             </button>
@@ -134,13 +134,13 @@ export default function Anime() {
 
       {/* Search results */}
       {searchState !== 'idle' && (
-        <div className="px-4 md:px-6 pt-6 pb-4 border-b border-white/[0.06]">
+        <div className="px-4 md:px-6 pt-6 pb-4 border-b border-border">
           <div className="flex items-center gap-2 mb-4">
             <h2 className="text-xl font-bold text-white tracking-tight">
               {searchState === 'loading' ? 'Searching…' : `Results for "${query}"`}
             </h2>
             {searchState === 'done' && (
-              <span className="text-[11px] text-white/70">{searchItems.length} found</span>
+              <span className="text-xs text-ink-secondary">{searchItems.length} found</span>
             )}
           </div>
 
@@ -153,16 +153,16 @@ export default function Anime() {
           )}
 
           {searchState === 'error' && (
-            <p className="text-sm text-white/70 py-4">
+            <p className="text-sm text-ink-secondary py-4">
               Search failed —{' '}
-              <button onClick={() => setSearchState('idle')} className="text-white/70 hover:text-white underline underline-offset-2">
+              <button onClick={() => setSearchState('idle')} className="text-ink-secondary hover:text-white underline underline-offset-2">
                 dismiss
               </button>
             </p>
           )}
 
           {searchState === 'done' && searchItems.length === 0 && (
-            <p className="text-sm text-white/70 py-4">No results found for "{query}".</p>
+            <p className="text-sm text-ink-secondary py-4">No results found for "{query}".</p>
           )}
 
           {searchState === 'done' && searchItems.length > 0 && (
@@ -193,7 +193,7 @@ export default function Anime() {
         <button
           onClick={() => nav('/anime/genres')}
           className="
-            relative w-full overflow-hidden rounded-[12px]
+            relative w-full overflow-hidden rounded-xl
             border border-white/[0.07] group
             bg-[radial-gradient(ellipse_120%_100%_at_20%_40%,rgba(255,255,255,0.04),rgba(10,10,10,0.9)_60%)]
             hover:border-white/[0.14] transition-[border-color,box-shadow] duration-300
@@ -203,17 +203,17 @@ export default function Anime() {
           <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500 bg-[radial-gradient(ellipse_80%_60%_at_50%_50%,rgba(255,255,255,0.04),transparent_70%)]" />
           <div className="relative flex flex-col md:flex-row items-start md:items-center justify-between gap-4 px-7 py-7">
             <div>
-              <div className="text-[10px] uppercase tracking-[0.2em] text-white/35 mb-2 font-medium">
+              <div className="text-2xs uppercase tracking-[0.2em] text-white/35 mb-2 font-medium">
                 AniList · Live data
               </div>
               <h2 className="text-2xl md:text-3xl font-bold text-white leading-tight mb-1">
                 Browse All Genres &amp; Tags
               </h2>
-              <p className="text-sm text-white/70 max-w-sm">
+              <p className="text-sm text-ink-secondary max-w-sm">
                 Every genre and media tag from AniList — searchable, filterable, with live previews.
               </p>
             </div>
-            <div className="shrink-0 flex items-center gap-2 text-sm text-white/70 group-hover:translate-x-1 group-hover:text-white/80 transition-[transform,color] duration-300">
+            <div className="shrink-0 flex items-center gap-2 text-sm text-ink-secondary group-hover:translate-x-1 group-hover:text-ink-secondary transition-[transform,color] duration-300">
               Explore <ArrowRight size={16} strokeWidth={2.2} />
             </div>
           </div>

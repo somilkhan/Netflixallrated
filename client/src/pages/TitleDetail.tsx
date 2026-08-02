@@ -104,15 +104,15 @@ const RelatedPosterCard = memo(function RelatedPosterCard({
       aria-label={name}
       onClick={onClick}
       onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onClick(); } }}
-      className="group relative shrink-0 w-[140px] sm:w-[180px] lg:w-[230px] scroll-snap-start cursor-pointer touch-manipulation select-none focus:outline-none focus-visible:ring-2 focus-visible:ring-white/30 rounded-[8px]"
+      className="group relative shrink-0 w-[140px] sm:w-[180px] lg:w-[230px] scroll-snap-start cursor-pointer touch-manipulation select-none focus:outline-none focus-visible:ring-2 focus-visible:ring-white/30 rounded-lg"
       style={{ WebkitTapHighlightColor: 'transparent' }}
     >
       <div
-        className="relative w-full overflow-hidden rounded-[8px] bg-[#000000] transition-transform duration-300 ease-[cubic-bezier(0.4,0,0.2,1)] md:group-hover:scale-[1.05] active:scale-[0.97]"
+        className="relative w-full overflow-hidden rounded-lg bg-page transition-transform duration-300 ease-[cubic-bezier(0.4,0,0.2,1)] md:group-hover:scale-[1.05] active:scale-[0.97]"
         style={{ aspectRatio: '2/3', boxShadow: '0 4px 16px rgba(0,0,0,0.3)' }}
       >
         {typeLabel && (
-          <span className="absolute top-2 right-2 z-20 text-[9px] font-medium px-[6px] py-[3px] rounded-full border border-white/[0.08] bg-[#000000]/60 text-white/70 uppercase tracking-wide leading-none">
+          <span className="absolute top-2 right-2 z-20 text-3xs font-medium px-[6px] py-[3px] rounded-full border border-white/[0.08] bg-page/60 text-ink-secondary uppercase tracking-wide leading-none">
             {typeLabel}
           </span>
         )}
@@ -126,13 +126,13 @@ const RelatedPosterCard = memo(function RelatedPosterCard({
           />
         ) : (
           <div className="absolute inset-0 flex items-center justify-center px-2">
-            <span className="text-white/20 text-[9px] text-center leading-tight">{name}</span>
+            <span className="text-ink-disabled text-3xs text-center leading-tight">{name}</span>
           </div>
         )}
       </div>
       <div className="mt-2 px-0.5">
-        <p className="text-[12px] font-medium text-white leading-tight line-clamp-2">{name}</p>
-        {year && <span className="text-[11px] text-[#737373]">{year}</span>}
+        <p className="text-sm font-medium text-white leading-tight line-clamp-2">{name}</p>
+        {year && <span className="text-xs text-[#737373]">{year}</span>}
       </div>
     </div>
   );
@@ -1258,7 +1258,7 @@ export default function TitleDetail() {
 
         {/* Anime-only: studios */}
         {title.type === 'ANIME' && studioNodes.length > 0 && (
-          <p className="text-[10px] text-white/70 uppercase tracking-wider" style={{ marginTop: 8 }}>
+          <p className="text-2xs text-ink-secondary uppercase tracking-wider" style={{ marginTop: 8 }}>
             {studioNodes.map(s => s.name).join(' · ')}
           </p>
         )}

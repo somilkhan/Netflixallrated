@@ -174,8 +174,8 @@ const ContentCard = memo(function ContentCard({
         onClick={handleClick}
         onKeyDown={handleKeyDown}
         className="
-          block relative z-10 w-full rounded-[4px] overflow-hidden aspect-[2/3]
-          bg-[#161616] cursor-pointer
+          block relative z-10 w-full rounded-md overflow-hidden aspect-[2/3]
+          bg-surface cursor-pointer
           active:scale-[0.97] md:active:scale-100
           focus:outline-none focus-visible:ring-2 focus-visible:ring-white/25
         "
@@ -187,7 +187,7 @@ const ContentCard = memo(function ContentCard({
         {/* Glow layer — opacity-only toggle, no repaint */}
         <div
           className="
-            absolute inset-0 rounded-[8px] pointer-events-none z-[-1]
+            absolute inset-0 rounded-lg pointer-events-none z-[-1]
             opacity-0 md:group-hover:opacity-100 transition-opacity duration-[400ms]
           "
           style={{ boxShadow: '0 20px 60px rgba(0,0,0,0.6), 0 0 0 1px rgba(255,255,255,0.08)' }}
@@ -198,7 +198,7 @@ const ContentCard = memo(function ContentCard({
         {hasImage ? (
           <>
             {!imgLoaded && (
-              <div className="absolute inset-0 bg-[#161616] overflow-hidden">
+              <div className="absolute inset-0 bg-surface overflow-hidden">
                 <div className="absolute inset-0" style={{
                   background: 'linear-gradient(90deg, transparent, rgba(255,255,255,0.05) 50%, transparent)',
                   animation: 'shimmer 1.8s ease-in-out infinite',
@@ -230,8 +230,8 @@ const ContentCard = memo(function ContentCard({
               background: 'radial-gradient(140% 120% at 30% 0%, #1e1e2e, #000000 75%)',
             }}
           >
-            <Film size={22} className="text-white/20" />
-            <span className="text-[9px] text-white/25 text-center leading-tight line-clamp-3">
+            <Film size={22} className="text-ink-disabled" />
+            <span className="text-3xs text-white/25 text-center leading-tight line-clamp-3">
               {title?.name ?? 'Untitled'}
             </span>
           </div>
@@ -243,7 +243,7 @@ const ContentCard = memo(function ContentCard({
             absolute top-2 left-2 z-20
             h-[22px] min-w-[22px] px-1 flex items-center justify-center
             rounded-full bg-black/80 border border-white/[0.12]
-            text-[10px] font-bold text-white/80 leading-none
+            text-2xs font-bold text-white/80 leading-none
           ">
             {rank}
           </div>
@@ -255,7 +255,7 @@ const ContentCard = memo(function ContentCard({
             absolute top-2 right-2 z-20
             text-[8px] font-medium px-[5px] py-[2.5px] rounded-full
              bg-black/70
-            text-white/45 uppercase tracking-wide leading-none
+            text-ink-tertiary uppercase tracking-wide leading-none
           ">
             {TYPE_LABEL[title.type] ?? title.type}
           </span>
@@ -280,14 +280,14 @@ const ContentCard = memo(function ContentCard({
 
         {/* Progress bar (continue watching) */}
         {showProgress && progressPct > 0 && (
-          <div className="absolute bottom-0 inset-x-0 z-30 h-[4px] bg-white/10">
+          <div className="absolute bottom-0 inset-x-0 z-30 h-[4px] bg-overlay-medium">
             <div className="h-full rounded-r-full" style={{ width: `${progressPct}%`, background: 'rgba(255,255,255,0.9)' }} />
           </div>
         )}
       </div>
 
       {/* ── Netflix-style hover overlay ───────────────────────────────── */}
-      <div className="hidden md:block absolute -bottom-[80px] left-0 right-0 z-30 opacity-0 md:group-hover:opacity-100 transition-opacity duration-[300ms] pointer-events-none">
+      <div className="hidden md:block absolute -bottom-[90px] left-0 right-0 z-30 opacity-0 md:group-hover:opacity-100 transition-opacity duration-[300ms] pointer-events-none">
         {/* Play button — centered */}
         <button
           type="button"
@@ -312,7 +312,7 @@ const ContentCard = memo(function ContentCard({
               type="button"
               aria-label={`Play ${title?.name ?? 'Untitled'}`}
               onClick={handlePlay}
-              className="pointer-events-auto flex items-center justify-center w-7 h-7 rounded-full bg-white hover:bg-white/90 transition-colors"
+              className="pointer-events-auto flex items-center justify-center w-8 h-8 rounded-full bg-white hover:bg-white/90 transition-colors"
             >
               <Play size={12} className="fill-black text-black ml-0.5" />
             </button>
@@ -321,7 +321,7 @@ const ContentCard = memo(function ContentCard({
                 type="button"
                 aria-label={`Add ${title?.name ?? 'Untitled'} to list`}
                 onClick={handleAddList}
-                className="pointer-events-auto flex items-center justify-center w-7 h-7 rounded-full border border-white/30 text-white hover:border-white hover:bg-white/10 transition-colors"
+                className="pointer-events-auto flex items-center justify-center w-8 h-8 rounded-full border border-border-hover text-white hover:border-white hover:bg-overlay-medium transition-colors"
               >
                 <Plus size={12} />
               </button>
@@ -331,7 +331,7 @@ const ContentCard = memo(function ContentCard({
               type="button"
               aria-label={`Info about ${title?.name ?? 'Untitled'}`}
               onClick={handleInfo}
-              className="pointer-events-auto flex items-center justify-center w-7 h-7 rounded-full border border-white/30 text-white hover:border-white hover:bg-white/10 transition-colors"
+              className="pointer-events-auto flex items-center justify-center w-8 h-8 rounded-full border border-border-hover text-white hover:border-white hover:bg-overlay-medium transition-colors"
             >
               <Info size={12} />
             </button>
@@ -340,11 +340,11 @@ const ContentCard = memo(function ContentCard({
           {/* Metadata row */}
           <div className="flex items-center gap-1.5 mb-1">
             {rating && typeof rating === 'number' && rating >= 7.5 && (
-              <span className="text-[9px] font-bold text-[#46d369] leading-none">{Math.round(rating * 10)}% Match</span>
+              <span className="text-3xs font-bold text-[#46d369] leading-none">{Math.round(rating * 10)}% Match</span>
             )}
-            {title.year && <span className="text-[9px] text-white/70 leading-none">{title.year}</span>}
+            {title.year && <span className="text-3xs text-ink-secondary leading-none">{title.year}</span>}
             {title.type && (
-              <span className="text-[9px] text-white/50 leading-none uppercase">{TYPE_LABEL[title.type] ?? title.type}</span>
+              <span className="text-3xs text-ink-tertiary leading-none uppercase">{TYPE_LABEL[title.type] ?? title.type}</span>
             )}
           </div>
 
@@ -352,9 +352,9 @@ const ContentCard = memo(function ContentCard({
           {title.genres && title.genres.length > 0 && (
             <div className="flex flex-wrap gap-1">
               {title.genres.slice(0, 3).map((g) => (
-                <span key={g} className="text-[8px] text-white/60 leading-none">
+                <span key={g} className="text-[8px] text-ink-tertiary leading-none">
                   {g}
-                  {g !== title.genres[Math.min(2, title.genres.length - 1)] && <span className="ml-1 text-white/30">·</span>}
+                  {g !== title.genres[Math.min(2, title.genres.length - 1)] && <span className="ml-1 text-ink-disabled">·</span>}
                 </span>
               ))}
             </div>
@@ -364,7 +364,7 @@ const ContentCard = memo(function ContentCard({
 
       {/* ── Text below poster ──────────────────────────────────────────── */}
       <div className="mt-2 px-0.5">
-            <p className="text-[14px] font-semibold text-white leading-[1.25] line-clamp-2">
+            <p className="text-md font-semibold text-white leading-[1.25] line-clamp-2">
           {highlightQuery
             ? <HighlightText text={title?.name ?? 'Untitled'} query={highlightQuery} />
             : title?.name ?? 'Untitled'}
@@ -373,12 +373,12 @@ const ContentCard = memo(function ContentCard({
           {rating && (
             <span className="flex items-center gap-0.5">
               <Star size={9} className="fill-[#f5c518] text-[#f5c518]" />
-              <span className="text-[12px] text-white/70">
+              <span className="text-sm text-ink-secondary">
                 {typeof rating === 'number' ? rating.toFixed(1) : rating}
               </span>
             </span>
           )}
-          {title.year && <span className="text-[12px] text-white/70">{title.year}</span>}
+          {title.year && <span className="text-sm text-ink-secondary">{title.year}</span>}
         </div>
       </div>
     </article>

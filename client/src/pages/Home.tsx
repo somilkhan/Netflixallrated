@@ -117,7 +117,7 @@ function NoKeyBanner() {
         <h2 className="text-xl font-bold text-white mb-2">TMDB API key required</h2>
         <p className="text-[#A3A3A3] text-sm leading-relaxed mb-4">
           Add your free TMDB API key as{' '}
-          <code className="bg-white/10 px-1.5 py-0.5 rounded text-xs font-mono text-amber-300">
+          <code className="bg-overlay-medium px-1.5 py-0.5 rounded text-xs font-mono text-amber-300">
             VITE_TMDB_API_KEY
           </code>{' '}
           in Replit Secrets, then restart the app.
@@ -128,7 +128,7 @@ function NoKeyBanner() {
             href="https://www.themoviedb.org/settings/api"
             target="_blank"
             rel="noopener noreferrer"
-            className="underline text-white/70 hover:text-white"
+            className="underline text-ink-secondary hover:text-white"
           >
             themoviedb.org/settings/api
           </a>
@@ -142,7 +142,7 @@ function NoKeyBanner() {
 function SectionSkeleton() {
   return (
     <div className="py-5">
-      <div className="px-4 md:px-6 mb-3 h-6 w-36 rounded-[4px] bg-[#161616] animate-pulse" />
+      <div className="px-4 md:px-6 mb-3 h-6 w-36 rounded-md bg-surface animate-pulse" />
       <SkeletonRow count={8} />
     </div>
   );
@@ -170,11 +170,11 @@ function ErrorRow({ label, onRetry }: { label: string; onRetry: () => void }) {
   return (
     <div className="py-5 px-4 md:px-6 flex items-center gap-3">
       <AlertCircle size={15} className="text-[#737373] shrink-0" />
-      <span className="text-[13px] text-[#737373]">{label}</span>
+      <span className="text-base text-[#737373]">{label}</span>
       <button
         type="button"
         onClick={onRetry}
-        className="flex items-center gap-1.5 text-[12px] text-white/70 hover:text-white transition-colors"
+        className="flex items-center gap-1.5 text-sm text-ink-secondary hover:text-white transition-colors"
       >
         <RefreshCw size={11} /> Retry
       </button>
@@ -445,12 +445,12 @@ export default function Home() {
               aria-pressed={activeTab === tab}
               onClick={() => setActiveTab(tab)}
               className={`
-                shrink-0 px-5 py-2 h-10 rounded-full text-[13px] font-medium
+                shrink-0 px-5 py-2 h-10 rounded-full text-base font-medium
                 border transition-all duration-200 touch-manipulation
                 focus:outline-none focus-visible:ring-2 focus-visible:ring-white/50
                 ${activeTab === tab
-                  ? 'border-white bg-white/10 text-white'
-                  : 'border-[#525252] bg-transparent text-[#A3A3A3] hover:border-white/40 hover:text-white'}
+                  ? 'border-white bg-overlay-medium text-white'
+                  : 'border-[#525252] bg-transparent text-[#A3A3A3] hover:border-border-hover hover:text-white'}
               `}
             >
               {tab}

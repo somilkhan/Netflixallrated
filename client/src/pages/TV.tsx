@@ -112,7 +112,7 @@ function useGenreScroll(genreId: number | null) {
 function SectionSkeleton() {
   return (
     <div className="py-5">
-      <div className="px-4 md:px-6 mb-3 h-6 w-40 rounded-[4px] bg-[#161616] animate-pulse" />
+      <div className="px-4 md:px-6 mb-3 h-6 w-40 rounded-md bg-surface animate-pulse" />
       <SkeletonRow count={8} />
     </div>
   );
@@ -210,7 +210,7 @@ export default function TVShows() {
           regionLabel="Trending TV"
         />
       ) : loading ? (
-        <div className="w-full bg-[#161616] animate-pulse"
+        <div className="w-full bg-surface animate-pulse"
           style={{ height: 'clamp(320px, 55svh, 640px)' }} />
       ) : null}
 
@@ -218,7 +218,7 @@ export default function TVShows() {
       <div className="px-4 md:px-6 pt-8 pb-4 border-b border-[#1a1a1a]">
         <div className="flex items-center gap-3 mb-1">
           <Tv size={20} className="text-white shrink-0" strokeWidth={1.8} />
-          <h1 className="text-[28px] font-bold tracking-tight text-white leading-none">TV Shows</h1>
+          <h1 className="text-6xl font-bold tracking-tight text-white leading-none">TV Shows</h1>
         </div>
         <p className="text-[13.5px] text-[#666] ml-[31px]">
           Series, dramas, documentaries &amp; more — live from TMDB
@@ -229,10 +229,10 @@ export default function TVShows() {
       <div className="px-4 md:px-6 py-3 flex gap-2 overflow-x-auto scrollbar-hide border-b border-[#1a1a1a]">
         <button
           onClick={() => setSelectedGenre(null)}
-          className={`shrink-0 text-[12px] px-4 py-1.5 rounded-full border transition-colors duration-200 ${
+          className={`shrink-0 text-sm px-4 py-1.5 rounded-full border transition-colors duration-200 ${
             !selectedGenre
               ? 'bg-white text-black border-white'
-              : 'bg-transparent border-white/[0.10] text-[#888] hover:text-white hover:border-white/[0.22]'
+              : 'bg-transparent border-border-light text-[#888] hover:text-white hover:border-white/[0.22]'
           }`}
         >
           All
@@ -241,10 +241,10 @@ export default function TVShows() {
           <button
             key={g.id}
             onClick={() => setSelectedGenre(s => s?.id === g.id ? null : g)}
-            className={`shrink-0 text-[12px] px-4 py-1.5 rounded-full border transition-colors duration-200 ${
+            className={`shrink-0 text-sm px-4 py-1.5 rounded-full border transition-colors duration-200 ${
               selectedGenre?.id === g.id
                 ? 'bg-white text-black border-white'
-                : 'bg-transparent border-white/[0.10] text-[#888] hover:text-white hover:border-white/[0.22]'
+                : 'bg-transparent border-border-light text-[#888] hover:text-white hover:border-white/[0.22]'
             }`}
           >
             {g.name}
@@ -256,7 +256,7 @@ export default function TVShows() {
       {selectedGenre ? (
         <div className="px-4 md:px-6 pt-8">
           <div className="flex items-baseline gap-2 mb-5">
-            <span className="text-[22px] font-semibold text-white">{selectedGenre.name}</span>
+            <span className="text-4xl font-semibold text-white">{selectedGenre.name}</span>
           </div>
 
           {genreLoading && genreItems.length === 0 ? (
@@ -269,7 +269,7 @@ export default function TVShows() {
                   {Array.from({ length: 4 }).map((_, i) => (
                     <div
                       key={i}
-                      className="w-[120px] sm:w-[140px] md:w-[180px] aspect-[2/3] bg-[#161616] rounded-[8px] animate-pulse"
+                      className="w-[120px] sm:w-[140px] md:w-[180px] aspect-[2/3] bg-surface rounded-lg animate-pulse"
                     />
                   ))}
                 </div>
@@ -278,7 +278,7 @@ export default function TVShows() {
             </>
           ) : !genreLoading ? (
             <div className="py-20 text-center">
-              <Inbox size={36} className="mx-auto text-white/20 mb-4" />
+              <Inbox size={36} className="mx-auto text-ink-disabled mb-4" />
               <p className="text-lg font-semibold text-white">No results</p>
             </div>
           ) : null}

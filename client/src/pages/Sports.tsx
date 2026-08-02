@@ -218,22 +218,22 @@ function StreamModal({ match, onClose }: { match: LiveMatch; onClose: () => void
             {match.teams.home.badge && (
               <img src={match.teams.home.badge} alt="" className="w-6 h-6 object-contain shrink-0" />
             )}
-            <span className="text-[13px] font-semibold text-white truncate">
+            <span className="text-base font-semibold text-white truncate">
               {match.title}
             </span>
             {match.teams.away.badge && (
               <img src={match.teams.away.badge} alt="" className="w-6 h-6 object-contain shrink-0" />
             )}
             {live && (
-              <span className="shrink-0 flex items-center gap-1 bg-[#e50914] rounded-full px-2 py-0.5 ml-1">
+              <span className="shrink-0 flex items-center gap-1 bg-primary rounded-full px-2 py-0.5 ml-1">
                 <span className="w-1.5 h-1.5 rounded-full bg-white animate-pulse" />
-                <span className="text-[9px] font-bold text-white">LIVE</span>
+                <span className="text-3xs font-bold text-white">LIVE</span>
               </span>
             )}
           </div>
           <button
             onClick={onClose}
-            className="shrink-0 w-7 h-7 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center transition-colors"
+            className="shrink-0 w-7 h-7 rounded-full bg-overlay-medium hover:bg-overlay-medium flex items-center justify-center transition-colors"
           >
             <X size={14} className="text-white" />
           </button>
@@ -243,22 +243,22 @@ function StreamModal({ match, onClose }: { match: LiveMatch; onClose: () => void
         <div className="flex-1 min-h-0 bg-black relative flex flex-col">
           {loading ? (
             <div className="flex-1 flex flex-col items-center justify-center gap-3">
-              <Loader size={24} className="text-white/30 animate-spin" />
-              <span className="text-sm text-white/40">Finding streams…</span>
+              <Loader size={24} className="text-ink-disabled animate-spin" />
+              <span className="text-sm text-ink-tertiary">Finding streams…</span>
             </div>
           ) : fetchErr || allExhausted ? (
             <div className="flex-1 flex flex-col items-center justify-center gap-4 px-6 text-center">
-              <WifiOff size={36} className="text-white/20" />
-              <p className="text-[15px] font-semibold text-white/70">
+              <WifiOff size={36} className="text-ink-disabled" />
+              <p className="text-lg font-semibold text-ink-secondary">
                 {allExhausted ? 'All streams unavailable' : fetchErr}
               </p>
-              <p className="text-[11px] text-white/30 max-w-xs">
+              <p className="text-xs text-ink-disabled max-w-xs">
                 Streams go live at kickoff. If the match is in progress, try again in a moment.
               </p>
               {allExhausted && (
                 <button
                   onClick={() => { failedRef.current = new Set(); setIdx(0); }}
-                  className="flex items-center gap-2 text-sm text-white/50 border border-white/20 rounded-[8px] px-4 py-2 hover:border-white/40 hover:text-white/70 transition-colors"
+                  className="flex items-center gap-2 text-sm text-ink-tertiary border border-border-hover rounded-lg px-4 py-2 hover:border-border-hover hover:text-ink-secondary transition-colors"
                 >
                   <RefreshCw size={13} /> Retry all sources
                 </button>
@@ -284,10 +284,10 @@ function StreamModal({ match, onClose }: { match: LiveMatch; onClose: () => void
               className="absolute bottom-0 inset-x-0 flex items-center justify-between px-4 py-2.5"
               style={{ background: 'linear-gradient(transparent, rgba(0,0,0,0.85))' }}
             >
-              <span className="text-[11px] text-white/40">Stream not loading?</span>
+              <span className="text-xs text-ink-tertiary">Stream not loading?</span>
               <button
                 onClick={advanceStream}
-                className="flex items-center gap-1.5 text-[11px] text-white/70 bg-white/10 hover:bg-white/20 rounded-full px-3 py-1.5 transition-colors"
+                className="flex items-center gap-1.5 text-xs text-ink-secondary bg-overlay-medium hover:bg-overlay-medium rounded-full px-3 py-1.5 transition-colors"
               >
                 Try next source <ChevronRight size={11} />
               </button>
@@ -302,7 +302,7 @@ function StreamModal({ match, onClose }: { match: LiveMatch; onClose: () => void
             style={{ background: '#000000', borderTop: '1px solid rgba(255,255,255,0.06)' }}
           >
             <Radio size={11} className="text-white/25 shrink-0" />
-            <span className="text-[9px] text-white/25 shrink-0 mr-1">SOURCES</span>
+            <span className="text-3xs text-white/25 shrink-0 mr-1">SOURCES</span>
             {streams.map((s, i) => {
               const isCurrent = i === idx;
               const isFailed  = failedRef.current.has(s.id);
@@ -313,18 +313,18 @@ function StreamModal({ match, onClose }: { match: LiveMatch; onClose: () => void
                   disabled={isFailed}
                   className={`
                     shrink-0 flex items-center gap-1.5
-                    text-[11px] px-3 py-1.5 rounded-full border
+                    text-xs px-3 py-1.5 rounded-full border
                     transition-colors duration-150
                     ${isCurrent && !isFailed
                       ? 'bg-white text-black border-white'
                       : isFailed
-                        ? 'bg-transparent border-white/10 text-white/20 line-through cursor-not-allowed'
-                        : 'bg-transparent border-white/20 text-white/50 hover:border-white/40 hover:text-white/80 cursor-pointer'
+                        ? 'bg-transparent border-border-light text-ink-disabled line-through cursor-not-allowed'
+                        : 'bg-transparent border-border-hover text-ink-tertiary hover:border-border-hover hover:text-ink-secondary cursor-pointer'
                     }
                   `}
                 >
                   {s.hd && (
-                    <span className={`font-mono text-[8px] font-bold ${isCurrent ? 'text-black' : 'text-white/60'}`}>
+                    <span className={`font-mono text-[8px] font-bold ${isCurrent ? 'text-black' : 'text-ink-tertiary'}`}>
                       HD
                     </span>
                   )}
@@ -356,7 +356,7 @@ function MatchCard({ match, onWatch }: { match: LiveMatch; onWatch: () => void }
       onClick={onWatch}
       className={`
         group relative flex flex-col w-full text-left
-        bg-[#000000] border rounded-[12px] overflow-hidden
+        bg-page border rounded-xl overflow-hidden
         transition-all duration-200 cursor-pointer
         hover:bg-[#141618] hover:scale-[1.02] hover:shadow-2xl
         active:scale-[0.99]
@@ -384,12 +384,12 @@ function MatchCard({ match, onWatch }: { match: LiveMatch; onWatch: () => void }
                 ? <img src={match.teams.home.badge} alt={match.teams.home.name} className="w-12 h-12 object-contain drop-shadow-lg" loading="lazy" />
                 : <span className="text-3xl">{cat.emoji}</span>
               }
-              <span className="text-[9px] text-white/60 text-center leading-tight line-clamp-2">{match.teams.home.name}</span>
+              <span className="text-3xs text-ink-tertiary text-center leading-tight line-clamp-2">{match.teams.home.name}</span>
             </div>
             <div className="flex flex-col items-center gap-0.5 shrink-0 px-2">
               {live
-                ? <span className="text-[10px] font-bold text-white animate-pulse">LIVE</span>
-                : <span className="text-xs text-white/20">vs</span>
+                ? <span className="text-2xs font-bold text-white animate-pulse">LIVE</span>
+                : <span className="text-xs text-ink-disabled">vs</span>
               }
             </div>
             <div className="flex flex-col items-center gap-1.5 flex-1">
@@ -397,7 +397,7 @@ function MatchCard({ match, onWatch }: { match: LiveMatch; onWatch: () => void }
                 ? <img src={match.teams.away.badge} alt={match.teams.away.name} className="w-12 h-12 object-contain drop-shadow-lg" loading="lazy" />
                 : <span className="text-3xl">{cat.emoji}</span>
               }
-              <span className="text-[9px] text-white/60 text-center leading-tight line-clamp-2">{match.teams.away.name}</span>
+              <span className="text-3xs text-ink-tertiary text-center leading-tight line-clamp-2">{match.teams.away.name}</span>
             </div>
           </div>
         )}
@@ -405,14 +405,14 @@ function MatchCard({ match, onWatch }: { match: LiveMatch; onWatch: () => void }
         {/* Live / Popular badges */}
         <div className="absolute top-2 left-2 flex gap-1.5">
           {live && (
-            <span className="flex items-center gap-1 bg-[#e50914] rounded-full px-2 py-0.5 shadow-lg">
+            <span className="flex items-center gap-1 bg-primary rounded-full px-2 py-0.5 shadow-lg">
               <span className="w-1.5 h-1.5 rounded-full bg-white animate-pulse" />
-              <span className="text-[9px] font-bold text-white">LIVE</span>
+              <span className="text-3xs font-bold text-white">LIVE</span>
             </span>
           )}
           {match.popular && (
             <span className="bg-amber-500 rounded-full px-2 py-0.5">
-              <span className="text-[9px] font-bold text-black">HOT</span>
+              <span className="text-3xs font-bold text-black">HOT</span>
             </span>
           )}
         </div>
@@ -431,27 +431,27 @@ function MatchCard({ match, onWatch }: { match: LiveMatch; onWatch: () => void }
           {match.title}
         </p>
         <div className="flex items-center justify-between gap-1">
-          <span className="text-[9px] text-white/30 uppercase tracking-wide truncate">
+          <span className="text-3xs text-ink-disabled uppercase tracking-wide truncate">
             {cat.emoji} {cat.label}
           </span>
-          <span className={`text-[9px] shrink-0 ${live ? 'text-[#e50914]' : 'text-white/25'}`}>
+          <span className={`text-3xs shrink-0 ${live ? 'text-[#e50914]' : 'text-white/25'}`}>
             {timeStr}
           </span>
         </div>
         {/* Watch CTA */}
         <div
           className={`
-            mt-0.5 flex items-center justify-center gap-1.5 py-1.5 rounded-[8px] border
+            mt-0.5 flex items-center justify-center gap-1.5 py-1.5 rounded-lg border
             transition-colors duration-150
-            group-hover:bg-white/[0.10]
+            group-hover:bg-overlay-medium
             ${live
-              ? 'bg-white/10 border-white/20 group-hover:border-white/30'
-              : 'bg-white/[0.04] border-white/[0.07]'
+              ? 'bg-overlay-medium border-border-hover group-hover:border-border-hover'
+              : 'bg-overlay-light border-white/[0.07]'
             }
           `}
         >
-          <Play size={10} className={`fill-current ${live ? 'text-white' : 'text-white/50'}`} />
-          <span className={`text-[11px] font-medium ${live ? 'text-white' : 'text-white/50'}`}>
+          <Play size={10} className={`fill-current ${live ? 'text-white' : 'text-ink-tertiary'}`} />
+          <span className={`text-xs font-medium ${live ? 'text-white' : 'text-ink-tertiary'}`}>
             {live ? 'Watch Live' : 'Watch'}
           </span>
         </div>
@@ -466,12 +466,12 @@ function MatchCard({ match, onWatch }: { match: LiveMatch; onWatch: () => void }
 
 function Skeleton() {
   return (
-    <div className="rounded-[8px] overflow-hidden border border-white/[0.04] bg-[#161616] animate-pulse">
-      <div className="w-full aspect-video bg-white/[0.04]" />
+    <div className="rounded-lg overflow-hidden border border-white/[0.04] bg-surface animate-pulse">
+      <div className="w-full aspect-video bg-overlay-light" />
       <div className="p-3 space-y-2">
         <div className="h-3 w-3/4 rounded bg-white/[0.05]" />
         <div className="h-2 w-1/2 rounded bg-white/[0.03]" />
-        <div className="h-7 rounded-[8px] bg-white/[0.04]" />
+        <div className="h-7 rounded-lg bg-overlay-light" />
       </div>
     </div>
   );
@@ -527,24 +527,24 @@ export default function Sports() {
       <div className="min-h-screen pb-28">
         {/* Header */}
         <div
-          className="relative overflow-hidden border-b border-white/[0.06]"
+          className="relative overflow-hidden border-b border-border"
           style={{ background: '#000000' }}
         >
           
           <div className="relative px-5 pt-10 pb-6">
             <div className="flex items-center gap-3 mb-1">
               <span className="text-2xl leading-none select-none">⚽</span>
-              <h1 className="text-[28px] font-bold tracking-tight text-white leading-none">Sports</h1>
+              <h1 className="text-6xl font-bold tracking-tight text-white leading-none">Sports</h1>
               {liveCount > 0 && (
-                <span className="flex items-center gap-1.5 bg-[#e50914] rounded-[8px] px-2.5 py-0.5 ml-0.5">
+                <span className="flex items-center gap-1.5 bg-primary rounded-lg px-2.5 py-0.5 ml-0.5">
                   <span className="w-1.5 h-1.5 rounded-full bg-white animate-pulse" />
-                  <span className="text-[9px] font-bold text-white tracking-wider">
+                  <span className="text-3xs font-bold text-white tracking-wider">
                     {liveCount} LIVE
                   </span>
                 </span>
               )}
             </div>
-            <p className="text-[13px] text-white/50 ml-[39px]">
+            <p className="text-base text-ink-tertiary ml-[39px]">
               Live matches &amp; streams · {new Date().toLocaleDateString([], { weekday: 'long', month: 'long', day: 'numeric' })}
             </p>
           </div>
@@ -563,7 +563,7 @@ export default function Sports() {
                   onClick={() => setActiveCat(cat)}
                   className={`
                     shrink-0 flex items-center gap-1.5
-                    text-[12px] px-4 py-1.5 rounded-[8px] border
+                    text-sm px-4 py-1.5 rounded-lg border
                     transition-[background-color,border-color,color] duration-150
                     ${isActive
                       ? 'bg-white text-black border-white'
@@ -575,7 +575,7 @@ export default function Sports() {
                   {catLiveCount > 0 && (
                     <span className={`
                       font-mono text-[8px] font-bold px-1 rounded
-                      ${isActive ? 'bg-black/20 text-black' : 'bg-white/20 text-white'}
+                      ${isActive ? 'bg-black/20 text-black' : 'bg-overlay-medium text-white'}
                     `}>
                       {catLiveCount}
                     </span>
@@ -599,7 +599,7 @@ export default function Sports() {
               <p className="text-sm text-white/35 max-w-xs mx-auto mb-6">{error}</p>
               <button
                 onClick={fetchMatches}
-                className="inline-flex items-center gap-2 text-sm text-white/60 border border-white/20 rounded-[8px] px-5 py-2 hover:border-white/40 hover:text-white/80 transition-colors"
+                className="inline-flex items-center gap-2 text-sm text-ink-tertiary border border-border-hover rounded-lg px-5 py-2 hover:border-border-hover hover:text-ink-secondary transition-colors"
               >
                 <RefreshCw size={13} /> Retry
               </button>
@@ -614,7 +614,7 @@ export default function Sports() {
               {activeCat !== ALL && (
                 <button
                   onClick={() => setActiveCat(ALL)}
-                  className="inline-flex items-center gap-1.5 text-sm text-white/50 border border-white/20 rounded-[8px] px-4 py-1.5 hover:border-white/40 hover:text-white/70 transition-colors"
+                  className="inline-flex items-center gap-1.5 text-sm text-ink-tertiary border border-border-hover rounded-lg px-4 py-1.5 hover:border-border-hover hover:text-ink-secondary transition-colors"
                 >
                   Show all sports
                 </button>

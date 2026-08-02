@@ -65,12 +65,12 @@ export default function Profile() {
   if (!user) {
     return (
       <div className="min-h-[80vh] flex flex-col items-center justify-center gap-6 px-6 text-center pt-20">
-        <div className="w-20 h-20 rounded-full bg-white/[0.06] border border-white/[0.08] flex items-center justify-center">
-          <User size={36} className="text-white/30" />
+        <div className="w-20 h-20 rounded-full bg-overlay-light border border-white/[0.08] flex items-center justify-center">
+          <User size={36} className="text-ink-disabled" />
         </div>
         <div>
           <p className="text-xl font-semibold text-white mb-1">Sign in to your account</p>
-          <p className="text-sm text-white/70">Track what you watch, build your list</p>
+          <p className="text-sm text-ink-secondary">Track what you watch, build your list</p>
         </div>
         <button
           type="button"
@@ -82,7 +82,7 @@ export default function Profile() {
         <button
           type="button"
           onClick={() => nav('/register')}
-          className="text-sm text-white/70 hover:text-white transition-colors"
+          className="text-sm text-ink-secondary hover:text-white transition-colors"
         >
           Create an account
         </button>
@@ -95,7 +95,7 @@ export default function Profile() {
 
       {/* ── User card ──────────────────────────────────────────────────────── */}
       <div
-        className="rounded-[12px] border border-white/[0.08] p-6 mb-8 flex flex-col sm:flex-row items-center sm:items-start gap-5"
+        className="rounded-xl border border-white/[0.08] p-6 mb-8 flex flex-col sm:flex-row items-center sm:items-start gap-5"
         style={{ background: 'rgba(255,255,255,0.03)', backdropFilter: 'blur(16px)' }}
       >
         <Avatar
@@ -110,10 +110,10 @@ export default function Profile() {
           <h1 className="text-2xl font-bold text-white tracking-tight truncate">
             {user.displayName || 'User'}
           </h1>
-          <p className="text-sm text-white/45 mt-0.5 truncate">{user.email}</p>
+          <p className="text-sm text-ink-tertiary mt-0.5 truncate">{user.email}</p>
 
           {user.role === 'ADMIN' && (
-            <span className="mt-2 inline-flex items-center gap-1 text-[10px] text-white/70 bg-white/[0.06] border border-white/[0.10] rounded-full px-2 py-0.5 uppercase tracking-wide">
+            <span className="mt-2 inline-flex items-center gap-1 text-2xs text-ink-secondary bg-overlay-light border border-border-light rounded-full px-2 py-0.5 uppercase tracking-wide">
               <Shield size={9} /> Admin
             </span>
           )}
@@ -123,8 +123,8 @@ export default function Profile() {
               type="button"
               className="
                 flex items-center gap-1.5 h-9 px-4 rounded-full text-sm
-                bg-white/[0.08] border border-white/[0.10] text-white/70
-                hover:bg-white/[0.12] hover:text-white transition-colors
+                bg-overlay-light border border-border-light text-ink-secondary
+                hover:bg-overlay-medium hover:text-white transition-colors
               "
             >
               <Edit2 size={13} />
@@ -137,8 +137,8 @@ export default function Profile() {
                 onClick={() => nav('/admin')}
                 className="
                   flex items-center gap-1.5 h-9 px-4 rounded-full text-sm
-                  bg-white/[0.08] border border-white/[0.10] text-white/70
-                  hover:bg-white/[0.12] hover:text-white transition-colors
+                  bg-overlay-light border border-border-light text-ink-secondary
+                  hover:bg-overlay-medium hover:text-white transition-colors
                 "
               >
                 <Shield size={13} />
@@ -151,8 +151,8 @@ export default function Profile() {
               onClick={handleSignOut}
               className="
                 flex items-center gap-1.5 h-9 px-4 rounded-full text-sm
-                bg-white/[0.04] border border-white/[0.08] text-white/45
-                hover:bg-white/[0.08] hover:text-white/80 transition-colors
+                bg-overlay-light border border-white/[0.08] text-ink-tertiary
+                hover:bg-overlay-light hover:text-ink-secondary transition-colors
               "
             >
               <LogOut size={13} />
@@ -166,13 +166,13 @@ export default function Profile() {
       <section className="mb-8">
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center gap-2">
-            <Clock size={16} className="text-white/70" />
+            <Clock size={16} className="text-ink-secondary" />
             <h2 className="text-lg font-semibold text-white">Watch History</h2>
           </div>
           <button
             type="button"
             onClick={() => nav('/history')}
-            className="flex items-center gap-0.5 text-sm text-white/70 hover:text-white transition-colors"
+            className="flex items-center gap-0.5 text-sm text-ink-secondary hover:text-white transition-colors"
           >
             View All <ChevronRight size={14} />
           </button>
@@ -182,20 +182,20 @@ export default function Profile() {
           <div className="flex gap-3 overflow-hidden">
             {Array.from({ length: 6 }).map((_, i) => (
               <div key={i} className="shrink-0 w-[130px]">
-                <div className="aspect-[2/3] rounded-[8px] bg-white/[0.05] animate-pulse mb-2" />
-                <div className="h-3 bg-white/[0.04] rounded-full w-4/5 animate-pulse" />
+                <div className="aspect-[2/3] rounded-lg bg-white/[0.05] animate-pulse mb-2" />
+                <div className="h-3 bg-overlay-light rounded-full w-4/5 animate-pulse" />
               </div>
             ))}
           </div>
         ) : history.length === 0 ? (
-          <div className="flex flex-col items-center gap-2 py-8 text-center rounded-[8px] border border-white/[0.06]"
+          <div className="flex flex-col items-center gap-2 py-8 text-center rounded-lg border border-border"
             style={{ background: 'rgba(255,255,255,0.02)' }}>
             <Clock size={28} className="text-white/15" />
             <p className="text-sm text-white/35">Nothing watched yet</p>
             <button
               type="button"
               onClick={() => nav('/')}
-              className="text-xs text-white/70 hover:text-white transition-colors"
+              className="text-xs text-ink-secondary hover:text-white transition-colors"
             >
               Browse titles
             </button>
@@ -215,10 +215,10 @@ export default function Profile() {
                   onKeyDown={e => { if (e.key === 'Enter') nav(`/title/${item.title.id}?play=1`); }}
                   className="
                     group shrink-0 w-[130px] cursor-pointer
-                    focus:outline-none focus-visible:ring-2 focus-visible:ring-white/30 rounded-[8px]
+                    focus:outline-none focus-visible:ring-2 focus-visible:ring-white/30 rounded-lg
                   "
                 >
-                  <div className="relative aspect-[2/3] rounded-[8px] overflow-hidden bg-white/[0.05] mb-2">
+                  <div className="relative aspect-[2/3] rounded-lg overflow-hidden bg-white/[0.05] mb-2">
                     {item.title.posterUrl && (
                       <img
                         {...tmdbSrcSet(item.title.posterUrl)}
@@ -241,20 +241,20 @@ export default function Profile() {
                     </div>
                     {/* Progress */}
                     {pct !== null && !item.completed && (
-                      <div className="absolute bottom-0 inset-x-0 h-[3px] bg-white/10">
+                      <div className="absolute bottom-0 inset-x-0 h-[3px] bg-overlay-medium">
                         <div className="h-full bg-white/65" style={{ width: `${pct}%` }} />
                       </div>
                     )}
                     {item.completed && (
                       <div className="absolute top-2 right-2">
-                        <span className="text-[8px] text-white/70 bg-black/70 border border-white/10 rounded px-1.5 py-0.5 font-mono">
+                        <span className="text-[8px] text-ink-secondary bg-black/70 border border-border-light rounded px-1.5 py-0.5 font-mono">
                           Done
                         </span>
                       </div>
                     )}
                   </div>
-                  <p className="text-[12px] font-medium text-white leading-tight line-clamp-2">{item.title?.name ?? 'Untitled'}</p>
-                  <p className="text-[10px] text-white/70 mt-0.5">{timeAgo(item.updatedAt)}</p>
+                  <p className="text-sm font-medium text-white leading-tight line-clamp-2">{item.title?.name ?? 'Untitled'}</p>
+                  <p className="text-2xs text-ink-secondary mt-0.5">{timeAgo(item.updatedAt)}</p>
                 </div>
               );
             })}
@@ -266,13 +266,13 @@ export default function Profile() {
       <section className="mb-8">
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center gap-2">
-            <Bookmark size={16} className="text-white/70" />
+            <Bookmark size={16} className="text-ink-secondary" />
             <h2 className="text-lg font-semibold text-white">My List</h2>
           </div>
           <button
             type="button"
              onClick={() => nav('/my-list')}
-            className="flex items-center gap-0.5 text-sm text-white/70 hover:text-white transition-colors"
+            className="flex items-center gap-0.5 text-sm text-ink-secondary hover:text-white transition-colors"
           >
             View All <ChevronRight size={14} />
           </button>
@@ -282,13 +282,13 @@ export default function Profile() {
           <div className="flex gap-3 overflow-hidden">
             {Array.from({ length: 6 }).map((_, i) => (
               <div key={i} className="shrink-0 w-[130px]">
-                <div className="aspect-[2/3] rounded-[8px] bg-white/[0.05] animate-pulse mb-2" />
-                <div className="h-3 bg-white/[0.04] rounded-full w-4/5 animate-pulse" />
+                <div className="aspect-[2/3] rounded-lg bg-white/[0.05] animate-pulse mb-2" />
+                <div className="h-3 bg-overlay-light rounded-full w-4/5 animate-pulse" />
               </div>
             ))}
           </div>
         ) : watchlist.length === 0 ? (
-          <div className="flex flex-col items-center gap-2 py-8 text-center rounded-[8px] border border-white/[0.06]"
+          <div className="flex flex-col items-center gap-2 py-8 text-center rounded-lg border border-border"
             style={{ background: 'rgba(255,255,255,0.02)' }}>
             <Bookmark size={28} className="text-white/15" />
             <p className="text-sm text-white/35">Your list is empty</p>
@@ -309,12 +309,12 @@ export default function Profile() {
       {/* ── Account ──────────────────────────────────────────────────────── */}
       <section>
         <div className="flex items-center gap-2 mb-4">
-          <Settings size={16} className="text-white/70" />
+          <Settings size={16} className="text-ink-secondary" />
           <h2 className="text-lg font-semibold text-white">Account</h2>
         </div>
 
         <div
-          className="rounded-[12px] border border-white/[0.06] overflow-hidden divide-y divide-white/[0.05]"
+          className="rounded-xl border border-border overflow-hidden divide-y divide-white/[0.05]"
           style={{ background: 'rgba(255,255,255,0.02)' }}
         >
           {[
@@ -327,7 +327,7 @@ export default function Profile() {
               onClick={action}
               className="
                 w-full flex items-center gap-3 px-4 py-3.5
-                text-sm text-white/70 hover:text-white hover:bg-white/[0.03]
+                text-sm text-ink-secondary hover:text-white hover:bg-white/[0.03]
                 transition-colors text-left
               "
             >
@@ -342,11 +342,11 @@ export default function Profile() {
             onClick={handleSignOut}
             className="
               w-full flex items-center gap-3 px-4 py-3.5
-              text-sm text-white/45 hover:text-white hover:bg-white/[0.03]
+              text-sm text-ink-tertiary hover:text-white hover:bg-white/[0.03]
               transition-colors text-left
             "
           >
-            <LogOut size={15} className="text-white/30 shrink-0" />
+            <LogOut size={15} className="text-ink-disabled shrink-0" />
             Sign Out
           </button>
         </div>
@@ -354,10 +354,10 @@ export default function Profile() {
 
       {/* ── Version Info ─────────────────────────────────────────────────── */}
       <div className="mt-12 pt-6 border-t border-white/[0.04] text-center">
-        <p className="text-[10px] font-mono text-white/20">
+        <p className="text-2xs font-mono text-ink-disabled">
           ALLRATED CINEMA · BUILD {BUILD_INFO.sha} ({BUILD_INFO.branch})
         </p>
-        <p className="text-[9px] font-mono text-white/15 mt-1">
+        <p className="text-3xs font-mono text-white/15 mt-1">
           Released: {BUILD_INFO.date !== 'dev' ? new Date(BUILD_INFO.date).toLocaleString() : 'Local Development'}
         </p>
       </div>

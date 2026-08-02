@@ -10,7 +10,7 @@ export default function Footer() {
 
   return (
     <footer className="px-6 pb-24 pt-8 md:pb-8" aria-label="Build information">
-      <p className="text-xs text-white/30">
+      <p className="text-xs text-ink-disabled">
         Build: {BUILD_INFO.sha} • {BUILD_INFO.date}
       </p>
     </footer>

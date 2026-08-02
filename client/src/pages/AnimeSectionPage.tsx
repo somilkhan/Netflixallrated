@@ -94,15 +94,15 @@ export default function AnimeSectionPage() {
       <div className="px-4 md:px-6 pt-4 pb-8">
         <button
           onClick={() => nav('/anime')}
-          className="flex items-center gap-1.5 text-[12px] text-white/70 hover:text-white transition-colors mb-5"
+          className="flex items-center gap-1.5 text-sm text-ink-secondary hover:text-white transition-colors mb-5"
         >
           <ChevronLeft size={14} strokeWidth={2.2} />
           Back to Anime
         </button>
 
         <div className="flex items-center gap-2 mb-3">
-          <span className="inline-block w-1.5 h-1.5 rounded-[8px] bg-white/50 animate-pulse" />
-          <span className="text-[10px] uppercase tracking-[0.22em] text-white/35 font-medium">
+          <span className="inline-block w-1.5 h-1.5 rounded-lg bg-white/50 animate-pulse" />
+          <span className="text-2xs uppercase tracking-[0.22em] text-white/35 font-medium">
             Live from AniList
           </span>
         </div>
@@ -120,7 +120,7 @@ export default function AnimeSectionPage() {
             <p className="text-xl font-semibold text-white">Failed to load</p>
             <button
               onClick={() => loadPage(1, true)}
-              className="mt-2 px-5 py-2 rounded-[8px] bg-white/[0.08] border border-white/[0.12] text-sm text-white/70 hover:text-white hover:bg-white/[0.12] transition-colors"
+              className="mt-2 px-5 py-2 rounded-lg bg-overlay-light border border-white/[0.12] text-sm text-ink-secondary hover:text-white hover:bg-overlay-medium transition-colors"
             >
               Retry
             </button>
@@ -141,7 +141,7 @@ export default function AnimeSectionPage() {
         {loadState === 'done' && items.length === 0 && (
           <div className="flex flex-col items-center justify-center gap-3 py-32 text-center">
             <Film size={40} className="text-white/15" />
-            <p className="text-white/70 text-sm">No anime found for this section.</p>
+            <p className="text-ink-secondary text-sm">No anime found for this section.</p>
           </div>
         )}
 
@@ -149,7 +149,7 @@ export default function AnimeSectionPage() {
         <div ref={sentinelRef} className="h-8" />
 
         {loadState === 'done' && !hasNext && items.length > 0 && (
-          <p className="text-[11px] text-white/25 text-center py-6">You've reached the end.</p>
+          <p className="text-xs text-white/25 text-center py-6">You've reached the end.</p>
         )}
       </div>
     </div>

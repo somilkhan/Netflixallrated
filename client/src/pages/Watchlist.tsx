@@ -38,11 +38,11 @@ export default function Watchlist() {
 
   if (!user) return (
     <div className="min-h-[60vh] flex flex-col items-center justify-center gap-4 px-6 text-center">
-      <Bookmark size={32} className="text-white/20" />
-      <p className="text-white/40 text-sm">Sign in to view your watchlist</p>
+      <Bookmark size={32} className="text-ink-disabled" />
+      <p className="text-ink-tertiary text-sm">Sign in to view your watchlist</p>
       <button
         onClick={() => nav('/login')}
-        className="px-5 py-2 bg-white text-black rounded-[8px] text-sm font-semibold hover:bg-white/90 transition-colors"
+        className="px-5 py-2 bg-white text-black rounded-lg text-sm font-semibold hover:bg-white/90 transition-colors"
       >
         Sign In
       </button>
@@ -61,14 +61,14 @@ export default function Watchlist() {
           <button
             key={s}
             onClick={() => setActive(s)}
-            className={`pb-2.5 px-3 text-[11px] font-medium transition-colors relative whitespace-nowrap ${
+            className={`pb-2.5 px-3 text-xs font-medium transition-colors relative whitespace-nowrap ${
               active === s
                 ? 'text-white after:absolute after:inset-x-0 after:bottom-[-1px] after:h-[2px] after:bg-white after:rounded-t'
-                : 'text-white/30 hover:text-white/60'
+                : 'text-ink-disabled hover:text-ink-tertiary'
             }`}
           >
             {STATUS_LABELS[s]}
-            <span className={`ml-1.5 ${active === s ? 'text-white/45' : 'text-white/20'}`}>
+            <span className={`ml-1.5 ${active === s ? 'text-ink-tertiary' : 'text-ink-disabled'}`}>
               ({items.filter(i => i.status === s).length})
             </span>
           </button>
@@ -80,9 +80,9 @@ export default function Watchlist() {
         <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
           {Array.from({ length: 12 }).map((_, i) => (
             <div key={i}>
-              <div className="aspect-[2/3] rounded-[8px] bg-white/[0.05] mb-2 animate-pulse" />
+              <div className="aspect-[2/3] rounded-lg bg-white/[0.05] mb-2 animate-pulse" />
               <div className="h-3 bg-white/[0.05] rounded-full w-3/4 mb-1 animate-pulse" />
-              <div className="h-2.5 bg-white/[0.04] rounded-full w-1/2 animate-pulse" />
+              <div className="h-2.5 bg-overlay-light rounded-full w-1/2 animate-pulse" />
             </div>
           ))}
         </div>
@@ -94,7 +94,7 @@ export default function Watchlist() {
           <p className="text-white/35 mb-4 text-sm">Couldn't load your watchlist.</p>
           <button
             onClick={() => setRetryTick(t => t + 1)}
-            className="px-4 py-2 border border-white/[0.12] rounded-[8px] text-sm text-white/50 hover:text-white hover:border-white/25 transition-colors"
+            className="px-4 py-2 border border-white/[0.12] rounded-lg text-sm text-ink-tertiary hover:text-white hover:border-white/25 transition-colors"
           >
             Retry
           </button>

@@ -28,10 +28,10 @@ export default function Login() {
     <div className="min-h-[70vh] flex items-center justify-center px-5">
       <form onSubmit={submit} className="w-full max-w-sm">
         <h1 className="text-3xl font-bold mb-1 text-white tracking-tight">Welcome back</h1>
-        <p className="text-sm text-white/40 mb-8">Sign in to your account</p>
+        <p className="text-sm text-ink-tertiary mb-8">Sign in to your account</p>
 
         {error && (
-          <div className="mb-4 px-4 py-3 rounded-[8px] border border-white/[0.10] bg-white/[0.04] text-sm text-white/70">
+          <div className="mb-4 px-4 py-3 rounded-lg border border-border-light bg-overlay-light text-sm text-ink-secondary">
             {error}
           </div>
         )}
@@ -44,7 +44,7 @@ export default function Login() {
             placeholder="Email"
             autoComplete="email"
             required
-            className="w-full bg-white/[0.04] border border-white/[0.09] rounded-[8px] px-4 py-3 text-sm text-white focus:border-white/[0.28] focus:bg-white/[0.06] outline-none placeholder:text-white/25 transition-[border-color,background-color] duration-200"
+            className="w-full bg-overlay-light border border-white/[0.09] rounded-lg px-4 py-3 text-sm text-white focus:border-white/[0.28] focus:bg-overlay-light outline-none placeholder:text-white/25 transition-[border-color,background-color] duration-200"
           />
           <input
             type="password"
@@ -53,14 +53,14 @@ export default function Login() {
             placeholder="Password"
             autoComplete="current-password"
             required
-            className="w-full bg-white/[0.04] border border-white/[0.09] rounded-[8px] px-4 py-3 text-sm text-white focus:border-white/[0.28] focus:bg-white/[0.06] outline-none placeholder:text-white/25 transition-[border-color,background-color] duration-200"
+            className="w-full bg-overlay-light border border-white/[0.09] rounded-lg px-4 py-3 text-sm text-white focus:border-white/[0.28] focus:bg-overlay-light outline-none placeholder:text-white/25 transition-[border-color,background-color] duration-200"
           />
         </div>
 
         <button
           type="submit"
           disabled={loading}
-          className="mt-5 w-full bg-white text-black font-semibold py-3 rounded-[8px] hover:bg-white/90 transition-colors disabled:opacity-50"
+          className="mt-5 w-full bg-white text-black font-semibold py-3 rounded-lg hover:bg-white/90 transition-colors disabled:opacity-50"
         >
           {loading ? 'Signing in…' : 'Sign In'}
         </button>
@@ -70,7 +70,7 @@ export default function Login() {
           <button
             type="button"
             onClick={() => nav('/register')}
-            className="text-white/70 hover:text-white transition-colors"
+            className="text-ink-secondary hover:text-white transition-colors"
           >
             Create one
           </button>

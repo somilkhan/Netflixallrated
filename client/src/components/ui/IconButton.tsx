@@ -20,12 +20,12 @@ const SIZE_MAP = {
 
 const SHAPE_MAP = {
   circle: 'rounded-full',
-  rounded: 'rounded-[8px]',
+  rounded: 'rounded-lg',
 } as const;
 
 const VARIANT_MAP = {
-  ghost:  'bg-transparent text-white/70 hover:bg-white/[0.08] hover:text-white',
-  glass:  'bg-white/[0.06] border border-white/[0.08] text-white/70 hover:bg-white/[0.10] hover:border-white/[0.14] hover:text-white',
+  ghost:  'bg-transparent text-ink-secondary hover:bg-overlay-light hover:text-white',
+  glass:  'bg-overlay-light border border-white/[0.08] text-ink-secondary hover:bg-overlay-medium hover:border-white/[0.14] hover:text-white',
   solid:  'bg-white text-black hover:bg-white/90',
 } as const;
 

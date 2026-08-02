@@ -30,7 +30,7 @@ export const Avatar = memo(function Avatar({ src, name, email, size = 32, classN
     <div
       className={`
         relative shrink-0 flex items-center justify-center overflow-hidden
-        rounded-full bg-white/[0.08] border border-white/[0.12]
+        rounded-full bg-overlay-light border border-white/[0.12]
         text-white font-semibold select-none
         ${className}
       `}
@@ -45,7 +45,7 @@ export const Avatar = memo(function Avatar({ src, name, email, size = 32, classN
           loading="lazy"
         />
       ) : initials === '?' ? (
-        <User size={size * 0.5} className="text-white/70" />
+        <User size={size * 0.5} className="text-ink-secondary" />
       ) : (
         initials
       )}

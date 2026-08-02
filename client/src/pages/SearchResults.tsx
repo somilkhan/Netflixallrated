@@ -18,7 +18,7 @@ function SkeletonCard() {
   return (
     <div className="w-full flex flex-col gap-2">
       <div
-        className="w-full rounded-[8px] overflow-hidden relative"
+        className="w-full rounded-lg overflow-hidden relative"
         style={{ aspectRatio: '2/3', background: 'rgba(255,255,255,0.06)' }}
       >
         <div
@@ -175,11 +175,11 @@ export default function SearchResults() {
       style={{ paddingBottom: 'calc(80px + env(safe-area-inset-bottom))' }}
     >
       {!hasTmdbKey() && (
-        <div className="mb-5 rounded-[8px] border border-amber-400/20 bg-amber-400/5 px-4 py-3 text-sm text-amber-100/70">
+        <div className="mb-5 rounded-lg border border-amber-400/20 bg-amber-400/5 px-4 py-3 text-sm text-amber-100/70">
           TMDB search is unavailable until <code>VITE_TMDB_API_KEY</code> is configured.
         </div>
       )}
-      <p className="mb-4 text-[11px] uppercase tracking-[0.16em] text-white/30">
+      <p className="mb-4 text-xs uppercase tracking-[0.16em] text-ink-disabled">
         Smart search powered by TMDB
       </p>
       {/* ── Search bar ─────────────────────────────────────────────── */}
@@ -195,7 +195,7 @@ export default function SearchResults() {
           onChange={e => handleChange(e.target.value)}
           placeholder="Search movies, series, anime..."
           className="
-            w-full rounded-[8px] pl-10 pr-10 py-3.5 text-[15px] text-white
+            w-full rounded-lg pl-10 pr-10 py-3.5 text-lg text-white
             border border-white/[0.09] outline-none
             placeholder:text-white/28
             focus:border-white/[0.22] focus:shadow-[0_0_0_3px_rgba(255,255,255,0.04)]
@@ -207,7 +207,7 @@ export default function SearchResults() {
           <button
             type="button"
             onClick={handleClear}
-            className="absolute right-3.5 top-1/2 -translate-y-1/2 text-white/30 hover:text-white/70 transition-colors p-0.5"
+            className="absolute right-3.5 top-1/2 -translate-y-1/2 text-ink-disabled hover:text-ink-secondary transition-colors p-0.5"
             aria-label="Clear search"
           >
             <X size={15} />
@@ -228,7 +228,7 @@ export default function SearchResults() {
                 transition-[border-color,background-color,color] duration-150
                 ${type === value
                   ? 'border-white/[0.28] text-white font-medium'
-                  : 'border-white/[0.08] text-white/45 hover:text-white/80 hover:border-white/[0.18]'
+                  : 'border-white/[0.08] text-ink-tertiary hover:text-ink-secondary hover:border-white/[0.18]'
                 }
               `}
               style={type === value ? { background: 'rgba(255,255,255,0.11)' } : { background: 'rgba(255,255,255,0.03)' }}
@@ -236,7 +236,7 @@ export default function SearchResults() {
               {Icon && <Icon size={12} />}
               {label}
               {searched && count > 0 && (
-                <span className={`text-[11px] ${type === value ? 'text-white/70' : 'text-white/30'}`}>
+                <span className={`text-xs ${type === value ? 'text-ink-secondary' : 'text-ink-disabled'}`}>
                   ({count})
                 </span>
               )}
@@ -254,9 +254,9 @@ export default function SearchResults() {
 
       {networkError && !loading && (
         <div className="flex flex-col items-center py-16 text-center">
-          <p className="text-base font-semibold text-white/70">Search is temporarily unavailable</p>
+          <p className="text-base font-semibold text-ink-secondary">Search is temporarily unavailable</p>
           <p className="mt-2 text-sm text-white/35">Check your connection and try again.</p>
-          <button type="button" onClick={() => runSearch(query)} className="mt-5 rounded-[8px] bg-white px-4 py-2.5 text-sm font-semibold text-black">
+          <button type="button" onClick={() => runSearch(query)} className="mt-5 rounded-lg bg-white px-4 py-2.5 text-sm font-semibold text-black">
             Try again
           </button>
         </div>
@@ -283,7 +283,7 @@ export default function SearchResults() {
         </>
       )}
       {hasResults && canLoadMore && (
-        <div ref={sentinelRef} className="flex min-h-20 items-center justify-center text-xs text-white/30" aria-live="polite">
+        <div ref={sentinelRef} className="flex min-h-20 items-center justify-center text-xs text-ink-disabled" aria-live="polite">
           {loadingMore ? 'Loading more titles…' : 'Scroll for more'}
         </div>
       )}
@@ -291,13 +291,13 @@ export default function SearchResults() {
       {/* ── Empty: tab has 0 but all has some ─────────────────────── */}
       {isEmpty && rawResults.length > 0 && (
         <div className="text-center py-16">
-          <p className="text-base font-semibold text-white/70 mb-2">
+          <p className="text-base font-semibold text-ink-secondary mb-2">
             No {TABS.find(t => t.value === type)?.label} results for "{query}"
           </p>
           <button
             type="button"
             onClick={() => setType('')}
-            className="mt-2 text-sm text-white/45 underline underline-offset-4 hover:text-white transition-colors"
+            className="mt-2 text-sm text-ink-tertiary underline underline-offset-4 hover:text-white transition-colors"
           >
             Show all results
           </button>
@@ -312,9 +312,9 @@ export default function SearchResults() {
           transition={{ duration: 0.2 }}
           className="flex flex-col items-center py-20 text-center"
         >
-          <div className="w-16 h-16 rounded-[12px] flex items-center justify-center mb-4 border border-white/[0.07]"
+          <div className="w-16 h-16 rounded-xl flex items-center justify-center mb-4 border border-white/[0.07]"
             style={{ background: 'rgba(255,255,255,0.04)' }}>
-            <Search size={24} className="text-white/20" />
+            <Search size={24} className="text-ink-disabled" />
           </div>
           <p className="text-lg font-semibold text-white/75 mb-1.5">No results for "{query}"</p>
           <p className="text-sm text-white/35 mb-6">Try different keywords or browse a category</p>
@@ -323,7 +323,7 @@ export default function SearchResults() {
               <button
                 key={g}
                 onClick={() => { setQuery(g); runSearch(g); }}
-                className="text-xs px-3.5 py-2 rounded-full border border-white/[0.08] text-white/70 hover:border-white/[0.22] hover:text-white/75 transition-[border-color,color]"
+                className="text-xs px-3.5 py-2 rounded-full border border-white/[0.08] text-ink-secondary hover:border-white/[0.22] hover:text-white/75 transition-[border-color,color]"
               >
                 {g}
               </button>
@@ -335,14 +335,14 @@ export default function SearchResults() {
       {/* ── Idle state ────────────────────────────────────────────── */}
       {!loading && !searched && !query && (
         <div className="py-10 text-center">
-          <p className="text-lg font-semibold text-white/70 mb-2">Search the catalog</p>
-          <p className="text-sm text-white/30 mb-7">Movies, TV shows, anime — all in one place</p>
+          <p className="text-lg font-semibold text-ink-secondary mb-2">Search the catalog</p>
+          <p className="text-sm text-ink-disabled mb-7">Movies, TV shows, anime — all in one place</p>
           <div className="flex flex-wrap gap-2 justify-center max-w-xs mx-auto">
             {['Action', 'Drama', 'Sci-Fi', 'Anime', 'Comedy', 'Thriller', 'Horror', 'Romance'].map(g => (
               <button
                 key={g}
                 onClick={() => { setQuery(g); runSearch(g); }}
-                className="text-xs px-3.5 py-2 rounded-full border border-white/[0.08] text-white/70 hover:border-white/[0.22] hover:text-white/75 transition-[border-color,color]"
+                className="text-xs px-3.5 py-2 rounded-full border border-white/[0.08] text-ink-secondary hover:border-white/[0.22] hover:text-white/75 transition-[border-color,color]"
               >
                 {g}
               </button>

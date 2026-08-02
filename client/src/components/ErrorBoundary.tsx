@@ -43,15 +43,15 @@ function ErrorFallback({ onReset, error }: { onReset: () => void; error: Error |
   const nav = useNavigate();
   return (
     <div className="min-h-[60vh] flex flex-col items-center justify-center px-6 text-center bg-black">
-      <div className="mb-6 flex items-center justify-center w-16 h-16 rounded-full bg-white/[0.06]">
+      <div className="mb-6 flex items-center justify-center w-16 h-16 rounded-full bg-overlay-light">
         <TriangleAlert className="text-amber-400/80" size={28} />
       </div>
-      <h1 className="text-[22px] font-bold text-white mb-2 tracking-tight">Something went wrong</h1>
-      <p className="text-white/45 text-sm mb-8 max-w-xs leading-relaxed">
+      <h1 className="text-4xl font-bold text-white mb-2 tracking-tight">Something went wrong</h1>
+      <p className="text-ink-tertiary text-sm mb-8 max-w-xs leading-relaxed">
         We couldn't load this part of Allrated. You can try again or go back home.
       </p>
       {error && process.env.NODE_ENV === 'development' && (
-        <pre className="mb-6 max-w-lg overflow-auto rounded-[8px] bg-white/[0.04] px-4 py-3 text-left text-[11px] text-red-300/80">
+        <pre className="mb-6 max-w-lg overflow-auto rounded-lg bg-overlay-light px-4 py-3 text-left text-xs text-red-300/80">
           {error.message}
 {error.stack}
         </pre>
@@ -60,14 +60,14 @@ function ErrorFallback({ onReset, error }: { onReset: () => void; error: Error |
         <button
           type="button"
           onClick={onReset}
-          className="inline-flex items-center gap-2 text-sm px-5 py-2.5 rounded-[8px] bg-white text-black font-semibold hover:bg-white/90 active:scale-[0.97] transition-all"
+          className="inline-flex items-center gap-2 text-sm px-5 py-2.5 rounded-lg bg-white text-black font-semibold hover:bg-white/90 active:scale-[0.97] transition-all"
         >
           <RefreshCw size={14} /> Try again
         </button>
         <button
           type="button"
           onClick={() => nav('/')}
-          className="inline-flex items-center gap-2 text-sm px-5 py-2.5 rounded-[8px] bg-white/10 text-white font-medium hover:bg-white/20 active:scale-[0.97] transition-all"
+          className="inline-flex items-center gap-2 text-sm px-5 py-2.5 rounded-lg bg-overlay-medium text-white font-medium hover:bg-overlay-medium active:scale-[0.97] transition-all"
         >
           <Home size={14} /> Go Home
         </button>

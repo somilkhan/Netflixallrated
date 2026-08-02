@@ -9,17 +9,17 @@ export default function NotFound() {
   return (
     <div className="min-h-[calc(100vh-64px)] md:min-h-screen flex flex-col items-center justify-center px-6 text-center gap-6 page-enter">
       <div
-        className="w-[160px] h-[160px] rounded-3xl overflow-hidden bg-white/[.04] border border-white/10 flex items-center justify-center"
+        className="w-[160px] h-[160px] rounded-3xl overflow-hidden bg-white/[.04] border border-border-light flex items-center justify-center"
         style={{ boxShadow: '0 8px 40px rgba(0,0,0,0.6)' }}
       >
         <span className="text-6xl font-bold tracking-tight text-white/80">404</span>
       </div>
 
       <div className="space-y-3 max-w-[440px]">
-        <h1 className="font-bold text-[32px] leading-tight text-white">
+        <h1 className="font-bold text-7xl leading-tight text-white">
           Page not found
         </h1>
-        <p className="text-[14px] text-[#888] leading-relaxed">
+        <p className="text-md text-[#888] leading-relaxed">
           This page doesn’t exist or may have moved. Let’s get you back to something good.
         </p>
       </div>
@@ -27,10 +27,10 @@ export default function NotFound() {
       <button
         onClick={() => nav('/')}
         className="
-          mt-2 px-6 py-2.5 rounded-[8px]
-          bg-[#1a1a1a] border border-white/10
-          font-semibold text-[14px] text-white
-          hover:bg-white/10 active:scale-[0.97]
+          mt-2 px-6 py-2.5 rounded-lg
+          bg-elevated border border-border-light
+          font-semibold text-md text-white
+          hover:bg-overlay-medium active:scale-[0.97]
           transition-all duration-150
         "
       >

@@ -139,17 +139,17 @@ const AnimeHeroBanner = memo(function AnimeHeroBanner() {
 
           {/* Badges */}
           <div className="flex items-center gap-2 mb-3 flex-wrap">
-            <span className="text-[10px] font-bold uppercase tracking-[0.15em] text-amber-400">
+            <span className="text-2xs font-bold uppercase tracking-[0.15em] text-amber-400">
               Trending Anime
             </span>
             {rating && (
-              <span className="flex items-center gap-1 text-xs text-white/70">
+              <span className="flex items-center gap-1 text-xs text-ink-secondary">
                 <span className="text-amber-400">★</span>
                 {rating}
               </span>
             )}
             {current.genres?.slice(0, 2).map((g: string) => (
-              <span key={g} className="text-[10px] text-white/70 uppercase tracking-wider border border-white/10 px-1.5 py-0.5 rounded">
+              <span key={g} className="text-2xs text-ink-secondary uppercase tracking-wider border border-border-light px-1.5 py-0.5 rounded">
                 {g}
               </span>
             ))}
@@ -171,7 +171,7 @@ const AnimeHeroBanner = memo(function AnimeHeroBanner() {
           {/* Synopsis */}
           {synopsis && (
             <p
-              className="text-[14px] md:text-[15px] leading-relaxed mb-6 max-w-[500px]"
+              className="text-md md:text-lg leading-relaxed mb-6 max-w-[500px]"
               style={{
                 display: '-webkit-box',
                 WebkitLineClamp: 3,
@@ -194,9 +194,9 @@ const AnimeHeroBanner = memo(function AnimeHeroBanner() {
               aria-label={`Play ${titleStr}`}
               className="
                 flex items-center justify-center gap-2.5
-                w-full sm:w-auto px-8 rounded-[4px]
+                w-full sm:w-auto px-8 rounded-md
                 bg-white text-black
-                text-[15px] font-semibold
+                text-lg font-semibold
                 hover:bg-white/90 active:scale-[0.97] disabled:opacity-60
                 transition-all duration-200 touch-manipulation
                 shadow-[0_4px_24px_rgba(0,0,0,0.5)]
@@ -216,10 +216,10 @@ const AnimeHeroBanner = memo(function AnimeHeroBanner() {
               aria-label={`More info about ${titleStr}`}
               className="
                 flex items-center justify-center gap-2.5
-                w-full sm:w-auto px-8 rounded-[4px]
-                bg-[#4d4d4d] text-white
-                text-[15px] font-medium
-                hover:bg-[#4d4d4d]/80
+                w-full sm:w-auto px-8 rounded-md
+                bg-btn-secondary text-white
+                text-lg font-medium
+                hover:bg-btn-secondary/80
                 active:scale-[0.97] disabled:opacity-60
                 transition-all duration-200 touch-manipulation
               "
@@ -240,7 +240,7 @@ const AnimeHeroBanner = memo(function AnimeHeroBanner() {
               type="button"
               onClick={prev}
               aria-label="Previous"
-              className="hidden md:flex items-center justify-center w-8 h-8 rounded-full bg-white/[0.07] border border-white/[0.12] text-white/65 hover:text-white hover:bg-white/[0.12] backdrop-blur-sm transition-all duration-200"
+              className="hidden md:flex items-center justify-center w-8 h-8 rounded-full bg-white/[0.07] border border-white/[0.12] text-white/65 hover:text-white hover:bg-overlay-medium backdrop-blur-sm transition-all duration-200"
             >
               <ChevronLeft size={15} />
             </button>
@@ -273,7 +273,7 @@ const AnimeHeroBanner = memo(function AnimeHeroBanner() {
               type="button"
               onClick={next}
               aria-label="Next featured title"
-              className="hidden md:flex items-center justify-center w-8 h-8 rounded-full bg-white/[0.07] border border-white/[0.12] text-white/65 hover:text-white hover:bg-white/[0.12] backdrop-blur-sm transition-all duration-200"
+              className="hidden md:flex items-center justify-center w-8 h-8 rounded-full bg-white/[0.07] border border-white/[0.12] text-white/65 hover:text-white hover:bg-overlay-medium backdrop-blur-sm transition-all duration-200"
             >
               <ChevronRight size={15} />
             </button>

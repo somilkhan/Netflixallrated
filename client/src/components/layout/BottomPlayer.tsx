@@ -54,23 +54,23 @@ const BottomPlayer = memo(function BottomPlayer() {
           onClick={() => setExpanded(false)}
         >
           <div
-            className="mx-3 mb-[72px] rounded-[12px] overflow-hidden border border-white/[0.08]"
+            className="mx-3 mb-[72px] rounded-xl overflow-hidden border border-white/[0.08]"
             style={{ background: '#000000' }}
             onClick={e => e.stopPropagation()}
           >
-            <div className="flex items-center justify-between px-4 py-3 border-b border-white/[0.06]">
-              <button type="button" onClick={() => setExpanded(false)} className="text-white/70 hover:text-white transition-colors" aria-label="Collapse">
+            <div className="flex items-center justify-between px-4 py-3 border-b border-border">
+              <button type="button" onClick={() => setExpanded(false)} className="text-ink-secondary hover:text-white transition-colors" aria-label="Collapse">
                 <ChevronDown size={18} />
               </button>
-              <p className="text-xs text-white/70 font-medium">Now Playing</p>
-              <button type="button" onClick={handleClose} className="text-white/70 hover:text-white transition-colors" aria-label="Close">
+              <p className="text-xs text-ink-secondary font-medium">Now Playing</p>
+              <button type="button" onClick={handleClose} className="text-ink-secondary hover:text-white transition-colors" aria-label="Close">
                 <X size={16} />
               </button>
             </div>
 
             <div className="px-8 py-6 flex flex-col items-center gap-4">
               <div
-                className="w-full max-w-[180px] rounded-[8px] overflow-hidden cursor-pointer"
+                className="w-full max-w-[180px] rounded-lg overflow-hidden cursor-pointer"
                 style={{ aspectRatio: '2/3', background: '#161616' }}
                 onClick={handleGoToTitle}
               >
@@ -81,13 +81,13 @@ const BottomPlayer = memo(function BottomPlayer() {
 
               <div className="text-center w-full">
                 <p className="text-base font-semibold text-white truncate">{nowPlaying.name}</p>
-                {subLabel && <p className="text-xs text-white/70 mt-0.5">{subLabel}</p>}
+                {subLabel && <p className="text-xs text-ink-secondary mt-0.5">{subLabel}</p>}
               </div>
 
               <div className="w-full flex flex-col gap-4">
                 <ProgressBar value={0} />
                 <div className="flex items-center justify-center gap-4">
-                  <IconButton aria-label="Previous" className="text-white/70"><SkipBack size={20} strokeWidth={1.8} /></IconButton>
+                  <IconButton aria-label="Previous" className="text-ink-secondary"><SkipBack size={20} strokeWidth={1.8} /></IconButton>
                   <button
                     type="button"
                     onClick={handlePlayPause}
@@ -96,10 +96,10 @@ const BottomPlayer = memo(function BottomPlayer() {
                   >
                     {isPlaying ? <Pause size={22} className="fill-current" /> : <Play size={22} className="fill-current ml-0.5" />}
                   </button>
-                  <IconButton aria-label="Next" className="text-white/70"><SkipForward size={20} strokeWidth={1.8} /></IconButton>
+                  <IconButton aria-label="Next" className="text-ink-secondary"><SkipForward size={20} strokeWidth={1.8} /></IconButton>
                 </div>
                 <div className="flex items-center gap-3">
-                  <IconButton size="sm" onClick={handleVolumeToggle} className="text-white/70" aria-label={muted ? 'Unmute' : 'Mute'}>
+                  <IconButton size="sm" onClick={handleVolumeToggle} className="text-ink-secondary" aria-label={muted ? 'Unmute' : 'Mute'}>
                     {muted ? <VolumeX size={16} /> : <Volume2 size={16} />}
                   </IconButton>
                   <ProgressBar value={muted ? 0 : volume} onChange={v => setVolume(v)} className="flex-1" />
@@ -109,7 +109,7 @@ const BottomPlayer = memo(function BottomPlayer() {
               <button
                 type="button"
                 onClick={handleGoToTitle}
-                className="w-full flex items-center justify-center gap-2 h-10 rounded-[8px] text-sm text-white/70 bg-white/[0.06] border border-white/[0.08] hover:bg-white/[0.10] hover:text-white transition-colors"
+                className="w-full flex items-center justify-center gap-2 h-10 rounded-lg text-sm text-ink-secondary bg-overlay-light border border-white/[0.08] hover:bg-overlay-medium hover:text-white transition-colors"
               >
                 <Maximize size={14} /> Go to title
               </button>
@@ -135,7 +135,7 @@ const BottomPlayer = memo(function BottomPlayer() {
         aria-label="Player"
       >
         {/* Progress line at top */}
-        <div className="absolute top-0 inset-x-0 h-[2px] bg-white/[0.04]">
+        <div className="absolute top-0 inset-x-0 h-[2px] bg-overlay-light">
           {nowPlaying && (
             <div className="h-full bg-white/25 rounded-full" style={{ width: '0%' }} />
           )}
@@ -151,21 +151,21 @@ const BottomPlayer = memo(function BottomPlayer() {
               onClick={() => window.innerWidth < 768 ? setExpanded(true) : handleGoToTitle()}
               aria-label={`Now playing: ${nowPlaying.name}`}
             >
-              <div className="shrink-0 w-10 h-14 md:w-12 md:h-[60px] rounded-[4px] overflow-hidden bg-[#161616]">
+              <div className="shrink-0 w-10 h-14 md:w-12 md:h-[60px] rounded-md overflow-hidden bg-surface">
                 {nowPlaying.posterUrl && (
                   <img {...tmdbSrcSet(nowPlaying.posterUrl)} alt={nowPlaying.name} className="w-full h-full object-cover" loading="lazy" decoding="async" sizes="48px" />
                 )}
               </div>
               <div className="min-w-0">
-                <p className="text-[13px] font-medium text-white truncate leading-tight">{nowPlaying.name}</p>
-                {subLabel && <p className="text-[11px] text-white/45 mt-0.5 truncate">{subLabel}</p>}
+                <p className="text-base font-medium text-white truncate leading-tight">{nowPlaying.name}</p>
+                {subLabel && <p className="text-xs text-ink-tertiary mt-0.5 truncate">{subLabel}</p>}
               </div>
             </button>
 
             {/* Center: transport controls (desktop) */}
             <div className="hidden md:flex flex-1 flex-col items-center justify-center gap-1.5 px-4">
               <div className="flex items-center gap-2">
-                <IconButton size="sm" className="text-white/70" aria-label="Previous"><SkipBack size={16} strokeWidth={1.8} /></IconButton>
+                <IconButton size="sm" className="text-ink-secondary" aria-label="Previous"><SkipBack size={16} strokeWidth={1.8} /></IconButton>
                 <button
                   type="button"
                   onClick={handlePlayPause}
@@ -174,12 +174,12 @@ const BottomPlayer = memo(function BottomPlayer() {
                 >
                   {isPlaying ? <Pause size={14} className="fill-current" /> : <Play size={14} className="fill-current ml-0.5" />}
                 </button>
-                <IconButton size="sm" className="text-white/70" aria-label="Next"><SkipForward size={16} strokeWidth={1.8} /></IconButton>
+                <IconButton size="sm" className="text-ink-secondary" aria-label="Next"><SkipForward size={16} strokeWidth={1.8} /></IconButton>
               </div>
               <div className="flex items-center gap-2 w-full max-w-[400px]">
-                <span className="text-[10px] text-white/35 font-mono shrink-0">0:00</span>
+                <span className="text-2xs text-white/35 font-mono shrink-0">0:00</span>
                 <ProgressBar value={0} buffered={0} thin />
-                <span className="text-[10px] text-white/35 font-mono shrink-0">–:––</span>
+                <span className="text-2xs text-white/35 font-mono shrink-0">–:––</span>
               </div>
             </div>
 
@@ -212,25 +212,25 @@ const BottomPlayer = memo(function BottomPlayer() {
           /* ── IDLE STATE ────────────────────────────────────────────── */
           <div className="flex items-center gap-3 px-4 w-full">
             {/* Idle icon */}
-            <div className="shrink-0 w-10 h-10 rounded-[8px] bg-white/[0.05] border border-white/[0.07] flex items-center justify-center">
+            <div className="shrink-0 w-10 h-10 rounded-lg bg-white/[0.05] border border-white/[0.07] flex items-center justify-center">
               <Music2 size={16} className="text-white/25" />
             </div>
             <div className="min-w-0">
-              <p className="text-[13px] text-white/30 truncate leading-tight">Nothing playing</p>
-              <p className="text-[11px] text-white/20 mt-0.5">Pick a title and press Play</p>
+              <p className="text-base text-ink-disabled truncate leading-tight">Nothing playing</p>
+              <p className="text-xs text-ink-disabled mt-0.5">Pick a title and press Play</p>
             </div>
             {/* Idle transport row — desktop only */}
             <div className="hidden md:flex items-center gap-2 ml-auto">
               <div className="flex items-center gap-1.5 opacity-20 pointer-events-none select-none">
                 <SkipBack size={16} className="text-white" />
-                <div className="w-8 h-8 rounded-full border border-white/20 flex items-center justify-center">
+                <div className="w-8 h-8 rounded-full border border-border-hover flex items-center justify-center">
                   <Play size={12} className="text-white ml-0.5" />
                 </div>
                 <SkipForward size={16} className="text-white" />
               </div>
               <div className="hidden xl:flex items-center gap-2 ml-6 opacity-20 pointer-events-none select-none">
                 <Volume2 size={15} className="text-white" />
-                <div className="w-20 h-1 rounded-full bg-white/20" />
+                <div className="w-20 h-1 rounded-full bg-overlay-medium" />
               </div>
             </div>
           </div>

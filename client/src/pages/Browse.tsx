@@ -264,20 +264,20 @@ export default function Browse() {
       <div className="px-4 md:px-6 pt-4 pb-2">
         <h1 className="text-2xl md:text-3xl font-bold text-white tracking-tight">{heading}</h1>
         {isLiveCollection ? (
-          <p className="text-sm text-white/70 mt-0.5">Live data from TMDB</p>
+          <p className="text-sm text-ink-secondary mt-0.5">Live data from TMDB</p>
         ) : total > 0 && !loading && (
-          <p className="text-sm text-white/70 mt-0.5">{total.toLocaleString()} titles</p>
+          <p className="text-sm text-ink-secondary mt-0.5">{total.toLocaleString()} titles</p>
         )}
       </div>
 
       {/* ── Filter bar ───────────────────────────────────────────────────── */}
-      {!isLiveCollection && <div className="sticky top-16 z-30 py-3 px-4 md:px-6 border-b border-white/[0.06]"
+      {!isLiveCollection && <div className="sticky top-16 z-30 py-3 px-4 md:px-6 border-b border-border"
         style={{ background: 'rgba(10,10,10,0.92)', backdropFilter: 'blur(12px)', WebkitBackdropFilter: 'blur(12px)' }}>
         
         {/* Type + Sort filters */}
         <div className="flex gap-2 overflow-x-auto scrollbar-hide pb-2">
           <div className="flex items-center gap-1.5 shrink-0 mr-1">
-            <SlidersHorizontal size={14} className="text-white/70" />
+            <SlidersHorizontal size={14} className="text-ink-secondary" />
           </div>
 
           {TYPE_FILTERS.map(f => (
@@ -289,7 +289,7 @@ export default function Browse() {
             />
           ))}
 
-          <div className="w-px bg-white/[0.08] mx-1 self-stretch shrink-0" />
+          <div className="w-px bg-overlay-light mx-1 self-stretch shrink-0" />
 
           {SORT_FILTERS.map(f => (
             <FilterPill
@@ -324,7 +324,7 @@ export default function Browse() {
       {/* ── Indian language quick-links (only for IN region on plain /browse) ── */}
       {!isLiveCollection && region.countryCode === 'IN' && (
         <div className="px-4 md:px-6 pt-5 pb-1">
-          <p className="text-[11px] uppercase tracking-[0.14em] text-white/25 mb-2.5">🇮🇳 Indian Languages</p>
+          <p className="text-xs uppercase tracking-[0.14em] text-white/25 mb-2.5">🇮🇳 Indian Languages</p>
           <div className="flex gap-2 overflow-x-auto scrollbar-hide">
             {(
               [
@@ -342,7 +342,7 @@ export default function Browse() {
                 type="button"
                 onClick={() => nav(path)}
                 className="
-                  shrink-0 px-3.5 py-1.5 rounded-[8px] text-[12px] font-medium
+                  shrink-0 px-3.5 py-1.5 rounded-lg text-sm font-medium
                   border border-orange-400/20 text-orange-200/70
                   hover:border-orange-400/50 hover:text-orange-100
                   transition-colors duration-150
@@ -370,7 +370,7 @@ export default function Browse() {
             <p className="text-xl font-semibold text-white">
               {liveError ? 'Live data unavailable' : 'No titles found'}
             </p>
-            <p className="text-sm text-white/70 max-w-sm">
+            <p className="text-sm text-ink-secondary max-w-sm">
               {liveError
                 ? 'TMDB could not load this collection. Try again in a moment.'
                 : 'Try adjusting the filters or browse a different category.'}
@@ -384,7 +384,7 @@ export default function Browse() {
                   nav('/browse');
                 }
               }}
-              className="mt-2 px-5 py-2 rounded-[8px] bg-white/[0.08] border border-white/[0.12] text-sm text-white/70 hover:text-white hover:bg-white/[0.12] transition-colors"
+              className="mt-2 px-5 py-2 rounded-lg bg-overlay-light border border-white/[0.12] text-sm text-ink-secondary hover:text-white hover:bg-overlay-medium transition-colors"
             >
               {liveError ? 'Retry' : 'Clear filters'}
             </button>
@@ -409,7 +409,7 @@ export default function Browse() {
             disabled={pageParam <= 1}
             className="
               flex items-center gap-1
-              h-9 px-3 rounded-[8px] text-sm text-white/70
+              h-9 px-3 rounded-lg text-sm text-ink-secondary
               border border-white/[0.08]
               hover:text-white hover:border-white/[0.16]
               disabled:opacity-30 disabled:pointer-events-none
@@ -422,18 +422,18 @@ export default function Browse() {
 
           {pageRange.map((p, i) =>
             p === 'ellipsis' ? (
-              <span key={`ellipsis-${i}`} className="text-white/30 px-1">…</span>
+              <span key={`ellipsis-${i}`} className="text-ink-disabled px-1">…</span>
             ) : (
               <button
                 key={p}
                 type="button"
                 onClick={() => setPage(p)}
                 className={`
-                  h-9 w-9 rounded-[8px] text-sm font-medium
+                  h-9 w-9 rounded-lg text-sm font-medium
                   border transition-colors
                   ${pageParam === p
                     ? 'bg-white text-black border-white'
-                    : 'text-white/70 border-white/[0.08] hover:text-white hover:border-white/[0.16]'
+                    : 'text-ink-secondary border-white/[0.08] hover:text-white hover:border-white/[0.16]'
                   }
                 `}
               >
@@ -448,7 +448,7 @@ export default function Browse() {
             disabled={pageParam >= totalPages}
             className="
               flex items-center gap-1
-              h-9 px-3 rounded-[8px] text-sm text-white/70
+              h-9 px-3 rounded-lg text-sm text-ink-secondary
               border border-white/[0.08]
               hover:text-white hover:border-white/[0.16]
               disabled:opacity-30 disabled:pointer-events-none

@@ -85,8 +85,8 @@ const AniCard = memo(function AniCard({ anime, rank, fluid = false, className = 
           if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); handleNav(false); }
         }}
         className="
-          block relative z-10 w-full rounded-[4px] overflow-hidden aspect-[2/3]
-          bg-[#161616] cursor-pointer
+          block relative z-10 w-full rounded-md overflow-hidden aspect-[2/3]
+          bg-surface cursor-pointer
           transition-transform duration-[400ms] ease-[cubic-bezier(0.4,0,0.2,1)]
           md:group-hover:scale-[1.08] md:group-hover:-translate-y-1
           active:scale-[0.97] md:active:scale-100 md:active:translate-y-0
@@ -96,7 +96,7 @@ const AniCard = memo(function AniCard({ anime, rank, fluid = false, className = 
       >
         {/* Glow layer */}
         <div
-          className="absolute inset-0 rounded-[8px] pointer-events-none z-[-1] opacity-0 md:group-hover:opacity-100 transition-opacity duration-[400ms]"
+          className="absolute inset-0 rounded-lg pointer-events-none z-[-1] opacity-0 md:group-hover:opacity-100 transition-opacity duration-[400ms]"
           style={{ boxShadow: '0 20px 60px rgba(0,0,0,0.6), 0 0 0 1px rgba(255,255,255,0.08)' }}
           aria-hidden
         />
@@ -105,7 +105,7 @@ const AniCard = memo(function AniCard({ anime, rank, fluid = false, className = 
         {hasImage ? (
           <>
             {!imgLoaded && (
-              <div className="absolute inset-0 bg-[#161616] overflow-hidden">
+              <div className="absolute inset-0 bg-surface overflow-hidden">
                 <div className="absolute inset-0" style={{
                   background: 'linear-gradient(90deg, transparent, rgba(255,255,255,0.05) 50%, transparent)',
                   animation: 'shimmer 1.8s ease-in-out infinite',
@@ -133,8 +133,8 @@ const AniCard = memo(function AniCard({ anime, rank, fluid = false, className = 
             className="absolute inset-0 flex flex-col items-center justify-center gap-2 px-3"
             style={{ background: 'radial-gradient(140% 120% at 30% 0%, #1e1e2e, #000000 75%)' }}
           >
-            <Film size={22} className="text-white/20" />
-            <span className="text-[9px] text-white/25 text-center leading-tight line-clamp-3">{title}</span>
+            <Film size={22} className="text-ink-disabled" />
+            <span className="text-3xs text-white/25 text-center leading-tight line-clamp-3">{title}</span>
           </div>
         )}
 
@@ -156,7 +156,7 @@ const AniCard = memo(function AniCard({ anime, rank, fluid = false, className = 
         )}
 
         {/* Type badge */}
-        <span className="absolute top-2 right-2 z-20 text-[8px] font-medium px-[5px] py-[2.5px] rounded-full  bg-black/70 text-white/45 uppercase tracking-wide leading-none">
+        <span className="absolute top-2 right-2 z-20 text-[8px] font-medium px-[5px] py-[2.5px] rounded-full  bg-black/70 text-ink-tertiary uppercase tracking-wide leading-none">
           {anime.format?.replace(/_/g, ' ') || 'Anime'}
         </span>
 
@@ -169,7 +169,7 @@ const AniCard = memo(function AniCard({ anime, rank, fluid = false, className = 
         {/* Resolving spinner */}
         {resolving && (
           <div className="absolute inset-0 z-40 flex items-center justify-center bg-black/40">
-            <div className="w-6 h-6 rounded-full border-2 border-white/20 border-t-white animate-spin" />
+            <div className="w-6 h-6 rounded-full border-2 border-border-hover border-t-white animate-spin" />
           </div>
         )}
 
@@ -191,10 +191,10 @@ const AniCard = memo(function AniCard({ anime, rank, fluid = false, className = 
 
       {/* Title + meta below card */}
       <div className="mt-2 px-0.5">
-        <h3 className="text-[13px] font-semibold text-white leading-tight truncate">
+        <h3 className="text-base font-semibold text-white leading-tight truncate">
           {title}
         </h3>
-        <div className="flex items-center gap-1.5 mt-0.5 text-[11px] text-white/70">
+        <div className="flex items-center gap-1.5 mt-0.5 text-xs text-ink-secondary">
           {rating && (
             <span className="flex items-center gap-0.5 text-[#f5c518]">
               <Star size={10} className="fill-[#f5c518] text-[#f5c518]" />

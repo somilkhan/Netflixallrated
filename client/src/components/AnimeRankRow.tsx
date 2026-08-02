@@ -91,7 +91,7 @@ const AnimeRankRow = memo(function AnimeRankRow({ title, badge, perPage = 10, on
       {/* Row header */}
       <div className="flex items-center justify-between px-4 md:px-6 mb-4">
         <div className="flex items-center gap-2.5 min-w-0">
-          <h2 className="text-[18px] md:text-[22px] font-bold text-white tracking-tight leading-none truncate">
+          <h2 className="text-2xl md:text-4xl font-bold text-white tracking-tight leading-none truncate">
             {title}
           </h2>
           {badge && (
@@ -106,8 +106,8 @@ const AnimeRankRow = memo(function AnimeRankRow({ title, badge, perPage = 10, on
           className="
             group shrink-0 flex items-center gap-1
             px-3 py-1.5 rounded-full
-            bg-white/[0.08] hover:bg-white/[0.14]
-            text-[13px] text-[#A3A3A3] hover:text-white
+            bg-overlay-light hover:bg-white/[0.14]
+            text-base text-[#A3A3A3] hover:text-white
             transition-all duration-200 touch-manipulation
           "
         >
@@ -151,7 +151,7 @@ const AnimeRankRow = memo(function AnimeRankRow({ title, badge, perPage = 10, on
           "
           style={{ background: 'linear-gradient(to right, rgba(10,10,10,0.95), transparent)' }}
         >
-          <div className="flex items-center justify-center w-9 h-9 rounded-full bg-white/[0.08] hover:bg-white/[0.16] border border-white/[0.10] text-white transition-all duration-200">
+          <div className="flex items-center justify-center w-9 h-9 rounded-full bg-overlay-light hover:bg-white/[0.16] border border-border-light text-white transition-all duration-200">
             <ChevronLeft size={16} />
           </div>
         </button>
@@ -171,11 +171,11 @@ const AnimeRankRow = memo(function AnimeRankRow({ title, badge, perPage = 10, on
             : loadState === 'error'
             ? (
                 <div className="flex items-center justify-center py-8 px-6 w-full">
-                  <p className="text-sm text-white/40">
+                  <p className="text-sm text-ink-tertiary">
                     Failed to load —{' '}
                     <button
                       onClick={() => { didFetch.current = true; fetchData(); }}
-                      className="text-white/60 hover:text-white underline underline-offset-2"
+                      className="text-ink-tertiary hover:text-white underline underline-offset-2"
                     >
                       retry
                     </button>
@@ -227,7 +227,7 @@ const AnimeRankRow = memo(function AnimeRankRow({ title, badge, perPage = 10, on
           "
           style={{ background: 'linear-gradient(to left, rgba(10,10,10,0.95), transparent)' }}
         >
-          <div className="flex items-center justify-center w-9 h-9 rounded-full bg-white/[0.08] hover:bg-white/[0.16] border border-white/[0.10] text-white transition-all duration-200">
+          <div className="flex items-center justify-center w-9 h-9 rounded-full bg-overlay-light hover:bg-white/[0.16] border border-border-light text-white transition-all duration-200">
             <ChevronRight size={16} />
           </div>
         </button>

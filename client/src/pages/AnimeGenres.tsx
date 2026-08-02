@@ -73,7 +73,7 @@ export default function AnimeGenres() {
       <div className="px-4 md:px-6 pt-4 pb-6">
         <button
           onClick={() => nav('/anime')}
-          className="flex items-center gap-1.5 text-[12px] text-white/40 hover:text-white transition-colors mb-5"
+          className="flex items-center gap-1.5 text-sm text-ink-tertiary hover:text-white transition-colors mb-5"
         >
           <ChevronLeft size={14} strokeWidth={2.2} />
           Back to Anime
@@ -81,7 +81,7 @@ export default function AnimeGenres() {
 
         <div className="flex items-center gap-2 mb-3">
           <span className="inline-block w-1.5 h-1.5 rounded-full bg-white/50 animate-pulse" />
-          <span className="text-[10px] uppercase tracking-[0.22em] text-white/35 font-medium">
+          <span className="text-2xs uppercase tracking-[0.22em] text-white/35 font-medium">
             Live from AniList
           </span>
         </div>
@@ -89,18 +89,18 @@ export default function AnimeGenres() {
         <h1 className="text-3xl md:text-5xl font-bold text-white tracking-tight leading-none mb-2">
           Browse All
         </h1>
-        <p className="text-sm text-white/40">
+        <p className="text-sm text-ink-tertiary">
           Genres open the genre page · Tags show a live preview row
         </p>
       </div>
 
       {/* Sticky search */}
       <div
-        className="sticky top-16 z-20 px-4 md:px-6 py-3 border-b border-white/[0.06]"
+        className="sticky top-16 z-20 px-4 md:px-6 py-3 border-b border-border"
         style={{ background: 'rgba(10,10,10,0.92)', backdropFilter: 'blur(12px)', WebkitBackdropFilter: 'blur(12px)' }}
       >
         <div className="relative max-w-md">
-          <Search size={13} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-white/30 pointer-events-none" />
+          <Search size={13} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-ink-disabled pointer-events-none" />
           <input
             type="text"
             value={filter}
@@ -108,9 +108,9 @@ export default function AnimeGenres() {
             placeholder="Filter genres & tags…"
             className="
               w-full rounded-full pl-9 pr-9 py-2
-              text-sm text-white placeholder:text-white/30
-              border border-white/[0.10] bg-white/[0.06]
-              outline-none focus:border-white/[0.22] focus:bg-white/[0.08]
+              text-sm text-white placeholder:text-ink-disabled
+              border border-border-light bg-overlay-light
+              outline-none focus:border-white/[0.22] focus:bg-overlay-light
               transition-colors
             "
           />
@@ -118,14 +118,14 @@ export default function AnimeGenres() {
             <button
               aria-label="Clear filter"
               onClick={() => setFilter('')}
-              className="absolute right-3.5 top-1/2 -translate-y-1/2 text-white/40 hover:text-white transition-colors"
+              className="absolute right-3.5 top-1/2 -translate-y-1/2 text-ink-tertiary hover:text-white transition-colors"
             >
               <X size={12} />
             </button>
           )}
         </div>
         {metaState === 'done' && (
-          <p className="text-[10px] text-white/30 mt-1.5">
+          <p className="text-2xs text-ink-disabled mt-1.5">
             {filteredGenres.length} genre{filteredGenres.length !== 1 ? 's' : ''}
             {' '}· {filteredTags.length} tag{filteredTags.length !== 1 ? 's' : ''}
             {filter && ' matching'}
@@ -135,20 +135,20 @@ export default function AnimeGenres() {
 
       {/* Tag preview row */}
       {tagSelection && (
-        <div className="border-b border-white/[0.06]" style={{ background: 'rgba(255,255,255,0.02)' }}>
+        <div className="border-b border-border" style={{ background: 'rgba(255,255,255,0.02)' }}>
           <div className="px-4 md:px-6 pt-5 pb-4">
             <div className="flex items-center gap-2 mb-1">
               <h3 className="text-xl font-bold text-white">{tagSelection.value}</h3>
-              <span className="text-[9px] uppercase tracking-widest px-1.5 py-0.5 rounded border border-white/[0.10] text-white/40">tag</span>
+              <span className="text-3xs uppercase tracking-widest px-1.5 py-0.5 rounded border border-border-light text-ink-tertiary">tag</span>
               <button
                 aria-label="Close tag preview"
                 onClick={() => { setTagSel(null); setPreview([]); setPreviewState('idle'); }}
-                className="ml-auto text-white/40 hover:text-white transition-colors"
+                className="ml-auto text-ink-tertiary hover:text-white transition-colors"
               >
                 <X size={14} />
               </button>
             </div>
-            <p className="text-[10px] text-white/30 mb-4 uppercase tracking-wider">live · anilist</p>
+            <p className="text-2xs text-ink-disabled mb-4 uppercase tracking-wider">live · anilist</p>
 
             {previewState === 'loading' && (
               <div className="flex gap-3 overflow-x-auto scrollbar-hide pb-3">
@@ -158,10 +158,10 @@ export default function AnimeGenres() {
               </div>
             )}
             {previewState === 'error' && (
-              <p className="text-sm text-white/40 py-4">Failed to load preview.</p>
+              <p className="text-sm text-ink-tertiary py-4">Failed to load preview.</p>
             )}
             {previewState === 'done' && preview.length === 0 && (
-              <p className="text-sm text-white/40 py-4">No anime found for this tag.</p>
+              <p className="text-sm text-ink-tertiary py-4">No anime found for this tag.</p>
             )}
             {previewState === 'done' && preview.length > 0 && (
               <div
@@ -178,17 +178,17 @@ export default function AnimeGenres() {
       {/* Loading skeleton */}
       {metaState === 'loading' && (
         <div className="px-4 md:px-6 pt-8">
-          <div className="text-[11px] uppercase tracking-widest text-white/30 mb-4 font-medium">Genres</div>
+          <div className="text-xs uppercase tracking-widest text-ink-disabled mb-4 font-medium">Genres</div>
           <div className="flex flex-wrap gap-2 mb-10">
             {Array.from({ length: 18 }).map((_, i) => (
-              <div key={i} className="h-8 rounded-[4px] bg-white/[0.06] animate-pulse"
+              <div key={i} className="h-8 rounded-md bg-overlay-light animate-pulse"
                 style={{ width: `${60 + (i * 17) % 60}px` }} />
             ))}
           </div>
-          <div className="text-[11px] uppercase tracking-widest text-white/30 mb-4 font-medium">Tags</div>
+          <div className="text-xs uppercase tracking-widest text-ink-disabled mb-4 font-medium">Tags</div>
           <div className="flex flex-wrap gap-1.5">
             {Array.from({ length: 48 }).map((_, i) => (
-              <div key={i} className="h-6 rounded-[4px] bg-white/[0.04] animate-pulse"
+              <div key={i} className="h-6 rounded-md bg-overlay-light animate-pulse"
                 style={{ width: `${48 + (i * 13) % 50}px` }} />
             ))}
           </div>
@@ -197,9 +197,9 @@ export default function AnimeGenres() {
 
       {metaState === 'error' && (
         <div className="px-4 pt-20 text-center">
-          <p className="text-sm text-white/40">
+          <p className="text-sm text-ink-tertiary">
             Failed to load genres &amp; tags.{' '}
-            <button onClick={() => window.location.reload()} className="text-white/60 hover:text-white underline underline-offset-2">
+            <button onClick={() => window.location.reload()} className="text-ink-tertiary hover:text-white underline underline-offset-2">
               Retry
             </button>
           </p>
@@ -210,13 +210,13 @@ export default function AnimeGenres() {
       {metaState === 'done' && (
         <div className="px-4 md:px-6 pt-8">
           <div className="flex items-center gap-2 mb-4">
-            <span className="text-[11px] uppercase tracking-widest text-white/40 font-medium">Genres</span>
-            <span className="text-[10px] text-white/25">{filteredGenres.length}</span>
-            <span className="text-[9px] text-white/20 ml-auto">click to open genre page</span>
+            <span className="text-xs uppercase tracking-widest text-ink-tertiary font-medium">Genres</span>
+            <span className="text-2xs text-white/25">{filteredGenres.length}</span>
+            <span className="text-3xs text-ink-disabled ml-auto">click to open genre page</span>
           </div>
 
           {filteredGenres.length === 0 ? (
-            <p className="text-sm text-white/40 py-2">No genres match "{filter}".</p>
+            <p className="text-sm text-ink-tertiary py-2">No genres match "{filter}".</p>
           ) : (
             <div className="flex flex-wrap gap-2">
               {filteredGenres.map(genre => (
@@ -225,8 +225,8 @@ export default function AnimeGenres() {
                   onClick={() => handleGenreClick(genre)}
                   className="
                     text-xs px-4 py-1.5 rounded-full border transition-all duration-200
-                    border-white/[0.10] bg-white/[0.04] text-white/50
-                    hover:text-white hover:border-white/[0.25] hover:bg-white/[0.08]
+                    border-border-light bg-overlay-light text-ink-tertiary
+                    hover:text-white hover:border-white/[0.25] hover:bg-overlay-light
                   "
                 >
                   {genre}
@@ -241,19 +241,19 @@ export default function AnimeGenres() {
       {metaState === 'done' && (
         <div className="px-4 md:px-6 pt-10 pb-8">
           <div className="flex items-center gap-2 mb-6">
-            <span className="text-[11px] uppercase tracking-widest text-white/40 font-medium">Media Tags</span>
-            <span className="text-[10px] text-white/25">{filteredTags.length}</span>
-            <span className="text-[9px] text-white/20 ml-auto">click to preview</span>
+            <span className="text-xs uppercase tracking-widest text-ink-tertiary font-medium">Media Tags</span>
+            <span className="text-2xs text-white/25">{filteredTags.length}</span>
+            <span className="text-3xs text-ink-disabled ml-auto">click to preview</span>
           </div>
 
           {filteredTags.length === 0 ? (
-            <p className="text-sm text-white/40 py-2">No tags match "{filter}".</p>
+            <p className="text-sm text-ink-tertiary py-2">No tags match "{filter}".</p>
           ) : (
             <div className="space-y-8">
               {tagCategories.map(cat => (
                 <div key={cat}>
                   {!filter && (
-                    <div className="text-[10px] uppercase tracking-widest text-white/25 mb-2.5 font-medium">{cat}</div>
+                    <div className="text-2xs uppercase tracking-widest text-white/25 mb-2.5 font-medium">{cat}</div>
                   )}
                   <div className="flex flex-wrap gap-1.5">
                     {tagsByCategory[cat].map(tag => {
@@ -265,8 +265,8 @@ export default function AnimeGenres() {
                           className={`
                             text-[10.5px] px-3 py-1 rounded-full border transition-all duration-200
                             ${active
-                              ? 'border-white/30 bg-white/[0.12] text-white'
-                              : 'border-white/[0.07] bg-white/[0.03] text-white/40 hover:text-white/70 hover:border-white/[0.16] hover:bg-white/[0.06]'
+                              ? 'border-border-hover bg-overlay-medium text-white'
+                              : 'border-white/[0.07] bg-white/[0.03] text-ink-tertiary hover:text-ink-secondary hover:border-white/[0.16] hover:bg-overlay-light'
                             }
                           `}
                         >

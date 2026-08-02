@@ -49,7 +49,7 @@ export default function RelatedRow({ title, count, children }: RelatedRowProps) 
             onClick={() => scroll('left')}
             disabled={!canLeft}
             aria-label="Scroll left"
-            className="w-7 h-7 flex items-center justify-center rounded-full border border-white/[0.10] bg-white/[0.04] text-white/70 hover:text-white hover:border-white/[0.22] hover:bg-white/[0.08] transition-colors duration-150 disabled:opacity-0 disabled:pointer-events-none"
+            className="w-7 h-7 flex items-center justify-center rounded-full border border-border-light bg-overlay-light text-ink-secondary hover:text-white hover:border-white/[0.22] hover:bg-overlay-light transition-colors duration-150 disabled:opacity-0 disabled:pointer-events-none"
           >
             <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
               <polyline points="15 18 9 12 15 6"/>
@@ -60,7 +60,7 @@ export default function RelatedRow({ title, count, children }: RelatedRowProps) 
             onClick={() => scroll('right')}
             disabled={!canRight}
             aria-label="Scroll right"
-            className="w-7 h-7 flex items-center justify-center rounded-full border border-white/[0.10] bg-white/[0.04] text-white/70 hover:text-white hover:border-white/[0.22] hover:bg-white/[0.08] transition-colors duration-150 disabled:opacity-0 disabled:pointer-events-none"
+            className="w-7 h-7 flex items-center justify-center rounded-full border border-border-light bg-overlay-light text-ink-secondary hover:text-white hover:border-white/[0.22] hover:bg-overlay-light transition-colors duration-150 disabled:opacity-0 disabled:pointer-events-none"
           >
             <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
               <polyline points="9 18 15 12 9 6"/>

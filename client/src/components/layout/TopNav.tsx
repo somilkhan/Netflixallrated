@@ -146,7 +146,7 @@ const TopNav = memo(function TopNav({ onOpenSearch }: TopNavProps) {
           aria-label="Allrated home"
         >
           <span className="text-white font-bold text-xl tracking-[-0.03em] leading-none select-none">
-            all<span className="text-white/45">rated</span>
+            all<span className="text-ink-tertiary">rated</span>
           </span>
         </button>
 
@@ -161,7 +161,7 @@ const TopNav = memo(function TopNav({ onOpenSearch }: TopNavProps) {
                 onClick={() => nav(link.path)}
                 aria-current={active ? 'page' : undefined}
                 className={`
-                  h-9 px-3.5 rounded-[8px] text-[13px] font-medium
+                  h-9 px-3.5 rounded-lg text-base font-medium
                   transition-all duration-200 touch-manipulation
                   ${active
                     ? 'text-white bg-white/[0.09]'
@@ -188,11 +188,11 @@ const TopNav = memo(function TopNav({ onOpenSearch }: TopNavProps) {
                 <div className="
                   flex items-center gap-2
                   h-9 px-3 rounded-full
-                  bg-white/[0.08] border border-white/[0.14]
+                  bg-overlay-light border border-white/[0.14]
                   w-[200px] md:w-[280px]
                   transition-all duration-200
                 ">
-                  <Search size={13} className="shrink-0 text-white/70" />
+                  <Search size={13} className="shrink-0 text-ink-secondary" />
                   <input
                     ref={searchInputRef}
                     type="text"
@@ -201,7 +201,7 @@ const TopNav = memo(function TopNav({ onOpenSearch }: TopNavProps) {
                     placeholder="Search titles…"
                     className="
                       flex-1 min-w-0 bg-transparent border-none outline-none
-                      text-[13px] text-white placeholder:text-white/30
+                      text-base text-white placeholder:text-ink-disabled
                     "
                     aria-label="Search"
                     autoFocus
@@ -209,7 +209,7 @@ const TopNav = memo(function TopNav({ onOpenSearch }: TopNavProps) {
                   <button
                     type="button"
                     onClick={() => { setSearchOpen(false); setSearchQuery(''); }}
-                    className="shrink-0 text-white/70 hover:text-white/80 transition-colors touch-manipulation"
+                    className="shrink-0 text-ink-secondary hover:text-ink-secondary transition-colors touch-manipulation"
                     aria-label="Close search"
                   >
                     <X size={12} />
@@ -223,7 +223,7 @@ const TopNav = memo(function TopNav({ onOpenSearch }: TopNavProps) {
                 aria-label="Search"
                 className="
                   flex items-center justify-center w-9 h-9 rounded-full
-                  text-[#A3A3A3] hover:text-white hover:bg-white/[0.06]
+                  text-[#A3A3A3] hover:text-white hover:bg-overlay-light
                   transition-all duration-200 touch-manipulation
                 "
               >
@@ -245,8 +245,8 @@ const TopNav = memo(function TopNav({ onOpenSearch }: TopNavProps) {
                     className="
                       flex items-center gap-1.5
                       h-9 pl-1 pr-2.5 rounded-full
-                      bg-white/[0.06] border border-white/[0.09]
-                      hover:bg-white/[0.10] hover:border-white/[0.15]
+                      bg-overlay-light border border-white/[0.09]
+                      hover:bg-overlay-medium hover:border-white/[0.15]
                       transition-all duration-200
                     "
                     title={user.displayName || user.email || ''}
@@ -257,12 +257,12 @@ const TopNav = memo(function TopNav({ onOpenSearch }: TopNavProps) {
                       src={user.avatarUrl}
                       size={26}
                     />
-                    <span className="text-[12px] font-medium text-white/80 max-w-[80px] truncate">
+                    <span className="text-sm font-medium text-white/80 max-w-[80px] truncate">
                       {user.displayName?.split(' ')[0] || 'Account'}
                     </span>
                     <ChevronDown
                       size={12}
-                      className={`text-white/70 transition-transform duration-200 ${profileOpen ? 'rotate-180' : ''}`}
+                      className={`text-ink-secondary transition-transform duration-200 ${profileOpen ? 'rotate-180' : ''}`}
                     />
                   </button>
 
@@ -270,19 +270,19 @@ const TopNav = memo(function TopNav({ onOpenSearch }: TopNavProps) {
                     <div
                       className="
                         absolute right-0 top-[calc(100%+8px)] w-56 z-50
-                        rounded-[12px] border border-white/[0.08] overflow-hidden
+                        rounded-xl border border-white/[0.08] overflow-hidden
                         animate-menu
                       "
                       style={{ background: '#000000', boxShadow: '0 8px 40px rgba(0,0,0,0.7)' }}
                     >
                       {/* User info */}
-                      <div className="px-4 py-3.5 border-b border-white/[0.06]">
-                        <p className="text-[13px] font-semibold text-white truncate">
+                      <div className="px-4 py-3.5 border-b border-border">
+                        <p className="text-base font-semibold text-white truncate">
                           {user.displayName || 'User'}
                         </p>
-                        <p className="text-[11px] text-[#737373] truncate mt-0.5">{user.email}</p>
+                        <p className="text-xs text-[#737373] truncate mt-0.5">{user.email}</p>
                         {user.role === 'ADMIN' && (
-                          <span className="mt-1.5 inline-flex items-center gap-1 text-[9px] text-white/70 bg-white/[0.06] border border-white/[0.10] rounded-full px-2 py-0.5 uppercase tracking-wide">
+                          <span className="mt-1.5 inline-flex items-center gap-1 text-3xs text-ink-secondary bg-overlay-light border border-border-light rounded-full px-2 py-0.5 uppercase tracking-wide">
                             <Shield size={7} /> Admin
                           </span>
                         )}
@@ -293,41 +293,41 @@ const TopNav = memo(function TopNav({ onOpenSearch }: TopNavProps) {
                         <button
                           type="button"
                           onClick={() => { setProfileOpen(false); nav('/profile'); }}
-                          className="w-full flex items-center gap-2.5 px-4 py-2.5 text-[13px] text-white/75 hover:bg-white/[0.04] hover:text-white transition-colors text-left"
+                          className="w-full flex items-center gap-2.5 px-4 py-2.5 text-base text-white/75 hover:bg-overlay-light hover:text-white transition-colors text-left"
                         >
-                          <User size={13} className="text-white/70 shrink-0" />
+                          <User size={13} className="text-ink-secondary shrink-0" />
                           Profile
                         </button>
                         {user.role === 'ADMIN' && (
                           <button
                             type="button"
                             onClick={() => { setProfileOpen(false); nav('/admin'); }}
-                            className="w-full flex items-center gap-2.5 px-4 py-2.5 text-[13px] text-white/75 hover:bg-white/[0.04] hover:text-white transition-colors text-left"
+                            className="w-full flex items-center gap-2.5 px-4 py-2.5 text-base text-white/75 hover:bg-overlay-light hover:text-white transition-colors text-left"
                           >
-                            <Shield size={13} className="text-white/70 shrink-0" />
+                            <Shield size={13} className="text-ink-secondary shrink-0" />
                             Admin Panel
                           </button>
                         )}
                         <button
                           type="button"
                           onClick={() => { setProfileOpen(false); nav('/history'); }}
-                          className="w-full flex items-center gap-2.5 px-4 py-2.5 text-[13px] text-white/75 hover:bg-white/[0.04] hover:text-white transition-colors text-left"
+                          className="w-full flex items-center gap-2.5 px-4 py-2.5 text-base text-white/75 hover:bg-overlay-light hover:text-white transition-colors text-left"
                         >
-                          <Clock size={13} className="text-white/70 shrink-0" />
+                          <Clock size={13} className="text-ink-secondary shrink-0" />
                           Watch History
                         </button>
                         <button
                           type="button"
             onClick={() => { setProfileOpen(false); nav('/my-list'); }}
-                          className="w-full flex items-center gap-2.5 px-4 py-2.5 text-[13px] text-white/75 hover:bg-white/[0.04] hover:text-white transition-colors text-left"
+                          className="w-full flex items-center gap-2.5 px-4 py-2.5 text-base text-white/75 hover:bg-overlay-light hover:text-white transition-colors text-left"
                         >
-                          <Bookmark size={13} className="text-white/70 shrink-0" />
+                          <Bookmark size={13} className="text-ink-secondary shrink-0" />
                           My List
                         </button>
                         <button
                           type="button"
                           onClick={handleSignOut}
-                          className="w-full flex items-center gap-2.5 px-4 py-2.5 text-[13px] text-[#737373] hover:bg-white/[0.04] hover:text-white transition-colors text-left border-t border-white/[0.06] mt-1"
+                          className="w-full flex items-center gap-2.5 px-4 py-2.5 text-base text-[#737373] hover:bg-overlay-light hover:text-white transition-colors text-left border-t border-border mt-1"
                         >
                           <LogOut size={13} className="shrink-0" />
                           Sign out
@@ -343,7 +343,7 @@ const TopNav = memo(function TopNav({ onOpenSearch }: TopNavProps) {
                   className="
                     flex items-center gap-1.5
                     h-9 px-4 rounded-full
-                    text-[13px] font-medium text-white/75
+                    text-base font-medium text-white/75
                     border border-white/[0.12] hover:border-white/[0.24] hover:text-white
                     transition-all duration-200
                   "
@@ -363,7 +363,7 @@ const TopNav = memo(function TopNav({ onOpenSearch }: TopNavProps) {
             className="
               md:hidden flex items-center justify-center
               w-9 h-9 rounded-full
-              text-[#A3A3A3] hover:text-white hover:bg-white/[0.06]
+              text-[#A3A3A3] hover:text-white hover:bg-overlay-light
               transition-colors duration-200 touch-manipulation
             "
           >
@@ -400,12 +400,12 @@ const TopNav = memo(function TopNav({ onOpenSearch }: TopNavProps) {
                   aria-current={active ? 'page' : undefined}
                   className={`
                     flex items-center gap-4
-                    min-h-[56px] px-4 rounded-[12px]
+                    min-h-[56px] px-4 rounded-xl
                     text-[17px] font-medium
                     transition-colors duration-200 touch-manipulation
                     ${active
                       ? 'text-white bg-white/[0.07]'
-                      : 'text-[#A3A3A3] hover:text-white hover:bg-white/[0.04]'
+                      : 'text-[#A3A3A3] hover:text-white hover:bg-overlay-light'
                     }
                   `}
                 >
@@ -417,14 +417,14 @@ const TopNav = memo(function TopNav({ onOpenSearch }: TopNavProps) {
           </nav>
 
           {/* Profile section at bottom */}
-          <div className="px-4 pb-8 pt-3 border-t border-white/[0.06]">
+          <div className="px-4 pb-8 pt-3 border-t border-border">
             {!isLoading && (
               user ? (
                 <div className="space-y-1">
                   <button
                     type="button"
                     onClick={() => nav('/profile')}
-                    className="w-full flex items-center gap-3 px-4 py-3 rounded-[12px] hover:bg-white/[0.04] transition-colors touch-manipulation"
+                    className="w-full flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-overlay-light transition-colors touch-manipulation"
                   >
                     <Avatar
                       name={user.displayName}
@@ -443,7 +443,7 @@ const TopNav = memo(function TopNav({ onOpenSearch }: TopNavProps) {
                   <button
                     type="button"
                     onClick={handleSignOut}
-                    className="w-full flex items-center gap-3 h-12 px-4 rounded-[12px] text-sm text-[#737373] hover:text-white hover:bg-white/[0.04] transition-colors touch-manipulation"
+                    className="w-full flex items-center gap-3 h-12 px-4 rounded-xl text-sm text-[#737373] hover:text-white hover:bg-overlay-light transition-colors touch-manipulation"
                   >
                     <LogOut size={16} className="shrink-0" />
                     Sign out
@@ -453,7 +453,7 @@ const TopNav = memo(function TopNav({ onOpenSearch }: TopNavProps) {
                 <button
                   type="button"
                   onClick={() => nav('/login')}
-                  className="w-full flex items-center justify-center gap-2 h-12 rounded-[12px] text-sm font-medium text-white bg-white/[0.08] border border-white/[0.12] hover:bg-white/[0.12] transition-colors touch-manipulation"
+                  className="w-full flex items-center justify-center gap-2 h-12 rounded-xl text-sm font-medium text-white bg-overlay-light border border-white/[0.12] hover:bg-overlay-medium transition-colors touch-manipulation"
                 >
                   <User size={16} />
                   Sign in

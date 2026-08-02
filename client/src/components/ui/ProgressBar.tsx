@@ -77,20 +77,20 @@ export const ProgressBar = memo(function ProgressBar({
     >
       {/* Track */}
       <div className={`
-        relative w-full rounded-full overflow-hidden bg-white/15
+        relative w-full rounded-none overflow-hidden bg-white/15
         transition-all duration-150
         ${thin ? 'h-[3px] group-hover:h-[5px]' : 'h-[4px] group-hover:h-[7px]'}
       `}>
         {/* Buffered */}
         {buffered > 0 && (
           <div
-            className="absolute inset-y-0 left-0 bg-white/25 rounded-full"
+            className="absolute inset-y-0 left-0 bg-white/25 rounded-none"
             style={{ width: `${buffered}%` }}
           />
         )}
         {/* Fill */}
         <div
-          className="absolute inset-y-0 left-0 bg-white rounded-full transition-[width] duration-100"
+          className="absolute inset-y-0 left-0 bg-white rounded-none transition-[width] duration-100"
           style={{ width: `${value}%` }}
         />
       </div>
@@ -98,7 +98,7 @@ export const ProgressBar = memo(function ProgressBar({
       <div
         className="
           absolute top-1/2 -translate-y-1/2 -translate-x-1/2
-          w-3 h-3 rounded-full bg-white
+          w-3 h-3 rounded-none bg-white
           opacity-0 group-hover:opacity-100
           transition-all duration-150
           shadow-[0_0_6px_rgba(0,0,0,0.5)]

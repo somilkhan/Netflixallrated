@@ -71,7 +71,7 @@ function HistoryRow({
     <div className="flex items-center gap-4 px-4 py-3 border-b border-white/[0.05] hover:bg-white/[0.03] transition-colors group">
       {/* Poster */}
       <div
-        className="relative shrink-0 w-12 h-16 rounded-[4px] overflow-hidden bg-white/5 cursor-pointer"
+        className="relative shrink-0 w-12 h-16 rounded-md overflow-hidden bg-white/5 cursor-pointer"
         role="button"
         tabIndex={0}
         aria-label={`Play ${item.title?.name ?? 'Untitled'}`}
@@ -88,13 +88,13 @@ function HistoryRow({
             sizes="96px"
           />
         ) : (
-          <div className="w-full h-full flex items-center justify-center text-white/20">
+          <div className="w-full h-full flex items-center justify-center text-ink-disabled">
             <Play size={14} />
           </div>
         )}
         {/* Progress bar on poster */}
         {pct !== null && !item.completed && (
-          <div className="absolute bottom-0 left-0 right-0 h-[3px] bg-white/10">
+          <div className="absolute bottom-0 left-0 right-0 h-[3px] bg-overlay-medium">
             <div
               className="h-full bg-white/65"
               style={{ width: `${pct}%` }}
@@ -103,7 +103,7 @@ function HistoryRow({
         )}
         {item.completed && (
           <div className="absolute inset-0 bg-black/50 flex items-center justify-center">
-            <span className="text-[9px] font-mono text-white/70 bg-black/60 px-1 rounded">Done</span>
+            <span className="text-3xs font-mono text-ink-secondary bg-black/60 px-1 rounded">Done</span>
           </div>
         )}
       </div>
@@ -118,26 +118,26 @@ function HistoryRow({
         onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); navigate(`/title/${item.title.id}?play=1`); } }}
       >
         <p className="text-sm font-semibold text-white leading-tight truncate">{item.title?.name ?? 'Untitled'}</p>
-        <p className="text-[10px] text-white/70 mt-0.5">
+        <p className="text-2xs text-ink-secondary mt-0.5">
           {typeLabel} · {item.title.year}
         </p>
         {subLabel && (
-          <p className="text-[10px] text-white/70 mt-0.5 truncate">{subLabel}</p>
+          <p className="text-2xs text-ink-secondary mt-0.5 truncate">{subLabel}</p>
         )}
         <div className="flex items-center gap-2 mt-1">
           {pct !== null && !item.completed && (
-            <span className="text-[9px] text-white/70">{pct}%</span>
+            <span className="text-3xs text-ink-secondary">{pct}%</span>
           )}
           {item.positionSeconds > 0 && !item.completed && (
-            <span className="text-[9px] text-white/70">
+            <span className="text-3xs text-ink-secondary">
               {formatTime(item.positionSeconds)} watched
             </span>
           )}
-          <span className="text-[9px] text-white/70 ml-auto">{timeAgo(item.updatedAt)}</span>
+          <span className="text-3xs text-ink-secondary ml-auto">{timeAgo(item.updatedAt)}</span>
         </div>
         {/* Progress bar */}
         {pct !== null && !item.completed && (
-          <div className="mt-1.5 h-[2px] bg-white/10 rounded-full overflow-hidden">
+          <div className="mt-1.5 h-[2px] bg-overlay-medium rounded-full overflow-hidden">
             <div className="h-full bg-white/65 rounded-full" style={{ width: `${pct}%` }} />
           </div>
         )}
@@ -147,7 +147,7 @@ function HistoryRow({
       <div className="flex items-center gap-1.5 shrink-0 opacity-0 group-hover:opacity-100 transition-opacity">
         <button
           onClick={() => navigate(`/title/${item.title.id}?play=1`)}
-          className="flex items-center gap-1 text-[10px] font-mono px-2.5 py-1.5 rounded-[8px] bg-white/[0.06] border border-white/[0.12] text-white/70 hover:bg-white/[0.10] hover:text-white transition-colors duration-150"
+          className="flex items-center gap-1 text-2xs font-mono px-2.5 py-1.5 rounded-lg bg-overlay-light border border-white/[0.12] text-ink-secondary hover:bg-overlay-medium hover:text-white transition-colors duration-150"
           title="Resume"
         >
           <Play size={10} />
@@ -155,7 +155,7 @@ function HistoryRow({
         </button>
         <button
           onClick={() => onRemove(item.titleId)}
-          className="p-1.5 rounded-[8px] border border-white/10 text-white/70 hover:text-white hover:border-white/20 transition-colors"
+          className="p-1.5 rounded-lg border border-border-light text-ink-secondary hover:text-white hover:border-border-hover transition-colors"
           title="Remove from history"
         >
           <X size={12} />
@@ -210,7 +210,7 @@ export default function WatchHistory() {
   if (!user) {
     return (
       <div className="min-h-[60vh] flex flex-col items-center justify-center gap-4 px-6 text-center">
-        <Clock size={36} className="text-white/30" />
+        <Clock size={36} className="text-ink-disabled" />
         <p className="text-xl font-semibold text-white">Sign in to see your watch history</p>
         <button
           onClick={() => navigate('/login')}
@@ -227,10 +227,10 @@ export default function WatchHistory() {
       {/* Header */}
       <div className="flex items-center justify-between px-4 mb-4">
         <div className="flex items-center gap-2">
-          <Clock size={18} className="text-white/70" />
+          <Clock size={18} className="text-ink-secondary" />
           <h1 className="text-xl font-semibold text-white tracking-tight">Watch History</h1>
           {items.length > 0 && (
-            <span className="text-[10px] text-white/70 bg-white/5 border border-white/10 rounded-full px-2 py-0.5">
+            <span className="text-2xs text-ink-secondary bg-white/5 border border-border-light rounded-full px-2 py-0.5">
               {items.length}
             </span>
           )}
@@ -239,7 +239,7 @@ export default function WatchHistory() {
           <button
             onClick={handleClearAll}
             disabled={clearing}
-            className="flex items-center gap-1.5 text-[10px] text-white/70 border border-white/10 rounded-[8px] px-2.5 py-1.5 hover:text-ink hover:border-white/20 transition-colors disabled:opacity-40"
+            className="flex items-center gap-1.5 text-2xs text-ink-secondary border border-border-light rounded-lg px-2.5 py-1.5 hover:text-ink hover:border-border-hover transition-colors disabled:opacity-40"
           >
             <Trash2 size={11} />
             {clearing ? 'Clearing…' : 'Clear all'}
@@ -258,9 +258,9 @@ export default function WatchHistory() {
             <button
               key={tab.key}
               onClick={() => setFilter(tab.key)}
-              className={`text-[10px] font-mono px-3 py-1.5 rounded-full border transition-colors ${
+              className={`text-2xs font-mono px-3 py-1.5 rounded-full border transition-colors ${
                 filter === tab.key
-                  ? 'border-white/[0.22] bg-white/[0.08] text-white'
+                  ? 'border-white/[0.22] bg-overlay-light text-white'
                   : 'border-white/[0.08] text-white/35 hover:text-white/75 hover:border-white/[0.16]'
               }`}
             >
@@ -275,18 +275,18 @@ export default function WatchHistory() {
         <InlineLoader label="Loading history…" minHeight={300} />
       ) : items.length === 0 ? (
         <div className="flex flex-col items-center justify-center gap-3 py-24 text-center px-6">
-          <Clock size={32} className="text-white/20" />
-          <p className="text-lg text-white/70">Nothing watched yet</p>
-          <p className="text-xs text-white/30">Titles you watch will appear here</p>
+          <Clock size={32} className="text-ink-disabled" />
+          <p className="text-lg text-ink-secondary">Nothing watched yet</p>
+          <p className="text-xs text-ink-disabled">Titles you watch will appear here</p>
           <button
             onClick={() => navigate('/')}
-            className="mt-3 px-5 py-2 rounded-full bg-white/[0.06] border border-white/[0.12] text-white/70 text-sm font-mono hover:bg-white/[0.10] hover:text-white transition-colors duration-150"
+            className="mt-3 px-5 py-2 rounded-full bg-overlay-light border border-white/[0.12] text-ink-secondary text-sm font-mono hover:bg-overlay-medium hover:text-white transition-colors duration-150"
           >
             Browse titles
           </button>
         </div>
       ) : filtered.length === 0 ? (
-        <div className="text-center py-16 text-white/70 text-sm font-mono">
+        <div className="text-center py-16 text-ink-secondary text-sm font-mono">
           No {filter === 'in-progress' ? 'in-progress' : 'completed'} titles
         </div>
       ) : (

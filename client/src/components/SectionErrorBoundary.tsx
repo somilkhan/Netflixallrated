@@ -31,17 +31,17 @@ export default class SectionErrorBoundary extends Component<Props, State> {
     if (this.state.crashed) {
       return (
         <div className="py-8 px-4 md:px-6">
-          <div className="flex items-center gap-3 rounded-[8px] bg-white/[0.04] border border-white/[0.06] px-4 py-3">
+          <div className="flex items-center gap-3 rounded-lg bg-overlay-light border border-border px-4 py-3">
             <TriangleAlert size={16} className="text-amber-400/70 shrink-0" />
             <div className="flex-1 min-w-0">
-              <p className="text-sm text-white/70">
+              <p className="text-sm text-ink-secondary">
                 {this.props.label ? `${this.props.label} couldn't load.` : "This section couldn't load."}
               </p>
             </div>
             <button
               type="button"
               onClick={this.handleReset}
-              className="shrink-0 inline-flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-[8px] bg-white/10 text-white hover:bg-white/20 transition-colors"
+              className="shrink-0 inline-flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-lg bg-overlay-medium text-white hover:bg-overlay-medium transition-colors"
             >
               <RefreshCw size={11} /> Retry
             </button>

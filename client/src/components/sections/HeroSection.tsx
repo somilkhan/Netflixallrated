@@ -185,7 +185,7 @@ const HeroSection = memo(function HeroSection({ titles, onAction, regionLabel }:
           {/* Region label */}
           {regionLabel && (
             <div className="mb-3 animate-fade-up" style={{ animationDelay: '0s' }}>
-              <span className="inline-flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-widest text-white/70 border border-white/[0.12] bg-[#000000]/[0.35] backdrop-blur-sm px-3 py-1 rounded-full">
+              <span className="inline-flex items-center gap-1.5 text-xs font-semibold uppercase tracking-widest text-ink-secondary border border-white/[0.12] bg-page/[0.35] backdrop-blur-sm px-3 py-1 rounded-full">
                 <span className="w-1.5 h-1.5 rounded-full bg-white/50 shrink-0" />
                 {regionLabel}
               </span>
@@ -202,8 +202,8 @@ const HeroSection = memo(function HeroSection({ titles, onAction, regionLabel }:
                 <span
                   key={g}
                   className="
-                    text-[11px] font-medium px-3 py-1.5 rounded-full
-                    border border-white/[0.12] bg-[#000000]/[0.45]
+                    text-xs font-medium px-3 py-1.5 rounded-full
+                    border border-white/[0.12] bg-page/[0.45]
                     text-white backdrop-blur-[8px] leading-none
                   "
                 >
@@ -237,15 +237,15 @@ const HeroSection = memo(function HeroSection({ titles, onAction, regionLabel }:
                   <svg width="9" height="9" viewBox="0 0 24 24" aria-hidden>
                     <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" fill="#f5c518" />
                   </svg>
-                  <span className="text-[12px] font-semibold text-white/90">
+                  <span className="text-sm font-semibold text-white/90">
                     {typeof rating === 'number' ? rating.toFixed(1) : rating}
                   </span>
                 </span>
               )}
               {metaParts.map((part, i) => (
                 <span key={part + i} className="flex items-center gap-2">
-                  <span className="text-[13px] text-[#A3A3A3]">{part}</span>
-                  {i < metaParts.length - 1 && <span className="text-[10px] text-white/20">·</span>}
+                  <span className="text-base text-[#A3A3A3]">{part}</span>
+                  {i < metaParts.length - 1 && <span className="text-2xs text-ink-disabled">·</span>}
                 </span>
               ))}
             </div>
@@ -254,7 +254,7 @@ const HeroSection = memo(function HeroSection({ titles, onAction, regionLabel }:
           {/* Synopsis */}
           {current.synopsis && (
             <p
-              className="text-[14px] md:text-[15px] leading-relaxed mb-6 max-w-[500px] animate-fade-up"
+              className="text-md md:text-lg leading-relaxed mb-6 max-w-[500px] animate-fade-up"
               style={{
                 animationDelay: '0.12s',
                 display: '-webkit-box',
@@ -280,9 +280,9 @@ const HeroSection = memo(function HeroSection({ titles, onAction, regionLabel }:
               aria-label={`Play ${current.name}`}
               className="
                 flex items-center justify-center gap-2.5
-                w-full sm:w-auto px-8 rounded-[4px]
+                w-full sm:w-auto px-8 rounded-md
                 bg-white text-black
-                text-[15px] font-semibold
+                text-lg font-semibold
                 hover:bg-white/90 active:scale-[0.97]
                 transition-all duration-200 touch-manipulation
                 shadow-[0_4px_24px_rgba(0,0,0,0.5)]
@@ -299,10 +299,10 @@ const HeroSection = memo(function HeroSection({ titles, onAction, regionLabel }:
               aria-label={`More info about ${current.name}`}
               className="
                 flex items-center justify-center gap-2.5
-                w-full sm:w-auto px-8 rounded-[4px]
-                bg-[#4d4d4d] text-white
-                text-[15px] font-medium
-                hover:bg-[#4d4d4d]/80
+                w-full sm:w-auto px-8 rounded-md
+                bg-btn-secondary text-white
+                text-lg font-medium
+                hover:bg-btn-secondary/80
                 active:scale-[0.97]
                 transition-all duration-200 touch-manipulation
               "
@@ -328,7 +328,7 @@ const HeroSection = memo(function HeroSection({ titles, onAction, regionLabel }:
               hidden md:flex items-center justify-center
               w-8 h-8 rounded-full
               bg-white/[0.07] border border-white/[0.12]
-              text-white/65 hover:text-white hover:bg-white/[0.12]
+              text-white/65 hover:text-white hover:bg-overlay-medium
               backdrop-blur-sm transition-all duration-200
             "
           >
@@ -375,7 +375,7 @@ const HeroSection = memo(function HeroSection({ titles, onAction, regionLabel }:
               hidden md:flex items-center justify-center
               w-8 h-8 rounded-full
               bg-white/[0.07] border border-white/[0.12]
-              text-white/65 hover:text-white hover:bg-white/[0.12]
+              text-white/65 hover:text-white hover:bg-overlay-medium
               backdrop-blur-sm transition-all duration-200
             "
           >

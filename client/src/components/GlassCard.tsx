@@ -36,8 +36,8 @@ export interface GlassCardProps {
 const TIER_STYLE: Record<string, string> = {
   PERFECTION: 'text-amber border-amber/40 bg-amber/10',
   GOFORIT:    'text-[#C2434F] border-[#C2434F]/40 bg-[#C2434F]/10',
-  TIMEPASS:   'text-[#999] border-[#333] bg-[#161616]',
-  SKIP:       'text-[#555] border-[#161616] bg-[#000000]',
+  TIMEPASS:   'text-[#999] border-[#333] bg-surface',
+  SKIP:       'text-[#555] border-[#161616] bg-page',
 };
 const TIER_LABEL: Record<string, string> = {
   PERFECTION: 'S',
@@ -152,8 +152,8 @@ const GlassCard = memo(function GlassCard({
                 #000000 75%)`,
             }}
           >
-            <Film size={22} className="text-white/30" />
-            <span className="text-[9px] font-mono text-white/35 text-center leading-tight line-clamp-3">
+            <Film size={22} className="text-ink-disabled" />
+            <span className="text-3xs font-mono text-white/35 text-center leading-tight line-clamp-3">
               {title}
             </span>
           </div>
@@ -192,8 +192,8 @@ const GlassCard = memo(function GlassCard({
           <div className="
             absolute top-2 left-2 z-10
             h-[22px] w-[22px] flex items-center justify-center
-            rounded-full bg-[#000000]/80 border border-white/[0.12]
-            font-semibold text-[11px] text-white/70 leading-none
+            rounded-full bg-page/80 border border-white/[0.12]
+            font-semibold text-xs text-ink-secondary leading-none
           ">
             {rank}
           </div>
@@ -202,7 +202,7 @@ const GlassCard = memo(function GlassCard({
             absolute top-2 left-2 z-10
             inline-flex items-center justify-center
             rounded-full border w-[20px] h-[20px]
-            text-[10px] font-semibold leading-none
+            text-2xs font-semibold leading-none
             ${tierStyle}
           `}>
             {tierLabel}
@@ -214,7 +214,7 @@ const GlassCard = memo(function GlassCard({
           <span className="
             absolute top-2 right-2 z-10
             font-mono text-[7px] px-[6px] py-[2.5px] rounded-full
-            border border-white/[0.10] bg-[#000000]/60
+            border border-border-light bg-page/60
             text-white/65 uppercase tracking-[0.08em] leading-none
           ">
             {typeLabel}
@@ -252,17 +252,17 @@ const GlassCard = memo(function GlassCard({
           absolute inset-x-0 bottom-0 z-10
           px-2.5 pt-2 pb-2
           border-t border-white/[0.05]
-          bg-[#000000]/80
-          md:bg-[#000000]/60 md:backdrop-blur-[14px]
+          bg-page/80
+          md:bg-page/60 md:backdrop-blur-[14px]
           transition-[background-color] duration-300 ease-spring
-          md:group-hover:bg-[#000000]/70
+          md:group-hover:bg-page/70
         ">
           <p className="text-[11.5px] font-semibold leading-[1.28] line-clamp-2 text-white">
             {title}
           </p>
 
           {metaParts && (
-            <p className="mt-[2px] text-[9px] text-white/75 truncate leading-none">
+            <p className="mt-[2px] text-3xs text-white/75 truncate leading-none">
               {metaParts}
             </p>
           )}
@@ -280,7 +280,7 @@ const GlassCard = memo(function GlassCard({
                   <span
                     key={p.name}
                     className="h-[13px] px-[4px] rounded-[3px] border border-white/[0.07]
-                      bg-white/[0.04] text-[6.5px] font-mono flex items-center text-white/70"
+                      bg-overlay-light text-[6.5px] font-mono flex items-center text-ink-secondary"
                   >
                     {p.name.slice(0, 3)}
                   </span>
@@ -296,7 +296,7 @@ const GlassCard = memo(function GlassCard({
                 <span className={`
                   mt-[6px] inline-flex items-center justify-center
                   rounded-full border w-[18px] h-[18px]
-                  text-[9px] font-semibold leading-none ${tierStyle}
+                  text-3xs font-semibold leading-none ${tierStyle}
                 `}>
                   {tierLabel}
                 </span>
@@ -308,7 +308,7 @@ const GlassCard = memo(function GlassCard({
                       key={g}
                       className="
                         text-[7.5px] font-mono px-[5px] py-[2px] rounded-full
-                        border border-white/[0.08] bg-white/[0.04] text-white/75
+                        border border-white/[0.08] bg-overlay-light text-white/75
                         leading-none
                       "
                     >
@@ -364,12 +364,12 @@ export function GlassCardSkeleton({
         </div>
         <div className="absolute inset-x-0 bottom-0 h-[40%] bg-gradient-to-t from-black/40 to-transparent pointer-events-none" />
         <div className="absolute top-2 left-2 h-[20px] w-[20px] rounded-full bg-white/[0.05]" />
-        <div className="absolute top-2 right-2 h-[14px] w-[28px] rounded-full bg-white/[0.04]" />
-        <div className="absolute inset-x-0 bottom-0 px-2.5 pt-2 pb-2 bg-[#000000]/70 border-t border-white/[0.05]">
-          <div className="h-[10px] w-[82%] rounded-full bg-white/[0.08] mb-[4px]" />
-          <div className="h-[8px] w-[50%] rounded-full bg-white/[0.06] mb-[6px]" />
+        <div className="absolute top-2 right-2 h-[14px] w-[28px] rounded-full bg-overlay-light" />
+        <div className="absolute inset-x-0 bottom-0 px-2.5 pt-2 pb-2 bg-page/70 border-t border-white/[0.05]">
+          <div className="h-[10px] w-[82%] rounded-full bg-overlay-light mb-[4px]" />
+          <div className="h-[8px] w-[50%] rounded-full bg-overlay-light mb-[6px]" />
           <div className="flex gap-[4px]">
-            <div className="h-[13px] w-[13px] rounded-[3px] bg-white/[0.06]" />
+            <div className="h-[13px] w-[13px] rounded-[3px] bg-overlay-light" />
             <div className="h-[13px] w-[13px] rounded-[3px] bg-white/[0.05]" />
           </div>
         </div>

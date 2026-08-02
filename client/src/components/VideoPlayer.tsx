@@ -470,7 +470,7 @@ export function FebBoxPlayer({
 
   if (!streams.length) {
     return (
-      <div className="absolute inset-0 flex items-center justify-center text-white/70 text-sm">
+      <div className="absolute inset-0 flex items-center justify-center text-ink-secondary text-sm">
         No streams available
       </div>
     );
@@ -550,10 +550,10 @@ export function FebBoxPlayer({
             <button
               key={s.url ?? s.quality ?? i}
               onClick={() => setQualityIdx(i)}
-              className={`text-[10px] font-mono px-2 py-0.5 rounded border transition-colors ${
+              className={`text-2xs font-mono px-2 py-0.5 rounded border transition-colors ${
                 qualityIdx === i
-                  ? 'border-white/40 bg-white/20 text-white'
-                  : 'border-white/10 text-white/70 bg-black/60 hover:text-white hover:border-white/30'
+                  ? 'border-border-hover bg-overlay-medium text-white'
+                  : 'border-border-light text-ink-secondary bg-black/60 hover:text-white hover:border-border-hover'
               }`}
             >
               {s.quality || s.name || `Q${i + 1}`}
@@ -573,28 +573,28 @@ export function FebBoxPlayer({
         <button
           type="button"
           onClick={() => setCastMessage(null)}
-          className="absolute top-14 left-1/2 z-40 -translate-x-1/2 rounded-[8px] border border-white/10 bg-black/85 px-3 py-2 text-xs text-white/80 shadow-xl"
+          className="absolute top-14 left-1/2 z-40 -translate-x-1/2 rounded-lg border border-border-light bg-black/85 px-3 py-2 text-xs text-white/80 shadow-xl"
         >
           {castMessage}
         </button>
       )}
 
       {nextCountdown !== null && (
-        <div className="absolute inset-x-0 bottom-20 z-40 mx-auto flex max-w-sm flex-col items-center gap-3 rounded-[12px] border border-white/10 bg-black/90 p-5 text-center shadow-2xl">
+        <div className="absolute inset-x-0 bottom-20 z-40 mx-auto flex max-w-sm flex-col items-center gap-3 rounded-xl border border-border-light bg-black/90 p-5 text-center shadow-2xl">
           <p className="text-sm font-semibold text-white">Next episode in {nextCountdown}s</p>
           <div className="flex gap-2">
-            <button type="button" onClick={() => { setNextCountdown(null); onNextEpisode?.(); }} className="rounded-[8px] bg-white px-3 py-2 text-xs font-semibold text-black">Play next</button>
-            <button type="button" onClick={() => setNextCountdown(null)} className="rounded-[8px] border border-white/15 px-3 py-2 text-xs text-white/70">Cancel</button>
+            <button type="button" onClick={() => { setNextCountdown(null); onNextEpisode?.(); }} className="rounded-lg bg-white px-3 py-2 text-xs font-semibold text-black">Play next</button>
+            <button type="button" onClick={() => setNextCountdown(null)} className="rounded-lg border border-white/15 px-3 py-2 text-xs text-ink-secondary">Cancel</button>
           </div>
         </div>
       )}
 
       {stillWatching && (
         <div className="absolute inset-0 z-40 flex items-center justify-center bg-black/65 p-6">
-          <div className="w-full max-w-sm rounded-[12px] border border-white/10 bg-[#161616] p-6 text-center shadow-2xl">
+          <div className="w-full max-w-sm rounded-xl border border-border-light bg-surface p-6 text-center shadow-2xl">
             <p className="text-base font-semibold text-white">Are you still watching?</p>
-            <p className="mt-2 text-xs text-white/45">You’ve watched three episodes in a row.</p>
-            <button type="button" onClick={() => { setStillWatching(false); setNextCountdown(5); }} className="mt-5 rounded-[8px] bg-white px-4 py-2 text-xs font-semibold text-black">Continue watching</button>
+            <p className="mt-2 text-xs text-ink-tertiary">You’ve watched three episodes in a row.</p>
+            <button type="button" onClick={() => { setStillWatching(false); setNextCountdown(5); }} className="mt-5 rounded-lg bg-white px-4 py-2 text-xs font-semibold text-black">Continue watching</button>
           </div>
         </div>
       )}
@@ -611,39 +611,39 @@ export function FebBoxPlayer({
       >
           {showSettings && (
             <div
-              className="absolute bottom-16 right-3 z-50 w-72 rounded-[8px] border border-white/10 bg-[#161616]/[.98] p-3 shadow-2xl"
+              className="absolute bottom-16 right-3 z-50 w-72 rounded-lg border border-border-light bg-surface/[.98] p-3 shadow-2xl"
               onClick={e => e.stopPropagation()}
             >
               <div className="mb-3 flex items-center justify-between">
                 <p className="text-xs font-semibold text-white">Playback settings</p>
-                <button type="button" onClick={() => setShowSettings(false)} className="text-white/45 hover:text-white"><X size={14} /></button>
+                <button type="button" onClick={() => setShowSettings(false)} className="text-ink-tertiary hover:text-white"><X size={14} /></button>
               </div>
-              <div className="mb-3 grid grid-cols-3 gap-1 rounded-[8px] bg-white/[.04] p-1">
+              <div className="mb-3 grid grid-cols-3 gap-1 rounded-lg bg-white/[.04] p-1">
                 {([['playback', 'Speed'], ['audio', 'Audio'], ['subtitles', 'Subtitles']] as const).map(([tab, label]) => (
-                  <button key={tab} type="button" onClick={() => setSettingsTab(tab)} className={`rounded-[4px] px-1 py-1.5 text-[10px] ${settingsTab === tab ? 'bg-white/10 text-white' : 'text-white/45'}`}>{label}</button>
+                  <button key={tab} type="button" onClick={() => setSettingsTab(tab)} className={`rounded-md px-1 py-1.5 text-2xs ${settingsTab === tab ? 'bg-overlay-medium text-white' : 'text-ink-tertiary'}`}>{label}</button>
                 ))}
               </div>
               {settingsTab === 'playback' && (
                 <div className="grid grid-cols-3 gap-1.5">
                   {[0.5, 0.75, 1, 1.25, 1.5, 2].map(rate => (
-                    <button key={rate} type="button" onClick={() => setRate(rate)} className={`rounded-[4px] border px-2 py-2 text-xs ${playbackRate === rate ? 'border-white/40 bg-white/10 text-white' : 'border-white/10 text-white/55'}`}>{rate}x {playbackRate === rate && <Check size={11} className="ml-1 inline" />}</button>
+                    <button key={rate} type="button" onClick={() => setRate(rate)} className={`rounded-md border px-2 py-2 text-xs ${playbackRate === rate ? 'border-border-hover bg-overlay-medium text-white' : 'border-border-light text-white/55'}`}>{rate}x {playbackRate === rate && <Check size={11} className="ml-1 inline" />}</button>
                   ))}
                 </div>
               )}
               {settingsTab === 'audio' && (
-                <label className="flex items-center justify-between text-xs text-white/70">
+                <label className="flex items-center justify-between text-xs text-ink-secondary">
                   Audio track
-                  <select className="rounded-[4px] border border-white/10 bg-black px-2 py-1 text-xs text-white" defaultValue="auto">
+                  <select className="rounded-md border border-border-light bg-black px-2 py-1 text-xs text-white" defaultValue="auto">
                     <option value="auto">Auto</option><option value="original">Original</option><option value=" dubbed">Dubbed</option>
                   </select>
                 </label>
               )}
               {settingsTab === 'subtitles' && (
-                <div className="space-y-3 text-xs text-white/70">
+                <div className="space-y-3 text-xs text-ink-secondary">
                   <label className="flex items-center justify-between">Size <input aria-label="Subtitle size" type="range" min="75" max="150" value={subtitleSize} onChange={e => setSubtitleSize(Number(e.target.value))} /></label>
                   <label className="flex items-center justify-between">Color <input aria-label="Subtitle color" type="color" value={subtitleColor} onChange={e => setSubtitleColor(e.target.value)} /></label>
                   <label className="flex items-center justify-between">Background <input aria-label="Subtitle background opacity" type="range" min="0" max="100" value={subtitleOpacity} onChange={e => setSubtitleOpacity(Number(e.target.value))} /></label>
-                  <p className="rounded-[4px] bg-black/60 p-2 text-center" style={{ color: subtitleColor, opacity: 0.5 + subtitleOpacity / 200, fontSize: `${subtitleSize}%` }}>Subtitle preview</p>
+                  <p className="rounded-md bg-black/60 p-2 text-center" style={{ color: subtitleColor, opacity: 0.5 + subtitleOpacity / 200, fontSize: `${subtitleSize}%` }}>Subtitle preview</p>
                 </div>
               )}
             </div>
@@ -677,10 +677,10 @@ export function FebBoxPlayer({
 
         {/* Time row */}
         <div className="flex items-center justify-between px-4 pb-1">
-          <span className="text-[11px] font-mono text-white/70 tabular-nums">
+          <span className="text-xs font-mono text-ink-secondary tabular-nums">
             {fmtTime(currentTime)}
           </span>
-          <span className="text-[11px] font-mono text-white/30 tabular-nums">
+          <span className="text-xs font-mono text-ink-disabled tabular-nums">
             {fmtTime(duration)}
           </span>
         </div>
@@ -692,21 +692,21 @@ export function FebBoxPlayer({
             type="button"
             aria-label="Skip back 10s"
             onClick={() => skip(-10)}
-            className="flex items-center justify-center w-9 h-9 rounded-full hover:bg-white/10 text-white/80 hover:text-white transition-colors"
+            className="flex items-center justify-center w-9 h-9 rounded-full hover:bg-overlay-medium text-white/80 hover:text-white transition-colors"
           >
             <SkipBack size={16} />
           </button>
 
-          <button type="button" onClick={requestPip} aria-label="Picture in picture" title="Picture in picture" className="flex h-8 w-8 items-center justify-center rounded-full text-white/70 hover:bg-white/10 hover:text-white">
+          <button type="button" onClick={requestPip} aria-label="Picture in picture" title="Picture in picture" className="flex h-8 w-8 items-center justify-center rounded-full text-ink-secondary hover:bg-overlay-medium hover:text-white">
             <PictureInPicture2 size={15} />
           </button>
-          <button type="button" onClick={requestCast} aria-label="Cast to device" title="Cast to device" className="flex h-8 w-8 items-center justify-center rounded-full text-white/70 hover:bg-white/10 hover:text-white">
+          <button type="button" onClick={requestCast} aria-label="Cast to device" title="Cast to device" className="flex h-8 w-8 items-center justify-center rounded-full text-ink-secondary hover:bg-overlay-medium hover:text-white">
             <Cast size={15} />
           </button>
-          <button type="button" onClick={requestAirplay} aria-label="AirPlay" title="AirPlay" className="flex h-8 w-8 items-center justify-center rounded-full text-white/70 hover:bg-white/10 hover:text-white">
+          <button type="button" onClick={requestAirplay} aria-label="AirPlay" title="AirPlay" className="flex h-8 w-8 items-center justify-center rounded-full text-ink-secondary hover:bg-overlay-medium hover:text-white">
             <Airplay size={15} />
           </button>
-          <button type="button" onClick={() => setShowSettings(v => !v)} aria-label="Playback settings" title="Playback settings" className={`flex h-8 w-8 items-center justify-center rounded-full hover:bg-white/10 hover:text-white ${showSettings ? 'text-white' : 'text-white/70'}`}>
+          <button type="button" onClick={() => setShowSettings(v => !v)} aria-label="Playback settings" title="Playback settings" className={`flex h-8 w-8 items-center justify-center rounded-full hover:bg-overlay-medium hover:text-white ${showSettings ? 'text-white' : 'text-ink-secondary'}`}>
             <Settings size={15} />
           </button>
 
@@ -715,7 +715,7 @@ export function FebBoxPlayer({
             type="button"
             aria-label={playing ? 'Pause' : 'Play'}
             onClick={togglePlay}
-            className="flex items-center justify-center w-10 h-10 rounded-full hover:bg-white/10 text-white transition-colors"
+            className="flex items-center justify-center w-10 h-10 rounded-full hover:bg-overlay-medium text-white transition-colors"
           >
             {playing
               ? <Pause size={20} className="fill-current" />
@@ -728,7 +728,7 @@ export function FebBoxPlayer({
             type="button"
             aria-label="Skip forward 10s"
             onClick={() => skip(10)}
-            className="flex items-center justify-center w-9 h-9 rounded-full hover:bg-white/10 text-white/80 hover:text-white transition-colors"
+            className="flex items-center justify-center w-9 h-9 rounded-full hover:bg-overlay-medium text-white/80 hover:text-white transition-colors"
           >
             <SkipForward size={16} />
           </button>
@@ -738,14 +738,14 @@ export function FebBoxPlayer({
             type="button"
             aria-label={muted ? 'Unmute' : 'Mute'}
             onClick={toggleMute}
-            className="flex items-center justify-center w-8 h-8 rounded-full hover:bg-white/10 text-white/70 hover:text-white transition-colors ml-1"
+            className="flex items-center justify-center w-8 h-8 rounded-full hover:bg-overlay-medium text-ink-secondary hover:text-white transition-colors ml-1"
           >
             {muted || volume === 0 ? <VolumeX size={15} /> : <Volume2 size={15} />}
           </button>
 
           {/* Volume bar */}
           <div
-            className="w-16 h-1 bg-white/20 rounded-full cursor-pointer hidden md:block"
+            className="w-16 h-1 bg-overlay-medium rounded-full cursor-pointer hidden md:block"
             onClick={changeVolume}
           >
             <div
@@ -762,7 +762,7 @@ export function FebBoxPlayer({
             type="button"
             aria-label={fullscreen ? 'Exit fullscreen' : 'Fullscreen'}
             onClick={toggleFullscreen}
-            className="flex items-center justify-center w-8 h-8 rounded-full hover:bg-white/10 text-white/70 hover:text-white transition-colors"
+            className="flex items-center justify-center w-8 h-8 rounded-full hover:bg-overlay-medium text-ink-secondary hover:text-white transition-colors"
           >
             {fullscreen ? <Minimize size={15} /> : <Maximize size={15} />}
           </button>
@@ -816,15 +816,15 @@ export default function VideoPlayer({
     <div className="fixed inset-0 z-50 bg-black flex flex-col">
       {/* ── Top bar ─────────────────────────────────────────────────────── */}
       <div
-        className="flex items-center justify-between px-4 py-2.5 shrink-0 gap-3 flex-wrap border-b border-white/[0.06]"
+        className="flex items-center justify-between px-4 py-2.5 shrink-0 gap-3 flex-wrap border-b border-border"
         style={{ background: 'rgba(10,10,10,0.95)', backdropFilter: 'blur(12px)' }}
       >
         {/* Title + episode info */}
         <div className="shrink-0">
-          <p className="text-[13px] font-semibold text-white leading-tight truncate max-w-[200px] md:max-w-none">
+          <p className="text-base font-semibold text-white leading-tight truncate max-w-[200px] md:max-w-none">
             {title?.name ?? 'Untitled'}
           </p>
-          <p className="text-[10px] text-white/70 font-mono mt-0.5">
+          <p className="text-2xs text-ink-secondary font-mono mt-0.5">
             {title.type === 'SERIES'
               ? `S${selectedSeason} · E${selectedEp}`
               : title.type === 'ANIME'
@@ -840,10 +840,10 @@ export default function VideoPlayer({
               <button
                 key={s.id}
                 onClick={() => switchServer(s.id)}
-                className={`text-[10px] font-mono px-2.5 py-1 rounded-full border transition-colors ${
+                className={`text-2xs font-mono px-2.5 py-1 rounded-full border transition-colors ${
                   serverId === s.id
-                    ? 'border-white/20 bg-white/[0.08] text-white'
-                    : 'border-white/[0.08] text-white/70 hover:text-white/80 hover:border-white/[0.16]'
+                    ? 'border-border-hover bg-overlay-light text-white'
+                    : 'border-white/[0.08] text-ink-secondary hover:text-ink-secondary hover:border-white/[0.16]'
                 }`}
               >
                 {s.label}
@@ -854,7 +854,7 @@ export default function VideoPlayer({
 
         {/* Anime source label */}
         {title.type === 'ANIME' && (
-          <span className="text-[10px] font-mono text-white/30 border border-white/[0.08] rounded-full px-2.5 py-1">
+          <span className="text-2xs font-mono text-ink-disabled border border-white/[0.08] rounded-full px-2.5 py-1">
             Anicrush
           </span>
         )}
@@ -866,7 +866,7 @@ export default function VideoPlayer({
             onClick={() => setDeviceModal('cast')}
             aria-label="Cast to device"
             title="Cast to device"
-            className="flex items-center justify-center w-8 h-8 rounded-[8px] text-white/70 border border-white/[0.08] hover:text-white hover:bg-white/[0.06] transition-colors"
+            className="flex items-center justify-center w-8 h-8 rounded-lg text-ink-secondary border border-white/[0.08] hover:text-white hover:bg-overlay-light transition-colors"
           >
             <Cast size={13} />
           </button>
@@ -875,7 +875,7 @@ export default function VideoPlayer({
             onClick={() => setDeviceModal('airplay')}
             aria-label="AirPlay"
             title="AirPlay"
-            className="flex items-center justify-center w-8 h-8 rounded-[8px] text-white/70 border border-white/[0.08] hover:text-white hover:bg-white/[0.06] transition-colors"
+            className="flex items-center justify-center w-8 h-8 rounded-lg text-ink-secondary border border-white/[0.08] hover:text-white hover:bg-overlay-light transition-colors"
           >
             <Airplay size={13} />
           </button>
@@ -883,7 +883,7 @@ export default function VideoPlayer({
             type="button"
             onClick={() => setIframeKey(k => k + 1)}
             title="Reload player"
-            className="flex items-center justify-center w-8 h-8 rounded-[8px] text-white/70 border border-white/[0.08] hover:text-white hover:bg-white/[0.06] transition-colors"
+            className="flex items-center justify-center w-8 h-8 rounded-lg text-ink-secondary border border-white/[0.08] hover:text-white hover:bg-overlay-light transition-colors"
           >
             <RefreshCw size={13} />
           </button>
@@ -893,14 +893,14 @@ export default function VideoPlayer({
               <button
                 type="button"
                 onClick={() => { setSelectedEp(p => Math.max(1, p - 1)); setIframeKey(k => k + 1); }}
-                className="flex items-center gap-1 h-8 px-2.5 rounded-[8px] text-[11px] text-white/70 border border-white/[0.08] hover:text-white hover:bg-white/[0.06] transition-colors"
+                className="flex items-center gap-1 h-8 px-2.5 rounded-lg text-xs text-ink-secondary border border-white/[0.08] hover:text-white hover:bg-overlay-light transition-colors"
               >
                 <ChevronLeft size={12} /> Prev
               </button>
               <button
                 type="button"
                 onClick={() => { setSelectedEp(p => p + 1); setIframeKey(k => k + 1); }}
-                className="flex items-center gap-1 h-8 px-2.5 rounded-[8px] text-[11px] text-white/70 border border-white/[0.08] hover:text-white hover:bg-white/[0.06] transition-colors"
+                className="flex items-center gap-1 h-8 px-2.5 rounded-lg text-xs text-ink-secondary border border-white/[0.08] hover:text-white hover:bg-overlay-light transition-colors"
               >
                 Next <ChevronRight size={12} />
               </button>
@@ -913,14 +913,14 @@ export default function VideoPlayer({
                 type="button"
                 onClick={onAnimePrev}
                 disabled={selectedEp <= 1}
-                className="flex items-center gap-1 h-8 px-2.5 rounded-[8px] text-[11px] text-white/70 border border-white/[0.08] hover:text-white hover:bg-white/[0.06] transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
+                className="flex items-center gap-1 h-8 px-2.5 rounded-lg text-xs text-ink-secondary border border-white/[0.08] hover:text-white hover:bg-overlay-light transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
               >
                 <ChevronLeft size={12} /> Prev
               </button>
               <button
                 type="button"
                 onClick={onAnimeNext}
-                className="flex items-center gap-1 h-8 px-2.5 rounded-[8px] text-[11px] text-white/70 border border-white/[0.08] hover:text-white hover:bg-white/[0.06] transition-colors"
+                className="flex items-center gap-1 h-8 px-2.5 rounded-lg text-xs text-ink-secondary border border-white/[0.08] hover:text-white hover:bg-overlay-light transition-colors"
               >
                 Next <ChevronRight size={12} />
               </button>
@@ -933,7 +933,7 @@ export default function VideoPlayer({
               target="_blank"
               rel="noreferrer"
               title="Open in new tab"
-              className="flex items-center justify-center w-8 h-8 rounded-[8px] text-white/70 border border-white/[0.08] hover:text-white hover:bg-white/[0.06] transition-colors"
+              className="flex items-center justify-center w-8 h-8 rounded-lg text-ink-secondary border border-white/[0.08] hover:text-white hover:bg-overlay-light transition-colors"
             >
               <ExternalLink size={13} />
             </a>
@@ -943,7 +943,7 @@ export default function VideoPlayer({
             type="button"
             onClick={() => setPlayerOpen(false)}
             aria-label="Close player"
-            className="flex items-center justify-center w-8 h-8 rounded-[8px] text-white/70 border border-white/[0.08] hover:text-white hover:bg-white/[0.06] transition-colors"
+            className="flex items-center justify-center w-8 h-8 rounded-lg text-ink-secondary border border-white/[0.08] hover:text-white hover:bg-overlay-light transition-colors"
           >
             <X size={14} />
           </button>
@@ -953,19 +953,19 @@ export default function VideoPlayer({
       {/* ── Player area ─────────────────────────────────────────────────── */}
       {deviceModal && (
         <div className="absolute inset-0 z-[60] flex items-center justify-center bg-black/60 p-4" onClick={() => setDeviceModal(null)}>
-          <div className="w-full max-w-sm rounded-[12px] border border-white/10 bg-[#161616] p-5 shadow-2xl" onClick={e => e.stopPropagation()}>
+          <div className="w-full max-w-sm rounded-xl border border-border-light bg-surface p-5 shadow-2xl" onClick={e => e.stopPropagation()}>
             <div className="mb-4 flex items-center justify-between">
               <div>
                 <p className="text-sm font-semibold text-white">{deviceModal === 'cast' ? 'Cast to device' : 'AirPlay'}</p>
-                <p className="mt-1 text-xs text-white/45">Choose a device to continue playback.</p>
+                <p className="mt-1 text-xs text-ink-tertiary">Choose a device to continue playback.</p>
               </div>
-              <button type="button" onClick={() => setDeviceModal(null)} className="text-white/45 hover:text-white"><X size={16} /></button>
+              <button type="button" onClick={() => setDeviceModal(null)} className="text-ink-tertiary hover:text-white"><X size={16} /></button>
             </div>
-            <button type="button" onClick={() => setDeviceModal(null)} className="flex w-full items-center justify-between rounded-[8px] border border-white/10 bg-white/[.04] px-3 py-3 text-left text-sm text-white/70 hover:bg-white/[.08]">
+            <button type="button" onClick={() => setDeviceModal(null)} className="flex w-full items-center justify-between rounded-lg border border-border-light bg-white/[.04] px-3 py-3 text-left text-sm text-ink-secondary hover:bg-white/[.08]">
               <span>{deviceModal === 'cast' ? 'No devices found' : 'No AirPlay devices found'}</span>
-              <span className="text-xs text-white/30">Scan again</span>
+              <span className="text-xs text-ink-disabled">Scan again</span>
             </button>
-            <p className="mt-4 text-center text-[11px] text-white/30">Device discovery depends on your browser and local network.</p>
+            <p className="mt-4 text-center text-xs text-ink-disabled">Device discovery depends on your browser and local network.</p>
           </div>
         </div>
       )}
