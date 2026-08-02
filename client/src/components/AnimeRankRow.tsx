@@ -107,6 +107,24 @@ const AnimeRankRow = memo(function AnimeRankRow({ title, badge, perPage = 10, on
 
       {/* Scroll container */}
       <div className="relative group/row">
+        {/* Left fade edge */}
+        <div
+          className="absolute left-0 top-0 bottom-0 z-10 pointer-events-none"
+          style={{
+            width: 'clamp(24px, 8vw, 60px)',
+            background: 'linear-gradient(to right, #000000 0%, transparent 100%)',
+          }}
+          aria-hidden
+        />
+        {/* Right fade edge */}
+        <div
+          className="absolute right-0 top-0 bottom-0 z-10 pointer-events-none"
+          style={{
+            width: 'clamp(24px, 8vw, 60px)',
+            background: 'linear-gradient(to left, #000000 0%, transparent 100%)',
+          }}
+          aria-hidden
+        />
         {/* Left arrow */}
         <button
           type="button"
