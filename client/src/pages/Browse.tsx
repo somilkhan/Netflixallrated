@@ -259,14 +259,14 @@ export default function Browse() {
   const visibleLoading = isLiveCollection ? liveLoading : loading;
 
   return (
-    <div className="min-h-screen pb-32 pt-20" style={{ background: '#0A0A0A' }}>
+    <div className="min-h-screen pb-32 pt-20" style={{ background: '#141414' }}>
       {/* ── Page header ──────────────────────────────────────────────────── */}
       <div className="px-4 md:px-6 pt-4 pb-2">
         <h1 className="text-2xl md:text-3xl font-bold text-white tracking-tight">{heading}</h1>
         {isLiveCollection ? (
-          <p className="text-sm text-white/40 mt-0.5">Live data from TMDB</p>
+          <p className="text-sm text-white/50 mt-0.5">Live data from TMDB</p>
         ) : total > 0 && !loading && (
-          <p className="text-sm text-white/40 mt-0.5">{total.toLocaleString()} titles</p>
+          <p className="text-sm text-white/50 mt-0.5">{total.toLocaleString()} titles</p>
         )}
       </div>
 
@@ -277,7 +277,7 @@ export default function Browse() {
         {/* Type + Sort filters */}
         <div className="flex gap-2 overflow-x-auto scrollbar-hide pb-2">
           <div className="flex items-center gap-1.5 shrink-0 mr-1">
-            <SlidersHorizontal size={14} className="text-white/40" />
+            <SlidersHorizontal size={14} className="text-white/50" />
           </div>
 
           {TYPE_FILTERS.map(f => (
@@ -370,7 +370,7 @@ export default function Browse() {
             <p className="text-xl font-semibold text-white">
               {liveError ? 'Live data unavailable' : 'No titles found'}
             </p>
-            <p className="text-sm text-white/40 max-w-sm">
+            <p className="text-sm text-white/50 max-w-sm">
               {liveError
                 ? 'TMDB could not load this collection. Try again in a moment.'
                 : 'Try adjusting the filters or browse a different category.'}
@@ -409,7 +409,7 @@ export default function Browse() {
             disabled={pageParam <= 1}
             className="
               flex items-center gap-1
-              h-9 px-3 rounded-lg text-sm text-white/60
+              h-9 px-3 rounded-lg text-sm text-white/50
               border border-white/[0.08]
               hover:text-white hover:border-white/[0.16]
               disabled:opacity-30 disabled:pointer-events-none
@@ -433,7 +433,7 @@ export default function Browse() {
                   border transition-colors
                   ${pageParam === p
                     ? 'bg-white text-black border-white'
-                    : 'text-white/60 border-white/[0.08] hover:text-white hover:border-white/[0.16]'
+                    : 'text-white/50 border-white/[0.08] hover:text-white hover:border-white/[0.16]'
                   }
                 `}
               >
@@ -448,7 +448,7 @@ export default function Browse() {
             disabled={pageParam >= totalPages}
             className="
               flex items-center gap-1
-              h-9 px-3 rounded-lg text-sm text-white/60
+              h-9 px-3 rounded-lg text-sm text-white/50
               border border-white/[0.08]
               hover:text-white hover:border-white/[0.16]
               disabled:opacity-30 disabled:pointer-events-none
