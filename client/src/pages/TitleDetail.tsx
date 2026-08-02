@@ -108,11 +108,11 @@ const RelatedPosterCard = memo(function RelatedPosterCard({
       style={{ WebkitTapHighlightColor: 'transparent' }}
     >
       <div
-        className="relative w-full overflow-hidden rounded-xl bg-[#141414] transition-transform duration-300 ease-[cubic-bezier(0.4,0,0.2,1)] md:group-hover:scale-[1.05] active:scale-[0.97]"
+        className="relative w-full overflow-hidden rounded-xl bg-[#000000] transition-transform duration-300 ease-[cubic-bezier(0.4,0,0.2,1)] md:group-hover:scale-[1.05] active:scale-[0.97]"
         style={{ aspectRatio: '2/3', boxShadow: '0 4px 16px rgba(0,0,0,0.3)' }}
       >
         {typeLabel && (
-          <span className="absolute top-2 right-2 z-20 text-[9px] font-medium px-[6px] py-[3px] rounded-full border border-white/[0.08] bg-[#141414]/60 text-white/50 uppercase tracking-wide leading-none">
+          <span className="absolute top-2 right-2 z-20 text-[9px] font-medium px-[6px] py-[3px] rounded-full border border-white/[0.08] bg-[#000000]/60 text-white/70 uppercase tracking-wide leading-none">
             {typeLabel}
           </span>
         )}
@@ -1021,7 +1021,7 @@ export default function TitleDetail() {
   }, [title, autoPlay]);
 
   if (titleError) return (
-    <div style={{ minHeight: '100vh', background: '#090909', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+    <div style={{ minHeight: '100vh', background: '#000000', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
       <div style={{ textAlign: 'center', color: 'rgba(255,255,255,0.7)', padding: '0 20px' }}>
         <p style={{ marginBottom: 16 }}>This title couldn't be found or failed to load.</p>
         <button
@@ -1079,7 +1079,7 @@ export default function TitleDetail() {
         backgroundPosition: 'center 25%',
       }
     : {
-        background: 'radial-gradient(90% 70% at 30% 0%, #1e1e2e, #0A0A0A 80%)',
+        background: 'radial-gradient(90% 70% at 30% 0%, #1e1e2e, #000000 80%)',
       };
 
   return (
@@ -1123,7 +1123,7 @@ export default function TitleDetail() {
                 style={{
                   backgroundImage: posterUrl
                     ? `url(${posterUrl})`
-                    : 'radial-gradient(120% 100% at 30% 0%, #1e1e2e, #0A0A0A 70%)',
+                    : 'radial-gradient(120% 100% at 30% 0%, #1e1e2e, #000000 70%)',
                 }}
               />
 
@@ -1258,7 +1258,7 @@ export default function TitleDetail() {
 
         {/* Anime-only: studios */}
         {title.type === 'ANIME' && studioNodes.length > 0 && (
-          <p className="text-[10px] text-white/50 uppercase tracking-wider" style={{ marginTop: 8 }}>
+          <p className="text-[10px] text-white/70 uppercase tracking-wider" style={{ marginTop: 8 }}>
             {studioNodes.map(s => s.name).join(' · ')}
           </p>
         )}
