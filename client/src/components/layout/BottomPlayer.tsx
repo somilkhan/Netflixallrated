@@ -55,15 +55,15 @@ const BottomPlayer = memo(function BottomPlayer() {
         >
           <div
             className="mx-3 mb-[72px] rounded-2xl overflow-hidden border border-white/[0.08]"
-            style={{ background: '#141414' }}
+            style={{ background: '#000000' }}
             onClick={e => e.stopPropagation()}
           >
             <div className="flex items-center justify-between px-4 py-3 border-b border-white/[0.06]">
-              <button type="button" onClick={() => setExpanded(false)} className="text-white/50 hover:text-white transition-colors" aria-label="Collapse">
+              <button type="button" onClick={() => setExpanded(false)} className="text-white/70 hover:text-white transition-colors" aria-label="Collapse">
                 <ChevronDown size={18} />
               </button>
-              <p className="text-xs text-white/50 font-medium">Now Playing</p>
-              <button type="button" onClick={handleClose} className="text-white/50 hover:text-white transition-colors" aria-label="Close">
+              <p className="text-xs text-white/70 font-medium">Now Playing</p>
+              <button type="button" onClick={handleClose} className="text-white/70 hover:text-white transition-colors" aria-label="Close">
                 <X size={16} />
               </button>
             </div>
@@ -81,13 +81,13 @@ const BottomPlayer = memo(function BottomPlayer() {
 
               <div className="text-center w-full">
                 <p className="text-base font-semibold text-white truncate">{nowPlaying.name}</p>
-                {subLabel && <p className="text-xs text-white/50 mt-0.5">{subLabel}</p>}
+                {subLabel && <p className="text-xs text-white/70 mt-0.5">{subLabel}</p>}
               </div>
 
               <div className="w-full flex flex-col gap-4">
                 <ProgressBar value={0} />
                 <div className="flex items-center justify-center gap-4">
-                  <IconButton aria-label="Previous" className="text-white/60"><SkipBack size={20} strokeWidth={1.8} /></IconButton>
+                  <IconButton aria-label="Previous" className="text-white/70"><SkipBack size={20} strokeWidth={1.8} /></IconButton>
                   <button
                     type="button"
                     onClick={handlePlayPause}
@@ -96,10 +96,10 @@ const BottomPlayer = memo(function BottomPlayer() {
                   >
                     {isPlaying ? <Pause size={22} className="fill-current" /> : <Play size={22} className="fill-current ml-0.5" />}
                   </button>
-                  <IconButton aria-label="Next" className="text-white/60"><SkipForward size={20} strokeWidth={1.8} /></IconButton>
+                  <IconButton aria-label="Next" className="text-white/70"><SkipForward size={20} strokeWidth={1.8} /></IconButton>
                 </div>
                 <div className="flex items-center gap-3">
-                  <IconButton size="sm" onClick={handleVolumeToggle} className="text-white/60" aria-label={muted ? 'Unmute' : 'Mute'}>
+                  <IconButton size="sm" onClick={handleVolumeToggle} className="text-white/70" aria-label={muted ? 'Unmute' : 'Mute'}>
                     {muted ? <VolumeX size={16} /> : <Volume2 size={16} />}
                   </IconButton>
                   <ProgressBar value={muted ? 0 : volume} onChange={v => setVolume(v)} className="flex-1" />
@@ -165,7 +165,7 @@ const BottomPlayer = memo(function BottomPlayer() {
             {/* Center: transport controls (desktop) */}
             <div className="hidden md:flex flex-1 flex-col items-center justify-center gap-1.5 px-4">
               <div className="flex items-center gap-2">
-                <IconButton size="sm" className="text-white/60" aria-label="Previous"><SkipBack size={16} strokeWidth={1.8} /></IconButton>
+                <IconButton size="sm" className="text-white/70" aria-label="Previous"><SkipBack size={16} strokeWidth={1.8} /></IconButton>
                 <button
                   type="button"
                   onClick={handlePlayPause}
@@ -174,7 +174,7 @@ const BottomPlayer = memo(function BottomPlayer() {
                 >
                   {isPlaying ? <Pause size={14} className="fill-current" /> : <Play size={14} className="fill-current ml-0.5" />}
                 </button>
-                <IconButton size="sm" className="text-white/60" aria-label="Next"><SkipForward size={16} strokeWidth={1.8} /></IconButton>
+                <IconButton size="sm" className="text-white/70" aria-label="Next"><SkipForward size={16} strokeWidth={1.8} /></IconButton>
               </div>
               <div className="flex items-center gap-2 w-full max-w-[400px]">
                 <span className="text-[10px] text-white/35 font-mono shrink-0">0:00</span>
@@ -212,7 +212,7 @@ const BottomPlayer = memo(function BottomPlayer() {
           /* ── IDLE STATE ────────────────────────────────────────────── */
           <div className="flex items-center gap-3 px-4 w-full">
             {/* Idle icon */}
-            <div className="shrink-0 w-10 h-10 rounded-lg bg-white/[0.05] border border-white/[0.07] flex items-center justify-center">
+            <div className="shrink-0 w-10 h-10 rounded-[8px] bg-white/[0.05] border border-white/[0.07] flex items-center justify-center">
               <Music2 size={16} className="text-white/25" />
             </div>
             <div className="min-w-0">
