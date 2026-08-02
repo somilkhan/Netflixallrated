@@ -89,12 +89,12 @@ export default function AnimeSectionPage() {
   }, [hasNext, loadState, page, loadPage]);
 
   return (
-    <div className="min-h-screen pb-32 pt-20" style={{ background: '#0A0A0A' }}>
+    <div className="min-h-screen pb-32 pt-20" style={{ background: '#000000' }}>
       {/* Page header */}
       <div className="px-4 md:px-6 pt-4 pb-8">
         <button
           onClick={() => nav('/anime')}
-          className="flex items-center gap-1.5 text-[12px] text-white/50 hover:text-white transition-colors mb-5"
+          className="flex items-center gap-1.5 text-[12px] text-white/70 hover:text-white transition-colors mb-5"
         >
           <ChevronLeft size={14} strokeWidth={2.2} />
           Back to Anime
@@ -141,7 +141,7 @@ export default function AnimeSectionPage() {
         {loadState === 'done' && items.length === 0 && (
           <div className="flex flex-col items-center justify-center gap-3 py-32 text-center">
             <Film size={40} className="text-white/15" />
-            <p className="text-white/50 text-sm">No anime found for this section.</p>
+            <p className="text-white/70 text-sm">No anime found for this section.</p>
           </div>
         )}
 
