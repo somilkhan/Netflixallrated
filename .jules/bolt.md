@@ -1,0 +1,3 @@
+## 2025-03-01 - DOM Observer CPU Overhead Optimization
+**Learning:** Over-observing elements using React `IntersectionObserver` hook without disconnecting on first intersection generates non-negligible CPU and main thread overhead on scroll. For static elements like lazy-loaded images (`LazyImage`) and scroll-deferred home rows (`RowWrapper`), the observer only needs to track intersection once. Once intersected, the observer is no longer useful but continues consuming browser cycles.
+**Action:** Default custom intersection observer hook to `triggerOnce: true` for automatic cleanup, and expose a fallback option `{ triggerOnce: false }` specifically for infinite scroll sentinels that need continuous tracking.
