@@ -70,8 +70,8 @@ const AniCard = memo(function AniCard({ anime, rank, fluid = false, className = 
           if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); handleNav(false); }
         }}
         className="
-          block relative z-10 w-full rounded-lg overflow-hidden aspect-[2/3]
-          bg-[#141414] cursor-pointer
+          block relative z-10 w-full rounded-[4px] overflow-hidden aspect-[2/3]
+          bg-[#181818] cursor-pointer
           transition-transform duration-[400ms] ease-[cubic-bezier(0.4,0,0.2,1)]
           md:group-hover:scale-[1.08] md:group-hover:-translate-y-1
           active:scale-[0.97] md:active:scale-100 md:active:translate-y-0
@@ -141,7 +141,7 @@ const AniCard = memo(function AniCard({ anime, rank, fluid = false, className = 
         )}
 
         {/* Type badge */}
-        <span className="absolute top-2 right-2 z-20 text-[8px] font-medium px-[5px] py-[2.5px] rounded-full border border-white/[0.08] bg-black/70 text-white/45 uppercase tracking-wide leading-none">
+        <span className="absolute top-2 right-2 z-20 text-[8px] font-medium px-[5px] py-[2.5px] rounded-full  bg-black/70 text-white/45 uppercase tracking-wide leading-none">
           {anime.format?.replace(/_/g, ' ') || 'Anime'}
         </span>
 
@@ -179,7 +179,7 @@ const AniCard = memo(function AniCard({ anime, rank, fluid = false, className = 
         <h3 className="text-[13px] font-semibold text-white leading-tight truncate">
           {title}
         </h3>
-        <div className="flex items-center gap-1.5 mt-0.5 text-[11px] text-white/40">
+        <div className="flex items-center gap-1.5 mt-0.5 text-[11px] text-white/50">
           {rating && (
             <span className="flex items-center gap-0.5 text-[#f5c518]">
               <Star size={10} className="fill-[#f5c518] text-[#f5c518]" />
