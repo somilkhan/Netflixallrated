@@ -103,7 +103,7 @@ function HistoryRow({
         )}
         {item.completed && (
           <div className="absolute inset-0 bg-black/50 flex items-center justify-center">
-            <span className="text-[9px] font-mono text-white/60 bg-black/60 px-1 rounded">Done</span>
+            <span className="text-[9px] font-mono text-white/50 bg-black/60 px-1 rounded">Done</span>
           </div>
         )}
       </div>
@@ -118,22 +118,22 @@ function HistoryRow({
         onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); navigate(`/title/${item.title.id}?play=1`); } }}
       >
         <p className="text-sm font-semibold text-white leading-tight truncate">{item.title?.name ?? 'Untitled'}</p>
-        <p className="text-[10px] text-white/40 mt-0.5">
+        <p className="text-[10px] text-white/50 mt-0.5">
           {typeLabel} · {item.title.year}
         </p>
         {subLabel && (
-          <p className="text-[10px] text-white/40 mt-0.5 truncate">{subLabel}</p>
+          <p className="text-[10px] text-white/50 mt-0.5 truncate">{subLabel}</p>
         )}
         <div className="flex items-center gap-2 mt-1">
           {pct !== null && !item.completed && (
-            <span className="text-[9px] text-white/40">{pct}%</span>
+            <span className="text-[9px] text-white/50">{pct}%</span>
           )}
           {item.positionSeconds > 0 && !item.completed && (
-            <span className="text-[9px] text-white/40">
+            <span className="text-[9px] text-white/50">
               {formatTime(item.positionSeconds)} watched
             </span>
           )}
-          <span className="text-[9px] text-white/40 ml-auto">{timeAgo(item.updatedAt)}</span>
+          <span className="text-[9px] text-white/50 ml-auto">{timeAgo(item.updatedAt)}</span>
         </div>
         {/* Progress bar */}
         {pct !== null && !item.completed && (
@@ -155,7 +155,7 @@ function HistoryRow({
         </button>
         <button
           onClick={() => onRemove(item.titleId)}
-          className="p-1.5 rounded-lg border border-white/10 text-white/40 hover:text-white hover:border-white/20 transition-colors"
+          className="p-1.5 rounded-lg border border-white/10 text-white/50 hover:text-white hover:border-white/20 transition-colors"
           title="Remove from history"
         >
           <X size={12} />
@@ -227,10 +227,10 @@ export default function WatchHistory() {
       {/* Header */}
       <div className="flex items-center justify-between px-4 mb-4">
         <div className="flex items-center gap-2">
-          <Clock size={18} className="text-white/40" />
+          <Clock size={18} className="text-white/50" />
           <h1 className="text-xl font-semibold text-white tracking-tight">Watch History</h1>
           {items.length > 0 && (
-            <span className="text-[10px] text-white/40 bg-white/5 border border-white/10 rounded-full px-2 py-0.5">
+            <span className="text-[10px] text-white/50 bg-white/5 border border-white/10 rounded-full px-2 py-0.5">
               {items.length}
             </span>
           )}
@@ -239,7 +239,7 @@ export default function WatchHistory() {
           <button
             onClick={handleClearAll}
             disabled={clearing}
-            className="flex items-center gap-1.5 text-[10px] text-white/40 border border-white/10 rounded-lg px-2.5 py-1.5 hover:text-ink hover:border-white/20 transition-colors disabled:opacity-40"
+            className="flex items-center gap-1.5 text-[10px] text-white/50 border border-white/10 rounded-lg px-2.5 py-1.5 hover:text-ink hover:border-white/20 transition-colors disabled:opacity-40"
           >
             <Trash2 size={11} />
             {clearing ? 'Clearing…' : 'Clear all'}
@@ -280,13 +280,13 @@ export default function WatchHistory() {
           <p className="text-xs text-white/30">Titles you watch will appear here</p>
           <button
             onClick={() => navigate('/')}
-            className="mt-3 px-5 py-2 rounded-full bg-white/[0.06] border border-white/[0.12] text-white/60 text-sm font-mono hover:bg-white/[0.10] hover:text-white transition-colors duration-150"
+            className="mt-3 px-5 py-2 rounded-full bg-white/[0.06] border border-white/[0.12] text-white/50 text-sm font-mono hover:bg-white/[0.10] hover:text-white transition-colors duration-150"
           >
             Browse titles
           </button>
         </div>
       ) : filtered.length === 0 ? (
-        <div className="text-center py-16 text-white/40 text-sm font-mono">
+        <div className="text-center py-16 text-white/50 text-sm font-mono">
           No {filter === 'in-progress' ? 'in-progress' : 'completed'} titles
         </div>
       ) : (
