@@ -342,7 +342,7 @@ export default function Browse() {
                 type="button"
                 onClick={() => nav(path)}
                 className="
-                  shrink-0 px-3.5 py-1.5 rounded-full text-[12px] font-medium
+                  shrink-0 px-3.5 py-1.5 rounded-[8px] text-[12px] font-medium
                   border border-orange-400/20 text-orange-200/70
                   hover:border-orange-400/50 hover:text-orange-100
                   transition-colors duration-150
@@ -384,7 +384,7 @@ export default function Browse() {
                   nav('/browse');
                 }
               }}
-              className="mt-2 px-5 py-2 rounded-full bg-white/[0.08] border border-white/[0.12] text-sm text-white/70 hover:text-white hover:bg-white/[0.12] transition-colors"
+              className="mt-2 px-5 py-2 rounded-[8px] bg-white/[0.08] border border-white/[0.12] text-sm text-white/70 hover:text-white hover:bg-white/[0.12] transition-colors"
             >
               {liveError ? 'Retry' : 'Clear filters'}
             </button>

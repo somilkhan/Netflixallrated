@@ -175,7 +175,7 @@ export default function SearchResults() {
       style={{ paddingBottom: 'calc(80px + env(safe-area-inset-bottom))' }}
     >
       {!hasTmdbKey() && (
-        <div className="mb-5 rounded-xl border border-amber-400/20 bg-amber-400/5 px-4 py-3 text-sm text-amber-100/70">
+        <div className="mb-5 rounded-[8px] border border-amber-400/20 bg-amber-400/5 px-4 py-3 text-sm text-amber-100/70">
           TMDB search is unavailable until <code>VITE_TMDB_API_KEY</code> is configured.
         </div>
       )}
@@ -195,7 +195,7 @@ export default function SearchResults() {
           onChange={e => handleChange(e.target.value)}
           placeholder="Search movies, series, anime..."
           className="
-            w-full rounded-xl pl-10 pr-10 py-3.5 text-[15px] text-white
+            w-full rounded-[8px] pl-10 pr-10 py-3.5 text-[15px] text-white
             border border-white/[0.09] outline-none
             placeholder:text-white/28
             focus:border-white/[0.22] focus:shadow-[0_0_0_3px_rgba(255,255,255,0.04)]
@@ -256,7 +256,7 @@ export default function SearchResults() {
         <div className="flex flex-col items-center py-16 text-center">
           <p className="text-base font-semibold text-white/70">Search is temporarily unavailable</p>
           <p className="mt-2 text-sm text-white/35">Check your connection and try again.</p>
-          <button type="button" onClick={() => runSearch(query)} className="mt-5 rounded-xl bg-white px-4 py-2.5 text-sm font-semibold text-black">
+          <button type="button" onClick={() => runSearch(query)} className="mt-5 rounded-[8px] bg-white px-4 py-2.5 text-sm font-semibold text-black">
             Try again
           </button>
         </div>

@@ -83,7 +83,7 @@ export default function Anime() {
       <div className="px-4 md:px-6 pt-8 pb-2">
         <div className="flex items-center justify-between mb-4">
           <span className="text-[10px] uppercase tracking-[0.22em] text-white/35 flex items-center gap-1.5 font-medium">
-            <span className="inline-block w-1.5 h-1.5 rounded-full bg-white/50 animate-pulse" />
+            <span className="inline-block w-1.5 h-1.5 rounded-[8px] bg-white/50 animate-pulse" />
             Live from AniList
           </span>
           <button
@@ -104,7 +104,7 @@ export default function Anime() {
               onChange={e => { setQuery(e.target.value); if (e.target.value === '') clearSearch(); }}
               placeholder="Search any anime…"
               className="
-                w-full rounded-full pl-10 pr-4 py-2.5
+                w-full rounded-[8px] pl-10 pr-4 py-2.5
                 text-sm text-white placeholder:text-white/30
                 border border-white/[0.10] bg-white/[0.06]
                 outline-none focus:border-white/[0.22] focus:bg-white/[0.08]
@@ -115,7 +115,7 @@ export default function Anime() {
           <button
             type="submit"
             disabled={!query.trim() || searchState === 'loading'}
-            className="bg-white hover:bg-white/88 disabled:opacity-40 text-black text-xs px-5 py-2.5 rounded-full transition-colors shrink-0 font-semibold"
+            className="bg-white hover:bg-white/88 disabled:opacity-40 text-black text-xs px-5 py-2.5 rounded-[8px] transition-colors shrink-0 font-semibold"
           >
             {searchState === 'loading' ? '…' : 'Search'}
           </button>

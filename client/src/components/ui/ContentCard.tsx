@@ -174,7 +174,7 @@ const ContentCard = memo(function ContentCard({
         {/* Glow layer — opacity-only toggle, no repaint */}
         <div
           className="
-            absolute inset-0 rounded-xl pointer-events-none z-[-1]
+            absolute inset-0 rounded-[8px] pointer-events-none z-[-1]
             opacity-0 md:group-hover:opacity-100 transition-opacity duration-[400ms]
           "
           style={{ boxShadow: '0 20px 60px rgba(0,0,0,0.6), 0 0 0 1px rgba(255,255,255,0.08)' }}

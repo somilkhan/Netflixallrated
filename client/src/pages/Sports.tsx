@@ -258,7 +258,7 @@ function StreamModal({ match, onClose }: { match: LiveMatch; onClose: () => void
               {allExhausted && (
                 <button
                   onClick={() => { failedRef.current = new Set(); setIdx(0); }}
-                  className="flex items-center gap-2 font-sans text-sm text-white/50 border border-white/20 rounded-full px-4 py-2 hover:border-white/40 hover:text-white/70 transition-colors"
+                  className="flex items-center gap-2 font-sans text-sm text-white/50 border border-white/20 rounded-[8px] px-4 py-2 hover:border-white/40 hover:text-white/70 transition-colors"
                 >
                   <RefreshCw size={13} /> Retry all sources
                 </button>
@@ -299,7 +299,7 @@ function StreamModal({ match, onClose }: { match: LiveMatch; onClose: () => void
         {streams.length > 0 && !loading && (
           <div
             className="shrink-0 flex items-center gap-2 px-4 py-2.5 overflow-x-auto scrollbar-hide"
-            style={{ background: '#0d0e11', borderTop: '1px solid rgba(255,255,255,0.06)' }}
+            style={{ background: '#000000', borderTop: '1px solid rgba(255,255,255,0.06)' }}
           >
             <Radio size={11} className="text-white/25 shrink-0" />
             <span className="font-mono text-[9px] text-white/25 shrink-0 mr-1">SOURCES</span>
@@ -324,13 +324,13 @@ function StreamModal({ match, onClose }: { match: LiveMatch; onClose: () => void
                   `}
                 >
                   {s.hd && (
-                    <span className={`font-mono text-[8px] font-bold ${isCurrent ? 'text-black' : 'text-green-400'}`}>
+                    <span className={`font-mono text-[8px] font-bold ${isCurrent ? 'text-black' : 'text-white/60'}`}>
                       HD
                     </span>
                   )}
                   {s.language || `Server ${s.streamNo}`}
                   {isCurrent && !isFailed && (
-                    <span className="w-1.5 h-1.5 rounded-full bg-green-400 animate-pulse" />
+                    <span className="w-1.5 h-1.5 rounded-full bg-white/60 animate-pulse" />
                   )}
                 </button>
               );
@@ -374,7 +374,7 @@ function MatchCard({ match, onWatch }: { match: LiveMatch; onWatch: () => void }
               loading="lazy"
               onError={e => { (e.target as HTMLImageElement).style.display = 'none'; }}
             />
-            <div className="absolute inset-0 bg-gradient-to-t from-[#0f1012] via-[#0f1012]/20 to-transparent" />
+            <div className="absolute inset-0 bg-gradient-to-t from-[#000000] via-[#000000]/20 to-transparent" />
           </>
         ) : (
           /* No poster → elegant team badge display */
@@ -388,7 +388,7 @@ function MatchCard({ match, onWatch }: { match: LiveMatch; onWatch: () => void }
             </div>
             <div className="flex flex-col items-center gap-0.5 shrink-0 px-2">
               {live
-                ? <span className="font-mono text-[10px] font-bold text-red-400 animate-pulse">LIVE</span>
+                ? <span className="font-mono text-[10px] font-bold text-white animate-pulse">LIVE</span>
                 : <span className="font-sans text-xs text-white/20">vs</span>
               }
             </div>
@@ -445,13 +445,13 @@ function MatchCard({ match, onWatch }: { match: LiveMatch; onWatch: () => void }
             transition-colors duration-150
             group-hover:bg-white/[0.10]
             ${live
-              ? 'bg-red-500/10 border-red-500/25 group-hover:border-red-500/40'
+              ? 'bg-white/10 border-white/20 group-hover:border-white/30'
               : 'bg-white/[0.04] border-white/[0.07]'
             }
           `}
         >
-          <Play size={10} className={`fill-current ${live ? 'text-red-400' : 'text-white/50'}`} />
-          <span className={`font-sans text-[11px] font-medium ${live ? 'text-red-300' : 'text-white/50'}`}>
+          <Play size={10} className={`fill-current ${live ? 'text-white' : 'text-white/50'}`} />
+          <span className={`font-sans text-[11px] font-medium ${live ? 'text-white' : 'text-white/50'}`}>
             {live ? 'Watch Live' : 'Watch'}
           </span>
         </div>
@@ -527,24 +527,16 @@ export default function Sports() {
       <div className="min-h-screen pb-28">
         {/* Header */}
         <div
-          className="relative overflow-hidden border-b border-[#181818]"
-          style={{ background: 'linear-gradient(160deg,#090f09 0%,#0b170b 45%,#0f1014 100%)' }}
+          className="relative overflow-hidden border-b border-white/[0.06]"
+          style={{ background: '#000000' }}
         >
-          <div
-            className="absolute inset-0 opacity-[0.03] pointer-events-none"
-            style={{
-              backgroundImage: `
-                repeating-linear-gradient(90deg,#4ade80 0,#4ade80 1px,transparent 1px,transparent 52px),
-                repeating-linear-gradient(0deg,  #4ade80 0,#4ade80 1px,transparent 1px,transparent 52px)
-              `,
-            }}
-          />
+          
           <div className="relative px-5 pt-10 pb-6">
             <div className="flex items-center gap-3 mb-1">
               <span className="text-2xl leading-none select-none">⚽</span>
               <h1 className="font-sans text-[28px] font-bold tracking-tight text-white leading-none">Sports</h1>
               {liveCount > 0 && (
-                <span className="flex items-center gap-1.5 bg-red-600/90 rounded-full px-2.5 py-0.5 ml-0.5">
+                <span className="flex items-center gap-1.5 bg-[#e50914] rounded-[8px] px-2.5 py-0.5 ml-0.5">
                   <span className="w-1.5 h-1.5 rounded-full bg-white animate-pulse" />
                   <span className="font-mono text-[9px] font-bold text-white tracking-wider">
                     {liveCount} LIVE
@@ -552,7 +544,7 @@ export default function Sports() {
                 </span>
               )}
             </div>
-            <p className="font-sans text-[13px] text-[#4a4a4a] ml-[39px]">
+            <p className="font-sans text-[13px] text-white/50 ml-[39px]">
               Live matches &amp; streams · {new Date().toLocaleDateString([], { weekday: 'long', month: 'long', day: 'numeric' })}
             </p>
           </div>
@@ -571,7 +563,7 @@ export default function Sports() {
                   onClick={() => setActiveCat(cat)}
                   className={`
                     shrink-0 flex items-center gap-1.5
-                    font-sans text-[12px] px-4 py-1.5 rounded-full border
+                    font-sans text-[12px] px-4 py-1.5 rounded-[8px] border
                     transition-[background-color,border-color,color] duration-150
                     ${isActive
                       ? 'bg-white text-black border-white'
@@ -583,7 +575,7 @@ export default function Sports() {
                   {catLiveCount > 0 && (
                     <span className={`
                       font-mono text-[8px] font-bold px-1 rounded
-                      ${isActive ? 'bg-black/20 text-black' : 'bg-red-600/80 text-white'}
+                      ${isActive ? 'bg-black/20 text-black' : 'bg-white/20 text-white'}
                     `}>
                       {catLiveCount}
                     </span>
@@ -607,7 +599,7 @@ export default function Sports() {
               <p className="font-sans text-sm text-white/35 max-w-xs mx-auto mb-6">{error}</p>
               <button
                 onClick={fetchMatches}
-                className="inline-flex items-center gap-2 font-sans text-sm text-white/60 border border-white/20 rounded-full px-5 py-2 hover:border-white/40 hover:text-white/80 transition-colors"
+                className="inline-flex items-center gap-2 font-sans text-sm text-white/60 border border-white/20 rounded-[8px] px-5 py-2 hover:border-white/40 hover:text-white/80 transition-colors"
               >
                 <RefreshCw size={13} /> Retry
               </button>
@@ -622,7 +614,7 @@ export default function Sports() {
               {activeCat !== ALL && (
                 <button
                   onClick={() => setActiveCat(ALL)}
-                  className="inline-flex items-center gap-1.5 font-sans text-sm text-white/50 border border-white/20 rounded-full px-4 py-1.5 hover:border-white/40 hover:text-white/70 transition-colors"
+                  className="inline-flex items-center gap-1.5 font-sans text-sm text-white/50 border border-white/20 rounded-[8px] px-4 py-1.5 hover:border-white/40 hover:text-white/70 transition-colors"
                 >
                   Show all sports
                 </button>

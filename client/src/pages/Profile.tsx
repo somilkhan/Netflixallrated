@@ -172,13 +172,13 @@ export default function Profile() {
           <div className="flex gap-3 overflow-hidden">
             {Array.from({ length: 6 }).map((_, i) => (
               <div key={i} className="shrink-0 w-[130px]">
-                <div className="aspect-[2/3] rounded-xl bg-white/[0.05] animate-pulse mb-2" />
+                <div className="aspect-[2/3] rounded-[8px] bg-white/[0.05] animate-pulse mb-2" />
                 <div className="h-3 bg-white/[0.04] rounded-full w-4/5 animate-pulse" />
               </div>
             ))}
           </div>
         ) : history.length === 0 ? (
-          <div className="flex flex-col items-center gap-2 py-8 text-center rounded-xl border border-white/[0.06]"
+          <div className="flex flex-col items-center gap-2 py-8 text-center rounded-[8px] border border-white/[0.06]"
             style={{ background: 'rgba(255,255,255,0.02)' }}>
             <Clock size={28} className="text-white/15" />
             <p className="text-sm text-white/35">Nothing watched yet</p>
@@ -205,10 +205,10 @@ export default function Profile() {
                   onKeyDown={e => { if (e.key === 'Enter') nav(`/title/${item.title.id}?play=1`); }}
                   className="
                     group shrink-0 w-[130px] cursor-pointer
-                    focus:outline-none focus-visible:ring-2 focus-visible:ring-white/30 rounded-xl
+                    focus:outline-none focus-visible:ring-2 focus-visible:ring-white/30 rounded-[8px]
                   "
                 >
-                  <div className="relative aspect-[2/3] rounded-xl overflow-hidden bg-white/[0.05] mb-2">
+                  <div className="relative aspect-[2/3] rounded-[8px] overflow-hidden bg-white/[0.05] mb-2">
                     {item.title.posterUrl && (
                       <img
                         {...tmdbSrcSet(item.title.posterUrl)}
@@ -272,13 +272,13 @@ export default function Profile() {
           <div className="flex gap-3 overflow-hidden">
             {Array.from({ length: 6 }).map((_, i) => (
               <div key={i} className="shrink-0 w-[130px]">
-                <div className="aspect-[2/3] rounded-xl bg-white/[0.05] animate-pulse mb-2" />
+                <div className="aspect-[2/3] rounded-[8px] bg-white/[0.05] animate-pulse mb-2" />
                 <div className="h-3 bg-white/[0.04] rounded-full w-4/5 animate-pulse" />
               </div>
             ))}
           </div>
         ) : watchlist.length === 0 ? (
-          <div className="flex flex-col items-center gap-2 py-8 text-center rounded-xl border border-white/[0.06]"
+          <div className="flex flex-col items-center gap-2 py-8 text-center rounded-[8px] border border-white/[0.06]"
             style={{ background: 'rgba(255,255,255,0.02)' }}>
             <Bookmark size={28} className="text-white/15" />
             <p className="text-sm text-white/35">Your list is empty</p>

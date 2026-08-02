@@ -47,7 +47,7 @@ function SwipeCard({
         type="button"
         onClick={() => onRemove(item)}
         aria-label={`Remove ${item.title?.name ?? 'Untitled'} from My List`}
-        className="absolute right-0 top-0 bottom-8 z-0 flex w-[76px] items-center justify-center rounded-xl bg-red-500/80 text-white md:hidden"
+        className="absolute right-0 top-0 bottom-8 z-0 flex w-[76px] items-center justify-center rounded-[8px] bg-red-500/80 text-white md:hidden"
       >
         <X size={18} />
       </button>
@@ -116,7 +116,7 @@ export default function MyList() {
           <h1 className="text-xl font-semibold text-white">Your list is waiting</h1>
           <p className="mt-2 text-sm text-white/70">Sign in to save movies and shows for later.</p>
         </div>
-        <button type="button" onClick={() => nav('/login')} className="rounded-xl bg-white px-5 py-2.5 text-sm font-semibold text-black hover:bg-white/90">
+        <button type="button" onClick={() => nav('/login')} className="rounded-[8px] bg-white px-5 py-2.5 text-sm font-semibold text-black hover:bg-white/90">
           Sign In
         </button>
       </div>
@@ -164,7 +164,7 @@ export default function MyList() {
 
       {loading && (
         <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6">
-          {Array.from({ length: 12 }).map((_, index) => <div key={index} className="aspect-[2/3] animate-pulse rounded-xl bg-white/[0.05]" />)}
+          {Array.from({ length: 12 }).map((_, index) => <div key={index} className="aspect-[2/3] animate-pulse rounded-[8px] bg-white/[0.05]" />)}
         </div>
       )}
 
@@ -182,7 +182,7 @@ export default function MyList() {
           </div>
           <h2 className="text-xl font-semibold text-white">Your list is empty</h2>
           <p className="mt-2 max-w-sm text-sm leading-6 text-white/70">Save movies and shows you want to watch later. They’ll appear here.</p>
-          <button type="button" onClick={() => nav('/browse')} className="mt-6 rounded-xl bg-white px-5 py-2.5 text-sm font-semibold text-black hover:bg-white/90">Browse</button>
+          <button type="button" onClick={() => nav('/browse')} className="mt-6 rounded-[8px] bg-white px-5 py-2.5 text-sm font-semibold text-black hover:bg-white/90">Browse</button>
         </div>
       )}
 
