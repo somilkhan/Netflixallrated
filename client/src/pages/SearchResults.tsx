@@ -18,7 +18,7 @@ function SkeletonCard() {
   return (
     <div className="w-full flex flex-col gap-2">
       <div
-        className="w-full rounded-lg overflow-hidden relative"
+        className="w-full rounded-[8px] overflow-hidden relative"
         style={{ aspectRatio: '2/3', background: 'rgba(255,255,255,0.06)' }}
       >
         <div
@@ -291,7 +291,7 @@ export default function SearchResults() {
       {/* ── Empty: tab has 0 but all has some ─────────────────────── */}
       {isEmpty && rawResults.length > 0 && (
         <div className="text-center py-16">
-          <p className="text-base font-semibold text-white/50 mb-2">
+          <p className="text-base font-semibold text-white/70 mb-2">
             No {TABS.find(t => t.value === type)?.label} results for "{query}"
           </p>
           <button
@@ -323,7 +323,7 @@ export default function SearchResults() {
               <button
                 key={g}
                 onClick={() => { setQuery(g); runSearch(g); }}
-                className="text-xs px-3.5 py-2 rounded-full border border-white/[0.08] text-white/50 hover:border-white/[0.22] hover:text-white/75 transition-[border-color,color]"
+                className="text-xs px-3.5 py-2 rounded-full border border-white/[0.08] text-white/70 hover:border-white/[0.22] hover:text-white/75 transition-[border-color,color]"
               >
                 {g}
               </button>
@@ -335,14 +335,14 @@ export default function SearchResults() {
       {/* ── Idle state ────────────────────────────────────────────── */}
       {!loading && !searched && !query && (
         <div className="py-10 text-center">
-          <p className="text-lg font-semibold text-white/50 mb-2">Search the catalog</p>
+          <p className="text-lg font-semibold text-white/70 mb-2">Search the catalog</p>
           <p className="text-sm text-white/30 mb-7">Movies, TV shows, anime — all in one place</p>
           <div className="flex flex-wrap gap-2 justify-center max-w-xs mx-auto">
             {['Action', 'Drama', 'Sci-Fi', 'Anime', 'Comedy', 'Thriller', 'Horror', 'Romance'].map(g => (
               <button
                 key={g}
                 onClick={() => { setQuery(g); runSearch(g); }}
-                className="text-xs px-3.5 py-2 rounded-full border border-white/[0.08] text-white/50 hover:border-white/[0.22] hover:text-white/75 transition-[border-color,color]"
+                className="text-xs px-3.5 py-2 rounded-full border border-white/[0.08] text-white/70 hover:border-white/[0.22] hover:text-white/75 transition-[border-color,color]"
               >
                 {g}
               </button>
