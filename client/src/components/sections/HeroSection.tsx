@@ -165,12 +165,12 @@ const HeroSection = memo(function HeroSection({ titles, onAction, regionLabel }:
       {/* Universal scrim — ensures text is always readable over any backdrop */}
       <div
         className="absolute inset-0 z-[2] pointer-events-none"
-        style={{ background: 'linear-gradient(to top, rgba(10,10,10,1) 0%, rgba(10,10,10,0.85) 25%, rgba(10,10,10,0.4) 60%, rgba(10,10,10,0) 100%)' }}
+        style={{ background: 'linear-gradient(to top, rgba(20,20,20,1) 0%, rgba(20,20,20,0.85) 25%, rgba(20,20,20,0.4) 60%, rgba(20,20,20,0) 100%)' }}
       />
       {/* Left: extra text-area darkening on desktop */}
       <div
         className="absolute inset-0 z-[2] pointer-events-none hidden md:block"
-        style={{ background: 'linear-gradient(105deg, rgba(10,10,10,0.85) 0%, rgba(10,10,10,0.5) 40%, transparent 70%)' }}
+        style={{ background: 'linear-gradient(105deg, rgba(20,20,20,0.85) 0%, rgba(10,10,10,0.5) 40%, transparent 70%)' }}
       />
       {/* Top: nav readability */}
       <div
@@ -185,7 +185,7 @@ const HeroSection = memo(function HeroSection({ titles, onAction, regionLabel }:
           {/* Region label */}
           {regionLabel && (
             <div className="mb-3 animate-fade-up" style={{ animationDelay: '0s' }}>
-              <span className="inline-flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-widest text-white/60 border border-white/[0.12] bg-black/[0.35] backdrop-blur-sm px-3 py-1 rounded-full">
+              <span className="inline-flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-widest text-white/50 border border-white/[0.12] bg-[#141414]/[0.35] backdrop-blur-sm px-3 py-1 rounded-full">
                 <span className="w-1.5 h-1.5 rounded-full bg-white/50 shrink-0" />
                 {regionLabel}
               </span>
@@ -203,7 +203,7 @@ const HeroSection = memo(function HeroSection({ titles, onAction, regionLabel }:
                   key={g}
                   className="
                     text-[11px] font-medium px-3 py-1.5 rounded-full
-                    border border-white/[0.12] bg-black/[0.45]
+                    border border-white/[0.12] bg-[#141414]/[0.45]
                     text-white backdrop-blur-[8px] leading-none
                   "
                 >
