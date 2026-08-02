@@ -683,7 +683,7 @@ export default function TitleDetail() {
       setAnilistLoading(true);
       getAnimeDetail(title.anilistId ? { id: title.anilistId } : { name: title?.name ?? '' })
         .then((data) => { if (!cancelled && data) setAnilistData(data); })
-        .catch(() => {})
+        .catch((err) => console.error('TitleDetail error:', err))
         .finally(() => { if (!cancelled) setAnilistLoading(false); });
     }
 
@@ -951,9 +951,9 @@ export default function TitleDetail() {
 
   const handleShare = () => {
     if (navigator.share) {
-      navigator.share({ title: title?.name || '', url: window.location.href }).catch(() => {});
+      navigator.share({ title: title?.name || '', url: window.location.href }).catch((err) => console.error('TitleDetail error:', err));
     } else {
-      navigator.clipboard.writeText(window.location.href).catch(() => {});
+      navigator.clipboard.writeText(window.location.href).catch((err) => console.error('TitleDetail error:', err));
     }
   };
 
