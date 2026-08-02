@@ -5,12 +5,12 @@ export default {
     extend: {
       colors: {
         /* ── New design system ── */
-        primary:   '#0A0A0A',
-        secondary: '#141414',
+        primary:   '#000000',
+        secondary: '#000000',
         tertiary:  '#1A1A1A',
         /* ── Legacy aliases (keep for existing components) ── */
-        void:         '#0A0A0A',
-        surface:      '#141414',
+        void:         '#000000',
+        surface:      '#000000',
         'surface-2':  '#1A1A1A',
         line:         'rgba(255,255,255,0.08)',
         'line-bright':'rgba(255,255,255,0.15)',
