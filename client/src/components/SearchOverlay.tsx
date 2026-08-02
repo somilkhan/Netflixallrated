@@ -284,7 +284,7 @@ export default function SearchOverlay({ open, onClose }: Props) {
             shadow-[0_8px_32px_rgba(0,0,0,0.6)]
           "
         >
-          <Search size={18} className="shrink-0 text-white/40" />
+          <Search size={18} className="shrink-0 text-white/50" />
           <input
             ref={inputRef}
             type="text"
@@ -373,7 +373,7 @@ export default function SearchOverlay({ open, onClose }: Props) {
                 <button
                   type="button"
                   onClick={showResults}
-                  className="w-full py-3 text-sm text-white/40 hover:text-white hover:bg-white/[0.04] transition-colors border-t border-white/[0.06] text-center"
+                  className="w-full py-3 text-sm text-white/50 hover:text-white hover:bg-white/[0.04] transition-colors border-t border-white/[0.06] text-center"
                 >
                   See all results for "<span className="text-white/70">{query}</span>"
                 </button>
@@ -434,7 +434,7 @@ export default function SearchOverlay({ open, onClose }: Props) {
             ) : allResults.length > 0 ? (
               /* Tab has 0 results but other tabs do */
               <div className="text-center py-16">
-                <p className="text-base font-semibold text-white/60 mb-2">
+                <p className="text-base font-semibold text-white/50 mb-2">
                   No {TABS.find(t => t.value === activeTab)?.label} results for "{query}"
                 </p>
                 <button
@@ -473,7 +473,7 @@ export default function SearchOverlay({ open, onClose }: Props) {
               <div>
                 <div className="flex items-center justify-between mb-3">
                   <h3 className="text-white text-[15px] font-semibold flex items-center gap-2">
-                    <Clock size={15} className="text-white/40" /> Recent Searches
+                    <Clock size={15} className="text-white/50" /> Recent Searches
                   </h3>
                   <button
                     type="button"
@@ -507,7 +507,7 @@ export default function SearchOverlay({ open, onClose }: Props) {
             {/* Trending */}
             <div>
               <h3 className="text-white text-[15px] font-semibold flex items-center gap-2 mb-3">
-                <TrendingUp size={15} className="text-white/40" /> Trending Now
+                <TrendingUp size={15} className="text-white/50" /> Trending Now
               </h3>
               <div className="flex flex-wrap gap-2">
                 {TRENDING_TERMS.map((term, i) => (
