@@ -74,7 +74,7 @@ const MobileBottomNav = memo(function MobileBottomNav() {
         style={{
           height: 'calc(64px + env(safe-area-inset-bottom))',
           paddingBottom: 'env(safe-area-inset-bottom)',
-          background: '#0A0A0A',
+          background: '#000000',
           borderTop: '1px solid rgba(255,255,255,0.05)',
         }}
         aria-label="Mobile navigation"
