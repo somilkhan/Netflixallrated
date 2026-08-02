@@ -45,7 +45,7 @@ export const Avatar = memo(function Avatar({ src, name, email, size = 32, classN
           loading="lazy"
         />
       ) : initials === '?' ? (
-        <User size={size * 0.5} className="text-white/60" />
+        <User size={size * 0.5} className="text-white/70" />
       ) : (
         initials
       )}
