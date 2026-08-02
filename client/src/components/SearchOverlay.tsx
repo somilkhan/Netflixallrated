@@ -77,7 +77,7 @@ function HighlightMatch({ text, query }: { text: string; query: string }) {
 function SkeletonCard() {
   return (
     <div className="w-full" style={{ aspectRatio: '2/3' }}>
-      <div className="w-full h-full rounded-lg overflow-hidden relative" style={{ background: 'rgba(255,255,255,0.06)' }}>
+      <div className="w-full h-full rounded-[8px] overflow-hidden relative" style={{ background: 'rgba(255,255,255,0.06)' }}>
         <div
           className="absolute inset-0"
           style={{
@@ -284,7 +284,7 @@ export default function SearchOverlay({ open, onClose }: Props) {
             shadow-[0_8px_32px_rgba(0,0,0,0.6)]
           "
         >
-          <Search size={18} className="shrink-0 text-white/50" />
+          <Search size={18} className="shrink-0 text-white/70" />
           <input
             ref={inputRef}
             type="text"
@@ -307,8 +307,8 @@ export default function SearchOverlay({ open, onClose }: Props) {
             type="button"
             onClick={onClose}
             className="
-              shrink-0 px-3 py-1.5 rounded-lg text-sm
-              bg-white/[0.06] border border-white/[0.08] text-white/50
+              shrink-0 px-3 py-1.5 rounded-[8px] text-sm
+              bg-white/[0.06] border border-white/[0.08] text-white/70
               hover:bg-white/[0.10] hover:text-white transition-colors
             "
           >
@@ -373,7 +373,7 @@ export default function SearchOverlay({ open, onClose }: Props) {
                 <button
                   type="button"
                   onClick={showResults}
-                  className="w-full py-3 text-sm text-white/50 hover:text-white hover:bg-white/[0.04] transition-colors border-t border-white/[0.06] text-center"
+                  className="w-full py-3 text-sm text-white/70 hover:text-white hover:bg-white/[0.04] transition-colors border-t border-white/[0.06] text-center"
                 >
                   See all results for "<span className="text-white/70">{query}</span>"
                 </button>
@@ -398,7 +398,7 @@ export default function SearchOverlay({ open, onClose }: Props) {
                     transition-all duration-150 shrink-0
                     ${activeTab === value
                       ? 'bg-white text-black border-white font-medium'
-                      : 'bg-transparent text-white/50 border-white/[0.10] hover:border-white/[0.22] hover:text-white'
+                      : 'bg-transparent text-white/70 border-white/[0.10] hover:border-white/[0.22] hover:text-white'
                     }
                   `}
                 >
@@ -434,7 +434,7 @@ export default function SearchOverlay({ open, onClose }: Props) {
             ) : allResults.length > 0 ? (
               /* Tab has 0 results but other tabs do */
               <div className="text-center py-16">
-                <p className="text-base font-semibold text-white/50 mb-2">
+                <p className="text-base font-semibold text-white/70 mb-2">
                   No {TABS.find(t => t.value === activeTab)?.label} results for "{query}"
                 </p>
                 <button
@@ -473,7 +473,7 @@ export default function SearchOverlay({ open, onClose }: Props) {
               <div>
                 <div className="flex items-center justify-between mb-3">
                   <h3 className="text-white text-[15px] font-semibold flex items-center gap-2">
-                    <Clock size={15} className="text-white/50" /> Recent Searches
+                    <Clock size={15} className="text-white/70" /> Recent Searches
                   </h3>
                   <button
                     type="button"
@@ -507,7 +507,7 @@ export default function SearchOverlay({ open, onClose }: Props) {
             {/* Trending */}
             <div>
               <h3 className="text-white text-[15px] font-semibold flex items-center gap-2 mb-3">
-                <TrendingUp size={15} className="text-white/50" /> Trending Now
+                <TrendingUp size={15} className="text-white/70" /> Trending Now
               </h3>
               <div className="flex flex-wrap gap-2">
                 {TRENDING_TERMS.map((term, i) => (
