@@ -129,7 +129,7 @@ const ContentRow = memo(function ContentRow({
              flex gap-4 overflow-x-auto overflow-y-visible
             px-4 md:px-6 pb-3
             scrollbar-hide
-            focus:outline-none focus-visible:ring-1 focus-visible:ring-white/25 rounded-lg
+            focus:outline-none focus-visible:ring-1 focus-visible:ring-white/25 rounded-[4px]
           "
           style={{
             scrollSnapType: 'x mandatory',
