@@ -134,7 +134,7 @@ export default function App() {
       <PlayerProvider>
         <div
           className="min-h-screen overflow-x-hidden max-w-full"
-          style={{ background: '#0A0A0A', color: '#FFFFFF' }}
+          style={{ background: '#000000', color: '#FFFFFF' }}
         >
            <TopNav onOpenSearch={openSearch} />
           <SearchOverlay open={searchOpen} onClose={closeSearch} />
