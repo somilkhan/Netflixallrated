@@ -174,7 +174,7 @@ const ContentCard = memo(function ContentCard({
         onClick={handleClick}
         onKeyDown={handleKeyDown}
         className="
-          block relative z-10 w-full rounded-[8px] overflow-hidden aspect-[2/3]
+          block relative z-10 w-full rounded-[4px] overflow-hidden aspect-[2/3]
           bg-[#161616] cursor-pointer
           active:scale-[0.97] md:active:scale-100
           focus:outline-none focus-visible:ring-2 focus-visible:ring-white/25
@@ -287,7 +287,7 @@ const ContentCard = memo(function ContentCard({
       </div>
 
       {/* ── Netflix-style hover overlay ───────────────────────────────── */}
-      <div className="hidden md:block absolute inset-0 z-20 opacity-0 md:group-hover:opacity-100 transition-opacity duration-[300ms] pointer-events-none">
+      <div className="hidden md:block absolute -bottom-[80px] left-0 right-0 z-30 opacity-0 md:group-hover:opacity-100 transition-opacity duration-[300ms] pointer-events-none">
         {/* Play button — centered */}
         <button
           type="button"

@@ -194,7 +194,7 @@ const AnimeHeroBanner = memo(function AnimeHeroBanner() {
               aria-label={`Play ${titleStr}`}
               className="
                 flex items-center justify-center gap-2.5
-                w-full sm:w-auto px-8 rounded-[8px]
+                w-full sm:w-auto px-8 rounded-[4px]
                 bg-white text-black
                 text-[15px] font-semibold
                 hover:bg-white/90 active:scale-[0.97] disabled:opacity-60
@@ -216,10 +216,10 @@ const AnimeHeroBanner = memo(function AnimeHeroBanner() {
               aria-label={`More info about ${titleStr}`}
               className="
                 flex items-center justify-center gap-2.5
-                w-full sm:w-auto px-8 rounded-[8px]
-                bg-white/20 text-white
+                w-full sm:w-auto px-8 rounded-[4px]
+                bg-[#4d4d4d] text-white
                 text-[15px] font-medium
-                hover:bg-white/30
+                hover:bg-[#4d4d4d]/80
                 active:scale-[0.97] disabled:opacity-60
                 transition-all duration-200 touch-manipulation
               "

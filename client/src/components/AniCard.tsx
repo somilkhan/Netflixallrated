@@ -85,7 +85,7 @@ const AniCard = memo(function AniCard({ anime, rank, fluid = false, className = 
           if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); handleNav(false); }
         }}
         className="
-          block relative z-10 w-full rounded-[8px] overflow-hidden aspect-[2/3]
+          block relative z-10 w-full rounded-[4px] overflow-hidden aspect-[2/3]
           bg-[#161616] cursor-pointer
           transition-transform duration-[400ms] ease-[cubic-bezier(0.4,0,0.2,1)]
           md:group-hover:scale-[1.08] md:group-hover:-translate-y-1
