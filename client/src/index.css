@@ -252,5 +252,11 @@
 
 /* Netflix base background */
 html, body, #root {
-  background-color: #141414;
+  background-color: #000000;
+}
+
+
+/* Netflix Base */
+html, body, #root {
+  background-color: #000000;
 }
