@@ -30,7 +30,7 @@ export const SkeletonCard = memo(function SkeletonCard({ className = '', fluid =
       {/* Text skeleton */}
       <div className="mt-2 space-y-1.5">
         <div className="h-3 w-4/5 rounded-full bg-[#1A1A1A]" style={{ animation: 'shimmer 1.8s ease-in-out 0.2s infinite' }} />
-        <div className="h-2.5 w-2/5 rounded-full bg-[#141414]" style={{ animation: 'shimmer 1.8s ease-in-out 0.4s infinite' }} />
+        <div className="h-2.5 w-2/5 rounded-full bg-[#000000]" style={{ animation: 'shimmer 1.8s ease-in-out 0.4s infinite' }} />
       </div>
     </div>
   );
