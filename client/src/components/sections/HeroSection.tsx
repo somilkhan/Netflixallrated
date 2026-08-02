@@ -130,14 +130,14 @@ const HeroSection = memo(function HeroSection({ titles, onAction, regionLabel }:
                   {/* Dark fallback while image loads */}
                   <div
                     className="absolute inset-0 transition-opacity duration-500"
-                    style={{ background: 'radial-gradient(ellipse at 30% 30%, #1a1a2e, #0A0A0A)', opacity: imgLoaded[i] ? 0 : 1 }}
+                    style={{ background: 'radial-gradient(ellipse at 30% 30%, #1a1a2e, #000000)', opacity: imgLoaded[i] ? 0 : 1 }}
                   />
                 </>
               ) : (
                 <div
                   className="absolute inset-0"
                   style={{
-                    background: `radial-gradient(ellipse at 30% 30%, #1a1a2e, #0A0A0A)`,
+                    background: `radial-gradient(ellipse at 30% 30%, #1a1a2e, #000000)`,
                   }}
                 />
               )}
@@ -185,7 +185,7 @@ const HeroSection = memo(function HeroSection({ titles, onAction, regionLabel }:
           {/* Region label */}
           {regionLabel && (
             <div className="mb-3 animate-fade-up" style={{ animationDelay: '0s' }}>
-              <span className="inline-flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-widest text-white/50 border border-white/[0.12] bg-[#141414]/[0.35] backdrop-blur-sm px-3 py-1 rounded-full">
+              <span className="inline-flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-widest text-white/70 border border-white/[0.12] bg-[#000000]/[0.35] backdrop-blur-sm px-3 py-1 rounded-full">
                 <span className="w-1.5 h-1.5 rounded-full bg-white/50 shrink-0" />
                 {regionLabel}
               </span>
@@ -203,7 +203,7 @@ const HeroSection = memo(function HeroSection({ titles, onAction, regionLabel }:
                   key={g}
                   className="
                     text-[11px] font-medium px-3 py-1.5 rounded-full
-                    border border-white/[0.12] bg-[#141414]/[0.45]
+                    border border-white/[0.12] bg-[#000000]/[0.45]
                     text-white backdrop-blur-[8px] leading-none
                   "
                 >
