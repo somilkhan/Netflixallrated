@@ -90,7 +90,7 @@ function AnimatedRoutes() {
 export default function App() {
   const [searchOpen, setSearchOpen] = useState(false);
   const [online, setOnline] = useState(() => navigator.onLine);
-  const [installEvent, setInstallEvent] = useState<any>(null);
+  const [installEvent, setInstallEvent] = useState<BeforeInstallPromptEvent | null>(null);
   const openSearch  = useCallback(() => setSearchOpen(true), []);
   const closeSearch = useCallback(() => setSearchOpen(false), []);
 
@@ -140,9 +140,9 @@ export default function App() {
           <SearchOverlay open={searchOpen} onClose={closeSearch} />
            {!online && <OfflinePage />}
            {online && installEvent && (
-             <div className="fixed bottom-20 left-1/2 z-[80] flex -translate-x-1/2 items-center gap-3 rounded-xl border border-white/10 bg-[#171717] px-4 py-3 text-xs text-white shadow-2xl">
+             <div className="fixed bottom-20 left-1/2 z-[80] flex -translate-x-1/2 items-center gap-3 rounded-[8px] border border-white/10 bg-[#161616] px-4 py-3 text-xs text-white shadow-2xl">
                <span>Install Allrated for a faster experience.</span>
-               <button type="button" onClick={async () => { await installEvent.prompt(); setInstallEvent(null); }} className="rounded-lg bg-white px-3 py-1.5 font-semibold text-black">Install</button>
+               <button type="button" onClick={async () => { await installEvent.prompt(); setInstallEvent(null); }} className="rounded-[8px] bg-white px-3 py-1.5 font-semibold text-black">Install</button>
                <button type="button" onClick={() => setInstallEvent(null)} className="text-white/45">Not now</button>
              </div>
            )}
