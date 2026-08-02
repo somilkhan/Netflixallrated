@@ -177,7 +177,7 @@ export default function Anime() {
       )}
 
       {/* Content rows — first 3 eager (fetch on mount, no IO wait) */}
-      <AnimeRankRow title="Trending Anime" badge="LIVE" perPage={10} onLoaded={onTrendingLoaded} eager />
+      <AnimeRankRow title="Trending Anime" isTrending badge="LIVE" perPage={10} onLoaded={onTrendingLoaded} eager />
       <AnimeRow title="Popular Anime" badge="LIVE" sort="POPULARITY_DESC" perPage={20} notIds={trendingIds} onLoaded={onPopularLoaded} eager />
       <AnimeRow title="Top Rated" sort="SCORE_DESC" perPage={20} notIds={[...trendingIds, ...popularIds]} eager />
       <AnimeRow title="Top Rated Movies" sort="SCORE_DESC" format="MOVIE" perPage={20} />

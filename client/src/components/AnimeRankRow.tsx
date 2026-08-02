@@ -76,7 +76,18 @@ const AnimeRankRow = memo(function AnimeRankRow({ title, badge, perPage = 10, on
   const isLoading = loadState === 'loading' || loadState === 'idle';
 
   return (
-    <section ref={sectionRef} className="py-5">
+    <section ref={sectionRef} className="relative py-5">
+        {/* Trending gradient wash */}
+        {isTrending && (
+          <div
+            className="absolute inset-x-0 top-0 h-full pointer-events-none -z-10"
+            style={{
+              background: 'linear-gradient(180deg, #192247 0%, #461518 100%)',
+              opacity: 0.35,
+            }}
+            aria-hidden
+          />
+        )}
       {/* Row header */}
       <div className="flex items-center justify-between px-4 md:px-6 mb-4">
         <div className="flex items-center gap-2.5 min-w-0">

@@ -10,6 +10,7 @@ interface ContentRowProps {
   viewAllPath?: string;
   children: React.ReactNode;
   className?: string;
+  isTrending?: boolean;
 }
 
 const ContentRow = memo(function ContentRow({
@@ -17,6 +18,7 @@ const ContentRow = memo(function ContentRow({
   viewAllPath,
   children,
   className = '',
+  isTrending = false,
 }: ContentRowProps) {
   const nav       = useNavigate();
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -38,7 +40,18 @@ const ContentRow = memo(function ContentRow({
   }, [scroll]);
 
   return (
-    <section className={`py-5 ${className}`}>
+    <section className={`relative py-5 ${className}`}>
+        {/* Trending gradient wash */}
+        {isTrending && (
+          <div
+            className="absolute inset-x-0 top-0 h-full pointer-events-none -z-10"
+            style={{
+              background: 'linear-gradient(180deg, #192247 0%, #461518 100%)',
+              opacity: 0.35,
+            }}
+            aria-hidden
+          />
+        )}
       {/* Row header */}
       <div className="flex items-center justify-between px-4 md:px-6 mb-4">
         <h2 className="text-[18px] md:text-[24px] font-bold text-white tracking-tight leading-none">

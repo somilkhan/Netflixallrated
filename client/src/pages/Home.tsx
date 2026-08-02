@@ -487,7 +487,7 @@ export default function Home() {
 
         {/* ── Trending Now ──────────────────────────────────────────── */}
         {!loading && trending.length > 0 && (
-          <ContentRow title="Trending Now" viewAllPath="/browse?collection=trending">
+          <ContentRow title="Trending Now" viewAllPath="/browse?collection=trending" isTrending>
             {trending.slice(0, 20).map(item => (
               <TmdbContentCard key={item.id} item={item} />
             ))}
