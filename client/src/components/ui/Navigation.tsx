@@ -522,9 +522,6 @@ const BottomVariant = memo(function BottomVariant() {
     [loc.pathname]
   );
 
-  /* Close More tray on route change */
-  useEffect(() => { setMoreOpen(false); }, [loc.pathname]);
-
   return (
     <>
       {/* ── More tray overlay ──────────────────────────────────────── */}
@@ -551,7 +548,7 @@ const BottomVariant = memo(function BottomVariant() {
                   <button
                     key={path}
                     type="button"
-                    onClick={() => { setMoreOpen(false); nav(path); }}
+                    onClick={() => { nav(path); }}
                     className={`
                       flex flex-col items-center justify-center gap-1.5 h-16 rounded-xl
                       transition-colors
@@ -594,8 +591,11 @@ const BottomVariant = memo(function BottomVariant() {
                 key={label}
                 type="button"
                 onClick={() => {
-                  if (action === 'toggle-more') setMoreOpen(o => !o);
-                  else nav(path);
+                  if (action === 'toggle-more') {
+                    setMoreOpen(o => !o);
+                  } else {
+                    nav(path);
+                  }
                 }}
                 aria-current={active ? 'page' : undefined}
                 className="flex flex-col items-center justify-center gap-1 w-16 h-14 rounded-xl transition-colors touch-manipulation"
@@ -629,9 +629,9 @@ const BottomVariant = memo(function BottomVariant() {
    Unified export
    ═══════════════════════════════════════════════════════════════════════════ */
 
-const Navigation = memo(function Navigation({ variant, onOpenSearch }: NavigationProps) {
+const Navigation = function Navigation({ variant, onOpenSearch }: NavigationProps) {
   if (variant === 'bottom') return <BottomVariant />;
   return <TopVariant onOpenSearch={onOpenSearch} />;
-});
+};
 
 export default Navigation;
