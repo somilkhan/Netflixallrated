@@ -156,7 +156,8 @@ function RowWrapper({
   onVisible: () => void;
 }) {
   const ref = useRef<HTMLDivElement>(null);
-  const isVisible = useHasIntersected(ref, { threshold: 0.1 });
+  // Use triggerOnce: true to disconnect observer immediately once visible, eliminating scroll callback overhead
+  const isVisible = useHasIntersected(ref, { threshold: 0.1, triggerOnce: true });
 
   useEffect(() => {
     if (isVisible) onVisible();

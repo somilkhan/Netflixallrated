@@ -1,0 +1,5 @@
+# Bolt's Journal - Performance Optimizations & Learnings
+
+## 2026-07-25 - Intersection Observer triggerOnce and State Resets
+**Learning:** React infinite scroll sentinels require a state reset when they go out of view. Without resetting `hasIntersected` to `false` when not intersecting, any changes to other dependency array properties (like page or loading state) will trigger successive API calls continuously even if the sentinel is no longer visible in the viewport. Conversely, static lazy-loaded items (such as home screen rows or content rows) are static assets that only need a single intersection trigger and should immediately disconnect their observer to eliminate continuous event evaluation and layout recalculations on scrolling.
+**Action:** Extend custom `useIntersectionObserver` hooks with a configurable `triggerOnce?: boolean` option. When `triggerOnce` is true, disconnect immediately on first intersection. When false, reset the state back to false once it is out of view, ensuring infinite scrolls operate accurately and eagerly without overhead.
