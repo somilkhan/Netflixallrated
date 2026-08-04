@@ -27,12 +27,14 @@ interface AnimeRowProps {
   onLoaded?: (ids: number[]) => void;
   /** Fetch immediately on mount instead of waiting for IntersectionObserver */
   eager?: boolean;
+  isTrending?: boolean;
 }
 
 const AnimeRow = memo(function AnimeRow({
   title, badge, sort = 'POPULARITY_DESC', genre, tag, status,
   season, seasonYear, format, perPage = 20, viewAllHref, notIds, onLoaded,
   eager = false,
+  isTrending = false,
 }: AnimeRowProps) {
   const nav = useNavigate();
   const [items, setItems] = useState<any[]>([]);

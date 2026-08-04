@@ -12,6 +12,7 @@ interface TopTenRowProps {
   viewAllPath?: string;
   /** Custom card renderer — defaults to <ContentCard title={item} /> */
   renderCard?: (item: unknown, index: number) => React.ReactNode;
+  isTrending?: boolean;
 }
 
 /**
@@ -21,7 +22,7 @@ interface TopTenRowProps {
  */
 const TEXT_AREA_HEIGHT = 38;
 
-const TopTenRow = memo(function TopTenRow({ title, items, viewAllPath, renderCard }: TopTenRowProps) {
+const TopTenRow = memo(function TopTenRow({ title, items, viewAllPath, renderCard, isTrending = false }: TopTenRowProps) {
   const nav       = useNavigate();
   const scrollRef = useRef<HTMLDivElement>(null);
 

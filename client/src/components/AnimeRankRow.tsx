@@ -18,9 +18,10 @@ interface AnimeRankRowProps {
   onLoaded?: (ids: number[]) => void;
   /** Fetch immediately on mount instead of waiting for IntersectionObserver */
   eager?: boolean;
+  isTrending?: boolean;
 }
 
-const AnimeRankRow = memo(function AnimeRankRow({ title, badge, perPage = 10, onLoaded, eager = false }: AnimeRankRowProps) {
+const AnimeRankRow = memo(function AnimeRankRow({ title, badge, perPage = 10, onLoaded, eager = false, isTrending = false }: AnimeRankRowProps) {
   const nav = useNavigate();
   const [items, setItems] = useState<any[]>([]);
   const [loadState, setLoadState] = useState<'idle' | 'loading' | 'done' | 'error'>('idle');
