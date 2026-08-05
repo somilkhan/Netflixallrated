@@ -1,0 +1,3 @@
+## 2025-02-14 - Optimizing DOM Observation and Intersection Events
+**Learning:** Continuous tracking via `IntersectionObserver` causes unnecessary CPU and layout recalculation cycles. By adding a `triggerOnce` parameter to our custom `useHasIntersected` hook, we can automatically disconnect the observer for elements that only need to load once (e.g., home rows and static content cards), while keeping continuous tracking optional (e.g., search page infinite scroll sentinel). This drastically reduces background DOM tracking overhead when scrolling.
+**Action:** Always check if an `IntersectionObserver` can be safely disconnected after its first positive intersection, and provide a configurable `triggerOnce` option to balance one-time and continuous tracking needs.
