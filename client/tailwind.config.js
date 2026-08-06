@@ -20,6 +20,7 @@ export default {
         ink:          '#FFFFFF',
         'ink-dim':    '#A3A3A3',
         'ink-faint':  '#737373',
+        'ink-disabled':'#737373',
         // 'ink-ghost':  '#525252', // Removed — Netflix doesn't use this shade
       },
       fontFamily: {
