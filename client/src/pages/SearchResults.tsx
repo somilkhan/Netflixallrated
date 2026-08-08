@@ -59,7 +59,8 @@ export default function SearchResults() {
   const abortRef    = useRef<AbortController | null>(null);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const sentinelRef = useRef<HTMLDivElement>(null);
-  const sentinelVisible = useHasIntersected(sentinelRef);
+  // Pass triggerOnce: false to let it reset when out of view, preventing continuous eager fetching
+  const sentinelVisible = useHasIntersected(sentinelRef, { triggerOnce: false });
 
   /* Tab-filtered results via useMemo — no re-filter on every render */
   const results = useMemo(() => {

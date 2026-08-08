@@ -1,0 +1,5 @@
+# Bolt's Journal - Critical Learnings
+
+## 2025-02-17 - Intersection Observer Over-observation & Search Results Infinite Scroll Eager Loading
+**Learning:** In React applications utilizing IntersectionObserver-based hooks like `useHasIntersected`, leaving the observer active after the first intersection event introduces needless DOM tracking overhead. Additionally, when a hook is used for infinite-scrolling sentinels, failing to reset the visibility state back to `false` when the sentinel is out of view causes continuous eager page fetching as the results list grows, ignoring user scroll progress entirely.
+**Action:** Enhance the `useHasIntersected` hook to support a custom `triggerOnce?: boolean` option. By default, set it to `true` to immediately disconnect the IntersectionObserver upon the first intersection (ideal for lazy-loading elements). For infinite scroll sentinels, set `triggerOnce: false` to allow the state to reset to `false` when the sentinel is out of view, ensuring pages are only loaded when scrolled to the fold.
